@@ -8,11 +8,13 @@ set(ZURA_HEADER_FILES
     src/helper/error/lexerError.hpp
     src/helper/flags.hpp
     src/lexer/lexer.hpp
+    src/ast/ast.hpp
     src/common.hpp
 )
 
 set(ZURA_SOURCE_FILES
     src/main.cpp
+    src/ast/ast.cpp
     src/helper/flags.cpp
     src/lexer/lexer.cpp
 )

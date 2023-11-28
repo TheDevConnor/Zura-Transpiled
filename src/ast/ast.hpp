@@ -17,7 +17,10 @@ enum class AstNodeType {
 
 class AstNode {
 public:
+    AstNode(AstNodeType type, void* data) : type(type), data(data) {}
+
     AstNodeType type;
+    void* data;
 
     struct Expr {
         AstNode* left;
@@ -26,12 +29,47 @@ public:
 
     struct Stmt { AstNode* expression; };
 
-    struct Binary : public Expr { TokenKind op; AstNode* left; AstNode* right;};
-    struct Unary : public Expr { TokenKind op; AstNode* right; };
-    struct Grouping : public Expr { AstNode* expression; };
-    struct Literal : public Expr { Lexer::Token literal; };
+    // ! Expressions
+    struct Binary : public Expr { 
+        TokenKind op; 
+        AstNode* left; 
+        AstNode* right; 
 
-    struct VarDeclaration : public Stmt { Lexer::Token name; AstNode* initializer; };
-    struct Expression : public Stmt { AstNode* expression; };
-    struct Print : public Stmt { AstNode* expression; };
+        Binary(TokenKind op, AstNode* left, AstNode* right) : op(op), left(left), right(right) {}
+    };
+    struct Unary : public Expr { 
+        TokenKind op; 
+        AstNode* right; 
+
+        Unary(TokenKind op, AstNode* right) : op(op), right(right) {}
+    };
+    struct Grouping : public Expr { 
+        AstNode* expression; 
+
+        Grouping(AstNode* expression) : expression(expression) {}
+    };
+    struct Literal : public Expr { 
+        Lexer::Token literal; 
+        Literal(Lexer::Token literal) : literal(literal) {}
+    };
+
+    // ! Statements
+    struct VarDeclaration : public Stmt { 
+        Lexer::Token name; 
+        AstNode* initializer; 
+
+        VarDeclaration(Lexer::Token name, AstNode* initializer) : name(name), initializer(initializer) {}
+    };
+    struct Expression : public Stmt { 
+        AstNode* expression;
+
+        Expression(AstNode* expression) : expression(expression) {}
+    };
+    struct Print : public Stmt { 
+        AstNode* expression; 
+
+        Print(AstNode* expression) : expression(expression) {}
+    };
+
+    static void printAst(AstNode* node, int indent);
 };
