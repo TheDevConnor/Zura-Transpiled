@@ -26,6 +26,19 @@ char Lexer::advance() {
 }
 char Lexer::peek() { return *scanner.current; }
 
+const char* Lexer::lineStart(int line) {
+    const char* start = scanner.source;
+    int currentLine = 1;
+
+    while (currentLine < line) {
+        if (*start != '\n' && *start != '\0' && isspace(*start)) currentLine--;
+        if (*start == '\n') currentLine++;
+        start++;
+    }
+
+    return start;
+}
+
 bool Lexer::match(char expected) {
     if (isAtEnd()) return false;
     if (*scanner.current != expected) return false;

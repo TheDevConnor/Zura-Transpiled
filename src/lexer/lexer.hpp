@@ -52,9 +52,9 @@ public:
     };
 
     Token token;
-
     Token scanToken();
 
+    static const char* lineStart(int line);
 private:
     struct Scanner {
         const char* current;
@@ -82,5 +82,4 @@ private:
     TokenKind identifierType();
 
     void skipWhitespace();
-
 };

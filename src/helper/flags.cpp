@@ -2,6 +2,7 @@
 #include <fstream>
 
 #include "../../inc/colorize.hpp"
+#include "../parser/parser.hpp"
 #include "../lexer/lexer.hpp"
 #include "../common.hpp"
 #include "flags.hpp"
@@ -56,12 +57,15 @@ void Flags::runFile(const char* path, std::string outName, bool save) {
     Lexer lexer(source);
     Lexer::Token token = lexer.scanToken();
 
-    while (token.kind != TokenKind::END_OF_FILE) {
-        cout << "Token: " << token.kind << endl;
-        token = lexer.scanToken();
-    }
+    // while (token.kind != TokenKind::END_OF_FILE) {
+    //     cout << "Token: " << token.kind << endl;
+    //     token = lexer.scanToken();
+    // }
+
+    Parser parser(token, false);
 
     lexer.~Lexer();
+    parser.~Parser();
     delete[] source;
 
     if (!save) {
