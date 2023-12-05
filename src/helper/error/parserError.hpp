@@ -6,6 +6,7 @@
 class ParserError {
 public:
     static void error(Lexer::Token line, int pos, std::string msg) {
+        Lexer lexer(line.start.c_str());
         // Parser Error: [line: 1, column: 1]
         std::cout << termcolor::yellow << "Parser Error" << termcolor::reset 
                   << ": [line: " << termcolor::blue << line.line << termcolor::reset
@@ -13,7 +14,7 @@ public:
                   << termcolor::red << msg << termcolor::reset << std::endl;
         
         // The line of the error
-        const char* lineStart = Lexer::lineStart(line.line);
+        const char* lineStart = lexer.lineStart(line.line);
         const char* lineEnd = lineStart;
         while (*lineEnd != '\n' && *lineEnd != '\0') lineEnd++;
         std::cout << termcolor::yellow << "  " << termcolor::reset << lineStart << std::endl;

@@ -51,10 +51,10 @@ public:
         TokenKind kind;
     };
 
-    Token token;
     Token scanToken();
+    Token token;
 
-    static const char* lineStart(int line);
+    const char* lineStart(int line);
 private:
     struct Scanner {
         const char* current;
@@ -65,6 +65,7 @@ private:
     };
 
     Scanner scanner;
+    
     char peekNext();
     char advance();
     char peek();
