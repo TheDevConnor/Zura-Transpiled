@@ -1,1 +1,8 @@
-have x int8 = 5;
+// x int8 := 10;
+
+// fn main() -> int8 {
+//     info "age: %d", x;
+//     exit 0;
+// }
+
+1 / 10

@@ -18,7 +18,7 @@ enum TokenKind {
 
     // Keywords.
     AND, CLASS, ELSE, FAL, FUN, LOOP, IF, NIL, OR,
-    PRINT, RETURN, SUPER, THS, TR, VAR,
+    PRINT, RETURN, SUPER, THS, TR, VAR, PKG,
 
     // Types.
     I8, I16, I32, I64, I128, 
@@ -54,6 +54,7 @@ public:
     Token scanToken();
     Token token;
 
+    Token errorToken(std::string message);
     const char* lineStart(int line);
 private:
     struct Scanner {
@@ -73,7 +74,6 @@ private:
     bool match(char expected);
     bool isAtEnd();
 
-    Token errorToken(std::string message);
     Token makeToken(TokenKind kind);
     Token identifier();
     Token number();

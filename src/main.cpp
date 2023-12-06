@@ -6,6 +6,8 @@
 
 using namespace std;
 
+int x = 0;
+
 int main(int argc, char** argv) {
     if (argc == 2 && strcmp(argv[1], "--help") == 0) {
         cout << "Usage: " << argv[0] << " [options]"                                                                             << endl;

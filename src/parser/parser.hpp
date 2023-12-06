@@ -1,21 +1,29 @@
 #pragma once
 
+#include <vector>
 #include "../lexer/lexer.hpp"
+#include "../ast/ast.hpp"
 
 class Parser {
 public:
-    Parser(Lexer::Token token, bool error) : token(token) {}
-    ~Parser() {}
+    Parser(Lexer& lexer);
 
-    struct ParserStruct {
-        Lexer::Token previous;
-        Lexer::Token token;
+    AstNode* parse();
 
-        bool hadError = false;
-        bool panicMode = false;
-    };
-
-    ParserStruct parser;
 private:
-    Lexer::Token token;
+    Lexer& lexer;
+    Lexer::Token currentToken;
+
+    AstNode* expression(int precedence = 0);
+    AstNode* unary();
+    // AstNode* binary(AstNode* left, int precedence);
+    AstNode* grouping();
+    AstNode* literal();
+
+    bool match(std::vector<TokenKind> kinds);
+    bool check(std::vector<TokenKind> kinds);
+    Lexer::Token consume(TokenKind kind, std::string message);
+    void synchronize();
+
+    int getPrecedence();
 };

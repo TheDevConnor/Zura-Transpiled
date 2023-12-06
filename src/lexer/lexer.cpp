@@ -96,7 +96,7 @@ TokenKind Lexer::checkKeyword(std::string identifier) {
         {"class", TokenKind::CLASS},
         {"else", TokenKind::ELSE},
         {"false", TokenKind::FAL},
-        {"fun", TokenKind::FUN},
+        {"fn", TokenKind::FUN},
         {"loop", TokenKind::LOOP},
         {"if", TokenKind::IF},
         {"nil", TokenKind::NIL},
@@ -107,6 +107,7 @@ TokenKind Lexer::checkKeyword(std::string identifier) {
         {"this", TokenKind::THS},
         {"true", TokenKind::TR},
         {"have", TokenKind::VAR},
+        {"pkg", TokenKind::PKG},
 
         // Types.
         {"i8", TokenKind::I8},
@@ -172,8 +173,6 @@ Lexer::Token Lexer::scanToken() {
     if (isAtEnd()) return makeToken(TokenKind::END_OF_FILE);
 
     char c = Lexer::advance();
-
-    std::cout << "c: " << c << std::endl;
 
     if (isalpha(c)) return identifier();
     if (isdigit(c)) return number();
