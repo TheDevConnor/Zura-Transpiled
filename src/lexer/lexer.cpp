@@ -3,7 +3,7 @@
 #include "../helper/error/lexerError.hpp"
 #include "lexer.hpp"
 
-Lexer::Lexer(const char* source) {
+void Lexer::initToken(const char* source) {
     scanner.current = source;
     scanner.source = source;
     scanner.start = source;
@@ -15,7 +15,7 @@ Lexer::~Lexer() {
     delete[] scanner.source;
     delete[] scanner.current;
     delete[] scanner.start;
-    delete[] token.start.c_str();
+    delete[] token.start;
 }
 
 char Lexer::peekNext() { return scanner.current[1]; }

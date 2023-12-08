@@ -22,9 +22,7 @@ void AstNode::printAst(AstNode* node, int indent) {
         }
         case AstNodeType::LITERAL: {
             AstNode::Literal* literal = (AstNode::Literal*)node->data;
-            std::cout << "Literal: " << literal->literal.start << std::endl;
-            literal->left->printAst(literal->left, indent + 2);
-            literal->right->printAst(literal->right, indent + 2);
+            std::cout << "Literal-Kind: " << literal->literal.kind << std::endl;
             break;
         }
         case AstNodeType::UNARY: {

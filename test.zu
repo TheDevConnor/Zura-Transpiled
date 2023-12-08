@@ -5,4 +5,15 @@
 //     exit 0;
 // }
 
-1 / 10
+(1 * 2) / (3 + 4)
+
+// Correct AST but wrong value kind for literals
+// Binary: 9
+//   Grouping:
+//     Binary: 10
+//       Literal-Kind: 7
+//       Literal-Kind: 1
+//   Grouping:
+//     Binary: 7
+//       Literal-Kind: 7
+//       Literal-Kind: 1

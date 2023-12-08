@@ -3,25 +3,30 @@
 #include "../ast/ast.hpp"
 #include "parser.hpp"
 
-Parser::Parser(Lexer& lexer) : lexer(lexer) {}
+Parser::Parser(const char* source) : source(source) {}
 
 AstNode* Parser::parse() {
+    lexer.initToken(source);
     currentToken = lexer.scanToken();
-    return expression();
+
+    AstNode* expr = expression();
+    consume(TokenKind::END_OF_FILE, "Expected end of expression");
+
+    expr->printAst(expr, 0);
+
+    return expr;
 }
 
 AstNode* Parser::expression(int precedence) {
     AstNode* left = unary();
 
-    while (check({ TokenKind::PLUS, TokenKind::MINUS, 
-                   TokenKind::STAR, TokenKind::SLASH, TokenKind::MODULO })) {
-        int tokenPrec = getPrecedence();
-        if (tokenPrec < precedence) return left;
-
+    while (getPrecedence() >= precedence) {
         TokenKind op = currentToken.kind;
         consume(op, "Expected binary operator");
-        AstNode* right = unary();
-        left = new AstNode(AstNodeType::BINARY, new AstNode::Binary(op, left, right));
+
+        AstNode* right = expression(getPrecedence() + 1);
+
+        left = new AstNode(AstNodeType::BINARY, new AstNode::Binary(left, op, right));
     }
 
     return left;
@@ -50,7 +55,7 @@ AstNode* Parser::grouping() {
 
 AstNode* Parser::literal() {
     if (match({TokenKind::NUMBER, TokenKind::STRING})) {
-        
+        return new AstNode(AstNodeType::LITERAL, new AstNode::Literal(currentToken));
     }
 
     /// Handle other literals here...
@@ -86,8 +91,7 @@ Lexer::Token Parser::consume(TokenKind kind, std::string message) {
         return token;
     }
 
-    // Error handling: report the erro and attempt to recover
-    std::cout << "Error: " << message << std::endl;
+    ParserError::error(currentToken, currentToken.column, message, lexer);
     return lexer.errorToken(message);
 }
 

@@ -31,11 +31,11 @@ public:
 
     // ! Expressions
     struct Binary : public Expr { 
-        TokenKind op; 
         AstNode* left; 
+        TokenKind op; 
         AstNode* right; 
 
-        Binary(TokenKind op, AstNode* left, AstNode* right) : op(op), left(left), right(right) {}
+        Binary(AstNode* left, TokenKind op, AstNode* right) : op(op), left(left), right(right) {}
     };
     struct Unary : public Expr { 
         TokenKind op; 

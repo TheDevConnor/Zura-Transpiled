@@ -6,12 +6,12 @@
 
 class Parser {
 public:
-    Parser(Lexer& lexer);
+    Parser(const char* source);
 
     AstNode* parse();
 
 private:
-    Lexer& lexer;
+    const char* source;
     Lexer::Token currentToken;
 
     AstNode* expression(int precedence = 0);

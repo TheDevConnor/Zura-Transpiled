@@ -60,3 +60,13 @@ Then run the output file with:
 ```bash
 ./<output name>
 ```
+
+## Examples of Zura code
+```bash
+x int8 := 10;
+fn main() -> int8 {
+    info "age: %d", x;
+    exit 0;
+}
+```
+As you can see, Zura is a statically typed language. The type of a variable is specified after the variable name. The `:=` operator is used to assign a value to a variable. The `info` function is used to print to the console. The `exit` function is used to exit the program. The `main` function is the entry point of the program. The `->` operator is used to specify the return type of a function.

@@ -55,20 +55,17 @@ char* Flags::readFile(const char* path) {
 void Flags::runFile(const char* path, std::string outName, bool save) {
     const char* source = readFile(path);
 
-    Lexer lexer(source);
-    Parser parser(lexer);
-
+    Parser parser(source);
     AstNode* expression = parser.parse();
-    expression->printAst(expression, 0);
 
     delete[] source;
     delete expression;
 
-    if (!save) {
-        #ifdef _WIN32
-            system("del out.c");
-        #else
-            system("rm -rf out.c");
-        #endif
-    }
+    // if (!save) {
+    //     #ifdef _WIN32
+    //         system("del out.c");
+    //     #else
+    //         system("rm -rf out.c");
+    //     #endif
+    // }
 }

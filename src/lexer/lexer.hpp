@@ -35,11 +35,10 @@ enum TokenKind {
 
 class Lexer {
 public:
-    Lexer(const char* source);
     ~Lexer();
 
     struct Token {
-        std::string start;
+        const char* start;
         TokenKind kind;
         int current;
         int column;
@@ -55,6 +54,7 @@ public:
     Token token;
 
     Token errorToken(std::string message);
+    void initToken(const char* source);
     const char* lineStart(int line);
 private:
     struct Scanner {
@@ -84,3 +84,5 @@ private:
 
     void skipWhitespace();
 };
+
+inline Lexer lexer;
