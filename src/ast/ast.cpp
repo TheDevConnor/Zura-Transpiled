@@ -31,12 +31,8 @@ void AstNode::printAst(AstNode* node, int indent) {
             printAst(unary->right, indent + 2);
             break;
         }
-        case AstNodeType::VAR_DECLARATION: {
-            AstNode::VarDeclaration* varDeclaration = (AstNode::VarDeclaration*)node->data;
-            std::cout << "VarDeclaration: " << varDeclaration->name.start << std::endl;
-            printAst(varDeclaration->initializer, indent + 2);
-            break;
-        }
+        
+
         case AstNodeType::EXPRESSION: {
             AstNode::Expression* expression = (AstNode::Expression*)node->data;
             std::cout << "Expression: " << std::endl;

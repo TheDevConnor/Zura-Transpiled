@@ -70,3 +70,18 @@ fn main() -> int8 {
 }
 ```
 As you can see, Zura is a statically typed language. The type of a variable is specified after the variable name. The `:=` operator is used to assign a value to a variable. The `info` function is used to print to the console. The `exit` function is used to exit the program. The `main` function is the entry point of the program. The `->` operator is used to specify the return type of a function.
+
+```bash
+include "std";
+
+fn main() -> int {
+    x []int8 := [1, 5, 8, 10];
+
+    loop (i int8 := 0; i < length(x)) : (i++) {
+        info "%d\n", x[i];
+    }
+
+    exit 0;
+}
+```
+This is an example of looping through an array and printing each element. The `include` keyword is used to include a file. The `loop` keyword is used to create a loop. The `length` function is used to get the length of an array. The `[]` operator is used to access an element in an array.

@@ -18,6 +18,7 @@ set(ZURA_SOURCE_FILES
     src/ast/ast.cpp
     src/helper/flags.cpp
     src/parser/parser.cpp
+    src/parser/def.cpp
     src/lexer/lexer.cpp
 )
 

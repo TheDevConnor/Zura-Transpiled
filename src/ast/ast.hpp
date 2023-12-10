@@ -54,12 +54,6 @@ public:
     };
 
     // ! Statements
-    struct VarDeclaration : public Stmt { 
-        Lexer::Token name; 
-        AstNode* initializer; 
-
-        VarDeclaration(Lexer::Token name, AstNode* initializer) : name(name), initializer(initializer) {}
-    };
     struct Expression : public Stmt { 
         AstNode* expression;
 

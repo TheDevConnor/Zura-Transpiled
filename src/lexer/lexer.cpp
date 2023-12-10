@@ -30,8 +30,7 @@ const char* Lexer::lineStart(int line) {
     const char* start = scanner.source;
     int currentLine = 1;
 
-    while (currentLine < line) {
-        if (*start != '\n' && *start != '\0' && isspace(*start)) currentLine--;
+    while (currentLine != line) {
         if (*start == '\n') currentLine++;
         start++;
     }
