@@ -44,6 +44,27 @@ AstNode* Parser::binary(AstNode *left, int precedence) {
         advance();
 
         AstNode* right = unary();
+
+        switch (op) {
+            case TokenKind::PLUS: {
+                if (left->type == AstNodeType::STRING_LITERAL && right->type == AstNodeType::NUMBER_LITERAL) {
+                    ParserError::error(currentToken, "Cannot add a string to a number", lexer);
+                } else if (left->type == AstNodeType::NUMBER_LITERAL && right->type == AstNodeType::STRING_LITERAL) {
+                    ParserError::error(currentToken, "Cannot add a number to a string", lexer);
+                }
+                break;
+            }
+            case TokenKind::MINUS:
+            case TokenKind::STAR:
+            case TokenKind::SLASH: {
+                if (left->type == AstNodeType::STRING_LITERAL || right->type == AstNodeType::STRING_LITERAL) {
+                    ParserError::error(currentToken, "Cannot subtract, multiply, or divide a string", lexer);
+                }
+                break;
+            }
+            default:
+                break;
+        }
         left = new AstNode(AstNodeType::BINARY, new AstNode::Binary(left, op, right));
     }
 }
@@ -59,11 +80,32 @@ AstNode* Parser::grouping() {
 }
 
 AstNode* Parser::literal() {
-    if (match(TokenKind::NUMBER) || match(TokenKind::STRING)) {
-        return new AstNode(AstNodeType::LITERAL, new AstNode::Literal(currentToken));
+    switch (currentToken.kind) {
+        case TokenKind::NUMBER: {
+            double value = std::stod(currentToken.start);
+            advance();
+            return new AstNode(AstNodeType::NUMBER_LITERAL, new AstNode::NumberLiteral(value));
+        }
+        case TokenKind::STRING: {
+            std::string value = currentToken.start;
+            advance();
+            return new AstNode(AstNodeType::STRING_LITERAL, new AstNode::StringLiteral(value));
+        }
+        case TokenKind::TR: {
+            advance();
+            return new AstNode(AstNodeType::TRUE_LITERAL, nullptr);
+        }
+        case TokenKind::FAL: {
+            advance();
+            return new AstNode(AstNodeType::FALSE_LITERAL, nullptr);
+        }
+        case TokenKind::NIL: {
+            advance();
+            return new AstNode(AstNodeType::NIL_LITERAL, nullptr);
+        }
+        default:
+            ParserError::error(currentToken, "Expected literal", lexer);
     }
-
-    /// Handle other literals here...
 
     /// If none of the literal patterns match
     synchronize();

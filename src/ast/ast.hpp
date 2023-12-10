@@ -6,7 +6,11 @@ enum class AstNodeType {
     // Expressions
     BINARY,
     GROUPING,
-    LITERAL,
+    NUMBER_LITERAL,
+    STRING_LITERAL,
+    TRUE_LITERAL,
+    FALSE_LITERAL,
+    NIL_LITERAL,
     UNARY,
 
     // Statements
@@ -48,9 +52,25 @@ public:
 
         Grouping(AstNode* expression) : expression(expression) {}
     };
-    struct Literal : public Expr { 
-        Lexer::Token literal; 
-        Literal(Lexer::Token literal) : literal(literal) {}
+
+    struct NumberLiteral : public Expr { 
+        double value; 
+
+        NumberLiteral(double value) : value(value) {}
+    };
+    struct StringLiteral : public Expr { 
+        std::string value; 
+
+        StringLiteral(std::string value) : value(value) {}
+    };
+    struct TrueLiteral : public Expr { 
+        TrueLiteral() {}
+    };
+    struct FalseLiteral : public Expr { 
+        FalseLiteral() {}
+    };
+    struct NilLiteral : public Expr { 
+        NilLiteral() {}
     };
 
     // ! Statements

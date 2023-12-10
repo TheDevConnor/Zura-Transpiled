@@ -188,6 +188,8 @@ Lexer::Token Lexer::scanToken() {
         case '+': return makeToken(TokenKind::PLUS);
         case '/': return makeToken(TokenKind::SLASH);
         case '*': return makeToken(TokenKind::STAR);
+        case '%': return makeToken(TokenKind::MODULO);
+        case '^': return makeToken(TokenKind::CARET);
         case '!': return makeToken(match('=') ? TokenKind::BANG_EQUAL 
                                               : TokenKind::BANG);
         case '=': return makeToken(match('=') ? TokenKind::EQUAL_EQUAL 

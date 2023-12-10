@@ -9,9 +9,15 @@ void AstNode::printAst(AstNode* node, int indent) {
     switch (node->type) {
         case AstNodeType::BINARY: {
             AstNode::Binary* binary = (AstNode::Binary*)node->data;
-            std::cout << "Binary: " << binary->op << std::endl;
-            printAst(binary->left, indent + 2);
-            printAst(binary->right, indent + 2);
+            std::cout << "Binary-TK-Kind: " << binary->op << std::endl;
+            printAst(binary->left, indent + 3);
+            printAst(binary->right, indent + 3);
+            break;
+        }
+        case AstNodeType::UNARY: {
+            AstNode::Unary* unary = (AstNode::Unary*)node->data;
+            std::cout << "Unary-TK-Kind: " << unary->op << std::endl;
+            printAst(unary->right, indent + 2);
             break;
         }
         case AstNodeType::GROUPING: {
@@ -20,19 +26,30 @@ void AstNode::printAst(AstNode* node, int indent) {
             printAst(grouping->expression, indent + 2);
             break;
         }
-        case AstNodeType::LITERAL: {
-            AstNode::Literal* literal = (AstNode::Literal*)node->data;
-            std::cout << "Literal-Kind: " << literal->literal.kind << std::endl;
+
+        case AstNodeType::NUMBER_LITERAL: {
+            AstNode::NumberLiteral* numberLiteral = (AstNode::NumberLiteral*)node->data;
+            std::cout << "NumberLiteral: " << numberLiteral->value << std::endl;
             break;
         }
-        case AstNodeType::UNARY: {
-            AstNode::Unary* unary = (AstNode::Unary*)node->data;
-            std::cout << "Unary: " << unary->op << std::endl;
-            printAst(unary->right, indent + 2);
+        case AstNodeType::STRING_LITERAL: {
+            AstNode::StringLiteral* stringLiteral = (AstNode::StringLiteral*)node->data;
+            std::cout << "StringLiteral: " << stringLiteral->value << std::endl;
+            break;
+        }
+        case AstNodeType::TRUE_LITERAL: {
+            std::cout << "TrueLiteral" << std::endl;
+            break;
+        }
+        case AstNodeType::FALSE_LITERAL: {
+            std::cout << "FalseLiteral" << std::endl;
+            break;
+        }
+        case AstNodeType::NIL_LITERAL: {
+            std::cout << "NilLiteral" << std::endl;
             break;
         }
         
-
         case AstNodeType::EXPRESSION: {
             AstNode::Expression* expression = (AstNode::Expression*)node->data;
             std::cout << "Expression: " << std::endl;
