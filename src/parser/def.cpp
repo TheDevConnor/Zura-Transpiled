@@ -16,6 +16,7 @@ void Parser::advance() {
         currentToken = lexer.scanToken();
         if (currentToken.kind != TokenKind::ERROR_) break;
 
+        hadError = true;
         ParserError::error(currentToken, "Unexpected character", lexer);
     }
 }
@@ -26,6 +27,7 @@ void Parser::consume(TokenKind kind, std::string message) {
         return;
     }
 
+    hadError = true;
     ParserError::error(currentToken, message, lexer);
 }
 

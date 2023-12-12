@@ -1,8 +1,11 @@
 #pragma once
 
+#include <vector>
 #include "../lexer/lexer.hpp"
 
 enum class AstNodeType {
+    // Program
+    PROGRAM,
     // Expressions
     BINARY,
     GROUPING,
@@ -12,6 +15,9 @@ enum class AstNodeType {
     FALSE_LITERAL,
     NIL_LITERAL,
     UNARY,
+
+    // Types
+    TYPE,
 
     // Statements
     EXPRESSION,
@@ -32,6 +38,19 @@ public:
     };
 
     struct Stmt { AstNode* expression; };
+
+    struct Program { 
+        std::vector<AstNode*> statements; 
+
+        Program(std::vector<AstNode*> statements) : statements(statements) {}
+    };
+
+    // ! Types
+    struct Type { 
+        Lexer::Token type; 
+
+        Type(Lexer::Token type) : type(type) {}
+    };
 
     // ! Expressions
     struct Binary : public Expr { 
@@ -79,11 +98,19 @@ public:
 
         Expression(AstNode* expression) : expression(expression) {}
     };
+    struct VarDeclaration : public Stmt { 
+        Lexer::Token name; 
+        AstNode* type;
+        AstNode* initializer; 
+
+        VarDeclaration(Lexer::Token name, AstNode* type, AstNode* initializer) : name(name), type(type), initializer(initializer) {}
+    };
     struct Print : public Stmt { 
         AstNode* expression; 
 
         Print(AstNode* expression) : expression(expression) {}
     };
 
+    static void printVarDeclaration(AstNode::VarDeclaration* varDeclaration, int indent);
     static void printAst(AstNode* node, int indent);
 };

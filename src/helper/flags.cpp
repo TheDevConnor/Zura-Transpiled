@@ -58,6 +58,10 @@ void Flags::runFile(const char* path, std::string outName, bool save) {
     Parser parser(source);
     AstNode* expression = parser.parse();
 
+    expression->printAst(expression, 0);
+
+    // Compiler compiler(expression);
+
     delete[] source;
     delete expression;
 

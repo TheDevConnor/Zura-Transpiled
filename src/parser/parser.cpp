@@ -1,3 +1,5 @@
+#include <vector>
+
 #include "../lexer/lexer.hpp"
 #include "../ast/ast.hpp"
 #include "parser.hpp"
@@ -9,10 +11,11 @@ AstNode* Parser::parse() {
 
     advance();
 
-    AstNode* expr = expression();
-    consume(TokenKind::END_OF_FILE, "Expected end of expression");
+    std::vector<AstNode*> statements;
 
-    expr->printAst(expr, 0);
+    while (!match(END_OF_FILE)) {
+        statements.push_back(declaration());
+    }
 
-    return expr;
+    return new AstNode(AstNodeType::PROGRAM, new AstNode::Program(statements));
 }

@@ -124,6 +124,7 @@ TokenKind Lexer::checkKeyword(std::string identifier) {
         {"f128", TokenKind::F128},
         {"bool", TokenKind::Bool},
         {"char", TokenKind::Char},
+        {"str", TokenKind::STRING},
     };
 
     auto it = keywords.find(identifier);
@@ -190,6 +191,8 @@ Lexer::Token Lexer::scanToken() {
         case '*': return makeToken(TokenKind::STAR);
         case '%': return makeToken(TokenKind::MODULO);
         case '^': return makeToken(TokenKind::CARET);
+        case ':': return makeToken(match('=') ? TokenKind::WALRUS
+                                              : TokenKind::COLON);
         case '!': return makeToken(match('=') ? TokenKind::BANG_EQUAL 
                                               : TokenKind::BANG);
         case '=': return makeToken(match('=') ? TokenKind::EQUAL_EQUAL 
