@@ -20,6 +20,7 @@ enum TokenKind {
     // Keywords.
     AND, CLASS, ELSE, FAL, FUN, LOOP, IF, NIL, OR,
     PRINT, RETURN, SUPER, THS, TR, VAR, PKG, TYPE,
+    EXIT,
 
     // Types.
     I8, I16, I32, I64, I128, 

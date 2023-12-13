@@ -6,6 +6,7 @@ set(CMAKE_CXX_STANDARD 20)
 
 set(ZURA_HEADER_FILES
     src/helper/error/lexerError.hpp
+    src/generation/gen.hpp
     src/parser/parser.hpp
     src/helper/flags.hpp
     src/lexer/lexer.hpp
@@ -14,6 +15,7 @@ set(ZURA_HEADER_FILES
 )
 
 set(ZURA_SOURCE_FILES
+    src/generation/gen.cpp
     src/parser/parser.cpp
     src/helper/flags.cpp
     src/parser/expr.cpp

@@ -11,6 +11,7 @@ AstNode* Parser::declaration() {
 
 AstNode* Parser::statement() {
     if (match(TokenKind::PRINT)) return printStatement();
+    if (match(TokenKind::EXIT)) return exitStatement();
     if (match(TokenKind::LEFT_BRACE)) return blockStatement();
     return expressionStatement();
 }
@@ -41,6 +42,13 @@ AstNode* Parser::printStatement() {
     consume(TokenKind::SEMICOLON, "Expected ';' after expression");
 
     return new AstNode(AstNodeType::PRINT, new AstNode::Print(expr, ident));
+}
+
+AstNode* Parser::exitStatement() {
+    // Get the exit code
+    AstNode* expr = expression();
+    consume(TokenKind::SEMICOLON, "Expected ';' after expression");
+    return new AstNode(AstNodeType::EXIT, new AstNode::Exit(expr));
 }
 
 AstNode* Parser::functionDeclaration() {

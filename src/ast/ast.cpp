@@ -135,6 +135,12 @@ void AstNode::printAst(AstNode* node, int indent) {
             std::cout << "Identifier: " << print->ident.start << std::endl;
             break;
         }
+        case AstNodeType::EXIT: {
+            AstNode::Exit* exit = (AstNode::Exit*)node->data;
+            std::cout << "Exit: " << std::endl;
+            printAst(exit->expression, indent + 2);
+            break;
+        }
 
         default:
             std::cout << "Unknown node type" << std::endl;

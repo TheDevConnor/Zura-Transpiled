@@ -108,6 +108,7 @@ TokenKind Lexer::checkKeyword(std::string identifier) {
         {"or", TokenKind::OR},
         {"info", TokenKind::PRINT},
         {"return", TokenKind::RETURN},
+        {"exit", TokenKind::EXIT},
         {"super", TokenKind::SUPER},
         {"this", TokenKind::THS},
         {"true", TokenKind::TR},

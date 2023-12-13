@@ -7,6 +7,7 @@
 class Parser {
 public:
     Parser(const char* source);
+    ~Parser();
 
     AstNode* parse();
 
@@ -34,6 +35,7 @@ private:
     AstNode* varDeclaration();
     AstNode* printStatement();
     AstNode* blockStatement();
+    AstNode* exitStatement();
     AstNode* declaration();
     AstNode* statement();
 

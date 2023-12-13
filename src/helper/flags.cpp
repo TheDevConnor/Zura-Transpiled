@@ -2,6 +2,7 @@
 #include <fstream>
 
 #include "../../inc/colorize.hpp"
+#include "../generation/gen.hpp"
 #include "../parser/parser.hpp"
 #include "../lexer/lexer.hpp"
 #include "../ast/ast.hpp"
@@ -58,18 +59,20 @@ void Flags::runFile(const char* path, std::string outName, bool save) {
     Parser parser(source);
     AstNode* expression = parser.parse();
 
-    expression->printAst(expression, 0);
+    Gen gen(expression);
 
-    // Compiler compiler(expression);
 
+    if (!save) {
+        #ifdef _WIN32
+            system("del out.c");
+        #else
+            system("rm -rf out.c");
+        #endif
+    }
+    
     delete[] source;
     delete expression;
-
-    // if (!save) {
-    //     #ifdef _WIN32
-    //         system("del out.c");
-    //     #else
-    //         system("rm -rf out.c");
-    //     #endif
-    // }
+    lexer.~Lexer();
+    parser.~Parser();
+    gen.~Gen();
 }

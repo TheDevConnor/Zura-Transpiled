@@ -7,6 +7,10 @@
 
 Parser::Parser(const char* source) : source(source) {}
 
+Parser::~Parser() {
+    delete[] previousToken.start;
+    delete[] currentToken.start;
+}
 
 AstNode* Parser::parse() {
     lexer.initToken(source);

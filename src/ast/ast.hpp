@@ -25,7 +25,7 @@ enum class AstNodeType {
     PRINT,
     VAR_DECLARATION,
     FUNCTION_DECLARATION,
-    BLOCK,
+    BLOCK, EXIT,
 };
 
 class AstNode {
@@ -140,6 +140,11 @@ public:
         Lexer::Token ident;
 
         Print(AstNode* expression, Lexer::Token ident) : expression(expression), ident(ident) {}
+    };
+    struct Exit : public Stmt { 
+        AstNode* expression; 
+
+        Exit(AstNode* expression) : expression(expression) {}
     };
 
     static void printVarDeclaration(AstNode::VarDeclaration* varDeclaration, int indent);
