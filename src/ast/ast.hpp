@@ -18,11 +18,14 @@ enum class AstNodeType {
 
     // Types
     TYPE,
+    TYPE_STRUCT,
 
     // Statements
     EXPRESSION,
     PRINT,
     VAR_DECLARATION,
+    FUNCTION_DECLARATION,
+    BLOCK,
 };
 
 class AstNode {
@@ -43,13 +46,26 @@ public:
         std::vector<AstNode*> statements; 
 
         Program(std::vector<AstNode*> statements) : statements(statements) {}
+
+        // Proveide the iterator interface
+        std::vector<AstNode*>::iterator begin() { return statements.begin(); }
+        std::vector<AstNode*>::iterator end() { return statements.end(); }
     };
+
+    Program* program;
 
     // ! Types
     struct Type { 
         Lexer::Token type; 
 
         Type(Lexer::Token type) : type(type) {}
+    };
+
+   struct TypeStruct : public Type { 
+        Lexer::Token name;
+        std::vector<AstNode*> fields; 
+
+        TypeStruct(Lexer::Token type, std::vector<AstNode*> fields) : Type(type), fields(fields) {}
     };
 
     // ! Expressions
@@ -98,6 +114,20 @@ public:
 
         Expression(AstNode* expression) : expression(expression) {}
     };
+    struct FunctionDeclaration : public Stmt {
+        Lexer::Token name;
+        std::vector<Lexer::Token> parameters;
+        AstNode* type;
+        AstNode* body;
+
+        FunctionDeclaration(Lexer::Token name, std::vector<Lexer::Token> parameters, AstNode* type, AstNode* body) 
+            : name(name), parameters(parameters), type(type), body(body) {}
+    };
+    struct Block : public Stmt { 
+        std::vector<AstNode*> statements; 
+
+        Block(std::vector<AstNode*> statements) : statements(statements) {}
+    };
     struct VarDeclaration : public Stmt { 
         Lexer::Token name; 
         AstNode* type;
@@ -107,8 +137,9 @@ public:
     };
     struct Print : public Stmt { 
         AstNode* expression; 
+        Lexer::Token ident;
 
-        Print(AstNode* expression) : expression(expression) {}
+        Print(AstNode* expression, Lexer::Token ident) : expression(expression), ident(ident) {}
     };
 
     static void printVarDeclaration(AstNode::VarDeclaration* varDeclaration, int indent);

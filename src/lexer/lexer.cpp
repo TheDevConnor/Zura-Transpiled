@@ -11,6 +11,12 @@ void Lexer::initToken(const char* source) {
     scanner.line = 1;
 }
 
+void Lexer::reset() {
+    scanner.current = scanner.start;
+    scanner.column = 1;
+    scanner.line = 1;
+}
+
 Lexer::~Lexer() {
     delete[] scanner.source;
     delete[] scanner.current;
@@ -107,6 +113,8 @@ TokenKind Lexer::checkKeyword(std::string identifier) {
         {"true", TokenKind::TR},
         {"have", TokenKind::VAR},
         {"pkg", TokenKind::PKG},
+        {"type", TokenKind::TYPE},
+        {"struct", TokenKind::STRUCT},
 
         // Types.
         {"i8", TokenKind::I8},
@@ -191,12 +199,10 @@ Lexer::Token Lexer::scanToken() {
         case '*': return makeToken(TokenKind::STAR);
         case '%': return makeToken(TokenKind::MODULO);
         case '^': return makeToken(TokenKind::CARET);
-        case ':': return makeToken(match('=') ? TokenKind::WALRUS
-                                              : TokenKind::COLON);
+        case ':': return makeToken(TokenKind::COLON);
+        case '=': return makeToken(TokenKind::EQUAL);
         case '!': return makeToken(match('=') ? TokenKind::BANG_EQUAL 
                                               : TokenKind::BANG);
-        case '=': return makeToken(match('=') ? TokenKind::EQUAL_EQUAL 
-                                              : TokenKind::EQUAL);
         case '<': return makeToken(match('=') ? TokenKind::LESS_EQUAL 
                                               : TokenKind::LESS);
         case '>': return makeToken(match('=') ? TokenKind::GREATER_EQUAL 

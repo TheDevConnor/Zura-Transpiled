@@ -5,12 +5,25 @@
 
 AstNode* Parser::declaration() {
     if (match(TokenKind::VAR)) return varDeclaration();
+    if (match(TokenKind::FUN)) return functionDeclaration();
     return statement();
 }
 
 AstNode* Parser::statement() {
     if (match(TokenKind::PRINT)) return printStatement();
+    if (match(TokenKind::LEFT_BRACE)) return blockStatement();
     return expressionStatement();
+}
+
+AstNode* Parser::blockStatement() {
+    std::vector<AstNode*> statements;
+
+    while (!match(TokenKind::RIGHT_BRACE)) {
+        AstNode* stmt = declaration();
+        statements.push_back(stmt);
+    }
+
+    return new AstNode(AstNodeType::BLOCK, new AstNode::Block(statements));
 }
 
 AstNode* Parser::expressionStatement() {
@@ -21,8 +34,42 @@ AstNode* Parser::expressionStatement() {
 
 AstNode* Parser::printStatement() {
     AstNode* expr = expression();
+
+    consume(TokenKind::COMMA, "Expected ',' after expression");
+    consume(TokenKind::IDENTIFIER, "Expected identifier after ','");
+    Lexer::Token ident = previousToken;
     consume(TokenKind::SEMICOLON, "Expected ';' after expression");
-    return new AstNode(AstNodeType::PRINT, new AstNode::Print(expr));
+
+    return new AstNode(AstNodeType::PRINT, new AstNode::Print(expr, ident));
+}
+
+AstNode* Parser::functionDeclaration() {
+    consume(TokenKind::IDENTIFIER, "Expected function name");
+    Lexer::Token name = previousToken;
+
+    consume(TokenKind::LEFT_PAREN, "Expected '(' after function name");
+
+    std::vector<Lexer::Token> parameters;
+
+    if (!match(TokenKind::RIGHT_PAREN)) {
+        do {
+            consume(TokenKind::IDENTIFIER, "Expected parameter name");
+            parameters.push_back(previousToken);
+        } while (match(TokenKind::COMMA));
+        consume(TokenKind::RIGHT_PAREN, "Expected ')' after function parameters");
+    }
+
+    // The type to be returned '-> type'
+    AstNode* type = nullptr;
+    if (match(TokenKind::MINUS) && match(TokenKind::GREATER)) {
+        type = findType(type);
+        advance();
+    } else ParserError::error(currentToken, "Expected '->' followed by return type annotation", lexer);
+
+    consume(TokenKind::LEFT_BRACE, "Expected '{' before function body");
+    AstNode* body = blockStatement();
+
+    return new AstNode(AstNodeType::FUNCTION_DECLARATION, new AstNode::FunctionDeclaration(name, parameters, type, body));
 }
 
 AstNode* Parser::varDeclaration() {
@@ -32,34 +79,14 @@ AstNode* Parser::varDeclaration() {
 
     AstNode* type = nullptr;
     if (match(TokenKind::LESS)) {
-        switch (currentToken.kind) {
-            case I8:
-            case I16:
-            case I32:
-            case I64: 
-                type = new AstNode(AstNodeType::TYPE, new AstNode::Type(currentToken)); break;
-            case U8:
-            case U16:
-            case U32:
-            case U64: 
-                type = new AstNode(AstNodeType::TYPE, new AstNode::Type(currentToken)); break;
-            case F32:
-            case F64: 
-                type = new AstNode(AstNodeType::TYPE, new AstNode::Type(currentToken)); break;
-            case Bool: 
-                type = new AstNode(AstNodeType::TYPE, new AstNode::Type(currentToken)); break;
-            case STRING: 
-                type = new AstNode(AstNodeType::TYPE, new AstNode::Type(currentToken)); break;
-        default:
-            consume(currentToken.kind, "Expected type annotation of either i8, i16, i32, i64, u8, u16, u32, u64, f32, f64, bool or string");
-        }
+        type = findType(type);
         advance();
         consume(TokenKind::GREATER, "Expected '>' after type annotation");
     }
 
-    consume(TokenKind::EQUAL, "Expected '=' after variable name and type annotation");
-
-    AstNode* initializer = expression();
+    AstNode* initializer = nullptr;
+    if (match(TokenKind::COLON) && match(TokenKind::EQUAL)) initializer = expression(); // := because the lexer not wont to work
+    else ParserError::error(currentToken, "Expected ':' followed by '=' after variable type annotation or var name.", lexer);
 
     consume(TokenKind::SEMICOLON, "Expected ';' after variable declaration");
     return new AstNode(AstNodeType::VAR_DECLARATION, new AstNode::VarDeclaration(name, type, initializer));

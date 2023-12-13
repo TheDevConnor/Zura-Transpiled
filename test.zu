@@ -1,2 +1,5 @@
-have x <str> = 5;
-info "Hello WOrld!";
+have x <i8> := 5;
+
+fn main() -> i8 {
+    info "x = ", x;
+}

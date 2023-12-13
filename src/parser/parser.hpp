@@ -19,23 +19,33 @@ private:
     bool hadError = false;
 
     // Expressions
-    AstNode* expression(int precedence = 0);
-    AstNode* unary();
     AstNode* binary(AstNode* left, int precedence);
+    AstNode* expression(int precedence = 0);
     AstNode* grouping();
     AstNode* literal();
+    AstNode* unary();
+
+    // Main function
+    std::vector<AstNode*> lookupMain();
 
     // Statements
-    AstNode* declaration();
-    AstNode* statement();
+    AstNode* functionDeclaration();
     AstNode* expressionStatement();
     AstNode* varDeclaration();
     AstNode* printStatement();
+    AstNode* blockStatement();
+    AstNode* declaration();
+    AstNode* statement();
 
+    // Types
+    AstNode* findType(AstNode* type);
+
+    // Helper
     bool match(TokenKind kinds);
 
     void consume(TokenKind kind, std::string message);
     void advance();
+    Lexer::Token peek(int offset);
     void synchronize();
 
     int getPrecedence();

@@ -1,9 +1,11 @@
 #include <iostream>
+#include <cstring>
 #include "ast.hpp"
 
 void AstNode::printVarDeclaration(AstNode::VarDeclaration* varDeclaration, int indent) {
     for (int i = 0; i < indent; i++) std::cout << " ";
 
+    varDeclaration->name.start = strtok(const_cast<char*>(varDeclaration->name.start), "<");
     std::cout << "Name: " << varDeclaration->name.start << std::endl;
 
     if (varDeclaration->type) {
@@ -59,6 +61,7 @@ void AstNode::printAst(AstNode* node, int indent) {
         }
         case AstNodeType::STRING_LITERAL: {
             AstNode::StringLiteral* stringLiteral = (AstNode::StringLiteral*)node->data;
+            stringLiteral->value = stringLiteral->value.substr(1, stringLiteral->value.length() - 6);
             std::cout << "StringLiteral: " << stringLiteral->value << std::endl;
             break;
         }
@@ -80,6 +83,13 @@ void AstNode::printAst(AstNode* node, int indent) {
             std::cout << "Type-TK-Kind: " << type->type.kind << std::endl;
             break;
         }
+        case AstNodeType::TYPE_STRUCT: {
+            AstNode::TypeStruct* typeStruct = (AstNode::TypeStruct*)node->data;
+            std::cout << "TypeStruct: " << std::endl;
+            std::cout << "Name: " << typeStruct->name.start << std::endl;
+            for (AstNode* field : typeStruct->fields) printAst(field, indent + 2);
+            break;
+        }
         
         case AstNodeType::EXPRESSION: {
             AstNode::Expression* expression = (AstNode::Expression*)node->data;
@@ -93,10 +103,36 @@ void AstNode::printAst(AstNode* node, int indent) {
             printVarDeclaration(varDeclaration, indent + 2);
             break;
         }
+        case AstNodeType::FUNCTION_DECLARATION: {
+            AstNode::FunctionDeclaration* functionDeclaration = (AstNode::FunctionDeclaration*)node->data;
+            std::cout << "FunctionDeclaration: " << std::endl;
+            functionDeclaration->name.start = strtok(const_cast<char*>(functionDeclaration->name.start), "(");
+            for (int i = 0; i < indent + 2; i++) std::cout << " ";
+            std::cout << "Name: " << functionDeclaration->name.start << std::endl;
+            for (Lexer::Token param : functionDeclaration->parameters) {
+                param.start = strtok(const_cast<char*>(param.start), ",");
+                param.start = strtok(const_cast<char*>(param.start), ")");
+                for (int i = 0; i < indent + 2; i++) std::cout << " ";
+                std::cout << "Parameter: " << param.start << std::endl;
+
+            }
+            printAst(functionDeclaration->type, indent + 2);
+            printAst(functionDeclaration->body, indent + 2);
+            break;
+        }
+        case AstNodeType::BLOCK: {
+            AstNode::Block* block = (AstNode::Block*)node->data;
+            std::cout << "Block: " << std::endl;
+            for (AstNode* stmt : block->statements) printAst(stmt, indent + 2);
+            break;
+        }
         case AstNodeType::PRINT: {
             AstNode::Print* print = (AstNode::Print*)node->data;
             std::cout << "Print: " << std::endl;
             printAst(print->expression, indent + 2);
+            print->ident.start = strtok(const_cast<char*>(print->ident.start), ";");
+            for (int i = 0; i < indent + 2; i++) std::cout << " ";
+            std::cout << "Identifier: " << print->ident.start << std::endl;
             break;
         }
 

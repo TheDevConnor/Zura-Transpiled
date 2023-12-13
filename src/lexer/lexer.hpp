@@ -6,10 +6,10 @@ enum TokenKind {
     // Single-character tokens.
     LEFT_PAREN, RIGHT_PAREN, LEFT_BRACE, RIGHT_BRACE,
     COMMA, DOT, MINUS, PLUS, SEMICOLON, SLASH, STAR, MODULO,
-    CARET, COLON,
+    CARET, COLON, STRUCT,
 
     // One or two character tokens.
-    BANG, BANG_EQUAL,
+    BANG, BANG_EQUAL,   
     EQUAL, EQUAL_EQUAL,
     GREATER, GREATER_EQUAL,
     LESS, LESS_EQUAL, WALRUS,
@@ -19,7 +19,7 @@ enum TokenKind {
 
     // Keywords.
     AND, CLASS, ELSE, FAL, FUN, LOOP, IF, NIL, OR,
-    PRINT, RETURN, SUPER, THS, TR, VAR, PKG,
+    PRINT, RETURN, SUPER, THS, TR, VAR, PKG, TYPE,
 
     // Types.
     I8, I16, I32, I64, I128, 
@@ -53,10 +53,12 @@ public:
 
     Token scanToken();
     Token token;
-
     Token errorToken(std::string message);
-    void initToken(const char* source);
+
     const char* lineStart(int line);
+    
+    void initToken(const char* source);
+    void reset();
 private:
     struct Scanner {
         const char* current;
