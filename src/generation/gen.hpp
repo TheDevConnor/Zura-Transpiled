@@ -4,11 +4,9 @@
 
 class Gen {
 public:
-    AstNode* ast;
-    ~Gen() {
-        delete ast;
-    }
+  AstNode *ast;
+  ~Gen() { delete ast; }
 
-    Gen(AstNode* ast);
-    void generate();  
+  Gen(AstNode *ast);
+  void generate();
 };
