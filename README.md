@@ -64,7 +64,7 @@ Then run the output file with:
 ## Examples of Zura code
 ```bash
 have x <i8> := 10;
-fn main() -> i8 {
+fn main() <i8> {
     info "age: %d", x;
     exit 0;
 }
@@ -74,8 +74,8 @@ As you can see, Zura is a statically typed language. The type of a variable is s
 ```bash
 include "std";
 
-fn main() -> i8 {
-    hve x <[]i8> := [1, 5, 8, 10];
+fn main() <i8> {
+    have x <[]i8> := [1, 5, 8, 10];
 
     loop (have i <i8> := 0; i < length(x)) : (i++) {
         info "%d\n", x[i];
@@ -91,7 +91,7 @@ include "std";
 
 type Range := i8;
 
-fn main() -> i8 {
+fn main() <i8> {
     have x <Range> := 10;
 
     info "x: %d\n", x;

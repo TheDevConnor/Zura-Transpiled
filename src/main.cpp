@@ -16,13 +16,13 @@ int main(int argc, char **argv) {
     cout << "  --license\t\t\tPrints the license of the Zura Lang" << endl;
     cout << "Compiler:" << endl;
     cout << termcolor::red << "   -s" << termcolor::reset
-         << ", \t\tsave the generated assembly file and the a.o file" << endl;
+         << ", \t\tsave the generated c file and the out.o file" << endl;
     cout << termcolor::red << "   -o" << termcolor::reset
          << ", \t\tOutput the transpiled file to <file>" << endl;
     cout << termcolor::red << "   -r" << termcolor::reset
          << ", \t\tRun the exacutable file. (Not yet implemented)" << endl;
     cout << termcolor::red << "   -c" << termcolor::reset
-         << ", \t\tDelete the exacutable file and asm file if it is there."
+         << ", \t\tDelete the exacutable file and c file if it is there."
          << endl;
     Exit(ExitValue::FLAGS_PRINTED);
   }
@@ -43,7 +43,7 @@ int main(int argc, char **argv) {
   }
 
   // (delete)
-  if (argc == 2 && strcmp(argv[1], "-c") == 0)
+  if (argc == 3 && strcmp(argv[1], "-c") == 0)
     Flags::compilerDelete(argv);
   // (transpile)
   if (argc == 4 && strcmp(argv[2], "-o") == 0) {

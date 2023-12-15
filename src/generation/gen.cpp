@@ -1,26 +1,32 @@
 #include <fstream>
 #include <iostream>
 #include <sstream>
+#include <cstring>
 
+#include "../lexer/lexer.hpp"
 #include "gen.hpp"
 
 Gen::Gen(AstNode *ast) : ast(ast) { generate(); }
 
 void Gen::generate() {
-  std::cout << "Creating file..." << std::endl;
   std::ofstream file;
   file.open("out.c");
 
-  std::cout << "Writing header..." << std::endl;
   file << "// -----------------------------------------\n";
   file << "// Compile Zura to C\n";
   file << "// -----------------------------------------\n\n";
 
-  file << "#include <stdio.h>\n\n";
+  headerImport(file);
 
-  std::cout << "Generating the code" << std::endl;
+  if (ast->type == AstNodeType::PROGRAM) {
+    AstNode::Program *program = (AstNode::Program *)ast->data;
 
-  ast->printAst(ast, 0);
-
-  std::cout << "Done!" << std::endl;
+    for (AstNode *node : program->statements) {
+      if (node->type == AstNodeType::FUNCTION_DECLARATION) {
+        AstNode::FunctionDeclaration *function =
+            (AstNode::FunctionDeclaration *)node->data;
+        functionDeclaration(file, function);
+      }
+    }
+  }
 }

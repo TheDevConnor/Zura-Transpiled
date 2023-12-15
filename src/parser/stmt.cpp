@@ -75,14 +75,14 @@ AstNode *Parser::functionDeclaration() {
 
   // The type to be returned '-> type'
   AstNode *type = nullptr;
-  if (match(TokenKind::MINUS) && match(TokenKind::GREATER)) {
+  if (match(TokenKind::LESS)) {
     type = findType(type);
     advance();
   } else
     ParserError::error(currentToken,
                        "Expected '->' followed by return type annotation",
                        lexer);
-
+  consume(TokenKind::GREATER, "Expected '>' after type annotation");
   consume(TokenKind::LEFT_BRACE, "Expected '{' before function body");
   AstNode *body = blockStatement();
 

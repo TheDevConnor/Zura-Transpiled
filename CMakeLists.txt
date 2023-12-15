@@ -15,6 +15,9 @@ set(ZURA_HEADER_FILES
 )
 
 set(ZURA_SOURCE_FILES
+    src/generation/header.cpp
+    src/generation/func.cpp
+    src/generation/type.cpp
     src/generation/gen.cpp
     src/parser/parser.cpp
     src/helper/flags.cpp

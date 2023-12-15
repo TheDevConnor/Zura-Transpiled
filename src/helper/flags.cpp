@@ -13,17 +13,19 @@ using namespace std;
 
 void Flags::compilerDelete(char **argv) {
   cout << "Deleting the executable file" << endl;
-  std::string outName = argv[1];
+  std::string outName = argv[2];
   char rmCommand[256];
 
 #ifdef _WIN32
   strcat(rmCommand, "del ");
   strcat(rmCommand, outName.c_str());
   strcat(rmCommand, ".exe");
+  strcat(rmCommand, " out.c");
   system(rmCommand);
 #else
   strcat(rmCommand, "rm -rf ");
   strcat(rmCommand, outName.c_str());
+  strcat(rmCommand, " out.c");
   system(rmCommand);
 #endif
   Exit(ExitValue::FLAGS_PRINTED);
@@ -59,7 +61,12 @@ void Flags::runFile(const char *path, std::string outName, bool save) {
   Parser parser(source);
   AstNode *expression = parser.parse();
 
+  // This prints the AST
+  // expression->printAst(expression, 0);
+
   Gen gen(expression);
+
+  compileToC(outName);
 
   if (!save) {
 #ifdef _WIN32
