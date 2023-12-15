@@ -122,12 +122,15 @@ public:
   struct FunctionDeclaration : public Stmt {
     Lexer::Token name;
     std::vector<Lexer::Token> parameters;
+    std::vector<AstNode *> paramType;
     AstNode *type;
     AstNode *body;
 
     FunctionDeclaration(Lexer::Token name, std::vector<Lexer::Token> parameters,
-                        AstNode *type, AstNode *body)
-        : name(name), parameters(parameters), type(type), body(body) {}
+                        std::vector<AstNode *> paramType, AstNode *type,
+                        AstNode *body)
+        : name(name), parameters(parameters), paramType(paramType), type(type),
+          body(body) {}
   };
   struct Block : public Stmt {
     std::vector<AstNode *> statements;

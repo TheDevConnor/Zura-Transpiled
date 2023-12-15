@@ -125,13 +125,38 @@ void AstNode::printAst(AstNode *node, int indent) {
     for (int i = 0; i < indent + 2; i++)
       std::cout << " ";
     std::cout << "Name: " << functionDeclaration->name.start << std::endl;
-    for (Lexer::Token param : functionDeclaration->parameters) {
-      param.start = strtok(const_cast<char *>(param.start), ",");
-      param.start = strtok(const_cast<char *>(param.start), ")");
-      for (int i = 0; i < indent + 2; i++)
-        std::cout << " ";
-      std::cout << "Parameter: " << param.start << std::endl;
+    
+    // Find the parameters and their types
+    if (functionDeclaration->parameters.size() > 0) {
+      for (Lexer::Token parameter : functionDeclaration->parameters) {
+        const char *type = nullptr;
+        switch (functionDeclaration->paramType.front()->type) {
+        case AstNodeType::TYPE: {
+          AstNode::Type *typeNode =
+              (AstNode::Type *)functionDeclaration->paramType.front()->data;
+          type = typeNode->type.start;
+          type = strtok(const_cast<char *>(type), ",");
+          type = strtok(const_cast<char *>(type), ")");
+          break;
+        }
+        default:
+          break;
+        }
+
+        const char *name = strtok(const_cast<char *>(parameter.start), " ");
+        name = strtok(const_cast<char *>(name), ":");
+        for (int i = 0; i < indent + 2; i++)
+          std::cout << " ";
+        std::cout << "Parameter: " << std::endl;
+        for (int i = 0; i < indent + 4; i++)
+          std::cout << " ";
+        std::cout << "Name: " << name << std::endl;
+        for (int i = 0; i < indent + 4; i++)
+          std::cout << " ";
+        std::cout << "Type: " << type << std::endl;
+      }
     }
+
     printAst(functionDeclaration->type, indent + 2);
     printAst(functionDeclaration->body, indent + 2);
     break;

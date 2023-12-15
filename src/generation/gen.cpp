@@ -18,15 +18,5 @@ void Gen::generate() {
 
   headerImport(file);
 
-  if (ast->type == AstNodeType::PROGRAM) {
-    AstNode::Program *program = (AstNode::Program *)ast->data;
-
-    for (AstNode *node : program->statements) {
-      if (node->type == AstNodeType::FUNCTION_DECLARATION) {
-        AstNode::FunctionDeclaration *function =
-            (AstNode::FunctionDeclaration *)node->data;
-        functionDeclaration(file, function);
-      }
-    }
-  }
+  body(file, ast);
 }

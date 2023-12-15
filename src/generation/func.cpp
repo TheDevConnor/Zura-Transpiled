@@ -1,37 +1,50 @@
-#include <fstream>
 #include <cstring>
+#include <fstream>
+#include <iostream>
 
 #include "../ast/ast.hpp"
+#include "../lexer/lexer.hpp"
 #include "gen.hpp"
 
-void Gen::functionDeclaration(std::ofstream &file, AstNode::FunctionDeclaration *functionDeclaration) {
-    // Find the type
-    const char* type = findType(functionDeclaration->type);
-    printTypeToFile(file, type);
+void Gen::functionDeclaration(std::ofstream &file, AstNode* node) {
+  AstNode::FunctionDeclaration *fun =
+          (AstNode::FunctionDeclaration*)node->data;
 
-    // Find the name
-    functionDeclaration->name.start = strtok(const_cast<char *>(functionDeclaration->name.start), "(");
-    file << functionDeclaration->name.start << "(";
+  const char* type = findType(fun->type);
+  printTypeToFile(file, type);
 
-    // TODO: Implement parameters to generation
-    file << ")";
-    
-    // Find the body
-    file << " {\n";
+  const char* name = fun->name.start;
+  name = strtok(const_cast<char *>(name), "(");
+  file << name << "(";
 
-    // Find the statements
-    if (functionDeclaration->body->type == AstNodeType::BLOCK) {
-        AstNode::Block *block = (AstNode::Block *)functionDeclaration->body->data;
-        for (AstNode *stmt : block->statements) {
-            if (stmt->type == AstNodeType::EXIT) {
-                AstNode::Exit *exit = (AstNode::Exit *)stmt->data;
-                if (exit->expression->type == AstNodeType::NUMBER_LITERAL) {
-                AstNode::NumberLiteral *number = (AstNode::NumberLiteral *)exit->expression->data;
-                file << "  return " << number->value << ";\n";
-                }
-            }
-        }
+  if (fun->parameters.size() > 0) {
+    for (Lexer::Token parameter : fun->parameters) {
+      const char* paramType;
+      switch (fun->paramType.front()->type) {
+      case AstNodeType::TYPE: {
+        AstNode::Type *typeNode =
+            (AstNode::Type *)fun->paramType.front()->data;
+        paramType = typeNode->type.start;
+        paramType = strtok(const_cast<char *>(paramType), ",");
+        paramType = strtok(const_cast<char *>(paramType), ")");
+        break;
+      }
+      default: break;
+      }
+      fun->paramType.erase(fun->paramType.begin());
+
+      const char* paramName = strtok(const_cast<char *>(parameter.start), " ");
+      paramName = strtok(const_cast<char *>(paramName), ":");
+      printTypeToFile(file, paramType);
+      file << paramName;
+      if (fun->parameters.size() > 1) file << ", ";
     }
-    
-    file << "}\n\n";
+    file.seekp(-2, std::ios_base::end);
+  }
+
+  file << ") {\n";
+
+  blockStmt(file, fun->body);
+
+  file << "}\n\n";
 }

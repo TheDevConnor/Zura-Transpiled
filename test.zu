@@ -1,3 +1,4 @@
-fn main() <i8> {
-    exit 100;
+fn main(argv: i8, argc: str) <i8> {
+    exit 0;
 }
+

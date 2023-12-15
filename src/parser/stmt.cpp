@@ -64,31 +64,38 @@ AstNode *Parser::functionDeclaration() {
   consume(TokenKind::LEFT_PAREN, "Expected '(' after function name");
 
   std::vector<Lexer::Token> parameters;
+  std::vector<AstNode *> paramType;
+  AstNode *pType = nullptr;
 
   if (!match(TokenKind::RIGHT_PAREN)) {
     do {
       consume(TokenKind::IDENTIFIER, "Expected parameter name");
       parameters.push_back(previousToken);
+
+      consume(TokenKind::COLON,
+              "Expected ':' after param name for type annotation");
+      paramType.push_back(findType(pType));
+      advance();
+
     } while (match(TokenKind::COMMA));
     consume(TokenKind::RIGHT_PAREN, "Expected ')' after function parameters");
   }
 
-  // The type to be returned '-> type'
+  // The type to be returned '<type>'
   AstNode *type = nullptr;
   if (match(TokenKind::LESS)) {
     type = findType(type);
     advance();
   } else
-    ParserError::error(currentToken,
-                       "Expected '->' followed by return type annotation",
-                       lexer);
+    ParserError::error(
+        currentToken, "Expected '<' followed by return type annotation", lexer);
   consume(TokenKind::GREATER, "Expected '>' after type annotation");
   consume(TokenKind::LEFT_BRACE, "Expected '{' before function body");
   AstNode *body = blockStatement();
 
-  return new AstNode(
-      AstNodeType::FUNCTION_DECLARATION,
-      new AstNode::FunctionDeclaration(name, parameters, type, body));
+  return new AstNode(AstNodeType::FUNCTION_DECLARATION,
+                     new AstNode::FunctionDeclaration(name, parameters,
+                                                      paramType, type, body));
 }
 
 AstNode *Parser::varDeclaration() {
