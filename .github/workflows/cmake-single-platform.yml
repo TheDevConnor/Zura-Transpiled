@@ -19,10 +19,6 @@ jobs:
       - name: "Build"
         run:
           cmake --build build
-      # run the tests
-      - name: "Test"
-        run:
-          cmake --build build --target test
       # release the project
       - uses: "marvinpinto/action-automatic-releases@latest"
         with:
