@@ -82,7 +82,6 @@ enum TokenKind {
 
 class Lexer {
 public:
-  ~Lexer();
 
   struct Token {
     const char *start;

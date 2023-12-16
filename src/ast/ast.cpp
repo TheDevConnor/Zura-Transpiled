@@ -42,6 +42,13 @@ void AstNode::printAst(AstNode *node, int indent) {
     break;
   }
 
+  case AstNodeType::IDENTIFIER: {
+    AstNode::Identifier *identifier = (AstNode::Identifier *)node->data;
+    identifier->name.start =
+        strtok(const_cast<char *>(identifier->name.start), ";");
+    std::cout << "Identifier: " << identifier->name.start << std::endl;
+    break;
+  }
   case AstNodeType::BINARY: {
     AstNode::Binary *binary = (AstNode::Binary *)node->data;
     std::cout << "Binary-TK-Kind: " << binary->op << std::endl;

@@ -7,7 +7,6 @@
 class Parser {
 public:
   Parser(const char *source);
-  ~Parser();
 
   AstNode *parse();
 

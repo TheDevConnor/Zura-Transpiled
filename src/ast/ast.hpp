@@ -9,6 +9,7 @@ enum class AstNodeType {
   // Expressions
   BINARY,
   GROUPING,
+  IDENTIFIER,
   NUMBER_LITERAL,
   STRING_LITERAL,
   TRUE_LITERAL,
@@ -86,6 +87,11 @@ public:
     AstNode *right;
 
     Unary(TokenKind op, AstNode *right) : op(op), right(right) {}
+  };
+  struct Identifier : public Expr {
+    Lexer::Token name;
+
+    Identifier(Lexer::Token name) : name(name) {}
   };
   struct Grouping : public Expr {
     AstNode *expression;

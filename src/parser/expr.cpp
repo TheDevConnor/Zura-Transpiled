@@ -3,6 +3,11 @@
 #include "parser.hpp"
 
 AstNode *Parser::expression(int precedence) {
+  if (match(TokenKind::IDENTIFIER)) {
+    Lexer::Token identifier = previousToken;
+    return new AstNode(AstNodeType::IDENTIFIER,
+                       new AstNode::Identifier(identifier));
+  }
   AstNode *left = unary();
   return binary(left, precedence);
 }

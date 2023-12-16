@@ -78,7 +78,4 @@ void Flags::runFile(const char *path, std::string outName, bool save) {
 
   delete[] source;
   delete expression;
-  lexer.~Lexer();
-  parser.~Parser();
-  gen.~Gen();
 }

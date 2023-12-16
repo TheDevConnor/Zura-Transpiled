@@ -1,4 +1,4 @@
 fn main(argv: i8, argc: str) <i8> {
-    exit 0;
+    have x <i8> := 10 + 10;
+    exit x;
 }
-

@@ -17,13 +17,6 @@ void Lexer::reset() {
   scanner.line = 1;
 }
 
-Lexer::~Lexer() {
-  delete[] scanner.source;
-  delete[] scanner.current;
-  delete[] scanner.start;
-  delete[] token.start;
-}
-
 char Lexer::peekNext() { return scanner.current[1]; }
 char Lexer::advance() {
   scanner.current++;
