@@ -1,12 +1,10 @@
 #include <fstream>
-#include <iostream>
-#include <sstream>
-#include <cstring>
+#include <memory>
 
 #include "../lexer/lexer.hpp"
 #include "gen.hpp"
 
-Gen::Gen(AstNode *ast) : ast(ast) { generate(); }
+Gen::Gen(std::unique_ptr<AstNode> ast) : ast(std::move(ast)) { generate(); }
 
 void Gen::generate() {
   std::ofstream file;
@@ -18,5 +16,5 @@ void Gen::generate() {
 
   headerImport(file);
 
-  body(file, ast);
+  body(file, ast.get());
 }

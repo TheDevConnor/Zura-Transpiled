@@ -2,8 +2,11 @@
 #include "../helper/error/parserError.hpp"
 #include "../lexer/lexer.hpp"
 #include "parser.hpp"
+#include <algorithm>
+#include <memory>
+#include <utility>
 
-AstNode *Parser::declaration() {
+std::unique_ptr<AstNode> Parser::declaration() {
   if (match(TokenKind::VAR))
     return varDeclaration();
   if (match(TokenKind::FUN))
@@ -11,7 +14,7 @@ AstNode *Parser::declaration() {
   return statement();
 }
 
-AstNode *Parser::statement() {
+std::unique_ptr<AstNode> Parser::statement() {
   if (match(TokenKind::PRINT))
     return printStatement();
   if (match(TokenKind::EXIT))
@@ -21,53 +24,59 @@ AstNode *Parser::statement() {
   return expressionStatement();
 }
 
-AstNode *Parser::blockStatement() {
+std::unique_ptr<AstNode> Parser::blockStatement() {
   std::vector<AstNode *> statements;
 
   while (!match(TokenKind::RIGHT_BRACE)) {
-    AstNode *stmt = declaration();
-    statements.push_back(stmt);
+    std::unique_ptr<AstNode> stmt = declaration();
+    statements.push_back(stmt.release());
   }
 
-  return new AstNode(AstNodeType::BLOCK, new AstNode::Block(statements));
+  return std::make_unique<AstNode>(AstNodeType::BLOCK,
+                                   new AstNode::Block(statements));
 }
 
-AstNode *Parser::expressionStatement() {
-  AstNode *expr = expression();
+std::unique_ptr<AstNode> Parser::expressionStatement() {
+  std::unique_ptr<AstNode> expr = expression();
   consume(TokenKind::SEMICOLON, "Expected ';' after expression");
-  return new AstNode(AstNodeType::EXPRESSION,
-                     new AstNode::Stmt{AstNode::Expression(expr)});
+  return std::make_unique<AstNode>(AstNodeType::EXPRESSION,
+                                   new AstNode::Expression(std::move(expr)));
 }
 
-AstNode *Parser::printStatement() {
-  AstNode *expr = expression();
+std::unique_ptr<AstNode> Parser::printStatement() {
+  std::unique_ptr<AstNode> expr = expression();
 
   consume(TokenKind::COMMA, "Expected ',' after expression");
   consume(TokenKind::IDENTIFIER, "Expected identifier after ','");
   Lexer::Token ident = previousToken;
   consume(TokenKind::SEMICOLON, "Expected ';' after expression");
 
-  return new AstNode(AstNodeType::PRINT, new AstNode::Print(expr, ident));
+  return std::make_unique<AstNode>(AstNodeType::PRINT,
+                                   new AstNode::Print(std::move(expr), ident));
 }
 
-AstNode *Parser::exitStatement() {
+std::unique_ptr<AstNode> Parser::exitStatement() {
   // Get the exit code
   if (match(TokenKind::NUMBER)) {
-    AstNode *expr = expression();
+    std::unique_ptr<AstNode> expr = expression();
     advance();
     consume(TokenKind::SEMICOLON, "Expected ';' after expression");
-    return new AstNode(AstNodeType::EXIT, new AstNode::Exit(expr));
+    return std::make_unique<AstNode>(AstNodeType::EXIT,
+                                     new AstNode::Exit(std::move(expr)));
   } else if (match(TokenKind::IDENTIFIER)) {
     Lexer::Token ident = previousToken;
     consume(TokenKind::SEMICOLON, "Expected ';' after expression");
-    return new AstNode(AstNodeType::EXIT,
-                       new AstNode::Exit(new AstNode(AstNodeType::IDENTIFIER,
-                                                     new AstNode::Identifier(ident))));
+    return std::make_unique<AstNode>(
+        AstNodeType::EXIT,
+        new AstNode::Exit(std::make_unique<AstNode>(
+            AstNodeType::IDENTIFIER, new AstNode::Identifier(ident))));
   } else
-    ParserError::error(currentToken, "Expected number or identifier after 'exit'", lexer);
+    ParserError::error(currentToken,
+                       "Expected number or identifier after 'exit'", lexer);
+  return nullptr;
 }
 
-AstNode *Parser::functionDeclaration() {
+std::unique_ptr<AstNode> Parser::functionDeclaration() {
   consume(TokenKind::IDENTIFIER, "Expected function name");
   Lexer::Token name = previousToken;
 
@@ -75,7 +84,7 @@ AstNode *Parser::functionDeclaration() {
 
   std::vector<Lexer::Token> parameters;
   std::vector<AstNode *> paramType;
-  AstNode *pType = nullptr;
+  std::unique_ptr<AstNode> pType = nullptr;
 
   if (!match(TokenKind::RIGHT_PAREN)) {
     do {
@@ -84,7 +93,8 @@ AstNode *Parser::functionDeclaration() {
 
       consume(TokenKind::COLON,
               "Expected ':' after param name for type annotation");
-      paramType.push_back(findType(pType));
+
+      paramType.push_back(findType(std::move(pType)).release());
       advance();
 
     } while (match(TokenKind::COMMA));
@@ -92,35 +102,37 @@ AstNode *Parser::functionDeclaration() {
   }
 
   // The type to be returned '<type>'
-  AstNode *type = nullptr;
+  std::unique_ptr<AstNode> type = nullptr;
   if (match(TokenKind::LESS)) {
-    type = findType(type);
+    type = findType(std::move(type));
     advance();
   } else
     ParserError::error(
         currentToken, "Expected '<' followed by return type annotation", lexer);
+
   consume(TokenKind::GREATER, "Expected '>' after type annotation");
   consume(TokenKind::LEFT_BRACE, "Expected '{' before function body");
-  AstNode *body = blockStatement();
+  std::unique_ptr<AstNode> body = blockStatement();
 
-  return new AstNode(AstNodeType::FUNCTION_DECLARATION,
-                     new AstNode::FunctionDeclaration(name, parameters,
-                                                      paramType, type, body));
+  return std::make_unique<AstNode>(
+      AstNodeType::FUNCTION_DECLARATION,
+      new AstNode::FunctionDeclaration(name, parameters, paramType,
+                                       std::move(body), std::move(type)));
 }
 
-AstNode *Parser::varDeclaration() {
+std::unique_ptr<AstNode> Parser::varDeclaration() {
   consume(TokenKind::IDENTIFIER, "Expected variable name");
 
   Lexer::Token name = previousToken;
 
-  AstNode *type = nullptr;
+  std::unique_ptr<AstNode> type = nullptr;
   if (match(TokenKind::LESS)) {
-    type = findType(type);
+    type = findType(std::move(type));
     advance();
     consume(TokenKind::GREATER, "Expected '>' after type annotation");
   }
 
-  AstNode *initializer = nullptr;
+  std::unique_ptr<AstNode> initializer = nullptr;
   if (match(TokenKind::COLON) && match(TokenKind::EQUAL))
     initializer = expression(); // := because the lexer not wont to work
   else
@@ -130,6 +142,8 @@ AstNode *Parser::varDeclaration() {
                        lexer);
 
   consume(TokenKind::SEMICOLON, "Expected ';' after variable declaration");
-  return new AstNode(AstNodeType::VAR_DECLARATION,
-                     new AstNode::VarDeclaration(name, type, initializer));
+  return std::make_unique<AstNode>(
+      AstNodeType::VAR_DECLARATION,
+      new AstNode::VarDeclaration(name, std::move(type),
+                                  std::move(initializer)));
 }

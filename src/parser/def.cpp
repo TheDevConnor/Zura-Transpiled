@@ -1,14 +1,17 @@
 #include "../helper/error/parserError.hpp"
 #include "../lexer/lexer.hpp"
 #include "parser.hpp"
+#include <iostream>
+#include <memory>
+#include <vector>
 
 std::vector<AstNode *> Parser::lookupMain() {
   std::vector<AstNode *> statements; // Statements in main function
   AstNode *main = nullptr;           // Main function
 
   while (!match(TokenKind::END_OF_FILE)) {
-    AstNode *stmt = declaration();
-    statements.push_back(stmt);
+    std::unique_ptr<AstNode> stmt = declaration();
+    statements.push_back(stmt.release());
   }
 
   for (AstNode *stmt : statements) {
@@ -24,7 +27,9 @@ std::vector<AstNode *> Parser::lookupMain() {
   }
 
   if (!main)
-    ParserError::error(previousToken, "No main function found. Please include a main function", lexer);
+    ParserError::error(previousToken,
+                       "No main function found. Please include a main function",
+                       lexer);
 
   return statements;
 }
@@ -107,29 +112,44 @@ int Parser::getPrecedence() {
   }
 }
 
-AstNode *Parser::findType(AstNode *type) {
+std::unique_ptr<AstNode> Parser::findType(std::unique_ptr<AstNode> type) {
   switch (currentToken.kind) {
   case I8:
   case I16:
   case I32:
   case I64:
-    type = new AstNode(AstNodeType::TYPE, new AstNode::Type(currentToken));
+    std::cout << "int"
+              << "\n";
+    type = std::make_unique<AstNode>(AstNodeType::TYPE,
+                                     new AstNode::Type(currentToken));
     break;
   case U8:
   case U16:
   case U32:
   case U64:
-    type = new AstNode(AstNodeType::TYPE, new AstNode::Type(currentToken));
+    std::cout << "uint"
+              << "\n";
+    type = std::make_unique<AstNode>(AstNodeType::TYPE,
+                                     new AstNode::Type(currentToken));
     break;
   case F32:
   case F64:
-    type = new AstNode(AstNodeType::TYPE, new AstNode::Type(currentToken));
+    std::cout << "float"
+              << "\n";
+    type = std::make_unique<AstNode>(AstNodeType::TYPE,
+                                     new AstNode::Type(currentToken));
     break;
   case Bool:
-    type = new AstNode(AstNodeType::TYPE, new AstNode::Type(currentToken));
+    std::cout << "bool"
+              << "\n";
+    type = std::make_unique<AstNode>(AstNodeType::TYPE,
+                                     new AstNode::Type(currentToken));
     break;
   case STRING:
-    type = new AstNode(AstNodeType::TYPE, new AstNode::Type(currentToken));
+    std::cout << "string"
+              << "\n";
+    type = std::make_unique<AstNode>(AstNodeType::TYPE,
+                                     new AstNode::Type(currentToken));
     break;
   default:
     consume(currentToken.kind,

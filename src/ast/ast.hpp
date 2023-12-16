@@ -1,12 +1,15 @@
 #pragma once
 
 #include "../lexer/lexer.hpp"
+#include <algorithm>
+#include <memory>
+#include <utility>
 #include <vector>
 
 enum class AstNodeType {
   // Program
   PROGRAM,
-  // Expressions
+  // Expressions 
   BINARY,
   GROUPING,
   IDENTIFIER,
@@ -38,12 +41,12 @@ public:
   void *data;
 
   struct Expr {
-    AstNode *left;
-    AstNode *right;
+    std::unique_ptr<AstNode> left;
+    std::unique_ptr<AstNode> right;
   };
 
   struct Stmt {
-    AstNode *expression;
+    std::unique_ptr<AstNode> expression;
   };
 
   struct Program {
@@ -75,18 +78,20 @@ public:
 
   // ! Expressions
   struct Binary : public Expr {
-    AstNode *left;
+    std::unique_ptr<AstNode> left;
     TokenKind op;
-    AstNode *right;
+    std::unique_ptr<AstNode> right;
 
-    Binary(AstNode *left, TokenKind op, AstNode *right)
-        : op(op), left(left), right(right) {}
+    Binary(std::unique_ptr<AstNode> left, TokenKind op,
+           std::unique_ptr<AstNode> right)
+        : left(std::move(left)), op(op), right(std::move(right)) {}
   };
   struct Unary : public Expr {
     TokenKind op;
-    AstNode *right;
+    std::unique_ptr<AstNode> right;
 
-    Unary(TokenKind op, AstNode *right) : op(op), right(right) {}
+    Unary(TokenKind op, std::unique_ptr<AstNode> right)
+        : op(op), right(std::move(right)) {}
   };
   struct Identifier : public Expr {
     Lexer::Token name;
@@ -94,9 +99,10 @@ public:
     Identifier(Lexer::Token name) : name(name) {}
   };
   struct Grouping : public Expr {
-    AstNode *expression;
+    std::unique_ptr<AstNode> expression;
 
-    Grouping(AstNode *expression) : expression(expression) {}
+    Grouping(std::unique_ptr<AstNode> expression)
+        : expression(std::move(expression)) {}
   };
 
   struct NumberLiteral : public Expr {
@@ -121,22 +127,24 @@ public:
 
   // ! Statements
   struct Expression : public Stmt {
-    AstNode *expression;
+    std::unique_ptr<AstNode> expression;
 
-    Expression(AstNode *expression) : expression(expression) {}
+    Expression(std::unique_ptr<AstNode> expression)
+        : expression(std::move(expression)) {}
   };
   struct FunctionDeclaration : public Stmt {
     Lexer::Token name;
     std::vector<Lexer::Token> parameters;
     std::vector<AstNode *> paramType;
-    AstNode *type;
-    AstNode *body;
+    std::unique_ptr<AstNode> type;
+    std::unique_ptr<AstNode> body;
 
     FunctionDeclaration(Lexer::Token name, std::vector<Lexer::Token> parameters,
-                        std::vector<AstNode *> paramType, AstNode *type,
-                        AstNode *body)
-        : name(name), parameters(parameters), paramType(paramType), type(type),
-          body(body) {}
+                        std::vector<AstNode *> paramType,
+                        std::unique_ptr<AstNode> type,
+                        std::unique_ptr<AstNode> body)
+        : name(name), parameters(parameters), paramType(paramType),
+          type(std::move(type)), body(std::move(body)) {}
   };
   struct Block : public Stmt {
     std::vector<AstNode *> statements;
@@ -145,26 +153,29 @@ public:
   };
   struct VarDeclaration : public Stmt {
     Lexer::Token name;
-    AstNode *type;
-    AstNode *initializer;
+    std::unique_ptr<AstNode> type;
+    std::unique_ptr<AstNode> initializer;
 
-    VarDeclaration(Lexer::Token name, AstNode *type, AstNode *initializer)
-        : name(name), type(type), initializer(initializer) {}
+    VarDeclaration(Lexer::Token name, std::unique_ptr<AstNode> type,
+                   std::unique_ptr<AstNode> initializer)
+        : name(name), type(std::move(type)),
+          initializer(std::move(initializer)) {}
   };
   struct Print : public Stmt {
-    AstNode *expression;
+    std::unique_ptr<AstNode> expression;
     Lexer::Token ident;
 
-    Print(AstNode *expression, Lexer::Token ident)
-        : expression(expression), ident(ident) {}
+    Print(std::unique_ptr<AstNode> expression, Lexer::Token ident)
+        : expression(std::move(expression)), ident(ident) {}
   };
   struct Exit : public Stmt {
-    AstNode *expression;
+    std::unique_ptr<AstNode> expression;
 
-    Exit(AstNode *expression) : expression(expression) {}
+    Exit(std::unique_ptr<AstNode> expression)
+        : expression(std::move(expression)) {}
   };
 
   static void printVarDeclaration(AstNode::VarDeclaration *varDeclaration,
                                   int indent);
-  static void printAst(AstNode *node, int indent);
+  // static void printAst(std::unique_ptr<AstNode> node, int indent);
 };

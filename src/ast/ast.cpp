@@ -26,7 +26,7 @@ void AstNode::printVarDeclaration(AstNode::VarDeclaration *varDeclaration,
   }
 }
 
-void AstNode::printAst(AstNode *node, int indent) {
+void AstNode::printAst(std::unique_ptr<AstNode> node, int indent) {
   if (!node)
     return;
 

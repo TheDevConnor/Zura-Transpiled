@@ -2,13 +2,14 @@
 
 #include "../ast/ast.hpp"
 #include "../lexer/lexer.hpp"
+#include <memory>
 #include <vector>
 
 class Parser {
 public:
   Parser(const char *source);
 
-  AstNode *parse();
+  std::unique_ptr<AstNode> parse();
 
 private:
   const char *source;
@@ -19,35 +20,35 @@ private:
   bool hadError = false;
 
   // Expressions
-  AstNode *binary(AstNode *left, int precedence);
-  AstNode *expression(int precedence = 0);
-  AstNode *grouping();
-  AstNode *literal();
-  AstNode *unary();
+  std::unique_ptr<AstNode> binary(std::unique_ptr<AstNode> left,
+                                  int precedence);
+  std::unique_ptr<AstNode> expression(int precedence = 0);
+  std::unique_ptr<AstNode> grouping();
+  std::unique_ptr<AstNode> literal();
+  std::unique_ptr<AstNode> unary();
 
   // Main function
   std::vector<AstNode *> lookupMain();
 
   // Statements
-  AstNode *functionDeclaration();
-  AstNode *expressionStatement();
-  AstNode *varDeclaration();
-  AstNode *printStatement();
-  AstNode *blockStatement();
-  AstNode *exitStatement();
-  AstNode *declaration();
-  AstNode *statement();
+  std::unique_ptr<AstNode> functionDeclaration();
+  std::unique_ptr<AstNode> expressionStatement();
+  std::unique_ptr<AstNode> varDeclaration();
+  std::unique_ptr<AstNode> printStatement();
+  std::unique_ptr<AstNode> blockStatement();
+  std::unique_ptr<AstNode> exitStatement();
+  std::unique_ptr<AstNode> declaration();
+  std::unique_ptr<AstNode> statement();
 
   // Types
-  AstNode *findType(AstNode *type);
+  std::unique_ptr<AstNode> findType(std::unique_ptr<AstNode> type);
 
   // Helper
-  bool match(TokenKind kinds);
-
   void consume(TokenKind kind, std::string message);
-  void advance();
   Lexer::Token peek(int offset);
+  bool match(TokenKind kinds);
   void synchronize();
+  void advance();
 
   int getPrecedence();
 };

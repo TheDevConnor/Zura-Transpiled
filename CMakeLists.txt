@@ -3,6 +3,7 @@ cmake_minimum_required(VERSION 3.15)
 project(zura)
 
 set(CMAKE_CXX_STANDARD 20)
+set(CMAKE_BUILD_TYPE Debug)
 
 set(ZURA_HEADER_FILES
     src/helper/error/lexerError.hpp
@@ -26,7 +27,7 @@ set(ZURA_SOURCE_FILES
     src/parser/stmt.cpp
     src/lexer/lexer.cpp
     src/parser/def.cpp
-    src/ast/ast.cpp
+    # src/ast/ast.cpp
     src/main.cpp
 )
 

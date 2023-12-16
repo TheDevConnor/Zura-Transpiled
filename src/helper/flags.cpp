@@ -59,12 +59,12 @@ void Flags::runFile(const char *path, std::string outName, bool save) {
   const char *source = readFile(path);
 
   Parser parser(source);
-  AstNode *expression = parser.parse();
+  std::unique_ptr<AstNode>expression = parser.parse();
 
   // This prints the AST
-  expression->printAst(expression, 0);
+  // expression->printAst(expression, 0);
 
-  Gen gen(expression);
+  Gen gen(std::move(expression));
 
   compileToC(outName);
 
@@ -77,5 +77,4 @@ void Flags::runFile(const char *path, std::string outName, bool save) {
   }
 
   delete[] source;
-  delete expression;
 }

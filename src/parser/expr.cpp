@@ -1,29 +1,32 @@
 #include "../ast/ast.hpp"
 #include "../helper/error/parserError.hpp"
 #include "parser.hpp"
+#include <memory>
 
-AstNode *Parser::expression(int precedence) {
+std::unique_ptr<AstNode> Parser::expression(int precedence) {
   if (match(TokenKind::IDENTIFIER)) {
     Lexer::Token identifier = previousToken;
-    return new AstNode(AstNodeType::IDENTIFIER,
-                       new AstNode::Identifier(identifier));
+    return std::make_unique<AstNode>(AstNodeType::IDENTIFIER,
+                                     new AstNode::Identifier(identifier));
   }
-  AstNode *left = unary();
-  return binary(left, precedence);
+  std::unique_ptr<AstNode> left = unary();
+  return binary(std::move(left), 0);
 }
 
-AstNode *Parser::unary() {
+std::unique_ptr<AstNode> Parser::unary() {
   if (match(TokenKind::MINUS) || match(TokenKind::BANG)) {
     TokenKind op = previousToken.kind;
-    AstNode *right = unary();
+    std::unique_ptr<AstNode> right = unary();
 
-    return new AstNode(AstNodeType::UNARY, new AstNode::Unary(op, right));
+    return std::make_unique<AstNode>(AstNodeType::UNARY,
+                                     new AstNode::Unary(op, std::move(right)));
   }
 
   return grouping();
 }
 
-AstNode *Parser::binary(AstNode *left, int precedence) {
+std::unique_ptr<AstNode> Parser::binary(std::unique_ptr<AstNode> left,
+                                        int precedence) {
   while (true) {
     int currentPrecedence = getPrecedence();
 
@@ -33,7 +36,7 @@ AstNode *Parser::binary(AstNode *left, int precedence) {
     TokenKind op = currentToken.kind;
     advance();
 
-    AstNode *right = unary();
+    std::unique_ptr<AstNode> right = unary();
 
     switch (op) {
     case TokenKind::PLUS: {
@@ -62,46 +65,47 @@ AstNode *Parser::binary(AstNode *left, int precedence) {
     default:
       break;
     }
-    left =
-        new AstNode(AstNodeType::BINARY, new AstNode::Binary(left, op, right));
+    left = std::make_unique<AstNode>(AstNodeType::BINARY,
+                                     new AstNode::Binary(std::move(left), op, std::move(right)));
   }
 }
 
-AstNode *Parser::grouping() {
-  if (match({TokenKind::LEFT_PAREN})) {
-    AstNode *expr = expression();
+std::unique_ptr<AstNode> Parser::grouping() {
+  if (match(TokenKind::LEFT_PAREN)) {
+    std::unique_ptr<AstNode> expr = expression();
     consume(TokenKind::RIGHT_PAREN, "Expected ')' after expression");
-    return new AstNode(AstNodeType::GROUPING, new AstNode::Grouping(expr));
+    return std::make_unique<AstNode>(AstNodeType::GROUPING,
+                                     new AstNode::Grouping(std::move(expr)));
   }
 
   return literal();
 }
 
-AstNode *Parser::literal() {
+std::unique_ptr<AstNode> Parser::literal() {
   switch (currentToken.kind) {
   case TokenKind::NUMBER: {
     double value = std::stod(currentToken.start);
     advance();
-    return new AstNode(AstNodeType::NUMBER_LITERAL,
-                       new AstNode::NumberLiteral(value));
+    return std::make_unique<AstNode>(AstNodeType::NUMBER_LITERAL,
+                                     new AstNode::NumberLiteral(value));
   }
   case TokenKind::STRING: {
     std::string value = currentToken.start;
     advance();
-    return new AstNode(AstNodeType::STRING_LITERAL,
-                       new AstNode::StringLiteral(value));
+    return std::make_unique<AstNode>(AstNodeType::STRING_LITERAL,
+                                     new AstNode::StringLiteral(value));
   }
   case TokenKind::TR: {
     advance();
-    return new AstNode(AstNodeType::TRUE_LITERAL, nullptr);
+    return std::make_unique<AstNode>(AstNodeType::TRUE_LITERAL, nullptr);
   }
   case TokenKind::FAL: {
     advance();
-    return new AstNode(AstNodeType::FALSE_LITERAL, nullptr);
+    return std::make_unique<AstNode>(AstNodeType::FALSE_LITERAL, nullptr);
   }
   case TokenKind::NIL: {
     advance();
-    return new AstNode(AstNodeType::NIL_LITERAL, nullptr);
+    return std::make_unique<AstNode>(AstNodeType::NIL_LITERAL, nullptr);
   }
   default:
     ParserError::error(currentToken, "Expected literal", lexer);
