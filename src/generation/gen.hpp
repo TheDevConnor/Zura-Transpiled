@@ -23,6 +23,7 @@ public:
   // Body
   void varDeclaration(std::ofstream &file, AstNode* node, int indent);
   void functionDeclaration(std::ofstream &file, AstNode* node);
+  void printStmt(std::ofstream &file, AstNode* node);
   void blockStmt(std::ofstream &file, AstNode* node);
   void exitStmt(std::ofstream &file, AstNode* node);
 };

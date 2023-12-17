@@ -26,6 +26,7 @@ void Gen::expression(std::ofstream &file, AstNode* node) {
     switch (node->type) {
         case AstNodeType::IDENTIFIER: {
             AstNode::Identifier *identifier = (AstNode::Identifier *)node->data;
+            identifier->name.start = strtok(const_cast<char *>(identifier->name.start), " ");
             identifier->name.start = strtok(const_cast<char *>(identifier->name.start), ";");
             file << identifier->name.start;
             break;
@@ -37,7 +38,7 @@ void Gen::expression(std::ofstream &file, AstNode* node) {
         }
         case AstNodeType::STRING_LITERAL: {
             AstNode::StringLiteral *string = (AstNode::StringLiteral *)node->data;
-            string->value = string->value.substr(1, string->value.length() - 6);
+            string->value = strtok(const_cast<char *>(string->value.c_str()), "\"");
             file << string->value;
             break;
         }
@@ -63,6 +64,22 @@ void Gen::expression(std::ofstream &file, AstNode* node) {
         }
         default: break;
     }
+}
+
+void Gen::printStmt(std::ofstream &file, AstNode* node) {
+    AstNode::Print *print = (AstNode::Print *)node->data;
+
+    file << "  printf(\"";
+    expression(file, print->expression);
+    file << "\"";
+
+    // Print the arguments
+    if (print->ident != nullptr) {
+        file << ", ";
+        expression(file, print->ident);
+    }
+
+    file << ");\n";
 }
 
 void Gen::exitStmt(std::ofstream &file, AstNode* node) {
@@ -96,9 +113,9 @@ void Gen::blockStmt(std::ofstream &file, AstNode* node) {
     for (AstNode *stmt : block->statements) {
         switch (stmt->type) {
             case AstNodeType::FUNCTION_DECLARATION: functionDeclaration(file, stmt); break;
-            case AstNodeType::VAR_DECLARATION: varDeclaration(file, stmt, 2);        break;
-            // case AstNodeType::PRINT:           printStmt(file, stmt);         break;
-            case AstNodeType::EXIT:            exitStmt(file, stmt);                 break;
+            case AstNodeType::VAR_DECLARATION:      varDeclaration(file, stmt, 2);   break;
+            case AstNodeType::PRINT:                printStmt(file, stmt);           break;
+            case AstNodeType::EXIT:                 exitStmt(file, stmt);            break;
             default: break;
         }
     }
@@ -111,7 +128,7 @@ void Gen::body(std::ofstream &file, AstNode* node) {
     for (AstNode *node : program->statements) {
       switch (node->type) {
         case AstNodeType::FUNCTION_DECLARATION: functionDeclaration(file, node); break;
-        // case AstNodeType::PRINT:                printStmt(file, node);           break;
+        case AstNodeType::PRINT:                printStmt(file, node);           break;
         case AstNodeType::VAR_DECLARATION:      varDeclaration(file, node, 0);   break;
         case AstNodeType::BLOCK:                blockStmt(file, node);           break;
         default: break;

@@ -1,4 +1,7 @@
 fn main(argv: i8, argc: str) <i8> {
-    have x <i8> := 10 + 10;
-    exit x;
+    have x <i8> := 0;
+    have y <i8> := 2;
+    have sum <i8> := x + y;
+    info "x + y = %d\n", sum;
+    exit 0;
 }

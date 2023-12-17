@@ -41,20 +41,22 @@ AstNode *Parser::expressionStatement() {
 
 AstNode *Parser::printStatement() {
   AstNode *expr = expression();
+  AstNode *ident = nullptr;
 
-  consume(TokenKind::COMMA, "Expected ',' after expression");
-  consume(TokenKind::IDENTIFIER, "Expected identifier after ','");
-  Lexer::Token ident = previousToken;
+  if (match(TokenKind::COMMA)) {
+    AstNode *identNode = expression();
+    consume(TokenKind::SEMICOLON, "Expected ';' after expression");
+    return new AstNode(AstNodeType::PRINT, new AstNode::Print(expr, identNode));
+  }
+
   consume(TokenKind::SEMICOLON, "Expected ';' after expression");
-
   return new AstNode(AstNodeType::PRINT, new AstNode::Print(expr, ident));
 }
 
 AstNode *Parser::exitStatement() {
   // Get the exit code
-  if (match(TokenKind::NUMBER)) {
+  if (currentToken.kind == TokenKind::NUMBER) {
     AstNode *expr = expression();
-    advance();
     consume(TokenKind::SEMICOLON, "Expected ';' after expression");
     return new AstNode(AstNodeType::EXIT, new AstNode::Exit(expr));
   } else if (match(TokenKind::IDENTIFIER)) {
@@ -65,6 +67,8 @@ AstNode *Parser::exitStatement() {
                                                      new AstNode::Identifier(ident))));
   } else
     ParserError::error(currentToken, "Expected number or identifier after 'exit'", lexer);
+
+  return nullptr;
 }
 
 AstNode *Parser::functionDeclaration() {

@@ -75,6 +75,7 @@ enum TokenKind {
 
   // Error
   ERROR_,
+  UNKNOWN,
 
   // End of file.
   END_OF_FILE

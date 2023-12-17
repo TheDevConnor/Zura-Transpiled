@@ -1,13 +1,9 @@
 #include "../ast/ast.hpp"
 #include "../helper/error/parserError.hpp"
 #include "parser.hpp"
+#include <cstring>
 
 AstNode *Parser::expression(int precedence) {
-  if (match(TokenKind::IDENTIFIER)) {
-    Lexer::Token identifier = previousToken;
-    return new AstNode(AstNodeType::IDENTIFIER,
-                       new AstNode::Identifier(identifier));
-  }
   AstNode *left = unary();
   return binary(left, precedence);
 }
@@ -79,6 +75,12 @@ AstNode *Parser::grouping() {
 
 AstNode *Parser::literal() {
   switch (currentToken.kind) {
+  case TokenKind::IDENTIFIER: {
+    Lexer::Token value = currentToken;
+    advance();
+    return new AstNode(AstNodeType::IDENTIFIER,
+                        new AstNode::Identifier(value));
+  }
   case TokenKind::NUMBER: {
     double value = std::stod(currentToken.start);
     advance();

@@ -153,9 +153,9 @@ public:
   };
   struct Print : public Stmt {
     AstNode *expression;
-    Lexer::Token ident;
+    AstNode *ident;
 
-    Print(AstNode *expression, Lexer::Token ident)
+    Print(AstNode *expression, AstNode *ident)
         : expression(expression), ident(ident) {}
   };
   struct Exit : public Stmt {

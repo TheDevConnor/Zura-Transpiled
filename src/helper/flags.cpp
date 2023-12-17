@@ -62,7 +62,7 @@ void Flags::runFile(const char *path, std::string outName, bool save) {
   AstNode *expression = parser.parse();
 
   // This prints the AST
-  expression->printAst(expression, 0);
+  // expression->printAst(expression, 0);
 
   Gen gen(expression);
 

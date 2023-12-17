@@ -78,8 +78,9 @@ void AstNode::printAst(AstNode *node, int indent) {
   case AstNodeType::STRING_LITERAL: {
     AstNode::StringLiteral *stringLiteral =
         (AstNode::StringLiteral *)node->data;
+    // Remove the quotes from the string
     stringLiteral->value =
-        stringLiteral->value.substr(1, stringLiteral->value.length() - 6);
+        stringLiteral->value.substr(1, stringLiteral->value.length() - 2);
     std::cout << "StringLiteral: " << stringLiteral->value << std::endl;
     break;
   }
@@ -179,10 +180,12 @@ void AstNode::printAst(AstNode *node, int indent) {
     AstNode::Print *print = (AstNode::Print *)node->data;
     std::cout << "Print: " << std::endl;
     printAst(print->expression, indent + 2);
-    print->ident.start = strtok(const_cast<char *>(print->ident.start), ";");
-    for (int i = 0; i < indent + 2; i++)
-      std::cout << " ";
-    std::cout << "Identifier: " << print->ident.start << std::endl;
+    if (print->ident) {
+      for (int i = 0; i < indent + 2; i++)
+        std::cout << " ";
+      std::cout << "Identifier: " << std::endl;
+      printAst(print->ident, indent + 4);
+    }
     break;
   }
   case AstNodeType::EXIT: {
