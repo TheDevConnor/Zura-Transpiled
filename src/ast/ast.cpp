@@ -77,7 +77,7 @@ void AstNode::printAst(AstNode *node, int indent) {
       AstNode::Identifier *identifier = (AstNode::Identifier *)arg->data;
       identifier->name.start =
           strtok(const_cast<char *>(identifier->name.start), ",");
-      identifier->name.start = 
+      identifier->name.start =
           strtok(const_cast<char *>(identifier->name.start), "(");
       identifier->name.start =
           strtok(const_cast<char *>(identifier->name.start), ")");
@@ -150,7 +150,7 @@ void AstNode::printAst(AstNode *node, int indent) {
     for (int i = 0; i < indent + 2; i++)
       std::cout << " ";
     std::cout << "Name: " << functionDeclaration->name.start << std::endl;
-    
+
     // Find the parameters and their types
     if (functionDeclaration->parameters.size() > 0) {
       for (Lexer::Token parameter : functionDeclaration->parameters) {
@@ -206,7 +206,7 @@ void AstNode::printAst(AstNode *node, int indent) {
             strtok(const_cast<char *>(identifier->name.start), ",");
         printAst(ident, indent + 2);
       } else
-      printAst(ident, indent + 2);
+        printAst(ident, indent + 2);
     break;
   }
   case AstNodeType::RETURN: {

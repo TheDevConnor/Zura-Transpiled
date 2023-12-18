@@ -1,9 +1,9 @@
-#include <fstream>
 #include <cstring>
+#include <fstream>
 
 #include "gen.hpp"
 
-const char* Gen::findType(AstNode *node) {
+const char *Gen::findType(AstNode *node) {
   switch (node->type) {
   case AstNodeType::TYPE: {
     AstNode::Type *type = static_cast<AstNode::Type *>(node->data);
@@ -17,9 +17,8 @@ const char* Gen::findType(AstNode *node) {
   return "Unknown";
 }
 
-void Gen::printTypeToFile(std::ofstream &file, const char* type) {
-  switch (type[0])
-  {
+void Gen::printTypeToFile(std::ofstream &file, const char *type) {
+  switch (type[0]) {
   case 'i':
     if (type[1] == '1') {
       file << "int16_t ";

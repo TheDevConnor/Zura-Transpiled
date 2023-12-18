@@ -5,7 +5,6 @@
 #include "../ast/ast.hpp"
 #include "../common.hpp"
 #include "../generation/gen.hpp"
-#include "../lexer/lexer.hpp"
 #include "../parser/parser.hpp"
 #include "flags.hpp"
 

@@ -15,7 +15,6 @@ public:
               << ", column: " << termcolor::blue << column << termcolor::reset
               << "] " << termcolor::red << message << termcolor::reset;
 
-    // The line of the error
     const char *lineStart = lexer.lineStart(line);
     const char *lineEnd = lineStart;
     while (*lineEnd != '\n' && *lineEnd != '\0')
@@ -23,7 +22,6 @@ public:
     std::cout << std::endl
               << std::string(lineStart, lineEnd - lineStart) << std::endl;
 
-    // The arrow pointing to the error
     std::string length(lineStart, lineEnd - lineStart);
     std::cout << termcolor::green << std::string(column - 2, '~')
               << termcolor::red << "^" << termcolor::reset << std::endl;

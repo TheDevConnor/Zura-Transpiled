@@ -1,7 +1,6 @@
 #include "../ast/ast.hpp"
 #include "../helper/error/parserError.hpp"
 #include "parser.hpp"
-#include <cstring>
 
 AstNode *Parser::expression(int precedence) {
   AstNode *left = unary();
@@ -13,8 +12,8 @@ AstNode *Parser::expression(int precedence) {
     if (!match(TokenKind::RIGHT_PAREN)) {
       do {
         if (arguments.size() >= 255)
-          ParserError::error(currentToken, "Cannot have more than 255 arguments",
-                             lexer);
+          ParserError::error(currentToken,
+                             "Cannot have more than 255 arguments", lexer);
         arguments.push_back(expression());
       } while (match(TokenKind::COMMA));
     }
@@ -97,8 +96,7 @@ AstNode *Parser::literal() {
   case TokenKind::IDENTIFIER: {
     Lexer::Token value = currentToken;
     advance();
-    return new AstNode(AstNodeType::IDENTIFIER,
-                        new AstNode::Identifier(value));
+    return new AstNode(AstNodeType::IDENTIFIER, new AstNode::Identifier(value));
   }
   case TokenKind::NUMBER: {
     double value = std::stod(currentToken.start);

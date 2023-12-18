@@ -1,10 +1,5 @@
-#include <fstream>
-#include <iostream>
-#include <sstream>
-#include <cstring>
-
-#include "../lexer/lexer.hpp"
 #include "gen.hpp"
+#include <fstream>
 
 Gen::Gen(AstNode *ast) : ast(ast) { generate(); }
 

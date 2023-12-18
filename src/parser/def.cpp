@@ -24,7 +24,9 @@ std::vector<AstNode *> Parser::lookupMain() {
   }
 
   if (!main)
-    ParserError::error(previousToken, "No main function found. Please include a main function", lexer);
+    ParserError::error(previousToken,
+                       "No main function found. Please include a main function",
+                       lexer);
 
   return statements;
 }

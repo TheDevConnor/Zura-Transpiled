@@ -164,7 +164,7 @@ public:
     AstNode *expression;
     std::vector<AstNode *> ident;
 
-    Print(AstNode *expression, std::vector<AstNode *>ident)
+    Print(AstNode *expression, std::vector<AstNode *> ident)
         : expression(expression), ident(ident) {}
   };
   struct Exit : public Stmt {
