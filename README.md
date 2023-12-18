@@ -1,5 +1,15 @@
 This is the compiled low-level version of Zura.
 
+## Introduction
+Zura is a statically typed, compiled, low-level programming language. It is designed to be simple and easy to use. It is inspired by C and Go. It is currently in development and is not ready for production use.
+
+tabe of contents:
+- [Installation](#installation)
+- [Usage](#usage)
+- [Examples of Zura code](sample/SAMPLE.MD)
+
+
+## Installation
 To start make sure you have the following installed:
 - [cmake](https://cmake.org/)
 - [make](https://www.gnu.org/software/make/)
@@ -41,6 +51,9 @@ cmake --build build
 
 This will create a `zura` executable in the `build` directory.
 
+Or you can download the latest release from [here](https://github.com/TheDevConnor/Zura-Transpiled/releases/tag/pre-release) and add either the `zura.exe` (For Windows) or `zura` (For Linux) executable to your path.
+Eventually, I will add a script to automate this process.
+
 ## Usage
 ```bash
 ./build/zura <filename> -o <output name>
@@ -59,41 +72,4 @@ if you want to clean up the build directory, use the `-c` flag:
 Then run the output file with:
 ```bash
 ./<output name>
-```
-
-## Examples of Zura code
-```bash
-have x <i8> := 10;
-fn main() <i8> {
-    info "age: %d", x;
-    exit 0;
-}
-```
-As you can see, Zura is a statically typed language. The type of a variable is specified after the variable name. The `:=` operator is used to assign a value to a variable. The `info` function is used to print to the console. The `exit` function is used to exit the program. The `main` function is the entry point of the program. The `->` operator is used to specify the return type of a function.
-
-```bash
-include "std";
-
-fn main() <i8> {
-    have x <[]i8> := [1, 5, 8, 10];
-
-    loop (have i <i8> := 0; i < length(x)) : (i++) {
-        info "%d\n", x[i];
-    }
-
-    exit 0;
-}
-```
-This is an example of looping through an array and printing each element. The `include` keyword is used to include a file. The `loop` keyword is used to create a loop. The `length` function is used to get the length of an array. The `[]` operator is used to access an element in an array.
-
-```bash
-include "std";
-
-type Range := i8;
-
-fn main() <i8> {
-    have x <Range> := 10;
-
-    info "x: %d\n", x;
-}
 ```

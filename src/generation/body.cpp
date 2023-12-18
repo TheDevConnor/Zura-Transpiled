@@ -21,6 +21,9 @@ void Gen::findBinaryOp(std::ofstream &file, AstNode::Binary *op) {
   case TokenKind::SLASH:
     file << " / ";
     break;
+  case TokenKind::MODULO:
+    file << " % ";
+    break;
   case TokenKind::EQUAL_EQUAL:
     file << " == ";
     break;
@@ -147,13 +150,13 @@ void Gen::exitStmt(std::ofstream &file, AstNode *node) {
   if (exit->expression->type == AstNodeType::NUMBER_LITERAL) {
     AstNode::NumberLiteral *number =
         (AstNode::NumberLiteral *)exit->expression->data;
-    file << "  exit " << number->value << ";\n";
+    file << "  exit(" << number->value << ");\n";
   } else if (exit->expression->type == AstNodeType::IDENTIFIER) {
     AstNode::Identifier *identifier =
         (AstNode::Identifier *)exit->expression->data;
     identifier->name.start =
         strtok(const_cast<char *>(identifier->name.start), ";");
-    file << "  return " << identifier->name.start << ";\n";
+    file << "  exit(" << identifier->name.start << ");\n";
   }
 }
 

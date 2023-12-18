@@ -64,6 +64,7 @@ AstNode *Parser::binary(AstNode *left, int precedence) {
     }
     case TokenKind::MINUS:
     case TokenKind::STAR:
+    case TokenKind::MODULO:
     case TokenKind::SLASH: {
       if (left->type == AstNodeType::STRING_LITERAL ||
           right->type == AstNodeType::STRING_LITERAL) {
