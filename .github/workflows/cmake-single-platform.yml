@@ -62,7 +62,7 @@ jobs:
         uses: actions/download-artifact@v2
         with:
           name: windows-artifacts 
-          path: .\windows-artifacts
+          path: windows-artifacts
   
       - name: "Combine artifacts"
         run: |
