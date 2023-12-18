@@ -30,21 +30,22 @@ jobs:
   pre-release-windows:
     name: "Pre release (Windows)"
     runs-on: windows-latest
-
+  
     steps:
       - name: "Checkout code"
         uses: actions/checkout@v3
-
+  
       - name: "Build environment (Windows)"
         run: |
           cmake -S . -B build
           cmake --build build --config Release
-
+  
       - name: "Upload artifacts (Windows)"
         uses: actions/upload-artifact@v2
         with:
-          name: windows-artifacts
+          name: windows-artifacts  # Make sure this matches the name used in download-artifact
           path: ./build/zura.exe
+            
 
   combine-artifacts:
     name: "Combine Artifacts"
