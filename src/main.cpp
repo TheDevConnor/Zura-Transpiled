@@ -8,12 +8,13 @@
 using namespace std;
 
 int main(int argc, char **argv) {
-  if (argc == 2 && strcmp(argv[1], "--help") == 0) {
+  if ((argc == 2 && strcmp(argv[1], "--help") == 0) || argc == 1) {
     cout << "Usage: " << argv[0] << " [options]" << endl;
     cout << "Options:" << endl;
     cout << "  --help\t\t\tPrints this help message" << endl;
     cout << "  --version\t\t\tPrints the version of the compiler" << endl;
     cout << "  --license\t\t\tPrints the license of the Zura Lang" << endl;
+    cout << "  --update\t\t\tUpdates the Zura compiler" << endl;
     cout << "Compiler:" << endl;
     cout << termcolor::red << "   -s" << termcolor::reset
          << ", \t\tsave the generated c file and the out.o file" << endl;
@@ -29,8 +30,14 @@ int main(int argc, char **argv) {
 
   // version
   if (argc == 2 && strcmp(argv[1], "--version") == 0) {
-    cout << "Zura Lang version 0.0.1" << endl;
+    cout << "Zura Lang " << ZuraVersion << endl;
     Exit(ExitValue::FLAGS_PRINTED);
+  }
+
+  // update
+  if (argc == 2 && strcmp(argv[1], "--update") == 0) {
+    installer();
+    Exit(ExitValue::UPDATED);
   }
 
   // license

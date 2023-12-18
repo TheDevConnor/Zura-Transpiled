@@ -27,6 +27,7 @@ set(ZURA_SOURCE_FILES
     src/lexer/lexer.cpp
     src/parser/def.cpp
     src/ast/ast.cpp
+    src/update.cpp
     src/main.cpp
 )
 
