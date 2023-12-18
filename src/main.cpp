@@ -36,7 +36,7 @@ int main(int argc, char **argv) {
 
   // update
   if (argc == 2 && strcmp(argv[1], "--update") == 0) {
-    installer();
+    system("python scripts/update.py");
     Exit(ExitValue::UPDATED);
   }
 

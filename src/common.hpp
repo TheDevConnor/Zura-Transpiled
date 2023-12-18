@@ -12,5 +12,4 @@ enum ExitValue {
   UPDATED = 6,
 };
 
-void installer();
 inline void Exit(ExitValue exitValue) { exit(ExitValue(exitValue)); }
