@@ -31,6 +31,7 @@ private:
   // Statements
   AstNode *functionDeclaration();
   AstNode *expressionStatement();
+  AstNode *returnStatement();
   AstNode *varDeclaration();
   AstNode *printStatement();
   AstNode *blockStatement();

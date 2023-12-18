@@ -1,5 +1,6 @@
 #include <fstream>
 #include <cstring>
+#include <iostream> 
 
 #include "../lexer/lexer.hpp"
 #include "../ast/ast.hpp"
@@ -24,39 +25,55 @@ void Gen::findBinaryOp(std::ofstream &file, AstNode::Binary* op) {
 
 void Gen::expression(std::ofstream &file, AstNode* node) {
     switch (node->type) {
+        case AstNodeType::CALL: {
+            AstNode::Call *call = static_cast<AstNode::Call *>(node->data);
+            call->callee->type = AstNodeType::IDENTIFIER;
+            expression(file, call->callee);
+            file << "(";
+            for (AstNode *arg : call->arguments) {
+                expression(file, arg);
+                file << ", ";
+            }
+            if (call->arguments.size() > 0) file.seekp(-2, std::ios_base::end);
+            file << ")";
+            break;
+        }
         case AstNodeType::IDENTIFIER: {
-            AstNode::Identifier *identifier = (AstNode::Identifier *)node->data;
+            AstNode::Identifier *identifier = static_cast<AstNode::Identifier *>(node->data);
             identifier->name.start = strtok(const_cast<char *>(identifier->name.start), " ");
+            identifier->name.start = strtok(const_cast<char *>(identifier->name.start), ",");
+            identifier->name.start = strtok(const_cast<char *>(identifier->name.start), "("); 
+            identifier->name.start = strtok(const_cast<char *>(identifier->name.start), ")");
             identifier->name.start = strtok(const_cast<char *>(identifier->name.start), ";");
             file << identifier->name.start;
             break;
         }
         case AstNodeType::NUMBER_LITERAL: {
-            AstNode::NumberLiteral *number = (AstNode::NumberLiteral *)node->data;
+            AstNode::NumberLiteral *number = static_cast<AstNode::NumberLiteral *>(node->data);
             file << number->value;
             break;
         }
         case AstNodeType::STRING_LITERAL: {
-            AstNode::StringLiteral *string = (AstNode::StringLiteral *)node->data;
+            AstNode::StringLiteral *string = static_cast<AstNode::StringLiteral *>(node->data);
             string->value = strtok(const_cast<char *>(string->value.c_str()), "\"");
             file << string->value;
             break;
         }
         case AstNodeType::BINARY: {
-            AstNode::Binary *binary = (AstNode::Binary *)node->data;
+            AstNode::Binary *binary = static_cast<AstNode::Binary *>(node->data);
             expression(file, binary->left);
             findBinaryOp(file, binary);
             expression(file, binary->right);
             break;
         }
         case AstNodeType::UNARY: {
-            AstNode::Unary *unary = (AstNode::Unary *)node->data;
+            AstNode::Unary *unary = static_cast<AstNode::Unary *>(node->data);
             file << unary->op;
             expression(file, unary->right);
             break;
         }
         case AstNodeType::GROUPING: {
-            AstNode::Grouping *grouping = (AstNode::Grouping *)node->data;
+            AstNode::Grouping *grouping = static_cast<AstNode::Grouping *>(node->data);
             file << "(";
             expression(file, grouping->expression);
             file << ")";
@@ -66,24 +83,36 @@ void Gen::expression(std::ofstream &file, AstNode* node) {
     }
 }
 
+void Gen::callStmt(std::ofstream &file, AstNode* node) {
+    AstNode::Call *call = static_cast<AstNode::Call *>(node->data);
+    call->callee->type = AstNodeType::IDENTIFIER;
+    expression(file, call->callee);
+    file << "(";
+    for (AstNode *arg : call->arguments) {
+        expression(file, arg);
+        file << ", ";
+    }
+    file << ");\n";
+}
+
 void Gen::printStmt(std::ofstream &file, AstNode* node) {
-    AstNode::Print *print = (AstNode::Print *)node->data;
+    AstNode::Print *print = static_cast<AstNode::Print *>(node->data);
 
     file << "  printf(\"";
     expression(file, print->expression);
     file << "\"";
 
     // Print the arguments
-    if (print->ident != nullptr) {
+    for (AstNode *arg : print->ident) {
         file << ", ";
-        expression(file, print->ident);
+        expression(file, arg);
     }
 
     file << ");\n";
 }
 
 void Gen::exitStmt(std::ofstream &file, AstNode* node) {
-    AstNode::Exit *exit = (AstNode::Exit *)node->data;
+    AstNode::Exit *exit = static_cast<AstNode::Exit *>(node->data);
     if (exit->expression->type == AstNodeType::NUMBER_LITERAL) {
         AstNode::NumberLiteral *number = (AstNode::NumberLiteral *)exit->expression->data;
         file << "  return " << number->value << ";\n";
@@ -94,8 +123,15 @@ void Gen::exitStmt(std::ofstream &file, AstNode* node) {
     }
 }
 
+void Gen::returnStmt(std::ofstream &file, AstNode* node) {
+    AstNode::Return *returnStmt = static_cast<AstNode::Return *>(node->data);
+    file << "  return ";
+    expression(file, returnStmt->expression);
+    file << ";\n";
+}
+
 void Gen::varDeclaration(std::ofstream &file, AstNode* node, int indent) {
-    AstNode::VarDeclaration *var = (AstNode::VarDeclaration *)node->data;
+    AstNode::VarDeclaration *var = static_cast<AstNode::VarDeclaration *>(node->data);
 
     for (int i = 0; i < indent; i++) file << " ";
     const char* type = findType(var->type);
@@ -109,13 +145,16 @@ void Gen::varDeclaration(std::ofstream &file, AstNode* node, int indent) {
 }
 
 void Gen::blockStmt(std::ofstream &file, AstNode* node) {
-    AstNode::Block *block = (AstNode::Block *)node->data;
+    AstNode::Block *block = static_cast<AstNode::Block *>(node->data);
     for (AstNode *stmt : block->statements) {
         switch (stmt->type) {
             case AstNodeType::FUNCTION_DECLARATION: functionDeclaration(file, stmt); break;
             case AstNodeType::VAR_DECLARATION:      varDeclaration(file, stmt, 2);   break;
+            case AstNodeType::RETURN:               returnStmt(file, stmt);          break;
             case AstNodeType::PRINT:                printStmt(file, stmt);           break;
             case AstNodeType::EXIT:                 exitStmt(file, stmt);            break;
+            case AstNodeType::BLOCK:                blockStmt(file, stmt);           break;
+            case AstNodeType::CALL:                 callStmt(file, stmt);            break;
             default: break;
         }
     }
@@ -123,7 +162,7 @@ void Gen::blockStmt(std::ofstream &file, AstNode* node) {
 
 void Gen::body(std::ofstream &file, AstNode* node) {
   if (ast->type == AstNodeType::PROGRAM) {
-    AstNode::Program *program = (AstNode::Program *)ast->data;
+    AstNode::Program *program = static_cast<AstNode::Program *>(ast->data);
 
     for (AstNode *node : program->statements) {
       switch (node->type) {
@@ -131,6 +170,7 @@ void Gen::body(std::ofstream &file, AstNode* node) {
         case AstNodeType::PRINT:                printStmt(file, node);           break;
         case AstNodeType::VAR_DECLARATION:      varDeclaration(file, node, 0);   break;
         case AstNodeType::BLOCK:                blockStmt(file, node);           break;
+        case AstNodeType::CALL:                 callStmt(file, node);            break;
         default: break;
       }
     }

@@ -6,7 +6,7 @@
 const char* Gen::findType(AstNode *node) {
   switch (node->type) {
   case AstNodeType::TYPE: {
-    AstNode::Type *type = (AstNode::Type *)node->data;
+    AstNode::Type *type = static_cast<AstNode::Type *>(node->data);
     type->type.start = strtok(const_cast<char *>(type->type.start), ">");
     return type->type.start;
   }

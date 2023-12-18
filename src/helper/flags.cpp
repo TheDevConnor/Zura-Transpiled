@@ -60,9 +60,10 @@ void Flags::runFile(const char *path, std::string outName, bool save) {
 
   Parser parser(source);
   AstNode *expression = parser.parse();
+  expression->printAst(expression, 0);
 
-  // This prints the AST
-  // expression->printAst(expression, 0);
+  // TODO: Implement a type checker
+  // Type type(expression);
 
   Gen gen(expression);
 

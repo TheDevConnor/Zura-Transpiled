@@ -9,6 +9,7 @@ enum class AstNodeType {
   // Expressions
   BINARY,
   GROUPING,
+  CALL,
   IDENTIFIER,
   NUMBER_LITERAL,
   STRING_LITERAL,
@@ -28,6 +29,7 @@ enum class AstNodeType {
   FUNCTION_DECLARATION,
   BLOCK,
   EXIT,
+  RETURN,
 };
 
 class AstNode {
@@ -98,6 +100,13 @@ public:
 
     Grouping(AstNode *expression) : expression(expression) {}
   };
+  struct Call : public Expr {
+    AstNode *callee;
+    std::vector<AstNode *> arguments;
+
+    Call(AstNode *callee, std::vector<AstNode *> arguments)
+        : callee(callee), arguments(arguments) {}
+  };
 
   struct NumberLiteral : public Expr {
     double value;
@@ -153,15 +162,20 @@ public:
   };
   struct Print : public Stmt {
     AstNode *expression;
-    AstNode *ident;
+    std::vector<AstNode *> ident;
 
-    Print(AstNode *expression, AstNode *ident)
+    Print(AstNode *expression, std::vector<AstNode *>ident)
         : expression(expression), ident(ident) {}
   };
   struct Exit : public Stmt {
     AstNode *expression;
 
     Exit(AstNode *expression) : expression(expression) {}
+  };
+  struct Return : public Stmt {
+    AstNode *expression;
+
+    Return(AstNode *expression) : expression(expression) {}
   };
 
   static void printVarDeclaration(AstNode::VarDeclaration *varDeclaration,

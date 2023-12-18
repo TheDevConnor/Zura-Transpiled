@@ -18,6 +18,8 @@ AstNode *Parser::statement() {
     return exitStatement();
   if (match(TokenKind::LEFT_BRACE))
     return blockStatement();
+  if (match(TokenKind::RETURN))
+    return returnStatement();
   return expressionStatement();
 }
 
@@ -39,14 +41,28 @@ AstNode *Parser::expressionStatement() {
                      new AstNode::Stmt{AstNode::Expression(expr)});
 }
 
+AstNode *Parser::returnStatement() {
+  AstNode *expr = expression();
+  consume(TokenKind::SEMICOLON, "Expected ';' after expression");
+  return new AstNode(AstNodeType::RETURN, new AstNode::Return(expr));
+}
+
 AstNode *Parser::printStatement() {
   AstNode *expr = expression();
-  AstNode *ident = nullptr;
+  std::vector<AstNode *> ident;
 
+  // check if there are multiple commas in the print statement
   if (match(TokenKind::COMMA)) {
-    AstNode *identNode = expression();
+    std::vector<AstNode *> idents;
+    AstNode *exprs = expression();
+    idents.push_back(exprs);
+    while (peek(0).kind != TokenKind::SEMICOLON) {
+      consume(TokenKind::COMMA, "Expected ',' after expression");
+      AstNode *exprs = expression();
+      idents.push_back(exprs);
+    }
     consume(TokenKind::SEMICOLON, "Expected ';' after expression");
-    return new AstNode(AstNodeType::PRINT, new AstNode::Print(expr, identNode));
+    return new AstNode(AstNodeType::PRINT, new AstNode::Print(expr, idents));
   }
 
   consume(TokenKind::SEMICOLON, "Expected ';' after expression");
@@ -62,11 +78,12 @@ AstNode *Parser::exitStatement() {
   } else if (match(TokenKind::IDENTIFIER)) {
     Lexer::Token ident = previousToken;
     consume(TokenKind::SEMICOLON, "Expected ';' after expression");
-    return new AstNode(AstNodeType::EXIT,
-                       new AstNode::Exit(new AstNode(AstNodeType::IDENTIFIER,
-                                                     new AstNode::Identifier(ident))));
+    return new AstNode(AstNodeType::EXIT, new AstNode::Exit(new AstNode(
+                                              AstNodeType::IDENTIFIER,
+                                              new AstNode::Identifier(ident))));
   } else
-    ParserError::error(currentToken, "Expected number or identifier after 'exit'", lexer);
+    ParserError::error(currentToken,
+                       "Expected number or identifier after 'exit'", lexer);
 
   return nullptr;
 }

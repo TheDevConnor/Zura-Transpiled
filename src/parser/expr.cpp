@@ -5,6 +5,25 @@
 
 AstNode *Parser::expression(int precedence) {
   AstNode *left = unary();
+
+  // function call
+  if (match(TokenKind::LEFT_PAREN)) {
+    std::vector<AstNode *> arguments;
+
+    if (!match(TokenKind::RIGHT_PAREN)) {
+      do {
+        if (arguments.size() >= 255)
+          ParserError::error(currentToken, "Cannot have more than 255 arguments",
+                             lexer);
+        arguments.push_back(expression());
+      } while (match(TokenKind::COMMA));
+    }
+
+    consume(TokenKind::RIGHT_PAREN, "Expected ')' after arguments");
+
+    return new AstNode(AstNodeType::CALL, new AstNode::Call(left, arguments));
+  }
+
   return binary(left, precedence);
 }
 

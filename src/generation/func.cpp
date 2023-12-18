@@ -8,7 +8,7 @@
 
 void Gen::functionDeclaration(std::ofstream &file, AstNode* node) {
   AstNode::FunctionDeclaration *fun =
-          (AstNode::FunctionDeclaration*)node->data;
+      static_cast<AstNode::FunctionDeclaration *>(node->data);
 
   const char* type = findType(fun->type);
   printTypeToFile(file, type);

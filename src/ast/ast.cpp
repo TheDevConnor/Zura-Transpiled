@@ -68,6 +68,23 @@ void AstNode::printAst(AstNode *node, int indent) {
     printAst(grouping->expression, indent + 2);
     break;
   }
+  case AstNodeType::CALL: {
+    AstNode::Call *call = (AstNode::Call *)node->data;
+    std::cout << "Call: " << std::endl;
+    printAst(call->callee, indent + 2);
+    for (AstNode *arg : call->arguments) {
+      arg->type = AstNodeType::IDENTIFIER;
+      AstNode::Identifier *identifier = (AstNode::Identifier *)arg->data;
+      identifier->name.start =
+          strtok(const_cast<char *>(identifier->name.start), ",");
+      identifier->name.start = 
+          strtok(const_cast<char *>(identifier->name.start), "(");
+      identifier->name.start =
+          strtok(const_cast<char *>(identifier->name.start), ")");
+      printAst(arg, indent + 2);
+    }
+    break;
+  }
 
   case AstNodeType::NUMBER_LITERAL: {
     AstNode::NumberLiteral *numberLiteral =
@@ -80,7 +97,7 @@ void AstNode::printAst(AstNode *node, int indent) {
         (AstNode::StringLiteral *)node->data;
     // Remove the quotes from the string
     stringLiteral->value =
-        stringLiteral->value.substr(1, stringLiteral->value.length() - 2);
+        strtok(const_cast<char *>(stringLiteral->value.c_str()), "\"");
     std::cout << "StringLiteral: " << stringLiteral->value << std::endl;
     break;
   }
@@ -150,6 +167,8 @@ void AstNode::printAst(AstNode *node, int indent) {
         default:
           break;
         }
+        functionDeclaration->paramType.erase(
+            functionDeclaration->paramType.begin());
 
         const char *name = strtok(const_cast<char *>(parameter.start), " ");
         name = strtok(const_cast<char *>(name), ":");
@@ -180,12 +199,20 @@ void AstNode::printAst(AstNode *node, int indent) {
     AstNode::Print *print = (AstNode::Print *)node->data;
     std::cout << "Print: " << std::endl;
     printAst(print->expression, indent + 2);
-    if (print->ident) {
-      for (int i = 0; i < indent + 2; i++)
-        std::cout << " ";
-      std::cout << "Identifier: " << std::endl;
-      printAst(print->ident, indent + 4);
-    }
+    for (AstNode *ident : print->ident)
+      if (ident->type == AstNodeType::IDENTIFIER) {
+        AstNode::Identifier *identifier = (AstNode::Identifier *)ident->data;
+        identifier->name.start =
+            strtok(const_cast<char *>(identifier->name.start), ",");
+        printAst(ident, indent + 2);
+      } else
+      printAst(ident, indent + 2);
+    break;
+  }
+  case AstNodeType::RETURN: {
+    AstNode::Return *returnStmt = (AstNode::Return *)node->data;
+    std::cout << "Return: " << std::endl;
+    printAst(returnStmt->expression, indent + 2);
     break;
   }
   case AstNodeType::EXIT: {
