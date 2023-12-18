@@ -71,9 +71,12 @@ jobs:
           mv windows-artifacts/* combined-artifacts/
   
       - name: "Upload combined artifacts"
-        uses: actions/upload-artifact@v2
+        uses: "marvinpinto/action-automatic-releases@latest"
         with:
-          name: combined-artifacts
-          path: ./combined-artifacts
+          repo_token: ${{ secrets.GITHUB_TOKEN }}
+          automatic_release_tag: "pre-release"
+          prerelease: true
+          files: |
+            combined-artifacts/*
             
 
