@@ -64,17 +64,17 @@ void Flags::runFile(const char *path, std::string outName, bool save) {
   // TODO: Implement a type checker
   // Type type(expression);
 
-  Gen gen(expression);
+//   Gen gen(expression);
 
-  compileToC(outName);
+//   compileToC(outName);
 
-  if (!save) {
-#ifdef _WIN32
-    system("del out.c");
-#else
-    system("rm -rf out.c");
-#endif
-  }
+//   if (!save) {
+// #ifdef _WIN32
+//     system("del out.c");
+// #else
+//     system("rm -rf out.c");
+// #endif
+//   }
 
   delete[] source;
   delete expression;

@@ -22,6 +22,10 @@ enum class AstNodeType {
   TYPE,
   TYPE_STRUCT,
 
+  // Array
+  ARRAY_TYPE,
+  ARRAY,
+
   // Statements
   EXPRESSION,
   PRINT,
@@ -126,6 +130,19 @@ public:
   };
   struct NilLiteral : public Expr {
     NilLiteral() {}
+  };
+
+  // ! Array
+  struct ArrayType {
+    AstNode *type;
+
+    ArrayType(AstNode *type) : type(type) {}
+  };
+
+  struct Array : public Expr {
+    std::vector<AstNode *> elements;
+
+    Array(std::vector<AstNode *> elements) : elements(elements) {}
   };
 
   // ! Statements

@@ -33,9 +33,9 @@ void Gen::functionDeclaration(std::ofstream &file, AstNode *node) {
       }
       fun->paramType.erase(fun->paramType.begin());
 
+      printTypeToFile(file, paramType);
       const char *paramName = strtok(const_cast<char *>(parameter.start), " ");
       paramName = strtok(const_cast<char *>(paramName), ":");
-      printTypeToFile(file, paramType);
       file << paramName;
       if (fun->parameters.size() > 1)
         file << ", ";

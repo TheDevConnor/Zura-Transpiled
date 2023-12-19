@@ -8,7 +8,7 @@ void AstNode::printVarDeclaration(AstNode::VarDeclaration *varDeclaration,
     std::cout << " ";
 
   varDeclaration->name.start =
-      strtok(const_cast<char *>(varDeclaration->name.start), "<");
+      strtok(const_cast<char *>(varDeclaration->name.start), ":");
   std::cout << "Name: " << varDeclaration->name.start << std::endl;
 
   if (varDeclaration->type) {
@@ -116,7 +116,10 @@ void AstNode::printAst(AstNode *node, int indent) {
 
   case AstNodeType::TYPE: {
     AstNode::Type *type = (AstNode::Type *)node->data;
-    std::cout << "Type-TK-Kind: " << type->type.kind << std::endl;
+    type->type.start = strtok(const_cast<char *>(type->type.start), " ");
+    type->type.start = strtok(const_cast<char *>(type->type.start), ":");
+    type->type.start = strtok(const_cast<char *>(type->type.start), ";");
+    std::cout << "Type: " << type->type.start << std::endl;
     break;
   }
   case AstNodeType::TYPE_STRUCT: {
@@ -125,6 +128,20 @@ void AstNode::printAst(AstNode *node, int indent) {
     std::cout << "Name: " << typeStruct->name.start << std::endl;
     for (AstNode *field : typeStruct->fields)
       printAst(field, indent + 2);
+    break;
+  }
+
+  case AstNodeType::ARRAY: {
+    AstNode::Array *array = (AstNode::Array *)node->data;
+    std::cout << "Array: " << std::endl;
+    for (AstNode *element : array->elements)
+      printAst(element, indent + 2);
+    break;
+  }
+  case AstNodeType::ARRAY_TYPE: {
+    AstNode::ArrayType *arrayType = (AstNode::ArrayType *)node->data;
+    std::cout << "ArrayType: " << std::endl;
+    printAst(arrayType->type, indent + 2);
     break;
   }
 
@@ -154,22 +171,6 @@ void AstNode::printAst(AstNode *node, int indent) {
     // Find the parameters and their types
     if (functionDeclaration->parameters.size() > 0) {
       for (Lexer::Token parameter : functionDeclaration->parameters) {
-        const char *type = nullptr;
-        switch (functionDeclaration->paramType.front()->type) {
-        case AstNodeType::TYPE: {
-          AstNode::Type *typeNode =
-              (AstNode::Type *)functionDeclaration->paramType.front()->data;
-          type = typeNode->type.start;
-          type = strtok(const_cast<char *>(type), ",");
-          type = strtok(const_cast<char *>(type), ")");
-          break;
-        }
-        default:
-          break;
-        }
-        functionDeclaration->paramType.erase(
-            functionDeclaration->paramType.begin());
-
         const char *name = strtok(const_cast<char *>(parameter.start), " ");
         name = strtok(const_cast<char *>(name), ":");
         for (int i = 0; i < indent + 2; i++)
@@ -178,9 +179,24 @@ void AstNode::printAst(AstNode *node, int indent) {
         for (int i = 0; i < indent + 4; i++)
           std::cout << " ";
         std::cout << "Name: " << name << std::endl;
-        for (int i = 0; i < indent + 4; i++)
-          std::cout << " ";
-        std::cout << "Type: " << type << std::endl;
+
+        const char *type = nullptr;
+        switch (functionDeclaration->paramType.front()->type) {
+        case AstNodeType::TYPE: {
+          AstNode::Type *typeNode =
+              (AstNode::Type *)functionDeclaration->paramType.front()->data;
+          type = strtok(const_cast<char *>(typeNode->type.start), ",");
+          type = strtok(const_cast<char *>(type), ")");
+          for (int i = 0; i < indent + 4; i++)
+            std::cout << " ";
+          std::cout << "Type: " << type << std::endl;
+          break;
+        }
+        default:
+          break;
+        }
+        functionDeclaration->paramType.erase(
+            functionDeclaration->paramType.begin());
       }
     }
 

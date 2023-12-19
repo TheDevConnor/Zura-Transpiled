@@ -10,7 +10,7 @@ Examples for Zura!
 
 ## Hello World
 ```zura
-fn main(argc: i8, argv: str[]) <i8> {
+fn main(argc: i8, argv: []str) <i8> {
     info "Hello World!";
     exit 0;
 }
@@ -18,7 +18,7 @@ fn main(argc: i8, argv: str[]) <i8> {
 BOOM! You just wrote your first Zura program! Now let's break it down.
 
 ```zura
-fn main(argc: i8, argv: str[]) <i8> {
+fn main(argc: i8, argv: []str) <i8> {
 ```
 This marks the main function, a mandatory element in every Zura program. The main function must yield an integer and accepts two arguments: argc, denoting the argument count, and argv, an array of strings containing program arguments.
 
@@ -39,7 +39,7 @@ This denotes the conclusion of the main function, a standard requirement for all
 
 ## Comments
 ```zura
-fn main(argc: i8, argv: str[]) <i8> {
+fn main(argc: i8, argv: []str) i8 {
     // This is a single line comment
     /*
         :( Not supported yet
@@ -53,7 +53,7 @@ Comments are very simple in Zura. Single line comments are denoted by two forwar
 ## Binary Operators
 In Zura there are 6 binary operators: +, -, *, /, %, and ^ by default. These operators are used to perform arithmetic operations on numbers. Here is an examples:
 ```zura
-fn main(argc: i8, argv: str[]) <i8> {
+fn main(argc: i8, argv: []str) i8 {
     have x: i8 = 1 + (2 * 3) / 4 % 5; // Which returns 2
     info "%d", x;
     exit 0;
@@ -64,7 +64,7 @@ The '^' is not supported yet. It will be added in the future.
 
 ## Variables
 ```zura
-fn main(argc: i8, argv: str[]) <i8> {
+fn main(argc: i8, argv: []str) i8 {
     have x: i8 = 0; // staticly typed variable
     auto y := 0;     // dynamically typed variable
     info "%d + %d = %d", x, y, x + y;
@@ -93,11 +93,11 @@ The rest of the program is the same as the previous example. With the exit funct
 
 ## Functions
 ```zura
-fn add(x: i8, y: i8) <i8> {
+fn add(x: i8, y: i8) i8 {
     return x + y;
 }
 
-fn main(argc: i8, argv: str[]) <i8> {
+fn main(argc: i8, argv: str[]) i8 {
     info "%d + %d = %d", 1, 2, add(1, 2);
     exit 0;
 }
@@ -105,14 +105,14 @@ fn main(argc: i8, argv: str[]) <i8> {
 This simple example introduces a function, akin to prior examples, but with a return type and statement.
 
 ```zura
-fn add(x: i8, y: i8) <i8> {
+fn add(x: i8, y: i8) i8 {
     return x + y;
 }
 ```
 This declares the add function, specifying its name, arguments, return type, and body containing a return statement. To write a function, we must first use the fn keyword, followed by the function name, then the arguments, then the return type, and finally the body of the function. The body of the function is denoted by the opening and closing braces. The return statement returns the value of the expression following it. In this case, the sum of x and y.
 
 ```zura
-fn main(argc: i8, argv: str[]) <i8> {
+fn main(argc: i8, argv: []str) i8 {
     info "%d + %d = %d", 1, 2, add(1, 2);
     exit 0;
 }
@@ -121,8 +121,8 @@ This declares the add function, specifying its name, arguments, return type, and
 
 ### Nested Functions
 ```zura
-fn main(argc: i8, argv: str[]) <i8> {
-    fn add(x: i8, y: i8) <i8> {
+fn main(argc: i8, argv: []str) i8 {
+    fn add(x: i8, y: i8) i8 {
         return x + y;
     }
     info "%d + %d = %d", 1, 2, add(1, 2);

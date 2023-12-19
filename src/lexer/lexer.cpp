@@ -223,6 +223,10 @@ Lexer::Token Lexer::scanToken() {
     return makeToken(TokenKind::COLON);
   case '=':
     return makeToken(TokenKind::EQUAL);
+  case '[':
+    return makeToken(TokenKind::LEFT_BRACKET);
+  case ']':
+    return makeToken(TokenKind::RIGHT_BRACKET);
   case '!':
     return makeToken(match('=') ? TokenKind::BANG_EQUAL : TokenKind::BANG);
   case '<':

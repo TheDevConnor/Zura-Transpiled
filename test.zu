@@ -1,5 +1,6 @@
-fn main(argc: i8, argv: str) <i8> {
-    have x <f32> := 1 + (2 * 3) / (4 % 5);
-    info "%f \n", x;
-    exit 0;
+fn main(argc: i8, argv: []str) i8 {
+    have a: i8 = 10;
+    have b: i8 = 20;
+    info "%d + %d = %d", a, b, a + b;
+    return 0;
 }

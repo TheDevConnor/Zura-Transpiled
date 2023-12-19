@@ -105,6 +105,12 @@ AstNode *Parser::functionDeclaration() {
 
       consume(TokenKind::COLON,
               "Expected ':' after param name for type annotation");
+      // check expression for an array type annotation
+      if (match(TokenKind::LEFT_BRACKET)) {
+        pType = expression();
+      } else {
+        pType = findType(pType);
+      }
       paramType.push_back(findType(pType));
       advance();
 
@@ -114,13 +120,11 @@ AstNode *Parser::functionDeclaration() {
 
   // The type to be returned '<type>'
   AstNode *type = nullptr;
-  if (match(TokenKind::LESS)) {
-    type = findType(type);
-    advance();
-  } else
-    ParserError::error(
-        currentToken, "Expected '<' followed by return type annotation", lexer);
-  consume(TokenKind::GREATER, "Expected '>' after type annotation");
+  type = (currentToken.kind == TokenKind::RIGHT_BRACKET) ? expression() : findType(type);
+  if (type == nullptr)
+    ParserError::error(currentToken, "Expected return type for the function.", lexer);
+  advance();
+
   consume(TokenKind::LEFT_BRACE, "Expected '{' before function body");
   AstNode *body = blockStatement();
 
@@ -135,15 +139,18 @@ AstNode *Parser::varDeclaration() {
   Lexer::Token name = previousToken;
 
   AstNode *type = nullptr;
-  if (match(TokenKind::LESS)) {
-    type = findType(type);
+  if (match(TokenKind::COLON)) {
+    if (match(TokenKind::LEFT_BRACKET)) {
+      type = expression();
+    } else {
+      type = findType(type);
+    }
     advance();
-    consume(TokenKind::GREATER, "Expected '>' after type annotation");
   }
 
   AstNode *initializer = nullptr;
-  if (match(TokenKind::COLON) && match(TokenKind::EQUAL))
-    initializer = expression(); // := because the lexer not wont to work
+  if (match(TokenKind::EQUAL))
+    initializer = expression();
   else
     ParserError::error(currentToken,
                        "Expected ':' followed by '=' after variable type "

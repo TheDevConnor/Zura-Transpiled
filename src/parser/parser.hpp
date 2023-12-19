@@ -43,11 +43,13 @@ private:
   AstNode *findType(AstNode *type);
 
   // Helper
+  TokenKind checkType();
+  Lexer::Token peek(int offset);
+
   bool match(TokenKind kinds);
 
   void consume(TokenKind kind, std::string message);
   void advance();
-  Lexer::Token peek(int offset);
   void synchronize();
 
   int getPrecedence();
