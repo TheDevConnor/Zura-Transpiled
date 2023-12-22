@@ -1,6 +1,4 @@
-fn main(argc: i8, argv: []str) i8 {
-    have a: i8 = 10;
-    have b: i8 = 20;
-    info "%d + %d = %d", a, b, a + b;
-    return 0;
+fn main() i8 {
+  info "Hello, World!";
+  exit 0;
 }

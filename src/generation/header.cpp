@@ -1,9 +1,38 @@
 #include "gen.hpp"
 #include <fstream>
+#include <iostream>
+
+void Gen::secData(std::ofstream &file, AstNode::Program *node) {
+  file << "section .data\n";
+
+  for (AstNode *child : node->statements) {
+    if (child->type == AstNodeType::FUNCTION_DECLARATION) {
+      AstNode::FunctionDeclaration *fun =
+          static_cast<AstNode::FunctionDeclaration *>(child->data);
+      AstNode::Block *block = static_cast<AstNode::Block *>(fun->body->data);
+
+      for (AstNode *stmt : block->statements) {
+        if (stmt->type == AstNodeType::PRINT) {
+          AstNode::Print *print = static_cast<AstNode::Print *>(stmt->data);
+          AstNode::StringLiteral *str = static_cast<AstNode::StringLiteral *>(print->expression->data);
+
+          file << "\t" << "fmt db \"" << str->value << "\", 10, 0\n";
+        }
+      }
+
+    }
+  }
+
+  file << "\n";
+}
+
+void Gen::secText(std::ofstream &file) {
+  file << "section .text\n";
+  file << "\tglobal main\n";
+  file << "\textern printf, exit\n";
+}
 
 void Gen::headerImport(std::ofstream &file) {
-  file << "#include <stdio.h>  \n";
-  file << "#include <stdint.h> \n";
-  file << "#include <stdbool.h>\n";
-  file << "#include <stdlib.h> \n";
+  // section .text
+  secText(file);
 }

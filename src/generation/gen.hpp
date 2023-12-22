@@ -14,8 +14,12 @@ public:
   // Header
   void findBinaryOp(std::ofstream &file, AstNode::Binary *op);
   void expression(std::ofstream &file, AstNode *node);
+  void secData(std::ofstream &file, AstNode::Program *node);
   void body(std::ofstream &file, AstNode *node);
   void headerImport(std::ofstream &file);
+  void prologue(std::ofstream &file);
+  void epilogue(std::ofstream &file);
+  void secText(std::ofstream &file);
   void generate();
 
   // Body

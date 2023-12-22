@@ -30,8 +30,10 @@ void Flags::compilerDelete(char **argv) {
   Exit(ExitValue::FLAGS_PRINTED);
 }
 
-void Flags::compileToC(std::string name) {
-  std::string compileCommand = "gcc -o " + name + " out.c";
+void Flags::compileToAsm(std::string name) {
+  std::string buildCommand = "nasm -f elf32 out.asm -o out.o";
+  std::string compileCommand = "gcc -m32 -o " + name + " out.o";
+  system(buildCommand.c_str());
   system(compileCommand.c_str());
 }
 
@@ -64,17 +66,17 @@ void Flags::runFile(const char *path, std::string outName, bool save) {
   // TODO: Implement a type checker
   // Type type(expression);
 
-//   Gen gen(expression);
+  Gen gen(expression);
 
-//   compileToC(outName);
+  compileToAsm(outName);
 
-//   if (!save) {
-// #ifdef _WIN32
-//     system("del out.c");
-// #else
-//     system("rm -rf out.c");
-// #endif
-//   }
+  if (!save) {
+#ifdef _WIN32
+    system("del out.asm out.o");
+#else
+    system("rm -rf out.asm out.o");
+#endif
+  }
 
   delete[] source;
   delete expression;

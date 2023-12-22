@@ -5,13 +5,11 @@ Gen::Gen(AstNode *ast) : ast(ast) { generate(); }
 
 void Gen::generate() {
   std::ofstream file;
-  file.open("out.c");
+  file.open("out.asm");
 
-  file << "// -----------------------------------------\n";
-  file << "// Compile Zura to C\n";
-  file << "// -----------------------------------------\n\n";
-
-  headerImport(file);
+  file << "; -----------------------------------------\n";
+  file << "; Compile Zura to Asm\n";
+  file << "; -----------------------------------------\n\n";
 
   body(file, ast);
 }

@@ -1,8 +1,9 @@
-#include <iostream>
+#pragma once
 
 #include "../../../inc/colorize.hpp"
 #include "../../common.hpp"
 #include "../../lexer/lexer.hpp"
+#include <iostream>
 
 class ParserError {
 public:

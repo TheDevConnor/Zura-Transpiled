@@ -2,3 +2,6 @@
 build
 *.c
 .vscode
+*.asm
+*.o
+main
