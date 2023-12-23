@@ -2,6 +2,7 @@
 #include <iostream>
 
 #include "../inc/colorize.hpp"
+#include "../inc/update.hpp"
 #include "common.hpp"
 #include "helper/flags.hpp"
 
@@ -36,7 +37,7 @@ int main(int argc, char **argv) {
 
   // update
   if (argc == 2 && strcmp(argv[1], "--update") == 0) {
-    system("python scripts/update.py");
+    installer();
     Exit(ExitValue::UPDATED);
   }
 

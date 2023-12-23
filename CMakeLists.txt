@@ -10,7 +10,9 @@ set(ZURA_HEADER_FILES
     src/parser/parser.hpp
     src/helper/flags.hpp
     src/lexer/lexer.hpp
+    inc/colorize.hpp
     src/ast/ast.hpp
+    inc/update.hpp
     src/common.hpp
 )
 
