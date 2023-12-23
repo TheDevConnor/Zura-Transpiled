@@ -51,5 +51,6 @@
         "map": "cpp",
         "cstring": "cpp",
         "cinttypes": "cpp"
-    }
+    },
+    "C_Cpp.errorSquiggles": "enabled"
 }
