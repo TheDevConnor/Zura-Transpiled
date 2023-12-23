@@ -1,6 +1,5 @@
 #include <cstring>
 #include <fstream>
-#include <iostream>
 
 #include "../ast/ast.hpp"
 #include "../lexer/lexer.hpp"
@@ -12,7 +11,7 @@ void Gen::functionDeclaration(std::ofstream &file, AstNode *node) {
 
   const char *name = fun->name.start;
   name = strtok(const_cast<char *>(name), "(");
-  file << name << ":\n";
+  file << "\n" << name << ":\n";
 
   prologue(file);
 

@@ -1,11 +1,23 @@
 #include "gen.hpp"
+#include <cstring>
 #include <fstream>
-#include <iostream>
 
 void Gen::secData(std::ofstream &file, AstNode::Program *node) {
   file << "section .data\n";
 
   for (AstNode *child : node->statements) {
+    if (child->type == AstNodeType::VAR_DECLARATION) {
+      globalVar = true;
+      // (x db 10)
+      AstNode::VarDeclaration *var =
+          static_cast<AstNode::VarDeclaration *>(child->data);
+      var->name.start = strtok(const_cast<char *>(var->name.start), ":");
+      file << " ; This is a global var\n";
+      file << "\t" << var->name.start << " db ";
+
+      expression(file, var->initializer);
+      file << "\n";
+    }
     if (child->type == AstNodeType::FUNCTION_DECLARATION) {
       AstNode::FunctionDeclaration *fun =
           static_cast<AstNode::FunctionDeclaration *>(child->data);
@@ -14,12 +26,13 @@ void Gen::secData(std::ofstream &file, AstNode::Program *node) {
       for (AstNode *stmt : block->statements) {
         if (stmt->type == AstNodeType::PRINT) {
           AstNode::Print *print = static_cast<AstNode::Print *>(stmt->data);
-          AstNode::StringLiteral *str = static_cast<AstNode::StringLiteral *>(print->expression->data);
+          AstNode::StringLiteral *str =
+              static_cast<AstNode::StringLiteral *>(print->expression->data);
 
-          file << "\t" << "fmt db \"" << str->value << "\", 10, 0\n";
+          file << "\t"
+               << "fmt db \"" << str->value << "\", 10, 0\n";
         }
       }
-
     }
   }
 

@@ -19,12 +19,12 @@ void Flags::compilerDelete(char **argv) {
   strcat(rmCommand, "del ");
   strcat(rmCommand, outName.c_str());
   strcat(rmCommand, ".exe");
-  strcat(rmCommand, " out.c");
+  strcat(rmCommand, " out.o out.asm");
   system(rmCommand);
 #else
   strcat(rmCommand, "rm -rf ");
   strcat(rmCommand, outName.c_str());
-  strcat(rmCommand, " out.c");
+  strcat(rmCommand, " out.o out.asm");
   system(rmCommand);
 #endif
   Exit(ExitValue::FLAGS_PRINTED);

@@ -145,19 +145,15 @@ void Gen::callStmt(std::ofstream &file, AstNode *node) {
 void Gen::printStmt(std::ofstream &file, AstNode *node) {
   AstNode::Print *print = static_cast<AstNode::Print *>(node->data);
 
-  // look back to find the section .data
-  std::ifstream fileRead("out.asm");
-  std::string line;
-  std::string fmt;
-  while (std::getline(fileRead, line)) {
-    if (line.find("section .data") != std::string::npos) {
-      std::getline(fileRead, line);
-      std::cout << line << std::endl;
-      fmt = line;
-      break;
-    }
+  while (globalVar == true) {
+    file << "\t; Callthe global var\n";
+    file << "\tmovzx eax, byte [x] \n";
+    file << "\tpush eax";
+    globalVar = false;
   }
 
+  file << "\n";
+  file << "  ; Call printf \n";
   file << "  push dword fmt\n";
   file << "  call printf\n";
   file << "  add esp, 8\n\n";

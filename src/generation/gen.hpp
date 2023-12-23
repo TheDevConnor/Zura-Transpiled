@@ -7,6 +7,9 @@ public:
 
   Gen(AstNode *ast);
 
+  bool globalVar = false;
+  bool localVar = false;
+
   // Helpers
   void printTypeToFile(std::ofstream &file, const char *type);
   const char *findType(AstNode *node);

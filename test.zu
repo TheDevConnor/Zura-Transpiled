@@ -1,4 +1,6 @@
+have x: i8 = 20;
+
 fn main() i8 {
-  info "Hello, World!";
+  info "%d", x;
   exit 0;
 }
