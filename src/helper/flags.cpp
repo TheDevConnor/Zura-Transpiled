@@ -81,3 +81,17 @@ void Flags::runFile(const char *path, std::string outName, bool save) {
   delete[] source;
   delete expression;
 }
+
+void Flags::outputASMFile(const char *path) {
+  const char *source = readFile(path);
+
+  std::cout << "Generating the asm file" << std::endl;
+
+  Parser parser(source);
+  AstNode *expr = parser.parse();
+
+  Gen gen(expr);
+
+  delete[] source;
+  delete expr;
+}

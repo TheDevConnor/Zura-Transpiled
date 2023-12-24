@@ -18,7 +18,9 @@ int main(int argc, char **argv) {
     cout << "  --update\t\t\tUpdates the Zura compiler" << endl;
     cout << "Compiler:" << endl;
     cout << termcolor::red << "   -s" << termcolor::reset
-         << ", \t\tsave the generated c file and the out.o file" << endl;
+         << ", \t\tSave the generated asm file and the out.o file" << endl;
+    cout << termcolor::red << "   -sa" << termcolor::reset
+         << ", \tOutput just the asm file" << endl;
     cout << termcolor::red << "   -o" << termcolor::reset
          << ", \t\tOutput the transpiled file to <file>" << endl;
     cout << termcolor::red << "   -r" << termcolor::reset
@@ -53,6 +55,10 @@ int main(int argc, char **argv) {
   // (delete)
   if (argc == 3 && strcmp(argv[1], "-c") == 0)
     Flags::compilerDelete(argv);
+  // (output the asm)
+  if (argc == 3 && strcmp(argv[1], "-sa") == 0) {
+    Flags::outputASMFile(argv[2]);
+  }
   // (transpile)
   if (argc == 4 && strcmp(argv[2], "-o") == 0) {
     char *outName = argv[3];
