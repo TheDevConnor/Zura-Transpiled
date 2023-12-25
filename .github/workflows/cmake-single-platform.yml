@@ -7,7 +7,7 @@ on:
 jobs:
   pre-release:
     name: "Pre release (Linux)"
-    runs-on: arch-latest
+    runs-on: ubuntu-latest
 
     steps:
       - name: "Checkout code"
