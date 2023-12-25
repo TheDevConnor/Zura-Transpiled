@@ -6,7 +6,7 @@ on:
 
 jobs:
   pre-release:
-    name: "Pre release"
+    name: "Pre release (Linux)"
     runs-on: ubuntu-latest
 
     steps:
@@ -35,7 +35,7 @@ jobs:
   
       - name: "Build environment (Windows)"
         run: |
-          cmake -S . -B build
+          cmake -S . -B build -G "MinGW Makefiles"
           cmake --build build
   
       - name: "Upload artifacts (Windows)"
@@ -43,9 +43,8 @@ jobs:
         with:
           name: windows-artifacts
           path: |
-            ./build/Debug/zura.exe
+            ./build/zura.exe
             
-
   combine-artifacts:
     name: "Combine Artifacts"
     runs-on: ubuntu-latest
