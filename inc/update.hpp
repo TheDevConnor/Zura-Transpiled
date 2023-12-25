@@ -50,15 +50,14 @@ void installer() {
 
   if (os_name == "windows") {
     url.append("pre-release/zura.exe");
+    std::string command = "curl -LO " + url;
+    runSystemCommand(command);
 
     std::ifstream f("C:\\Windows\\System32\\zura.exe");
     if (f.good()) {
       promptUpdate();
       runSystemCommand("del C:\\Windows\\System32\\zura.exe");
     }
-
-    std::string command = "curl -LO " + url;
-    runSystemCommand(command);
 
     // Prompt the user for admin privileges and move the file to System32
     command = "powershell -Command \"Start-Process cmd -Verb RunAs "
@@ -72,16 +71,15 @@ void installer() {
   } else if (os_name == "linux" || os_name == "darwin") {
     url.append("pre-release/zura");
     std::string command = "curl -LO " + url;
+    runSystemCommand(command);
+
+    chmod("zura", 0777);
 
     std::ifstream f("/usr/bin/zura");
     if (f.good()) {
       promptUpdate();
       runSystemCommand("sudo rm /usr/bin/zura");
     }
-
-    runSystemCommand(command);
-
-    chmod("zura", 0777);
 
     command = "sudo mv zura /usr/bin";
     std::cout
