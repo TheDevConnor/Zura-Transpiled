@@ -1,3 +1,9 @@
-fn main() str {
+/* 
+  // This is a multi-line comment.
+  *
+  /
+*/
+
+fn main() i8 {
   exit 0;
 }

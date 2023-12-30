@@ -163,13 +163,30 @@ void Lexer::skipWhitespace() {
       advance();
       break;
     case '/':
-      if (peekNext() == '/') {
+      advance();
+      if (peek() == '/') {
         // A comment goes until the end of the line.
         while (peek() != '\n' && !isAtEnd())
           advance();
-      } else {
-        return;
+      } 
+      if (peek() == '*') {
+        advance();
+        while (peek() != '/' && !isAtEnd()) {
+          while (peek() != '*' && !isAtEnd()) {
+            if (peek() == '\n')
+              scanner.line++;
+            advance();
+          }
+          if (isAtEnd())
+            errorToken("Unterminated multi-comment.");
+
+          advance();
+        }
+        advance();
+        advance();
       }
+      else
+        return;
       break;
     default:
       return;
