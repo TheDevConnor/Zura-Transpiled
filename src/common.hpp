@@ -10,6 +10,7 @@ enum ExitValue {
   PARSER_ERROR = 4,
   GENERATOR_ERROR = 5,
   UPDATED = 6,
+  INVALID_TYPE = 7,
 };
 
 inline void Exit(ExitValue exitValue) { exit(ExitValue(exitValue)); }

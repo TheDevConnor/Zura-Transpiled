@@ -10,6 +10,7 @@ set(ZURA_HEADER_FILES
     src/parser/parser.hpp
     src/helper/flags.hpp
     src/lexer/lexer.hpp
+    src/type/type.hpp
     inc/colorize.hpp
     src/ast/ast.hpp
     inc/update.hpp
@@ -28,6 +29,7 @@ set(ZURA_SOURCE_FILES
     src/parser/stmt.cpp
     src/lexer/lexer.cpp
     src/parser/def.cpp
+    src/type/type.cpp
     src/ast/ast.cpp
     src/main.cpp
 )

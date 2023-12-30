@@ -1,6 +1,3 @@
-have x: i8 = 20;
-
-fn main() i8 {
-  info "%d", x;
+fn main() str {
   exit 0;
 }

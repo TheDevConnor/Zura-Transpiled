@@ -28,7 +28,7 @@ void Gen::secData(std::ofstream &file, AstNode::Program *node) {
           AstNode::Print *print = static_cast<AstNode::Print *>(stmt->data);
           AstNode::StringLiteral *str =
               static_cast<AstNode::StringLiteral *>(print->expression->data);
-
+          str->value = strtok(const_cast<char *>(str->value.c_str()), "\"");
           file << "\t"
                << "fmt db \"" << str->value << "\", 10, 0\n";
         }

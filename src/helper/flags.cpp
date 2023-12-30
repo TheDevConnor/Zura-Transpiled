@@ -2,10 +2,11 @@
 #include <fstream>
 #include <iostream>
 
-#include "../ast/ast.hpp"
-#include "../common.hpp"
 #include "../generation/gen.hpp"
 #include "../parser/parser.hpp"
+#include "../type/type.hpp"
+#include "../ast/ast.hpp"
+#include "../common.hpp"
 #include "flags.hpp"
 
 using namespace std;
@@ -61,13 +62,11 @@ void Flags::runFile(const char *path, std::string outName, bool save) {
 
   Parser parser(source);
   AstNode *expression = parser.parse();
-  expression->printAst(expression, 0);
 
-  // TODO: Implement a type checker
-  // Type type(expression);
+  Type type(expression);
+  type.typeCheck(expression);
 
   Gen gen(expression);
-
   compileToAsm(outName);
 
   if (!save) {

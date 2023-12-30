@@ -10,7 +10,7 @@ Examples for Zura!
 
 ## Hello World
 ```zura
-fn main(argc: i8, argv: []str) <i8> {
+fn main(argc: i8, argv: []str) i8 {
     info "Hello World!";
     exit 0;
 }
@@ -18,7 +18,7 @@ fn main(argc: i8, argv: []str) <i8> {
 BOOM! You just wrote your first Zura program! Now let's break it down.
 
 ```zura
-fn main(argc: i8, argv: []str) <i8> {
+fn main(argc: i8, argv: []str) i8 {
 ```
 This marks the main function, a mandatory element in every Zura program. The main function must yield an integer and accepts two arguments: argc, denoting the argument count, and argv, an array of strings containing program arguments.
 
