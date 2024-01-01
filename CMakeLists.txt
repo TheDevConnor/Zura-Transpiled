@@ -11,6 +11,7 @@ set(ZURA_HEADER_FILES
     src/helper/flags.hpp
     src/lexer/lexer.hpp
     src/type/type.hpp
+    src/type/error.hpp
     inc/colorize.hpp
     src/ast/ast.hpp
     inc/update.hpp
@@ -18,13 +19,10 @@ set(ZURA_HEADER_FILES
 )
 
 set(ZURA_SOURCE_FILES
-    src/generation/header.cpp
-    src/generation/body.cpp
-    src/generation/func.cpp
-    src/generation/type.cpp
     src/generation/gen.cpp
     src/parser/parser.cpp
     src/helper/flags.cpp
+    src/type/detType.cpp
     src/parser/expr.cpp
     src/parser/stmt.cpp
     src/lexer/lexer.cpp

@@ -63,19 +63,22 @@ void Flags::runFile(const char *path, std::string outName, bool save) {
   Parser parser(source);
   AstNode *expression = parser.parse();
 
+  expression->printAst(expression, 0);
+
   Type type(expression);
   type.typeCheck(expression);
 
-  Gen gen(expression);
-  compileToAsm(outName);
+  // TODO: Redo generation code
+  // Gen gen(expression);
+  // compileToAsm(outName);
 
-  if (!save) {
-#ifdef _WIN32
-    system("del out.asm out.o");
-#else
-    system("rm -rf out.asm out.o");
-#endif
-  }
+//   if (!save) {
+// #ifdef _WIN32
+//     system("del out.asm out.o");
+// #else
+//     system("rm -rf out.asm out.o");
+// #endif
+// }
 
   delete[] source;
   delete expression;
@@ -89,7 +92,11 @@ void Flags::outputASMFile(const char *path) {
   Parser parser(source);
   AstNode *expr = parser.parse();
 
-  Gen gen(expr);
+  Type type(expr);
+  type.typeCheck(expr);
+
+  // TODO: Redo generation code
+  // Gen gen(expr);
 
   delete[] source;
   delete expr;

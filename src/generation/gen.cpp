@@ -8,8 +8,8 @@ void Gen::generate() {
   file.open("out.asm");
 
   file << "; -----------------------------------------\n";
-  file << "; Compile Zura to Asm\n";
+  file << "; Compile Zura to X86_Asm\n";
   file << "; -----------------------------------------\n\n";
 
-  body(file, ast);
+  // TODO: Generate asm code from ast
 }

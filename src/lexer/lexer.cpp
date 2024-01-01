@@ -107,7 +107,7 @@ TokenKind Lexer::checkKeyword(std::string identifier) {
       {"if", TokenKind::IF},
       {"nil", TokenKind::NIL},
       {"or", TokenKind::OR},
-      {"info", TokenKind::PRINT},
+      {"dis", TokenKind::PRINT},
       {"return", TokenKind::RETURN},
       {"exit", TokenKind::EXIT},
       {"super", TokenKind::SUPER},
@@ -164,29 +164,25 @@ void Lexer::skipWhitespace() {
       break;
     case '/':
       advance();
+      // check for a comment (//) and a block comment (/*)
       if (peek() == '/') {
-        // A comment goes until the end of the line.
         while (peek() != '\n' && !isAtEnd())
           advance();
-      } 
-      if (peek() == '*') {
+      } else if (peek() == '*') {
         advance();
-        while (peek() != '/' && !isAtEnd()) {
-          while (peek() != '*' && !isAtEnd()) {
-            if (peek() == '\n')
-              scanner.line++;
-            advance();
-          }
-          if (isAtEnd())
-            errorToken("Unterminated multi-comment.");
-
+        while (peek() != '*' && peekNext() != '/' && !isAtEnd()) {
+          if (peek() == '\n')
+            scanner.line++;
           advance();
         }
+        if (isAtEnd())
+          LexerError::error("Unterminated block comment.", scanner.line,
+                            scanner.column);
         advance();
         advance();
-      }
-      else
+      } else {
         return;
+      }
       break;
     default:
       return;
