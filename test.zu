@@ -1,4 +1,39 @@
+/* 
+  Expected output 
+  Error: Cannot cast 'str' to 'i8' in declartion of 'y'
+
+  Expected Ast output
+  Program
+    FunctionDeclaration
+      Name main
+      Type i8
+      Block
+        VarDeclaration
+          Name x
+          Type
+            Type i8
+          Initializer
+            NumberLiteral 1
+        VarDeclaration
+          Name y
+          Type
+            Type str
+          Initializer
+            NumberLiteral 10
+        Print
+          StringLiteral %d\n
+          Binary-TK-Kind 9
+              Identifier x + y
+              Identifier y
+        Exit
+          NumberLiteral 0
+*/
+
 fn main () i8 {
-  dis "Hello, World!";
-  exit 10;
+  have x: i8 = 1;
+  have y: str = 10;
+
+  dis "%d\n", x + y;
+
+  exit 0;
 }

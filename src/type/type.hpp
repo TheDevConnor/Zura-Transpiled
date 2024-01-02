@@ -33,8 +33,13 @@ private:
   constexpr static double FLOAT64_min = -1.7976931348623158e+308;
 
   static std::unordered_map<std::string, AstNode::Type *> typeMap;
-  static const std::vector<std::vector<std::string>> upCastArray;
   static std::unordered_map<std::string, int> typeIndices;
+
+  static std::vector<std::pair<std::string, std::string>> paramTypes;
+  // static std::vector<std::pair<std::string, std::string>> varTypes;
+
+  static const std::vector<std::vector<std::string>> downCastArray;
+  static const std::vector<std::vector<std::string>> upCastArray;
   static const std::vector<MinMaxType> typeArray;
 
   struct MinMaxType {
@@ -45,12 +50,19 @@ private:
 
   static void checkForErrors(AstNode::Type *type, AstNode::Type *returnType,
                              std::string name);
+  static void checkCastOfStr(AstNode::Type *type, AstNode::Type *returnType,
+                             std::string name);
 
   static void checkExpression(AstNode *expr);
   static void checkBody(AstNode *body);
 
   static AstNode::Type *determineIfUpCast(AstNode::Type *type,
                                           AstNode::Type *returnType);
+  static AstNode::Type *determineIfDownCast(AstNode::Type *type,
+                                         AstNode::Type *returnType);
   static AstNode::Type *findType(const std::string &typeName);
   static AstNode::Type *determineType(double value);
 };
+
+
+// TODO: Add in checking for function calls and update them to be able to be called by themselves

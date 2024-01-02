@@ -6,13 +6,23 @@
 #include "../common.hpp"
 #include "type.hpp"
 
+void Type::checkCastOfStr(AstNode::Type *type, AstNode::Type *returnType,
+                          std::string name) {
+    if (strcmp(type->type.start, "str") == 0 &&
+    strcmp(returnType->type.start, "str") != 0) {
+    std::cout << termcolor::red << "Error: " << termcolor::reset
+              << "Cannot cast '" << type->type.start << "' to '"
+              << returnType->type.start << "' in declartion of '" << name << "'"
+              << std::endl;
+    Exit(ExitValue::INVALID_TYPE);
+  }
+}
+
 void Type::checkForErrors(AstNode::Type *type, AstNode::Type *returnType,
                           std::string name) {
-
+  checkCastOfStr(type, returnType, name);
   type = determineIfUpCast(type, returnType);
-
-  std::cout << "type: " << type->type.start << std::endl;
-  std::cout << "returnType: " << returnType->type.start << std::endl;
+  type = determineIfDownCast(type, returnType);
 
   // string compare the type and returnType
   if (strcmp(type->type.start, returnType->type.start) == 0)
@@ -20,7 +30,7 @@ void Type::checkForErrors(AstNode::Type *type, AstNode::Type *returnType,
 
   std::cout << termcolor::red << "Error: " << termcolor::reset
             << "Expected type '" << type->type.start << "' but got '"
-            << returnType->type.start << "' in function '" << name << "'"
+            << returnType->type.start << "' in declartion of '" << name << "'"
             << std::endl;
   Exit(ExitValue::INVALID_TYPE);
 }
