@@ -198,4 +198,5 @@ public:
   static void printVarDeclaration(AstNode::VarDeclaration *varDeclaration,
                                   int indent);
   static void printAst(AstNode *node, int indent);
+  static void codeGen(AstNode *node);
 };

@@ -2,7 +2,6 @@
 #include <fstream>
 #include <iostream>
 
-#include "../generation/gen.hpp"
 #include "../parser/parser.hpp"
 #include "../type/type.hpp"
 #include "../ast/ast.hpp"
@@ -32,8 +31,8 @@ void Flags::compilerDelete(char **argv) {
 }
 
 void Flags::compileToAsm(std::string name) {
-  std::string buildCommand = "nasm -f elf32 out.asm -o out.o";
-  std::string compileCommand = "gcc -m32 -o " + name + " out.o";
+  std::string buildCommand = "as -o out.o out.s";
+  std::string compileCommand = "ld -o " + name + " out.o -lc --entry=main";
   system(buildCommand.c_str());
   system(compileCommand.c_str());
 }
@@ -68,17 +67,16 @@ void Flags::runFile(const char *path, std::string outName, bool save) {
   Type type(expression);
   type.typeCheck(expression);
 
-  // TODO: Redo generation code
-  // Gen gen(expression);
-  // compileToAsm(outName);
+  AstNode::codeGen(expression);
+  compileToAsm(outName);
 
-//   if (!save) {
-// #ifdef _WIN32
-//     system("del out.asm out.o");
-// #else
-//     system("rm -rf out.asm out.o");
-// #endif
-// }
+  if (!save) {
+#ifdef _WIN32
+    system("del out.s out.o");
+#else
+    system("rm -rf out.s out.o");
+#endif
+}
 
   delete[] source;
   delete expression;

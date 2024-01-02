@@ -1,4 +1,4 @@
 fn main () i8 {
   dis "Hello, World!";
-  exit 127;
+  exit 10;
 }

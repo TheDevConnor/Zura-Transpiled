@@ -1,114 +1,71 @@
-#include <cstdint>
-#include <cstring>
 #include <unordered_map>
+#include <algorithm>
+#include <vector>
 
+#include "../lexer/lexer.hpp"
 #include "../ast/ast.hpp"
 #include "type.hpp"
 
-#define FLOAT32_MAX 3.402823466e+38F
-#define FLOAT32_MIN -3.402823466e+38F
-
-std::unordered_map<std::string, AstNode::Type *> Type::findType = {
-    {"i8",   new AstNode::Type(Lexer::Token{.start = "i8"})},
-    {"i16",  new AstNode::Type(Lexer::Token{.start = "i16"})},
-    {"i32",  new AstNode::Type(Lexer::Token{.start = "i32"})},
-    {"i64",  new AstNode::Type(Lexer::Token{.start = "i64"})},
+std::unordered_map<std::string, AstNode::Type *> Type::typeMap = {
+    {"i8", new AstNode::Type(Lexer::Token{.start = "i8"})},
+    {"i16", new AstNode::Type(Lexer::Token{.start = "i16"})},
+    {"i32", new AstNode::Type(Lexer::Token{.start = "i32"})},
+    {"i64", new AstNode::Type(Lexer::Token{.start = "i64"})},
     {"i128", new AstNode::Type(Lexer::Token{.start = "i128"})},
-    {"f32",  new AstNode::Type(Lexer::Token{.start = "f32"})},
-    {"f64",  new AstNode::Type(Lexer::Token{.start = "f64"})},
-    {"str",  new AstNode::Type(Lexer::Token{.start = "str"})},
+    {"f32", new AstNode::Type(Lexer::Token{.start = "f32"})},
+    {"f64", new AstNode::Type(Lexer::Token{.start = "f64"})},
+    {"str", new AstNode::Type(Lexer::Token{.start = "str"})},
     {"bool", new AstNode::Type(Lexer::Token{.start = "bool"})},
     {"void", new AstNode::Type(Lexer::Token{.start = "void"})}};
 
-AstNode::Type *Type::i8   = findType["i8"];
-AstNode::Type *Type::i16  = findType["i16"];
-AstNode::Type *Type::i32  = findType["i32"];
-AstNode::Type *Type::i64  = findType["i64"];
-AstNode::Type *Type::i128 = findType["i128"];
-AstNode::Type *Type::f32  = findType["f32"];
-AstNode::Type *Type::f64  = findType["f64"];
+const std::vector<Type::MinMaxType> Type::typeArray = {
+    {INT8_min, INT8_max, typeMap["i8"]},
+    {INT16_min, INT16_max, typeMap["i16"]},
+    {INT32_min, INT32_max, typeMap["i32"]},
+    {INT64_min, INT64_max, typeMap["i64"]},
+    {INT128_min, INT128_max, typeMap["i128"]},
+    {FLOAT32_min, FLOAT32_max, typeMap["f32"]},
+    {FLOAT64_min, FLOAT64_max, typeMap["f64"]}};
 
-AstNode::Type *Type::str  = findType["str"];
-AstNode::Type *Type::bool_ = findType["bool"];
-AstNode::Type *Type::void_ = findType["void"];
+const std::vector<std::vector<std::string>> Type::upCastArray = {
+    {"i8", "i16", "i32", "i64", "i128", "f32", "f64"}, // i8
+    {"i16", "i32", "i64", "i128", "f32", "f64"},       // i16
+    {"i32", "i64", "i128", "f32", "f64"},              // i32
+    {"i64", "i128", "f32", "f64"},                     // i64
+    {"i128", "f32", "f64"},                            // i128
+    {"f32", "f64"},                                    // f32
+    {"f64"}};                                          // f64 (no upcast)
 
-void Type::determineType(double value) {
-  if (value == (int)value) {
-    if (value >= INT8_MIN && value <= INT8_MAX) {
-      returnType = i8; return;
-    } else if (value >= INT16_MIN && value <= INT16_MAX) {
-      returnType = i16; return;
-    } else if (value >= INT32_MIN && value <= INT32_MAX) {
-      returnType = i32; return;
-    } else if (value >= INT64_MIN && value <= INT64_MAX) {
-      returnType = i64; return;
-    } else {
-      returnType = i128; return;
-    }
-  } else {
-    if (value >= FLOAT32_MIN && value <= FLOAT32_MAX) {
-      returnType = f32; return;
-    } else {
-      returnType = f64; return;
+std::unordered_map<std::string, int> Type::typeIndices = {
+    {"i8", 0},   {"i16", 1}, {"i32", 2}, {"i64", 3},
+    {"i128", 4}, {"f32", 5}, {"f64", 6}};
+
+AstNode::Type *Type::findType(const std::string &typeName) {
+  auto it = typeMap.find(typeName);
+  return (it != typeMap.end()) ? it->second : nullptr;
+}
+
+AstNode::Type *Type::determineType(double value) {
+  for (auto &type : typeArray) {
+    if (value >= type.min && value <= type.max) {
+      return type.type;
     }
   }
+  return nullptr;
 }
 
 AstNode::Type *Type::determineIfUpCast(AstNode::Type *type,
                                        AstNode::Type *returnType) {
-  if (strcmp(type->type.start, returnType->type.start) == 0)
+  if (type == returnType)
     return type;
 
-  if (strcmp(type->type.start, "i8") == 0) {
-    if (strcmp(returnType->type.start, "i16") == 0 ||
-        strcmp(returnType->type.start, "i32") == 0 ||
-        strcmp(returnType->type.start, "i64") == 0 ||
-        strcmp(returnType->type.start, "i128") == 0 ||
-        strcmp(returnType->type.start, "f32") == 0 ||
-        strcmp(returnType->type.start, "f64") == 0) {
-      type = i16;
-    }
-  }
+  int typeIndex = typeIndices[type->type.start];
 
-  if (strcmp(type->type.start, "i16") == 0) {
-    if (strcmp(returnType->type.start, "i32") == 0 ||
-        strcmp(returnType->type.start, "i64") == 0 ||
-        strcmp(returnType->type.start, "i128") == 0 ||
-        strcmp(returnType->type.start, "f32") == 0 ||
-        strcmp(returnType->type.start, "f64") == 0) {
-      type = i32;
-    }
-  }
+  auto it = std::find(upCastArray[typeIndex].begin(),
+                      upCastArray[typeIndex].end(), returnType->type.start);
 
-  if (strcmp(type->type.start, "i32") == 0) {
-    if (strcmp(returnType->type.start, "i64") == 0 ||
-        strcmp(returnType->type.start, "i128") == 0 ||
-        strcmp(returnType->type.start, "f32") == 0 ||
-        strcmp(returnType->type.start, "f64") == 0) {
-      type = i64;
-    }
-  }
-
-  if (strcmp(type->type.start, "i64") == 0) {
-    if (strcmp(returnType->type.start, "i128") == 0 ||
-        strcmp(returnType->type.start, "f32") == 0 ||
-        strcmp(returnType->type.start, "f64") == 0) {
-      type = i128;
-    }
-  }
-
-  if (strcmp(type->type.start, "i128") == 0) {
-    if (strcmp(returnType->type.start, "f32") == 0 ||
-        strcmp(returnType->type.start, "f64") == 0) {
-      returnType = f32;
-    }
-  }
-
-  if (strcmp(type->type.start, "f32") == 0) {
-    if (strcmp(returnType->type.start, "f64") == 0) {
-      type = f64;
-    }
-  }
+  if (it != upCastArray[typeIndex].end())
+    return returnType;
 
   return type;
 }

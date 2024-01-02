@@ -1,20 +1,19 @@
 #include <cstring>
-#include <iostream>
 
 #include "../ast/ast.hpp"
-#include "error.hpp"
 #include "type.hpp"
 
 void Type::checkExpression(AstNode *expr) {
   if (expr->type == AstNodeType::NUMBER_LITERAL) {
     AstNode::NumberLiteral *numberLiteral =
         (AstNode::NumberLiteral *)expr->data;
-
-    determineType(numberLiteral->value);
+    returnType = determineType(numberLiteral->value);
   }
 
   if (expr->type == AstNodeType::STRING_LITERAL) {
-    returnType = findType["str"];
+    AstNode::StringLiteral *stringLiteral =
+        (AstNode::StringLiteral *)expr->data;
+    returnType = findType(stringLiteral->value);
   }
 }
 
