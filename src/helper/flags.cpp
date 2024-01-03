@@ -31,8 +31,8 @@ void Flags::compilerDelete(char **argv) {
 }
 
 void Flags::compileToAsm(std::string name) {
-  std::string buildCommand = "as -o out.o out.s";
-  std::string compileCommand = "ld -o " + name + " out.o -lc --entry=main";
+  std::string buildCommand = "nasm -elf32 -o out.o out.s";
+  std::string compileCommand = "gcc -m32 -o " + name + " out.o";
   system(buildCommand.c_str());
   system(compileCommand.c_str());
 }

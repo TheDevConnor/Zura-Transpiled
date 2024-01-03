@@ -112,18 +112,32 @@ int Parser::getPrecedence() {
 AstNode *Parser::findType(AstNode *type) {
   switch (currentToken.kind) {
   case I8:
+    type = new AstNode(AstNodeType::TYPE, new AstNode::Type(currentToken));
+    break;
   case I16:
+    type = new AstNode(AstNodeType::TYPE, new AstNode::Type(currentToken));
+    break;
   case I32:
+    type = new AstNode(AstNodeType::TYPE, new AstNode::Type(currentToken));
+    break;
   case I64:
     type = new AstNode(AstNodeType::TYPE, new AstNode::Type(currentToken));
     break;
   case U8:
+    type = new AstNode(AstNodeType::TYPE, new AstNode::Type(currentToken));
+    break;
   case U16:
+    type = new AstNode(AstNodeType::TYPE, new AstNode::Type(currentToken));
+    break;
   case U32:
+    type = new AstNode(AstNodeType::TYPE, new AstNode::Type(currentToken));
+    break;
   case U64:
     type = new AstNode(AstNodeType::TYPE, new AstNode::Type(currentToken));
     break;
   case F32:
+    type = new AstNode(AstNodeType::TYPE, new AstNode::Type(currentToken));
+    break;
   case F64:
     type = new AstNode(AstNodeType::TYPE, new AstNode::Type(currentToken));
     break;
