@@ -91,6 +91,8 @@ void Flags::outputASMFile(const char *path) {
   Type type(expr);
   type.typeCheck(expr);
 
+  std::cout << "Generating the asm file" << std::endl;
+
   AstNode::codeGen(expr);
 
   delete[] source;

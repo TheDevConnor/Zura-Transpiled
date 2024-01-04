@@ -1,18 +1,27 @@
-#include <unordered_map>
-#include <algorithm>
-#include <iostream>
+#include <cstdint>
 #include <cstring>
-#include <vector>
+#include <unordered_map>
 
-#include "../lexer/lexer.hpp"
 #include "../ast/ast.hpp"
-#include "../common.hpp"
 #include "type.hpp"
 
-std::vector<std::pair<std::string, std::string>> Type::paramTypes = {};
-// std::vector<std::pair<std::string, std::string>> Type::varTypes   = {};
+constexpr static int8_t INT8_min = -128;
+constexpr static int8_t INT8_max = 127;
+constexpr static int16_t INT16_min = -32768;
+constexpr static int16_t INT16_max = 32767;
+constexpr static int32_t INT32_min = -2147483648;
+constexpr static int32_t INT32_max = 2147483647;
+constexpr static double INT64_min = -9.223372036854776e+18;
+constexpr static double INT64_max = 9.223372036854776e+18;
+constexpr static __int128_t INT128_min = -1.7014118346e+38;
+constexpr static __int128_t INT128_max = 1.7014118346e+38;
 
-std::unordered_map<std::string, AstNode::Type *> Type::typeMap = {
+constexpr static float FLOAT32_max = 3.402823466e+38F;
+constexpr static float FLOAT32_min = -3.402823466e+38F;
+constexpr static double FLOAT64_max = 1.7976931348623158e+308;
+constexpr static double FLOAT64_min = -1.7976931348623158e+308;
+
+std::unordered_map<std::string, AstNode::Type *> Type::findType = {
     {"i8", new AstNode::Type(Lexer::Token{.start = "i8"})},
     {"i16", new AstNode::Type(Lexer::Token{.start = "i16"})},
     {"i32", new AstNode::Type(Lexer::Token{.start = "i32"})},
@@ -25,80 +34,22 @@ std::unordered_map<std::string, AstNode::Type *> Type::typeMap = {
     {"void", new AstNode::Type(Lexer::Token{.start = "void"})}};
 
 const std::vector<Type::MinMaxType> Type::typeArray = {
-    {INT8_min, INT8_max, typeMap["i8"]},
-    {INT16_min, INT16_max, typeMap["i16"]},
-    {INT32_min, INT32_max, typeMap["i32"]},
-    {INT64_min, INT64_max, typeMap["i64"]},
-    {INT128_min, INT128_max, typeMap["i128"]},
-    {FLOAT32_min, FLOAT32_max, typeMap["f32"]},
-    {FLOAT64_min, FLOAT64_max, typeMap["f64"]},
-    {0, 0, typeMap["str"]}, {0, 0, typeMap["bool"]}, 
-    {0, 0, typeMap["void"]}};
+    {INT8_min, INT8_max, findType["i8"]},
+    {INT16_min, INT16_max, findType["i16"]},
+    {INT32_min, INT32_max, findType["i32"]},
+    {INT64_min, INT64_max, findType["i64"]},
+    {INT128_min, INT128_max, findType["i128"]},
+    {FLOAT32_min, FLOAT32_max, findType["f32"]},
+    {FLOAT64_min, FLOAT64_max, findType["f64"]},
+    {0, 0, findType["str"]},
+    {0, 0, findType["bool"]},
+    {0, 0, findType["void"]}};
 
-const std::vector<std::vector<std::string>> Type::upCastArray = {
-    {"i8", "i16", "i32", "i64", "i128", "f32", "f64"}, // i8
-    {"i16", "i32", "i64", "i128", "f32", "f64"},       // i16
-    {"i32", "i64", "i128", "f32", "f64"},              // i32
-    {"i64", "i128", "f32", "f64"},                     // i64
-    {"i128", "f32", "f64"},                            // i128
-    {"f32", "f64"},                                    // f32
-    {"f64"}};                                          // f64 (no upcast)
-
-const std::vector<std::vector<std::string>> Type::downCastArray = {
-    {"i8"},                         // i8
-    {"i8", "i16"},                  // i16
-    {"i8", "i16", "i32"},           // i32
-    {"i8", "i16", "i32", "i64"},    // i64
-    {"i8", "i16", "i32", "i64"},    // i128
-    {"i8", "i16", "i32", "i64"},    // f32
-    {"i8", "i16", "i32", "i64"}};   // f64
-
-std::unordered_map<std::string, int> Type::typeIndices = {
-    {"i8", 0}, {"i16", 1}, {"i32", 2}, {"i64", 3}, 
-    {"i128", 4}, {"f32", 5}, {"f64", 6}, {"str", 7}};
-
-AstNode::Type *Type::findType(const std::string &typeName) {
-  auto it = typeMap.find(typeName);
-  return (it != typeMap.end()) ? it->second : nullptr;
-}
-
-AstNode::Type *Type::determineType(double value) {
-  for (auto &type : typeArray) {
+void Type::determineType(double value) {
+  for (const MinMaxType &type : typeArray) {
     if (value >= type.min && value <= type.max) {
-      return type.type;
+      returnType = type.type;
+      return;
     }
   }
-  return nullptr;
-}
-
-AstNode::Type *Type::determineIfUpCast(AstNode::Type *type,
-                                       AstNode::Type *returnType) {
-  if (type == returnType)
-    return type;
-
-  int typeIndex = typeIndices[type->type.start];
-
-  auto it = std::find(upCastArray[typeIndex].begin(),
-                      upCastArray[typeIndex].end(), returnType->type.start);
-
-  if (it != upCastArray[typeIndex].end())
-    return returnType;
-
-  return type;
-}
-
-AstNode::Type *Type::determineIfDownCast(AstNode::Type *type,
-                                         AstNode::Type *returnType) {
-  if (type == returnType)
-    return type;
-
-  int typeIndex = typeIndices[type->type.start];
-
-  auto it = std::find(downCastArray[typeIndex].begin(),
-                      downCastArray[typeIndex].end(), returnType->type.start);
-
- if (it != downCastArray[typeIndex].end())
-    return returnType;
-
-  return type;
 }
