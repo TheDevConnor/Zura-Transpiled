@@ -93,8 +93,7 @@ void Flags::outputASMFile(const char *path) {
   Type type(expr);
   type.typeCheck(expr);
 
-  // TODO: Redo generation code
-  // Gen gen(expr);
+  AstNode::codeGen(expr);
 
   delete[] source;
   delete expr;
