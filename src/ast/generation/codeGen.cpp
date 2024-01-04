@@ -55,7 +55,7 @@ void CodeGen::findFunctionData(AstNode::FunctionDeclaration *function, std::ofst
                 AstNode::Print *print = static_cast<AstNode::Print *>(stmt->data);
                 if (print->expression->type == AstNodeType::STRING_LITERAL) {
                     AstNode::StringLiteral *string = static_cast<AstNode::StringLiteral *>(print->expression->data);
-                    file << "   fmt db \"" << string->value << "\", 0\n";
+                    file << "   fmt db \"" << string->value << "\", 10\n";
                 }
                 break;
             }
@@ -85,12 +85,39 @@ void CodeGen::findSectionData(AstNode::Program *program, std::ofstream &file) {
             }
         }
     }
+    file << "\n";
 }
 
 void CodeGen::findSectionText(AstNode::Program *program, std::ofstream &file) {
     file << "section .text\n";
-    file << "   global main\n";
-    file << "   extern printf\n\n";
+    file << "   extern printf, exit\n";
+    file << "\n";
+}
+
+void CodeGen::setStack(std::ofstream &file) {
+    file << "   ; Set up stack frame\n";
+    file << "   push ebp\n";
+    file << "   mov ebp, esp\n";
+}
+
+void CodeGen::cleanStack(std::ofstream &file) {
+    file << "   ; Clean up and return\n";
+    file << "   mov esp, ebp\n";
+    file << "   pop ebp\n";
+    file << "   ret\n";
+}
+
+void CodeGen::createFunction(AstNode::Program *progam, std::ofstream &file) {
+    AstNode::FunctionDeclaration *function = static_cast<AstNode::FunctionDeclaration *>(progam->statements[0]->data);
+    function->name.start = strtok(const_cast<char*>(function->name.start), "(");
+    function->name.start = strtok(const_cast<char*>(function->name.start), " ");
+    file << function->name.start << ":\n";
+
+    setStack(file);
+
+    // the in between code
+
+    cleanStack(file);
 }
 
 void AstNode::codeGen(AstNode *expression) {
@@ -101,6 +128,9 @@ void AstNode::codeGen(AstNode *expression) {
         AstNode::Program *program = static_cast<AstNode::Program *>(expression->data);
         CodeGen::findSectionData(program, file);
         CodeGen::findSectionText(program, file);
+
+        file << "global main\n";
+        CodeGen::createFunction(program, file);
     }
 
     file.close();
