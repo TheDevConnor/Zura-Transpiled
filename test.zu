@@ -1,5 +1,5 @@
 fn main () i8 {
-  have x: i16 = 200;
-  dis "%d\n", x;
-  exit 0;
+  have x: i16 = 128;
+  dis "%d", x;
+  exit 128;
 }

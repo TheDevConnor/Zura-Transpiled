@@ -7,7 +7,7 @@
 #include "../ast.hpp"
 #include "codeGen.hpp"
 
-const std::unordered_map<TokenKind, std::string> typeMapping = {
+const std::unordered_map<TokenKind, std::string> CodeGen::typeMapping = {
     {TokenKind::I8,     "db"},
     {TokenKind::U8,     "db"},
     {TokenKind::Bool,   "db"},
@@ -55,12 +55,18 @@ void CodeGen::findFunctionData(AstNode::FunctionDeclaration *function, std::ofst
                 AstNode::Print *print = static_cast<AstNode::Print *>(stmt->data);
                 if (print->expression->type == AstNodeType::STRING_LITERAL) {
                     AstNode::StringLiteral *string = static_cast<AstNode::StringLiteral *>(print->expression->data);
+
+                    size_t startPos = string->value.find("\"");
+                    size_t endPos = string->value.rfind("\"");
+                    if (startPos != std::string::npos && endPos != std::string::npos) {
+                        string->value = string->value.substr(startPos + 1, endPos - startPos - 1);
+                    }
+
                     file << "   fmt db \"" << string->value << "\", 10\n";
                 }
                 break;
             }
             case AstNodeType::VAR_DECLARATION: {
-                std::cout << "Var declaration\n";
                 AstNode::VarDeclaration *variable = static_cast<AstNode::VarDeclaration *>(stmt->data);
                 generateVariableDeclaration(variable, file);
                 break;
@@ -96,14 +102,14 @@ void CodeGen::findSectionText(AstNode::Program *program, std::ofstream &file) {
 
 void CodeGen::setStack(std::ofstream &file) {
     file << "   ; Set up stack frame\n";
-    file << "   push ebp\n";
-    file << "   mov ebp, esp\n";
+    file << "   push rbp\n";
+    file << "   mov rbp, rsp\n\n";
 }
 
 void CodeGen::cleanStack(std::ofstream &file) {
     file << "   ; Clean up and return\n";
-    file << "   mov esp, ebp\n";
-    file << "   pop ebp\n";
+    file << "   mov rsp, rbp\n";
+    file << "   pop rbp\n";
     file << "   ret\n";
 }
 
@@ -115,7 +121,41 @@ void CodeGen::createFunction(AstNode::Program *progam, std::ofstream &file) {
 
     setStack(file);
 
-    // the in between code
+    AstNode::Block *block = static_cast<AstNode::Block *>(function->body->data);
+    for (AstNode *stmt : block->statements) {
+        switch (stmt->type) {
+            case AstNodeType::PRINT: {
+                file << "   ; Print\n";
+                file << "   lea rdi, [fmt]\n";
+                file << "   mov rsi, rax\n";
+                file << "   xor eax, eax\n";
+                file << "   call printf\n\n"; 
+                break;
+            }
+            case AstNodeType::VAR_DECLARATION: {
+                AstNode::VarDeclaration *variable = static_cast<AstNode::VarDeclaration *>(stmt->data);
+                file << "   ; Variable declaration\n";
+                if (variable->initializer->type == AstNodeType::NUMBER_LITERAL) {
+                    AstNode::NumberLiteral *number = static_cast<AstNode::NumberLiteral *>(variable->initializer->data);
+                    if (number->value <= 127 && number->value >= -128) {
+                        file << "   movsx rax, byte[" << variable->name.start << "]\n\n";
+                    } else {
+                        file << "   movsx rax, word[" << variable->name.start << "]\n\n";
+                    }
+                }
+                break;
+            }
+            case AstNodeType::EXIT: {
+                AstNode::Exit *exit = static_cast<AstNode::Exit *>(stmt->data);
+                AstNode::NumberLiteral *number = static_cast<AstNode::NumberLiteral *>(exit->expression->data);
+                file << "   ; Exit\n";
+                file << "   mov rdi, " << number->value << "\n";
+                file << "   xor rax, rax\n";
+                file << "   call exit\n\n";
+                break;
+            }
+        }
+    }
 
     cleanStack(file);
 }

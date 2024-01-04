@@ -19,12 +19,12 @@ void Flags::compilerDelete(char **argv) {
   strcat(rmCommand, "del ");
   strcat(rmCommand, outName.c_str());
   strcat(rmCommand, ".exe");
-  strcat(rmCommand, " out.o out.asm");
+  strcat(rmCommand, " out.o out.s");
   system(rmCommand);
 #else
   strcat(rmCommand, "rm -rf ");
   strcat(rmCommand, outName.c_str());
-  strcat(rmCommand, " out.o out.asm");
+  strcat(rmCommand, " out.o out.s");
   system(rmCommand);
 #endif
   Exit(ExitValue::FLAGS_PRINTED);
@@ -61,8 +61,6 @@ void Flags::runFile(const char *path, std::string outName, bool save) {
 
   Parser parser(source);
   AstNode *expression = parser.parse();
-
-  expression->printAst(expression, 0);
 
   Type type(expression);
   type.typeCheck(expression);

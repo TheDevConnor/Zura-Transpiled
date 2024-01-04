@@ -16,4 +16,7 @@ public:
     static void createFunction(AstNode::Program *program, std::ofstream &file);
     static void setStack(std::ofstream &file);
     static void cleanStack(std::ofstream &file);
+
+private:
+    static const std::unordered_map<TokenKind, std::string> typeMapping;
 };

@@ -20,8 +20,9 @@ main:
     xor eax, eax           ; Clear eax to indicate printf uses vector registers for arguments
     call printf            ; Call printf function
 
-    ; Exit the program
-    xor edi, edi           ; Clear edi for exit status 0
+    ; Exit the program with 60
+    mov rdi, 60            ; Set exit code to 60
+    xor rax, rax           ; Clear rax to indicate exit uses vector registers for arguments
     call exit              ; Call exit function
 
     ; Clean up and return
