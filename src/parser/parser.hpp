@@ -6,7 +6,9 @@
 
 class Parser {
 public:
-  Parser(const char *source);
+  Parser(const char *source, Lexer &lexer);
+
+  Lexer &lexer;
 
   AstNode *parse();
 

@@ -1,4 +1,5 @@
 fn main (argv: i8, argc: str) i8 {
+  have x: i8 = 0;
   dis "Hello, World!";
   exit 0;
 }

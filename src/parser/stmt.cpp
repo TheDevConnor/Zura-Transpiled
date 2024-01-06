@@ -153,7 +153,7 @@ AstNode *Parser::varDeclaration() {
     initializer = expression();
   else
     ParserError::error(currentToken,
-                       "Expected ':' followed by '=' after variable type "
+                       "Expected '=' after variable type "
                        "annotation or var name.",
                        lexer);
 

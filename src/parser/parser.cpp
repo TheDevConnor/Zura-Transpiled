@@ -4,13 +4,10 @@
 #include "../lexer/lexer.hpp"
 #include "parser.hpp"
 
-Parser::Parser(const char *source) : source(source) {}
+Parser::Parser(const char *source, Lexer &lexer) : source(source), lexer(lexer) {}
 
 AstNode *Parser::parse() {
-  lexer.initToken(source);
-
   advance();
-
   std::vector<AstNode *> statements = lookupMain();
   AstNode *main =
       new AstNode(AstNodeType::PROGRAM, new AstNode::Program(statements));

@@ -85,6 +85,9 @@ enum TokenKind {
 
 class Lexer {
 public:
+
+  Lexer(const char *source);
+
   struct Token {
     const char *start;
     TokenKind kind;
@@ -104,7 +107,6 @@ public:
 
   const char *lineStart(int line);
 
-  void initToken(const char *source);
   void reset();
 
 private:
@@ -135,5 +137,3 @@ private:
 
   void skipWhitespace();
 };
-
-inline Lexer lexer;

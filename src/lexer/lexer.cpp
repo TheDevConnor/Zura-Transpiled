@@ -3,7 +3,7 @@
 #include "../helper/error/lexerError.hpp"
 #include "lexer.hpp"
 
-void Lexer::initToken(const char *source) {
+Lexer::Lexer(const char *source) {
   scanner.current = source;
   scanner.source = source;
   scanner.start = source;
@@ -44,15 +44,15 @@ bool Lexer::match(char expected) {
   if (*scanner.current != expected)
     return false;
 
-  token.current++;
-  token.column++;
+  scanner.current++;
+  scanner.column++;
   return true;
 }
 
 bool Lexer::isAtEnd() { return *scanner.current == '\0'; }
 
 Lexer::Token Lexer::errorToken(std::string message) {
-  LexerError::error(message, scanner.line, scanner.column);
+  LexerError::error(message, scanner.line, scanner.column, *this);
   return makeToken(TokenKind::ERROR_);
 }
 
@@ -177,7 +177,7 @@ void Lexer::skipWhitespace() {
         }
         if (isAtEnd())
           LexerError::error("Unterminated block comment.", scanner.line,
-                            scanner.column);
+                            scanner.column, *this);
         advance();
         advance();
       } else {
@@ -232,14 +232,14 @@ Lexer::Token Lexer::scanToken() {
     return makeToken(TokenKind::MODULO);
   case '^':
     return makeToken(TokenKind::CARET);
-  case ':':
-    return makeToken(TokenKind::COLON);
-  case '=':
-    return makeToken(TokenKind::EQUAL);
   case '[':
     return makeToken(TokenKind::LEFT_BRACKET);
   case ']':
     return makeToken(TokenKind::RIGHT_BRACKET);
+  case ':':
+    return makeToken(match('=') ? TokenKind::WALRUS : TokenKind::COLON);
+  case '=':
+    return makeToken(match('=') ? TokenKind::EQUAL_EQUAL : TokenKind::EQUAL);
   case '!':
     return makeToken(match('=') ? TokenKind::BANG_EQUAL : TokenKind::BANG);
   case '<':
@@ -252,6 +252,6 @@ Lexer::Token Lexer::scanToken() {
   }
 
   LexerError::error("Unexpected character. " + std::to_string(c), scanner.line,
-                    scanner.column);
+                    scanner.column, *this);
   return makeToken(TokenKind::ERROR_);
 }

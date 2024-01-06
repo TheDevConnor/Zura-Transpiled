@@ -59,7 +59,8 @@ char *Flags::readFile(const char *path) {
 void Flags::runFile(const char *path, std::string outName, bool save) {
   const char *source = readFile(path);
 
-  Parser parser(source);
+  Lexer lexer(source);
+  Parser parser(source, lexer);
   AstNode *expression = parser.parse();
 
   Type type(expression);
@@ -85,7 +86,8 @@ void Flags::outputASMFile(const char *path) {
 
   std::cout << "Generating the asm file" << std::endl;
 
-  Parser parser(source);
+  Lexer lexer(source);
+  Parser parser(source, lexer);
   AstNode *expr = parser.parse();
 
   Type type(expr);

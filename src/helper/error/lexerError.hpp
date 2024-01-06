@@ -7,7 +7,7 @@
 
 class LexerError {
 public:
-  static void error(std::string message, int line, int column) {
+  static void error(std::string message, int line, int column, Lexer &lexer) {
     // Lexer Error: [line: 1, column: 1] <message>
     std::cerr << termcolor::yellow << "Error" << termcolor::reset
               << ": [line: " << termcolor::blue << line << termcolor::reset
