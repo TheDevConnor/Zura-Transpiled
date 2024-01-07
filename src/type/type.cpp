@@ -1,6 +1,7 @@
 #include <cstring>
 #include <iostream>
 
+#include "../helper/error/error.hpp"
 #include "../ast/ast.hpp"
 #include "type.hpp"
 
@@ -62,7 +63,7 @@ void Type::typeCheck(AstNode *expression) {
       }
       default: break; }
 
-      checkForErrors(type, returnType, name);
+      Error::errorType(type, returnType, name);
       returnType = nullptr;
       type = nullptr;
       name = "";

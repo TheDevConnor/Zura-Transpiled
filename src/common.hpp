@@ -8,10 +8,11 @@ enum ExitValue {
   INVALID_FILE = 2,
   LEXER_ERROR = 3,
   PARSER_ERROR = 4,
-  GENERATOR_ERROR = 5,
-  UPDATED = 6,
-  INVALID_TYPE = 7,
-  TYPE_ERROR = 8,
+  ERROR = 5,
+  GENERATOR_ERROR = 6,
+  UPDATED = 7,
+  INVALID_TYPE = 8,
+  TYPE_ERROR = 9,
 };
 
 inline void Exit(ExitValue exitValue) { exit(ExitValue(exitValue)); }

@@ -1,6 +1,6 @@
 #include <unordered_map>
 
-#include "../helper/error/lexerError.hpp"
+#include "../helper/error/error.hpp"
 #include "lexer.hpp"
 
 Lexer::Lexer(const char *source) {
@@ -52,7 +52,7 @@ bool Lexer::match(char expected) {
 bool Lexer::isAtEnd() { return *scanner.current == '\0'; }
 
 Lexer::Token Lexer::errorToken(std::string message) {
-  LexerError::error(message, scanner.line, scanner.column, *this);
+  Error::error(token, message, *this);
   return makeToken(TokenKind::ERROR_);
 }
 
@@ -176,8 +176,7 @@ void Lexer::skipWhitespace() {
           advance();
         }
         if (isAtEnd())
-          LexerError::error("Unterminated block comment.", scanner.line,
-                            scanner.column, *this);
+          errorToken("Unterminated block comment.");
         advance();
         advance();
       } else {
@@ -251,7 +250,6 @@ Lexer::Token Lexer::scanToken() {
     return String();
   }
 
-  LexerError::error("Unexpected character. " + std::to_string(c), scanner.line,
-                    scanner.column, *this);
+  Error::error(token, "Unexpected character: " + std::string(1, c), *this);
   return makeToken(TokenKind::ERROR_);
 }

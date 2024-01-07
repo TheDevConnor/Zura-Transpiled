@@ -1,5 +1,5 @@
 #include "../ast/ast.hpp"
-#include "../helper/error/parserError.hpp"
+#include "../helper/error/error.hpp"
 #include "parser.hpp"
 
 TokenKind Parser::checkType() {
@@ -31,7 +31,7 @@ AstNode *Parser::expression(int precedence) {
     if (!match(TokenKind::RIGHT_PAREN)) {
       do {
         if (arguments.size() >= 255)
-          ParserError::error(currentToken,
+          Error::error(currentToken,
                              "Cannot have more than 255 arguments", lexer);
         arguments.push_back(expression());
       } while (match(TokenKind::COMMA));
@@ -72,11 +72,11 @@ AstNode *Parser::binary(AstNode *left, int precedence) {
     case TokenKind::PLUS: {
       if (left->type == AstNodeType::STRING_LITERAL &&
           right->type == AstNodeType::NUMBER_LITERAL) {
-        ParserError::error(currentToken, "Cannot add a string to a number",
+        Error::error(currentToken, "Cannot add a string to a number",
                            lexer);
       } else if (left->type == AstNodeType::NUMBER_LITERAL &&
                  right->type == AstNodeType::STRING_LITERAL) {
-        ParserError::error(currentToken, "Cannot add a number to a string",
+        Error::error(currentToken, "Cannot add a number to a string",
                            lexer);
       }
       break;
@@ -87,7 +87,7 @@ AstNode *Parser::binary(AstNode *left, int precedence) {
     case TokenKind::SLASH: {
       if (left->type == AstNodeType::STRING_LITERAL ||
           right->type == AstNodeType::STRING_LITERAL) {
-        ParserError::error(currentToken,
+        Error::error(currentToken,
                            "Cannot subtract, multiply, or divide a string",
                            lexer);
       }
@@ -158,7 +158,7 @@ AstNode *Parser::literal() {
     if (!match(TokenKind::RIGHT_BRACKET)) {
       do {
         if (elements.size() >= 255)
-          ParserError::error(currentToken,
+          Error::error(currentToken,
                              "Cannot have more than 255 elements", lexer);
         elements.push_back(expression());
       } while (match(TokenKind::COMMA));
@@ -169,7 +169,7 @@ AstNode *Parser::literal() {
     return new AstNode(AstNodeType::ARRAY, new AstNode::Array(elements));
   }
   default:
-    ParserError::error(currentToken, "Expected literal", lexer);
+    Error::error(currentToken, "Expected literal", lexer);
   }
 
   /// If none of the literal patterns match

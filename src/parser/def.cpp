@@ -1,4 +1,4 @@
-#include "../helper/error/parserError.hpp"
+#include "../helper/error/error.hpp"
 #include "../lexer/lexer.hpp"
 #include "parser.hpp"
 
@@ -24,7 +24,7 @@ std::vector<AstNode *> Parser::lookupMain() {
   }
 
   if (!main)
-    ParserError::error(previousToken,
+    Error::error(previousToken,
                        "No main function found. Please include a main function",
                        lexer);
 
@@ -48,7 +48,7 @@ void Parser::advance() {
       break;
 
     hadError = true;
-    ParserError::error(currentToken, "Unexpected character", lexer);
+    Error::error(currentToken, "Unexpected character", lexer);
   }
 }
 
@@ -68,7 +68,7 @@ void Parser::consume(TokenKind kind, std::string message) {
   }
 
   hadError = true;
-  ParserError::error(currentToken, message, lexer);
+  Error::error(currentToken, message, lexer);
 }
 
 void Parser::synchronize() {

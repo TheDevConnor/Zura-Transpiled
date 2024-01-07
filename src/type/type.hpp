@@ -24,9 +24,6 @@ private:
   static std::unordered_map<std::string, AstNode::Type *> findType;
   static const std::vector<MinMaxType> typeArray;
 
-  static void checkForErrors(AstNode::Type *type, AstNode::Type *returnType,
-                             std::string name);
-
   static void checkExpression(AstNode *expr);
   static void checkBody(AstNode *body);
 

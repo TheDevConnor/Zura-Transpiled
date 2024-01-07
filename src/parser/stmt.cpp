@@ -1,5 +1,5 @@
 #include "../ast/ast.hpp"
-#include "../helper/error/parserError.hpp"
+#include "../helper/error/error.hpp"
 #include "../lexer/lexer.hpp"
 #include "parser.hpp"
 
@@ -82,7 +82,7 @@ AstNode *Parser::exitStatement() {
                                               AstNodeType::IDENTIFIER,
                                               new AstNode::Identifier(ident))));
   } else
-    ParserError::error(currentToken,
+    Error::error(currentToken,
                        "Expected number or identifier after 'exit'", lexer);
 
   return nullptr;
@@ -122,7 +122,7 @@ AstNode *Parser::functionDeclaration() {
   AstNode *type = nullptr;
   type = (currentToken.kind == TokenKind::RIGHT_BRACKET) ? expression() : findType(type);
   if (type == nullptr)
-    ParserError::error(currentToken, "Expected return type for the function.", lexer);
+    Error::error(currentToken, "Expected return type for the function.", lexer);
   advance();
 
   consume(TokenKind::LEFT_BRACE, "Expected '{' before function body");
@@ -152,7 +152,7 @@ AstNode *Parser::varDeclaration() {
   if (match(TokenKind::EQUAL))
     initializer = expression();
   else
-    ParserError::error(currentToken,
+    Error::error(currentToken,
                        "Expected '=' after variable type "
                        "annotation or var name.",
                        lexer);
