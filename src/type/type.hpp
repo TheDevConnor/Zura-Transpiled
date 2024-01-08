@@ -21,6 +21,7 @@ private:
     AstNode::Type *type;
   };
 
+  static std::vector<std::pair<std::string, AstNode::Type*>> paramData;
   static std::unordered_map<std::string, AstNode::Type *> findType;
   static const std::vector<MinMaxType> typeArray;
 
@@ -28,4 +29,5 @@ private:
   static void checkBody(AstNode *body);
 
   static void determineType(double value);
+  static void resetType();
 };

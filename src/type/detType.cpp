@@ -45,6 +45,8 @@ const std::vector<Type::MinMaxType> Type::typeArray = {
     {0, 0, findType["bool"]},
     {0, 0, findType["void"]}};
 
+std::vector<std::pair<std::string, AstNode::Type *>> Type::paramData {};
+
 void Type::determineType(double value) {
   for (const MinMaxType &type : typeArray) {
     if (value >= type.min && value <= type.max) {
@@ -52,4 +54,10 @@ void Type::determineType(double value) {
       return;
     }
   }
+}
+
+void Type::resetType() {
+  returnType = nullptr;
+  type = nullptr;
+  name = "";
 }
