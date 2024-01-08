@@ -19,21 +19,19 @@ void Flags::compilerDelete(char **argv) {
   strcat(rmCommand, "del ");
   strcat(rmCommand, outName.c_str());
   strcat(rmCommand, ".exe");
-  strcat(rmCommand, " out.o out.s");
+  strcat(rmCommand, "out.c");
   system(rmCommand);
 #else
   strcat(rmCommand, "rm -rf ");
   strcat(rmCommand, outName.c_str());
-  strcat(rmCommand, " out.o out.s");
+  strcat(rmCommand, "out.c");
   system(rmCommand);
 #endif
   Exit(ExitValue::FLAGS_PRINTED);
 }
 
-void Flags::compileToAsm(std::string name) {
-  std::string buildCommand = "nasm -f elf64 -o out.o out.s";
-  std::string compileCommand = "gcc -m64 -o " + name + " out.o -no-pie -fno-pie";
-  system(buildCommand.c_str());
+void Flags::compileToC(std::string name) {
+  std::string compileCommand = "gcc -o " + name + " out.c";
   system(compileCommand.c_str());
 }
 
@@ -63,17 +61,16 @@ void Flags::runFile(const char *path, std::string outName, bool save) {
   Parser parser(source, lexer);
   AstNode *expression = parser.parse();
 
+  expression->printAst(expression, 0);
+
   Type type(expression);
   type.typeCheck(expression);
 
-  AstNode::codeGen(expression);
-  compileToAsm(outName);
-
   if (!save) {
 #ifdef _WIN32
-    system("del out.s out.o");
+    system("del out.c");
 #else
-    system("rm -rf out.s out.o");
+    system("rm -rf out.c");
 #endif
 }
 
@@ -81,10 +78,10 @@ void Flags::runFile(const char *path, std::string outName, bool save) {
   delete expression;
 }
 
-void Flags::outputASMFile(const char *path) {
+void Flags::outputCFile(const char *path) {
   const char *source = readFile(path);
 
-  std::cout << "Generating the asm file" << std::endl;
+  std::cout << "Generating the c file" << std::endl;
 
   Lexer lexer(source);
   Parser parser(source, lexer);
@@ -93,9 +90,7 @@ void Flags::outputASMFile(const char *path) {
   Type type(expr);
   type.typeCheck(expr);
 
-  std::cout << "Generating the asm file" << std::endl;
-
-  AstNode::codeGen(expr);
+  std::cout << "Generated the c file" << std::endl;
 
   delete[] source;
   delete expr;

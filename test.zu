@@ -1,5 +1,6 @@
+fn add(a: i8, b: i8) i8 {}
+
 fn main (argv: i8, argc: str) i8 {
-  have x: i8 = 0;
-  dis "Hello, World!";
+  dis "Hello, World!\n";
   exit 0;
 }

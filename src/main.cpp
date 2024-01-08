@@ -57,7 +57,7 @@ int main(int argc, char **argv) {
     Flags::compilerDelete(argv);
   // (output the asm)
   if (argc == 3 && strcmp(argv[1], "-sa") == 0) {
-    Flags::outputASMFile(argv[2]);
+    Flags::outputCFile(argv[2]);
   }
   // (transpile)
   if (argc == 4 && strcmp(argv[2], "-o") == 0) {

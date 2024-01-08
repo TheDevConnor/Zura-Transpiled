@@ -5,7 +5,6 @@ project(zura)
 set(CMAKE_CXX_STANDARD 20)
 
 set(ZURA_HEADER_FILES
-    src/ast/generation/codeGen.hpp
     src/helper/error/error.hpp
     src/parser/parser.hpp
     src/helper/flags.hpp
@@ -18,7 +17,6 @@ set(ZURA_HEADER_FILES
     )
     
     set(ZURA_SOURCE_FILES
-    src/ast/generation/codeGen.cpp
     src/parser/parser.cpp
     src/helper/flags.cpp
     src/type/detType.cpp
