@@ -10,6 +10,7 @@
 class Error {
 public:
   static void error(Lexer::Token token, std::string msg, Lexer &lexer) {
+    int errorCount = 0;
     std::cout << termcolor::yellow << "Error" << termcolor::reset
               << ": [line: " << termcolor::blue << token.line << termcolor::reset
               << ", column: " << termcolor::blue << token.column - 1
@@ -27,7 +28,9 @@ public:
     std::cout << termcolor::green << std::string(token.column - 2, '~')
               << termcolor::red << "^" << termcolor::reset << std::endl;
 
-    Exit(ExitValue::PARSER_ERROR);
+    if (errorCount == 5)
+      Exit(ExitValue::_ERROR);
+    errorCount++;
   }
 
   static void errorType(AstNode::Type *type, AstNode::Type *returnType,
@@ -39,7 +42,6 @@ public:
                 << std::endl;
       return;
     }
-
 
     std::cout << termcolor::red << "Error: " << termcolor::reset
               << "Expected type '" << type->type.start << "' but got '"

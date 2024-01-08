@@ -8,7 +8,7 @@ enum ExitValue {
   INVALID_FILE = 2,
   LEXER_ERROR = 3,
   PARSER_ERROR = 4,
-  ERROR = 5,
+  _ERROR = 5,
   GENERATOR_ERROR = 6,
   UPDATED = 7,
   INVALID_TYPE = 8,
