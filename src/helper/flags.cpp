@@ -61,7 +61,7 @@ void Flags::runFile(const char *path, std::string outName, bool save) {
   Parser parser(source, lexer);
   AstNode *expression = parser.parse();
 
-  expression->printAst(expression, 0);
+  // expression->printAst(expression, 0);
 
   Type type(expression);
   type.typeCheck(expression);

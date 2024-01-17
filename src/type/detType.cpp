@@ -1,5 +1,5 @@
 #include <cstdint>
-#include <cstring>
+#include <string>
 #include <unordered_map>
 
 #include "../ast/ast.hpp"

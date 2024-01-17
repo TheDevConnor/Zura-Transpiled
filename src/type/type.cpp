@@ -16,6 +16,7 @@ void Type::checkExpression(AstNode *expr) {
   }
   if (expr->type == AstNodeType::IDENTIFIER) {
     AstNode::Identifier *identifier = (AstNode::Identifier *)expr->data;
+    identifier->name.start = strtok(const_cast<char *>(identifier->name.start), ";");
 
     for (auto& param : paramData) {
       if (param.first == identifier->name.start) {
@@ -101,6 +102,11 @@ void Type::typeCheck(AstNode *expression) {
           for (auto& param : functionDeclaration->parameters) {
             AstNode::Type *type_ = (AstNode::Type *)functionDeclaration->paramType.front()->data;
             type_->type.start = strtok(const_cast<char *>(type_->type.start), " ");
+            type_->type.start = strtok(const_cast<char *>(type_->type.start), ",");
+            type_->type.start = strtok(const_cast<char *>(type_->type.start), ")");
+
+            param.start = strtok(const_cast<char *>(param.start), ":");
+
             paramData.push_back(std::make_pair(param.start, type_));
           }
 
@@ -117,6 +123,7 @@ void Type::typeCheck(AstNode *expression) {
         checkBody(functionDeclaration->body);
         Error::errorType(type, returnType, name);
         resetType();
+
         break;
       }
       case AstNodeType::VAR_DECLARATION: {
