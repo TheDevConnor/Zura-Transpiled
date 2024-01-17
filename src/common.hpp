@@ -1,6 +1,6 @@
 #pragma once
 #include <stdlib.h>
-#define ZuraVersion "v0.0.4"
+#define ZuraVersion "v0.0.7"
 
 enum ExitValue {
   FLAGS_PRINTED = 0,
