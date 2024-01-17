@@ -36,22 +36,19 @@ public:
   static void errorType(AstNode::Type *type, AstNode::Type *returnType,
                           std::string name) {
     if (type == nullptr || returnType == nullptr || type->type.start == nullptr || returnType->type.start == nullptr) {
-      std::cerr << termcolor::red << "Error: " << termcolor::reset << "Null pointer encountered." << std::endl;
+      std::cerr << termcolor::red << "Error: " << termcolor::reset << "Null pointer encountered in function '" 
+                << termcolor::yellow << name << termcolor::reset << "'" << std::endl; 
       Exit(ExitValue::INVALID_TYPE);
     }
 
     if (strcmp(type->type.start, returnType->type.start) == 0) {
-      std::cout << termcolor::green << "Success: " << termcolor::reset
-                << "Expected type '" << type->type.start << "' and got '"
-                << returnType->type.start << "' in function '" << name << "'"
-                << std::endl;
       return;
     }
 
     std::cout << termcolor::red << "Error: " << termcolor::reset
-              << "Expected type '" << type->type.start << "' but got '"
-              << returnType->type.start << "' in function '" << name << "'"
+              << "Expected type '" << termcolor::green << type->type.start << termcolor::reset 
+              << "' but got '" << termcolor::green << returnType->type.start <<termcolor::reset
+              << "' in function '" << termcolor::yellow << name << termcolor::reset << "'" 
               << std::endl;
-    Exit(ExitValue::INVALID_TYPE);
   }
 };

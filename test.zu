@@ -8,5 +8,5 @@ fn add(a: i8, b: i8) i8 {
 
 fn main (argv: i8, argc: str) i8 {
   dis "Hello, World!\n";
-  exit 0;
+  exit 127;
 }
