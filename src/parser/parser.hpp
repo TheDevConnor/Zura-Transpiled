@@ -10,7 +10,7 @@ public:
 
   Lexer &lexer;
 
-  AstNode *parse();
+ std::unique_ptr<AstNode> parse();
 
 private:
   const char *source;
@@ -21,28 +21,32 @@ private:
   bool hadError = false;
 
   // Expressions
-  AstNode *binary(AstNode *left, int precedence);
-  AstNode *expression(int precedence = 0);
-  AstNode *grouping();
-  AstNode *literal();
-  AstNode *unary();
+  std::unique_ptr<ExprAST> expression(int precedence);
+  std::unique_ptr<ExprAST> binary(std::unique_ptr<ExprAST> left,
+                                    int precedence);
+  std::unique_ptr<ExprAST> unary();
+  std::unique_ptr<ExprAST> literal();
+  std::unique_ptr<ExprAST> identifier();
+  std::unique_ptr<ExprAST> grouping();
+  std::unique_ptr<ExprAST> assignment();
+
 
   // Main function
-  std::vector<AstNode *> lookupMain();
+  std::vector<std::unique_ptr<StmtAST>> lookupMain();
 
   // Statements
-  AstNode *functionDeclaration();
-  AstNode *expressionStatement();
-  AstNode *returnStatement();
-  AstNode *varDeclaration();
-  AstNode *printStatement();
-  AstNode *blockStatement();
-  AstNode *exitStatement();
-  AstNode *declaration();
-  AstNode *statement();
+  std::unique_ptr<StmtAST> functionDeclaration();
+  std::unique_ptr<StmtAST> expressionStatement();
+  std::unique_ptr<StmtAST> returnStatement();
+  std::unique_ptr<StmtAST> varDeclaration();
+  std::unique_ptr<StmtAST> printStatement();
+  std::unique_ptr<StmtAST> blockStatement();
+  std::unique_ptr<StmtAST> exitStatement();
+  std::unique_ptr<StmtAST> declaration();
+  std::unique_ptr<StmtAST> statement();
 
   // Types
-  AstNode *findType(AstNode *type);
+  TypeAST *findType(TypeAST *type);
 
   // Helper
   TokenKind checkType();

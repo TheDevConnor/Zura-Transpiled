@@ -59,12 +59,10 @@ void Flags::runFile(const char *path, std::string outName, bool save) {
 
   Lexer lexer(source);
   Parser parser(source, lexer);
-  AstNode *expression = parser.parse();
+  std::unique_ptr<AstNode> expression = parser.parse();
 
-  // expression->printAst(expression, 0);
-
-  Type type(expression);
-  type.typeCheck(expression);
+  // Type type(expression);
+  // type.typeCheck(expression);
 
   if (!save) {
 #ifdef _WIN32
@@ -75,7 +73,6 @@ void Flags::runFile(const char *path, std::string outName, bool save) {
 }
 
   delete[] source;
-  delete expression;
 }
 
 void Flags::outputCFile(const char *path) {
@@ -85,13 +82,12 @@ void Flags::outputCFile(const char *path) {
 
   Lexer lexer(source);
   Parser parser(source, lexer);
-  AstNode *expr = parser.parse();
+  std::unique_ptr<AstNode> expr = parser.parse();
 
-  Type type(expr);
-  type.typeCheck(expr);
+  // Type type(expr);
+  // type.typeCheck(expr);
 
   std::cout << "Generated the c file" << std::endl;
 
   delete[] source;
-  delete expr;
 }

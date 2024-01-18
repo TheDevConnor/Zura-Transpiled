@@ -33,22 +33,22 @@ public:
     errorCount++;
   }
 
-  static void errorType(AstNode::Type *type, AstNode::Type *returnType,
-                          std::string name) {
-    if (type == nullptr || returnType == nullptr || type->type.start == nullptr || returnType->type.start == nullptr) {
-      std::cerr << termcolor::red << "Error: " << termcolor::reset << "Null pointer encountered in function '" 
-                << termcolor::yellow << name << termcolor::reset << "'" << std::endl; 
-      Exit(ExitValue::INVALID_TYPE);
-    }
+  // static void errorType(AstNode::Type *type, AstNode::Type *returnType,
+  //                         std::string name) {
+  //   if (type == nullptr || returnType == nullptr || type->type.start == nullptr || returnType->type.start == nullptr) {
+  //     std::cerr << termcolor::red << "Error: " << termcolor::reset << "Null pointer encountered in function '" 
+  //               << termcolor::yellow << name << termcolor::reset << "'" << std::endl; 
+  //     Exit(ExitValue::INVALID_TYPE);
+  //   }
 
-    if (strcmp(type->type.start, returnType->type.start) == 0) {
-      return;
-    }
+  //   if (strcmp(type->type.start, returnType->type.start) == 0) {
+  //     return;
+  //   }
 
-    std::cout << termcolor::red << "Error: " << termcolor::reset
-              << "Expected type '" << termcolor::green << type->type.start << termcolor::reset 
-              << "' but got '" << termcolor::green << returnType->type.start <<termcolor::reset
-              << "' in function '" << termcolor::yellow << name << termcolor::reset << "'" 
-              << std::endl;
-  }
+  //   std::cout << termcolor::red << "Error: " << termcolor::reset
+  //             << "Expected type '" << termcolor::green << type->type.start << termcolor::reset 
+  //             << "' but got '" << termcolor::green << returnType->type.start <<termcolor::reset
+  //             << "' in function '" << termcolor::yellow << name << termcolor::reset << "'" 
+  //             << std::endl;
+  // }
 };

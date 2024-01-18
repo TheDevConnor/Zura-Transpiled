@@ -2,35 +2,6 @@
 #include "../lexer/lexer.hpp"
 #include "parser.hpp"
 
-std::vector<AstNode *> Parser::lookupMain() {
-  std::vector<AstNode *> statements; // Statements in main function
-  AstNode *main = nullptr;           // Main function
-
-  while (!match(TokenKind::END_OF_FILE)) {
-    AstNode *stmt = declaration();
-    statements.push_back(stmt);
-  }
-
-  for (AstNode *stmt : statements) {
-    if (stmt->type == AstNodeType::FUNCTION_DECLARATION) {
-      AstNode::FunctionDeclaration *function =
-          (AstNode::FunctionDeclaration *)stmt->data;
-      if (function->name.start[0] == 'm' && function->name.start[1] == 'a' &&
-          function->name.start[2] == 'i' && function->name.start[3] == 'n') {
-        main = stmt;
-        break;
-      }
-    }
-  }
-
-  if (!main)
-    Error::error(previousToken,
-                       "No main function found. Please include a main function",
-                       lexer);
-
-  return statements;
-}
-
 bool Parser::match(TokenKind kinds) {
   if (currentToken.kind != kinds)
     return false;
@@ -109,49 +80,34 @@ int Parser::getPrecedence() {
   }
 }
 
-AstNode *Parser::findType(AstNode *type) {
-  switch (currentToken.kind) {
-  case I8:
-    type = new AstNode(AstNodeType::TYPE, new AstNode::Type(currentToken));
-    break;
-  case I16:
-    type = new AstNode(AstNodeType::TYPE, new AstNode::Type(currentToken));
-    break;
-  case I32:
-    type = new AstNode(AstNodeType::TYPE, new AstNode::Type(currentToken));
-    break;
-  case I64:
-    type = new AstNode(AstNodeType::TYPE, new AstNode::Type(currentToken));
-    break;
-  case U8:
-    type = new AstNode(AstNodeType::TYPE, new AstNode::Type(currentToken));
-    break;
-  case U16:
-    type = new AstNode(AstNodeType::TYPE, new AstNode::Type(currentToken));
-    break;
-  case U32:
-    type = new AstNode(AstNodeType::TYPE, new AstNode::Type(currentToken));
-    break;
-  case U64:
-    type = new AstNode(AstNodeType::TYPE, new AstNode::Type(currentToken));
-    break;
-  case F32:
-    type = new AstNode(AstNodeType::TYPE, new AstNode::Type(currentToken));
-    break;
-  case F64:
-    type = new AstNode(AstNodeType::TYPE, new AstNode::Type(currentToken));
-    break;
-  case Bool:
-    type = new AstNode(AstNodeType::TYPE, new AstNode::Type(currentToken));
-    break;
-  case STRING:
-    type = new AstNode(AstNodeType::TYPE, new AstNode::Type(currentToken));
-    break;
-  default:
-    consume(currentToken.kind,
-            "Expected type annotation of either i8, i16, i32, i64, u8, u16, "
-            "u32, u64, f32, f64, bool or string");
+TypeAST *Parser::findType(TypeAST *type) {
+  return type;
+}
+
+std::vector<std::unique_ptr<StmtAST>> Parser::lookupMain() {
+  std::vector<std::unique_ptr<StmtAST>> statements;
+
+  while (currentToken.kind != TokenKind::END_OF_FILE) {
+    statements.push_back(std::move(declaration()));
   }
 
-  return type;
+  bool foundMain = false;
+  for (size_t i = 0; i < statements.size(); i++) {
+    std::unique_ptr<StmtAST>& stmt = statements[i];
+    
+    if (stmt.get()->getNodeType() == AstNodeType::FUNCTION_DECLARATION) {
+      FunctionDeclStmtAST* funcDecl = (FunctionDeclStmtAST*)stmt.get();
+      if (funcDecl->Name == "main") {
+        foundMain = true;
+        break;
+      }
+    }
+
+    if (i == statements.size() - 1) {
+      hadError = true;
+      Error::error(currentToken, "No main function found", lexer);
+    }
+  }
+
+  return statements;
 }

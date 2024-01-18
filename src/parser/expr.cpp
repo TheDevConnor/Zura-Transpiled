@@ -21,158 +21,86 @@ TokenKind Parser::checkType() {
   }
 }
 
-AstNode *Parser::expression(int precedence) {
-  AstNode *left = unary();
-
-  // function call
-  if (match(TokenKind::LEFT_PAREN)) {
-    std::vector<AstNode *> arguments;
-
-    if (!match(TokenKind::RIGHT_PAREN)) {
-      do {
-        if (arguments.size() >= 255)
-          Error::error(currentToken,
-                             "Cannot have more than 255 arguments", lexer);
-        arguments.push_back(expression());
-      } while (match(TokenKind::COMMA));
-    }
-
-    consume(TokenKind::RIGHT_PAREN, "Expected ')' after arguments");
-
-    return new AstNode(AstNodeType::CALL, new AstNode::Call(left, arguments));
+std::unique_ptr<ExprAST> Parser::unary() {
+  if (match(TokenKind::MINUS)) {
+    std::unique_ptr<ExprAST> right = unary();
+    return std::make_unique<UnaryExprAST>(std::move(right), TokenKind::MINUS);
   }
 
-  return binary(left, precedence);
-}
-
-AstNode *Parser::unary() {
-  if (match(TokenKind::MINUS) || match(TokenKind::BANG)) {
-    TokenKind op = previousToken.kind;
-    AstNode *right = unary();
-
-    return new AstNode(AstNodeType::UNARY, new AstNode::Unary(op, right));
-  }
-
-  return grouping();
-}
-
-AstNode *Parser::binary(AstNode *left, int precedence) {
-  while (true) {
-    int currentPrecedence = getPrecedence();
-
-    if (currentPrecedence < precedence)
-      return left;
-
-    TokenKind op = currentToken.kind;
-    advance();
-
-    AstNode *right = unary();
-
-    switch (op) {
-    case TokenKind::PLUS: {
-      if (left->type == AstNodeType::STRING_LITERAL &&
-          right->type == AstNodeType::NUMBER_LITERAL) {
-        Error::error(currentToken, "Cannot add a string to a number",
-                           lexer);
-      } else if (left->type == AstNodeType::NUMBER_LITERAL &&
-                 right->type == AstNodeType::STRING_LITERAL) {
-        Error::error(currentToken, "Cannot add a number to a string",
-                           lexer);
-      }
-      break;
-    }
-    case TokenKind::MINUS:
-    case TokenKind::STAR:
-    case TokenKind::MODULO:
-    case TokenKind::SLASH: {
-      if (left->type == AstNodeType::STRING_LITERAL ||
-          right->type == AstNodeType::STRING_LITERAL) {
-        Error::error(currentToken,
-                           "Cannot subtract, multiply, or divide a string",
-                           lexer);
-      }
-      break;
-    }
-    default:
-      break;
-    }
-    left =
-        new AstNode(AstNodeType::BINARY, new AstNode::Binary(left, op, right));
-  }
-}
-
-AstNode *Parser::grouping() {
-  if (match({TokenKind::LEFT_PAREN})) {
-    AstNode *expr = expression();
-    consume(TokenKind::RIGHT_PAREN, "Expected ')' after expression");
-    return new AstNode(AstNodeType::GROUPING, new AstNode::Grouping(expr));
+  if (match(TokenKind::BANG)) {
+    std::unique_ptr<ExprAST> right = unary();
+    return std::make_unique<UnaryExprAST>(std::move(right), TokenKind::BANG);
   }
 
   return literal();
 }
 
-AstNode *Parser::literal() {
+std::unique_ptr<ExprAST> Parser::expression(int precedence) {
+  std::unique_ptr<ExprAST> left = unary();
+
+  return binary(std::move(left), precedence);
+}
+
+std::unique_ptr<ExprAST> Parser::binary(std::unique_ptr<ExprAST> left,
+                                        int precedence) {
+  TokenKind operatorKind = currentToken.kind;
+  advance();
+
+  std::unique_ptr<ExprAST> right = unary();
+
+  return std::make_unique<BinaryExprAST>(std::move(left), std::move(right), operatorKind);
+}
+
+std::unique_ptr<ExprAST> Parser::literal() {
   switch (currentToken.kind) {
-  case TokenKind::IDENTIFIER: {
-    Lexer::Token value = currentToken;
-    advance();
-    return new AstNode(AstNodeType::IDENTIFIER, new AstNode::Identifier(value));
-  }
-  case TokenKind::NUMBER: {
-    double value = std::stod(currentToken.start);
-    advance();
-    return new AstNode(AstNodeType::NUMBER_LITERAL,
-                       new AstNode::NumberLiteral(value));
-  }
-  case TokenKind::STRING: {
-    std::string value = currentToken.start;
-    advance();
-    return new AstNode(AstNodeType::STRING_LITERAL,
-                       new AstNode::StringLiteral(value));
-  }
-  case TokenKind::TR: {
-    advance();
-    return new AstNode(AstNodeType::TRUE_LITERAL, nullptr);
-  }
-  case TokenKind::FAL: {
-    advance();
-    return new AstNode(AstNodeType::FALSE_LITERAL, nullptr);
-  }
-  case TokenKind::NIL: {
-    advance();
-    return new AstNode(AstNodeType::NIL_LITERAL, nullptr);
-  }
-  case TokenKind::RIGHT_BRACKET: {
-    std::cout << "Array type annotation" << std::endl;
-    advance();
-    AstNode *type = nullptr;
-    type = findType(type);
-    return new AstNode(AstNodeType::ARRAY_TYPE, new AstNode::ArrayType(type));
-  }
-  case TokenKind::LEFT_BRACKET: {
-    // array type annotation
-    advance();
-    std::vector<AstNode *> elements;
-    AstNode *type = nullptr;
-
-    if (!match(TokenKind::RIGHT_BRACKET)) {
-      do {
-        if (elements.size() >= 255)
-          Error::error(currentToken,
-                             "Cannot have more than 255 elements", lexer);
-        elements.push_back(expression());
-      } while (match(TokenKind::COMMA));
+    case TokenKind::NUMBER: {
+      Lexer::Token value = currentToken;
+      advance();
+      return std::make_unique<LiteralExprAST>(value);
     }
-
-    consume(TokenKind::RIGHT_BRACKET, "Expected ']' after array elements");
-
-    return new AstNode(AstNodeType::ARRAY, new AstNode::Array(elements));
+    case TokenKind::STRING: {
+      Lexer::Token value = currentToken;
+      advance();
+      return std::make_unique<LiteralExprAST>(value);
+    }
+    case TokenKind::TR: {
+      Lexer::Token value = currentToken;
+      advance();
+      return std::make_unique<LiteralExprAST>(value);
+    }
+    case TokenKind::FAL: {
+      Lexer::Token value = currentToken;
+      advance();
+      return std::make_unique<LiteralExprAST>(value);
+    }
+    case TokenKind::NIL: {
+      Lexer::Token value = currentToken;
+      advance();
+      return std::make_unique<LiteralExprAST>(value);
+    }
+    default: {
+      Error::error(currentToken, "Expected literal", lexer);
+      return nullptr;
+    }
   }
-  default:
-    Error::error(currentToken, "Expected literal", lexer);
-  }
+}
 
-  /// If none of the literal patterns match
-  synchronize();
-  return nullptr;
+std::unique_ptr<ExprAST> Parser::identifier() {
+  Lexer::Token value = currentToken;
+  advance();
+  return std::make_unique<LiteralExprAST>(value);
+}
+
+std::unique_ptr<ExprAST> Parser::grouping() {
+  consume(TokenKind::LEFT_PAREN, "Expected '(' before expression");
+  std::unique_ptr<ExprAST> expr = expression(0);
+  consume(TokenKind::RIGHT_PAREN, "Expected ')' after expression");
+  return expr;
+}
+
+std::unique_ptr<ExprAST> Parser::assignment() {
+  std::unique_ptr<ExprAST> left = identifier();
+  consume(TokenKind::EQUAL, "Expected '=' after identifier");
+  std::unique_ptr<ExprAST> right = expression(0);
+  return std::make_unique<BinaryExprAST>(std::move(left), std::move(right), TokenKind::EQUAL);
 }

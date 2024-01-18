@@ -1,7 +1,12 @@
 #pragma once
 
-#include "../lexer/lexer.hpp"
 #include <vector>
+#include <memory>
+
+#include "llvm/IR/Value.h"
+#include "../lexer/lexer.hpp"
+
+using namespace llvm;
 
 enum class AstNodeType {
   // Program
@@ -36,167 +41,211 @@ enum class AstNodeType {
   RETURN,
 };
 
+class ExprAST {
+public:
+  virtual ~ExprAST() = default;
+  virtual AstNodeType getNodeType() = 0;
+  virtual Value *codegen() = 0;
+};
+
+class StmtAST {
+public:
+  virtual ~StmtAST() = default;
+  virtual AstNodeType getNodeType() = 0;
+  virtual Value *codegen() = 0;
+};
+
+//! Expressions
+class BinaryExprAST : public ExprAST {
+public:
+  BinaryExprAST(std::unique_ptr<ExprAST> LHS, std::unique_ptr<ExprAST> RHS,
+                Lexer::Token Op)
+      : LHS(std::move(LHS)), RHS(std::move(RHS)), Op(Op) {}
+  AstNodeType getNodeType() override { return AstNodeType::BINARY; }
+  std::unique_ptr<ExprAST> LHS;
+  std::unique_ptr<ExprAST> RHS;
+  Lexer::Token Op;
+  ~BinaryExprAST() override = default;
+  Value *codegen() override;
+};
+class LiteralExprAST : public ExprAST {
+public:
+  LiteralExprAST(Lexer::Token value) : value(value) {}
+  AstNodeType getNodeType() override { return AstNodeType::NUMBER_LITERAL; }
+  Lexer::Token value;
+  ~LiteralExprAST() override = default;
+  Value *codegen() override;
+};
+class UnaryExprAST : public ExprAST {
+public:
+  UnaryExprAST(std::unique_ptr<ExprAST> RHS, Lexer::Token Op)
+      : RHS(std::move(RHS)), Op(Op) {}
+  AstNodeType getNodeType() override { return AstNodeType::UNARY; }
+  std::unique_ptr<ExprAST> RHS;
+  Lexer::Token Op;
+  ~UnaryExprAST() override = default;
+  Value *codegen() override;
+};
+class GroupingExprAST : public ExprAST {
+public:
+  GroupingExprAST(std::unique_ptr<ExprAST> Expr)
+      : Expr(std::move(Expr)) {}
+  AstNodeType getNodeType() override { return AstNodeType::GROUPING; }
+  std::unique_ptr<ExprAST> Expr;
+  ~GroupingExprAST() override = default;
+  Value *codegen() override;
+};
+class CallExprAST : public ExprAST {
+public:
+  CallExprAST(std::unique_ptr<ExprAST> Callee,
+              std::vector<std::unique_ptr<ExprAST>> Args)
+      : Callee(std::move(Callee)), Args(std::move(Args)) {}
+  AstNodeType getNodeType() override { return AstNodeType::CALL; }
+  std::unique_ptr<ExprAST> Callee;
+  std::vector<std::unique_ptr<ExprAST>> Args;
+  ~CallExprAST() override = default;
+  Value *codegen() override;
+};
+class IdentifierExprAST : public ExprAST {
+public:
+  IdentifierExprAST(std::string Name) : Name(Name) {}
+  AstNodeType getNodeType() override { return AstNodeType::IDENTIFIER; }
+  std::string Name;
+  ~IdentifierExprAST() override = default;
+  Value *codegen() override;
+};
+
+//! Types
+class TypeAST : public ExprAST {
+public:
+  TypeAST(std::string Name) : Name(Name) {}
+  AstNodeType getNodeType() override { return AstNodeType::TYPE; }
+  std::string Name;
+  ~TypeAST() override = default;
+  Value *codegen() override;
+};
+class StructTypeAST : public ExprAST {
+public:
+  StructTypeAST(std::string Name, std::vector<std::unique_ptr<TypeAST>> Fields)
+      : Name(Name), Fields(std::move(Fields)) {}
+  AstNodeType getNodeType() override { return AstNodeType::TYPE_STRUCT; }
+  std::string Name;
+  std::vector<std::unique_ptr<TypeAST>> Fields;
+  ~StructTypeAST() override = default;
+  Value *codegen() override;
+};
+
+//! Array
+class ArrayTypeAST : public ExprAST {
+public:
+  ArrayTypeAST(std::unique_ptr<TypeAST> Type)
+      : Type(std::move(Type)) {}
+  AstNodeType getNodeType() override { return AstNodeType::ARRAY_TYPE; }
+  std::unique_ptr<TypeAST> Type;
+  ~ArrayTypeAST() override = default;
+  Value *codegen() override;
+};
+class ArrayExprAST : public ExprAST {
+public:
+  ArrayExprAST(std::vector<std::unique_ptr<ExprAST>> Elements)
+      : Elements(std::move(Elements)) {}
+  AstNodeType getNodeType() override { return AstNodeType::ARRAY; }
+  std::vector<std::unique_ptr<ExprAST>> Elements;
+  ~ArrayExprAST() override = default;
+  Value *codegen() override;
+};
+
+//! Statements
+class ExpressionStmtAST : public StmtAST {
+public:
+  ExpressionStmtAST(std::unique_ptr<ExprAST> Expr)
+      : Expr(std::move(Expr)) {}
+  AstNodeType getNodeType() override { return AstNodeType::EXPRESSION; }
+  std::unique_ptr<ExprAST> Expr;
+  ~ExpressionStmtAST() override = default;
+  Value *codegen() override;
+};
+class PrintStmtAST : public StmtAST {
+public:
+  PrintStmtAST(std::unique_ptr<ExprAST> Expr)
+      : Expr(std::move(Expr)) {}
+  AstNodeType getNodeType() override { return AstNodeType::PRINT; }
+  std::unique_ptr<ExprAST> Expr;
+  ~PrintStmtAST() override = default;
+  Value *codegen() override;
+};
+class VarDeclStmtAST : public StmtAST {
+public:
+  VarDeclStmtAST(std::string Name, std::unique_ptr<ExprAST> Expr)
+      : Name(Name), Expr(std::move(Expr)) {}
+  AstNodeType getNodeType() override { return AstNodeType::VAR_DECLARATION; }
+  std::string Name;
+  std::unique_ptr<ExprAST> Expr;
+  ~VarDeclStmtAST() override = default;
+  Value *codegen() override;
+};
+class FunctionDeclStmtAST : public StmtAST {
+public:
+  FunctionDeclStmtAST(std::string Name, std::vector<std::string> Params,
+                      std::unique_ptr<ExprAST> Body)
+      : Name(Name), Params(std::move(Params)), Body(std::move(Body)) {}
+  AstNodeType getNodeType() override { return AstNodeType::FUNCTION_DECLARATION; }
+  std::string Name;
+  std::vector<std::string> Params;
+  std::unique_ptr<ExprAST> Body;
+  ~FunctionDeclStmtAST() override = default;
+  Value *codegen() override;
+};
+class BlockStmtAST : public StmtAST {
+public:
+  BlockStmtAST(std::vector<std::unique_ptr<StmtAST>> Stmts)
+      : Stmts(std::move(Stmts)) {}
+  AstNodeType getNodeType() override { return AstNodeType::BLOCK; }
+  std::vector<std::unique_ptr<StmtAST>> Stmts;
+  ~BlockStmtAST() override = default;
+  Value *codegen() override;
+};
+class ExitStmtAST : public StmtAST {
+public:
+  ExitStmtAST() {}
+  AstNodeType getNodeType() override { return AstNodeType::EXIT; }
+  ~ExitStmtAST() override = default;
+  Value *codegen() override;
+};
+class ReturnStmtAST : public StmtAST {
+public:
+  ReturnStmtAST(std::unique_ptr<ExprAST> Expr)
+      : Expr(std::move(Expr)) {}
+  AstNodeType getNodeType() override { return AstNodeType::RETURN; }
+  std::unique_ptr<ExprAST> Expr;
+  ~ReturnStmtAST() override = default;
+  Value *codegen() override;
+};
+
+//! Program
+class ProgramAST {
+public:
+  ProgramAST(std::vector<std::unique_ptr<StmtAST>> Stmts)
+      : Stmts(std::move(Stmts)) {}
+  std::vector<std::unique_ptr<StmtAST>> Stmts;
+  ~ProgramAST() = default;
+  void codegen();
+};
+
 class AstNode {
 public:
-  AstNode(AstNodeType type, void *data) : type(type), data(data) {}
-
+  AstNode(AstNodeType type, std::vector<std::unique_ptr<StmtAST>> Stmts)
+      : type(type), Stmts(std::move(Stmts)) {}
+  AstNode(AstNodeType type, std::vector<std::unique_ptr<ExprAST>> Exprs)
+      : type(type), Exprs(std::move(Exprs)) {}
+  AstNode(AstNodeType type, std::vector<std::unique_ptr<TypeAST>> Types)
+      : type(type), Types(std::move(Types)) {}
+  AstNode(AstNodeType type, std::vector<std::unique_ptr<ExprAST>> Exprs,
+          std::vector<std::unique_ptr<StmtAST>> Stmts)
+      : type(type), Exprs(std::move(Exprs)), Stmts(std::move(Stmts)) {}
   AstNodeType type;
-  void *data;
-
-  struct Expr {
-    AstNode *left;
-    AstNode *right;
-  };
-
-  struct Stmt {
-    AstNode *expression;
-  };
-
-  struct Program {
-    std::vector<AstNode *> statements;
-
-    Program(std::vector<AstNode *> statements) : statements(statements) {}
-
-    // Proveide the iterator interface
-    std::vector<AstNode *>::iterator begin() { return statements.begin(); }
-    std::vector<AstNode *>::iterator end() { return statements.end(); }
-  };
-
-  Program *program;
-
-  // ! Types
-  struct Type {
-    Lexer::Token type;
-
-    Type(Lexer::Token type) : type(type) {}
-  };
-
-  struct TypeStruct : public Type {
-    Lexer::Token name;
-    std::vector<AstNode *> fields;
-
-    TypeStruct(Lexer::Token type, std::vector<AstNode *> fields)
-        : Type(type), fields(fields) {}
-  };
-
-  // ! Expressions
-  struct Binary : public Expr {
-    AstNode *left;
-    TokenKind op;
-    AstNode *right;
-
-    Binary(AstNode *left, TokenKind op, AstNode *right)
-        : op(op), left(left), right(right) {}
-  };
-  struct Unary : public Expr {
-    TokenKind op;
-    AstNode *right;
-
-    Unary(TokenKind op, AstNode *right) : op(op), right(right) {}
-  };
-  struct Identifier : public Expr {
-    Lexer::Token name;
-
-    Identifier(Lexer::Token name) : name(name) {}
-  };
-  struct Grouping : public Expr {
-    AstNode *expression;
-
-    Grouping(AstNode *expression) : expression(expression) {}
-  };
-  struct Call : public Expr {
-    AstNode *callee;
-    std::vector<AstNode *> arguments;
-
-    Call(AstNode *callee, std::vector<AstNode *> arguments)
-        : callee(callee), arguments(arguments) {}
-  };
-
-  struct NumberLiteral : public Expr {
-    double value;
-
-    NumberLiteral(double value) : value(value) {}
-  };
-  struct StringLiteral : public Expr {
-    std::string value;
-
-    StringLiteral(std::string value) : value(value) {}
-  };
-  struct TrueLiteral : public Expr {
-    TrueLiteral() {}
-  };
-  struct FalseLiteral : public Expr {
-    FalseLiteral() {}
-  };
-  struct NilLiteral : public Expr {
-    NilLiteral() {}
-  };
-
-  // ! Array
-  struct ArrayType {
-    AstNode *type;
-
-    ArrayType(AstNode *type) : type(type) {}
-  };
-
-  struct Array : public Expr {
-    std::vector<AstNode *> elements;
-
-    Array(std::vector<AstNode *> elements) : elements(elements) {}
-  };
-
-  // ! Statements
-  struct Expression : public Stmt {
-    AstNode *expression;
-
-    Expression(AstNode *expression) : expression(expression) {}
-  };
-  struct FunctionDeclaration : public Stmt {
-    Lexer::Token name;
-    std::vector<Lexer::Token> parameters;
-    std::vector<AstNode *> paramType;
-    AstNode *type;
-    AstNode *body;
-
-    FunctionDeclaration(Lexer::Token name, std::vector<Lexer::Token> parameters,
-                        std::vector<AstNode *> paramType, AstNode *type,
-                        AstNode *body)
-        : name(name), parameters(parameters), paramType(paramType), type(type),
-          body(body) {}
-  };
-  struct Block : public Stmt {
-    std::vector<AstNode *> statements;
-
-    Block(std::vector<AstNode *> statements) : statements(statements) {}
-  };
-  struct VarDeclaration : public Stmt {
-    Lexer::Token name;
-    AstNode *type;
-    AstNode *initializer;
-
-    VarDeclaration(Lexer::Token name, AstNode *type, AstNode *initializer)
-        : name(name), type(type), initializer(initializer) {}
-  };
-  struct Print : public Stmt {
-    AstNode *expression;
-    std::vector<AstNode *> ident;
-
-    Print(AstNode *expression, std::vector<AstNode *> ident)
-        : expression(expression), ident(ident) {}
-  };
-  struct Exit : public Stmt {
-    AstNode *expression;
-
-    Exit(AstNode *expression) : expression(expression) {}
-  };
-  struct Return : public Stmt {
-    AstNode *expression;
-
-    Return(AstNode *expression) : expression(expression) {}
-  };
-
-  static void printVarDeclaration(AstNode::VarDeclaration *varDeclaration,
-                                  int indent);
-  static void printAst(AstNode *node, int indent);
-  static void codeGen(AstNode *node);
+  std::vector<std::unique_ptr<ExprAST>> Exprs;
+  std::vector<std::unique_ptr<StmtAST>> Stmts;
+  std::vector<std::unique_ptr<TypeAST>> Types;
 };
+

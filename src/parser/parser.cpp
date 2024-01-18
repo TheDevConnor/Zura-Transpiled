@@ -1,4 +1,5 @@
 #include <vector>
+#include <memory>
 
 #include "../ast/ast.hpp"
 #include "../lexer/lexer.hpp"
@@ -6,11 +7,14 @@
 
 Parser::Parser(const char *source, Lexer &lexer) : source(source), lexer(lexer) {}
 
-AstNode *Parser::parse() {
+std::unique_ptr<AstNode> Parser::parse() {
   advance();
-  std::vector<AstNode *> statements = lookupMain();
-  AstNode *main =
-      new AstNode(AstNodeType::PROGRAM, new AstNode::Program(statements));
+  std::vector<std::unique_ptr<StmtAST>> statements;
 
-  return main;
+  while (!match(TokenKind::END_OF_FILE)) {
+    std::unique_ptr<StmtAST> stmt = declaration();
+    statements.push_back(std::move(stmt));
+  }
+
+  return std::make_unique<AstNode>(AstNodeType::PROGRAM, std::move(statements));
 }
