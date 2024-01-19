@@ -1,3 +1,5 @@
+#include <memory>
+
 #include "../ast/ast.hpp"
 #include "../helper/error/error.hpp"
 #include "parser.hpp"

@@ -59,12 +59,12 @@ public:
 class BinaryExprAST : public ExprAST {
 public:
   BinaryExprAST(std::unique_ptr<ExprAST> LHS, std::unique_ptr<ExprAST> RHS,
-                Lexer::Token Op)
+                TokenKind Op)
       : LHS(std::move(LHS)), RHS(std::move(RHS)), Op(Op) {}
   AstNodeType getNodeType() override { return AstNodeType::BINARY; }
   std::unique_ptr<ExprAST> LHS;
   std::unique_ptr<ExprAST> RHS;
-  Lexer::Token Op;
+  TokenKind Op;
   ~BinaryExprAST() override = default;
   Value *codegen() override;
 };
@@ -78,11 +78,11 @@ public:
 };
 class UnaryExprAST : public ExprAST {
 public:
-  UnaryExprAST(std::unique_ptr<ExprAST> RHS, Lexer::Token Op)
+  UnaryExprAST(std::unique_ptr<ExprAST> RHS, TokenKind Op)
       : RHS(std::move(RHS)), Op(Op) {}
   AstNodeType getNodeType() override { return AstNodeType::UNARY; }
   std::unique_ptr<ExprAST> RHS;
-  Lexer::Token Op;
+  TokenKind Op;
   ~UnaryExprAST() override = default;
   Value *codegen() override;
 };
