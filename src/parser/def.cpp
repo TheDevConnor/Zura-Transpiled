@@ -80,34 +80,51 @@ int Parser::getPrecedence() {
   }
 }
 
-TypeAST *Parser::findType(TypeAST *type) {
-  return type;
+std::string Parser::findType(TokenKind kind) {
+  std::unordered_map<TokenKind, std::string> types = {
+      {TokenKind::I8, "i8"},   {TokenKind::I16, "i16"}, {TokenKind::I32, "i32"}, {TokenKind::I64, "i64"}, {TokenKind::I128, "i128"},
+      {TokenKind::U8, "u8"},   {TokenKind::U16, "u16"}, {TokenKind::U32, "u32"}, {TokenKind::U64, "u64"}, {TokenKind::U128, "u128"},
+      {TokenKind::F32, "f32"}, {TokenKind::F64, "f64"}, {TokenKind::STRING, "str"}, {TokenKind::Bool, "bool"}};
+
+  return types[kind];
+}
+
+TypeAST *Parser::buildType(std::string type) {
+  TypeAST *result = new TypeAST(type);
+  return result;
 }
 
 std::vector<std::unique_ptr<StmtAST>> Parser::lookupMain() {
+  std::cout << "Looking up main function" << std::endl;
   std::vector<std::unique_ptr<StmtAST>> statements;
+  StmtAST *main = nullptr;
 
-  while (currentToken.kind != TokenKind::END_OF_FILE) {
-    statements.push_back(std::move(declaration()));
+  std::cout << "parsing statements" << std::endl;
+  while (!match(TokenKind::END_OF_FILE)) {
+    std::unique_ptr<StmtAST> stmt = declaration();
+    statements.push_back(std::move(stmt));
   }
+  std::cout << "done parsing statements" << std::endl;
 
-  bool foundMain = false;
-  for (size_t i = 0; i < statements.size(); i++) {
-    std::unique_ptr<StmtAST>& stmt = statements[i];
-    
-    if (stmt.get()->getNodeType() == AstNodeType::FUNCTION_DECLARATION) {
-      FunctionDeclStmtAST* funcDecl = (FunctionDeclStmtAST*)stmt.get();
-      if (funcDecl->Name == "main") {
-        foundMain = true;
-        break;
-      }
-    }
+  // for (std::unique_ptr<StmtAST> &stmt : statements) {
+  //   if (stmt->getNodeType() == AstNodeType::FUNCTION_DECLARATION) {
+  //     FunctionDeclStmtAST *function =
+  //         (FunctionDeclStmtAST *)stmt.get();
+  //     if (function->Name[0] == 'm' && function->Name[1] == 'a' &&
+  //         function->Name[2] == 'i' && function->Name[3] == 'n') {
+  //       std::cout << "Found main function" << std::endl;
+  //       main = stmt.get();
+  //       break;
+  //     }
+  //   }
+  // }
 
-    if (i == statements.size() - 1) {
-      hadError = true;
-      Error::error(currentToken, "No main function found", lexer);
-    }
-  }
+  main = statements[0].get();
+
+  if (!main)
+    Error::error(previousToken,
+                 "No main function found. Please include a main function",
+                 lexer);
 
   return statements;
 }

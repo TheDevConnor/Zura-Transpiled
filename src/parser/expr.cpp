@@ -56,9 +56,10 @@ std::unique_ptr<ExprAST> Parser::binary(std::unique_ptr<ExprAST> left,
 std::unique_ptr<ExprAST> Parser::literal() {
   switch (currentToken.kind) {
     case TokenKind::NUMBER: {
-      Lexer::Token value = currentToken;
+      std::cout << "number" << std::endl;
+      double number = std::stod(currentToken.start);
       advance();
-      return std::make_unique<LiteralExprAST>(value);
+      return std::make_unique<NumberExprAST>(number);
     }
     case TokenKind::STRING: {
       Lexer::Token value = currentToken;

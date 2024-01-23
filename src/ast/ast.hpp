@@ -1,10 +1,10 @@
 #pragma once
 
-#include <vector>
 #include <memory>
+#include <vector>
 
-#include "llvm/IR/Value.h"
 #include "../lexer/lexer.hpp"
+#include "llvm/IR/Value.h"
 
 using namespace llvm;
 
@@ -25,7 +25,8 @@ enum class AstNodeType {
 
   // Types
   TYPE,
-  TYPE_STRUCT,
+  TYPE_POINTER,
+  TYPE_ARRAY,
 
   // Array
   ARRAY_TYPE,
@@ -76,6 +77,14 @@ public:
   ~LiteralExprAST() override = default;
   Value *codegen() override;
 };
+class NumberExprAST : public ExprAST {
+public:
+  NumberExprAST(double Val) : Val(Val) {}
+  AstNodeType getNodeType() override { return AstNodeType::NUMBER_LITERAL; }
+  double Val;
+  ~NumberExprAST() override = default;
+  Value *codegen() override;
+};
 class UnaryExprAST : public ExprAST {
 public:
   UnaryExprAST(std::unique_ptr<ExprAST> RHS, TokenKind Op)
@@ -88,8 +97,7 @@ public:
 };
 class GroupingExprAST : public ExprAST {
 public:
-  GroupingExprAST(std::unique_ptr<ExprAST> Expr)
-      : Expr(std::move(Expr)) {}
+  GroupingExprAST(std::unique_ptr<ExprAST> Expr) : Expr(std::move(Expr)) {}
   AstNodeType getNodeType() override { return AstNodeType::GROUPING; }
   std::unique_ptr<ExprAST> Expr;
   ~GroupingExprAST() override = default;
@@ -124,22 +132,27 @@ public:
   ~TypeAST() override = default;
   Value *codegen() override;
 };
-class StructTypeAST : public ExprAST {
+class TypePointerAST : public ExprAST {
 public:
-  StructTypeAST(std::string Name, std::vector<std::unique_ptr<TypeAST>> Fields)
-      : Name(Name), Fields(std::move(Fields)) {}
-  AstNodeType getNodeType() override { return AstNodeType::TYPE_STRUCT; }
+  TypePointerAST(std::string Name) : Name(Name) {}
+  AstNodeType getNodeType() override { return AstNodeType::TYPE_POINTER; }
   std::string Name;
-  std::vector<std::unique_ptr<TypeAST>> Fields;
-  ~StructTypeAST() override = default;
+  ~TypePointerAST() override = default;
+  Value *codegen() override;
+};
+class TypeArrayAST : public ExprAST {
+public:
+  TypeArrayAST(std::string Name) : Name(Name) {}
+  AstNodeType getNodeType() override { return AstNodeType::TYPE_ARRAY; }
+  std::string Name;
+  ~TypeArrayAST() override = default;
   Value *codegen() override;
 };
 
 //! Array
 class ArrayTypeAST : public ExprAST {
 public:
-  ArrayTypeAST(std::unique_ptr<TypeAST> Type)
-      : Type(std::move(Type)) {}
+  ArrayTypeAST(std::unique_ptr<TypeAST> Type) : Type(std::move(Type)) {}
   AstNodeType getNodeType() override { return AstNodeType::ARRAY_TYPE; }
   std::unique_ptr<TypeAST> Type;
   ~ArrayTypeAST() override = default;
@@ -158,8 +171,7 @@ public:
 //! Statements
 class ExpressionStmtAST : public StmtAST {
 public:
-  ExpressionStmtAST(std::unique_ptr<ExprAST> Expr)
-      : Expr(std::move(Expr)) {}
+  ExpressionStmtAST(std::unique_ptr<ExprAST> Expr) : Expr(std::move(Expr)) {}
   AstNodeType getNodeType() override { return AstNodeType::EXPRESSION; }
   std::unique_ptr<ExprAST> Expr;
   ~ExpressionStmtAST() override = default;
@@ -167,32 +179,40 @@ public:
 };
 class PrintStmtAST : public StmtAST {
 public:
-  PrintStmtAST(std::unique_ptr<ExprAST> Expr)
-      : Expr(std::move(Expr)) {}
+  PrintStmtAST(std::unique_ptr<ExprAST> Expr,
+               std::vector<std::unique_ptr<ExprAST>> idents)
+      : Expr(std::move(Expr)), Idents(std::move(idents)) {}
   AstNodeType getNodeType() override { return AstNodeType::PRINT; }
   std::unique_ptr<ExprAST> Expr;
+  std::vector<std::unique_ptr<ExprAST>> Idents;
   ~PrintStmtAST() override = default;
   Value *codegen() override;
 };
 class VarDeclStmtAST : public StmtAST {
 public:
-  VarDeclStmtAST(std::string Name, std::unique_ptr<ExprAST> Expr)
-      : Name(Name), Expr(std::move(Expr)) {}
+  VarDeclStmtAST(Lexer::Token Name, std::unique_ptr<TypeAST> Type,
+                 std::unique_ptr<ExprAST> Expr)
+      : Name(Name), Type(std::move(Type)), Expr(std::move(Expr)) {}
   AstNodeType getNodeType() override { return AstNodeType::VAR_DECLARATION; }
-  std::string Name;
+  Lexer::Token Name;
+  std::unique_ptr<TypeAST> Type;
   std::unique_ptr<ExprAST> Expr;
   ~VarDeclStmtAST() override = default;
   Value *codegen() override;
 };
 class FunctionDeclStmtAST : public StmtAST {
 public:
-  FunctionDeclStmtAST(std::string Name, std::vector<std::string> Params,
-                      std::unique_ptr<ExprAST> Body)
-      : Name(Name), Params(std::move(Params)), Body(std::move(Body)) {}
-  AstNodeType getNodeType() override { return AstNodeType::FUNCTION_DECLARATION; }
+  FunctionDeclStmtAST(std::string Name, std::vector<std::string> Params, std::vector<TypeAST*> ParamTypes,
+                      TypeAST *ResultType ,std::unique_ptr<StmtAST> Body)
+      : Name(Name), Params(std::move(Params)), ParamTypes(std::move(ParamTypes)), ResultType(ResultType), Body(std::move(Body)) {}
+  AstNodeType getNodeType() override {
+    return AstNodeType::FUNCTION_DECLARATION;
+  }
   std::string Name;
   std::vector<std::string> Params;
-  std::unique_ptr<ExprAST> Body;
+  std::vector<TypeAST*> ParamTypes;
+  TypeAST *ResultType;
+  std::unique_ptr<StmtAST> Body;
   ~FunctionDeclStmtAST() override = default;
   Value *codegen() override;
 };
@@ -207,15 +227,15 @@ public:
 };
 class ExitStmtAST : public StmtAST {
 public:
-  ExitStmtAST() {}
+  ExitStmtAST(std::unique_ptr<ExprAST> value) : value(std::move(value)) {}
+  std::unique_ptr<ExprAST> value;
   AstNodeType getNodeType() override { return AstNodeType::EXIT; }
   ~ExitStmtAST() override = default;
   Value *codegen() override;
 };
 class ReturnStmtAST : public StmtAST {
 public:
-  ReturnStmtAST(std::unique_ptr<ExprAST> Expr)
-      : Expr(std::move(Expr)) {}
+  ReturnStmtAST(std::unique_ptr<ExprAST> Expr) : Expr(std::move(Expr)) {}
   AstNodeType getNodeType() override { return AstNodeType::RETURN; }
   std::unique_ptr<ExprAST> Expr;
   ~ReturnStmtAST() override = default;
@@ -229,7 +249,7 @@ public:
       : Stmts(std::move(Stmts)) {}
   std::vector<std::unique_ptr<StmtAST>> Stmts;
   ~ProgramAST() = default;
-  void codegen();
+  virtual Value *codegen() = 0;
 };
 
 class AstNode {
@@ -248,4 +268,3 @@ public:
   std::vector<std::unique_ptr<StmtAST>> Stmts;
   std::vector<std::unique_ptr<TypeAST>> Types;
 };
-

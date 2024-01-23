@@ -1,12 +1,4 @@
-fn string(a: str) str {
-  return a;
-}
-
-fn add(a: i8, b: i8) i8 {
-  return a + b;
-}
-
-fn main (argv: i8, argc: str) i8 {
-  dis "Hello, World!\n";
-  exit 127;
+fn main() i8 {
+  have x: i8 = 1;
+  exit 0;
 }

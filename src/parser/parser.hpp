@@ -10,7 +10,7 @@ public:
 
   Lexer &lexer;
 
- std::unique_ptr<AstNode> parse();
+  std::unique_ptr<AstNode> parse();
 
 private:
   const char *source;
@@ -23,13 +23,12 @@ private:
   // Expressions
   std::unique_ptr<ExprAST> expression(int precedence);
   std::unique_ptr<ExprAST> binary(std::unique_ptr<ExprAST> left,
-                                    int precedence);
+                                  int precedence);
   std::unique_ptr<ExprAST> unary();
   std::unique_ptr<ExprAST> literal();
   std::unique_ptr<ExprAST> identifier();
   std::unique_ptr<ExprAST> grouping();
   std::unique_ptr<ExprAST> assignment();
-
 
   // Main function
   std::vector<std::unique_ptr<StmtAST>> lookupMain();
@@ -46,7 +45,8 @@ private:
   std::unique_ptr<StmtAST> statement();
 
   // Types
-  TypeAST *findType(TypeAST *type);
+  std::string findType(TokenKind kind);
+  TypeAST *buildType(std::string type);
 
   // Helper
   TokenKind checkType();

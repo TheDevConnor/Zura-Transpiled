@@ -5,28 +5,29 @@
 
 std::unique_ptr<StmtAST> Parser::declaration() {
   if (match(TokenKind::VAR))
-    return std::unique_ptr<StmtAST>(varDeclaration());
+    return varDeclaration();
   if (match(TokenKind::FUN))
-    return std::unique_ptr<StmtAST>(functionDeclaration());
-  return std::unique_ptr<StmtAST>(statement());
+    return functionDeclaration();
+  return statement();
 }
 
 std::unique_ptr<StmtAST> Parser::statement() {
   if (match(TokenKind::PRINT))
-    return std::unique_ptr<StmtAST>(printStatement());
+    return printStatement();
   if (match(TokenKind::EXIT))
-    return std::unique_ptr<StmtAST>(exitStatement());
+    return exitStatement();
   if (match(TokenKind::LEFT_BRACE))
-    return std::unique_ptr<StmtAST>(blockStatement());
+    return blockStatement();
   if (match(TokenKind::RETURN))
-    return std::unique_ptr<StmtAST>(returnStatement());
-  return std::unique_ptr<StmtAST>(expressionStatement());
+    return returnStatement();
+  return expressionStatement();
 }
 
 std::unique_ptr<StmtAST> Parser::blockStatement() {
   std::vector<std::unique_ptr<StmtAST>> statements;
 
   while (!match(TokenKind::RIGHT_BRACE)) {
+    std::cout << "blockStatement" << std::endl;
     std::unique_ptr<StmtAST> stmt = declaration();
     statements.push_back(std::move(stmt));
   }
@@ -35,18 +36,21 @@ std::unique_ptr<StmtAST> Parser::blockStatement() {
 }
 
 std::unique_ptr<StmtAST> Parser::expressionStatement() {
+  std::cout << "expressionStatement" << std::endl;
   std::unique_ptr<ExprAST> expr = expression(0);
   consume(TokenKind::SEMICOLON, "Expected ';' after expression");
   return std::make_unique<ExpressionStmtAST>(std::move(expr));
 }
 
 std::unique_ptr<StmtAST> Parser::returnStatement() {
+  std::cout << "returnStatement" << std::endl;
   std::unique_ptr<ExprAST> expr = expression(0);
   consume(TokenKind::SEMICOLON, "Expected ';' after expression");
   return std::make_unique<ReturnStmtAST>(std::move(expr));
 }
 
 std::unique_ptr<StmtAST> Parser::printStatement() {
+  std::cout << "printStatement" << std::endl;
   std::unique_ptr<ExprAST> expr = expression(0);
   std::vector<std::unique_ptr<ExprAST>> idents;
 
@@ -69,95 +73,53 @@ std::unique_ptr<StmtAST> Parser::printStatement() {
 }
 
 std::unique_ptr<StmtAST> Parser::exitStatement() {
-  // Get the exit code
+  std::cout << "exitStatement" << std::endl;
   if (currentToken.kind == TokenKind::NUMBER) {
     std::unique_ptr<ExprAST> expr = expression(0);
-    consume(TokenKind::SEMICOLON, "Expected ';' after expression");
+    // consume(TokenKind::SEMICOLON, "Expected ';' after expression");
     return std::make_unique<ExitStmtAST>(std::move(expr));
-  } else if (match(TokenKind::IDENTIFIER)) {
-    Lexer::Token ident = previousToken;
-    consume(TokenKind::SEMICOLON, "Expected ';' after expression");
-    return std::make_unique<ExitStmtAST>(std::make_unique<IdentifierExprAST>(ident));
-  } else
-    Error::error(currentToken,
-                       "Expected number or identifier after 'exit'", lexer);
-
-  return nullptr;
+  } else {
+    // consume(TokenKind::SEMICOLON, "Expected ';' after expression");
+    return std::make_unique<ExitStmtAST>(nullptr);
+  }
 }
 
-// AstNode *Parser::functionDeclaration() {
-//   consume(TokenKind::IDENTIFIER, "Expected function name");
-//   Lexer::Token name = previousToken;
+std::unique_ptr<StmtAST> Parser::functionDeclaration() {
+  std::cout << "functionDeclaration" << std::endl;
+  consume(TokenKind::IDENTIFIER, "Expected function name");
 
-//   consume(TokenKind::LEFT_PAREN, "Expected '(' after function name");
+  std::string name = previousToken.start;
 
-//   std::vector<Lexer::Token> parameters;
-//   std::vector<AstNode *> paramType;
-//   AstNode *pType = nullptr;
+  consume(TokenKind::LEFT_PAREN, "Expected '(' after function name");
 
-//   if (!match(TokenKind::RIGHT_PAREN)) {
-//     do {
-//       consume(TokenKind::IDENTIFIER, "Expected parameter name");
-//       parameters.push_back(previousToken);
+  std::vector<std::string> params;
+  std::vector<TypeAST*> paramTypes;
+  if (!match(TokenKind::RIGHT_PAREN)) {
+    do {
+      consume(TokenKind::IDENTIFIER, "Expected parameter name");
+      consume(TokenKind::COLON, "Expected ':' after parameter name");
+      
+      std::string type = findType(checkType());
+      TypeAST *paramType = buildType(type);
+      paramTypes.push_back(paramType);
 
-//       consume(TokenKind::COLON,
-//               "Expected ':' after param name for type annotation");
-//       // check expression for an array type annotation
-//       if (match(TokenKind::LEFT_BRACKET)) {
-//         pType = expression();
-//       } else {
-//         pType = findType(pType);
-//       }
-//       paramType.push_back(findType(pType));
-//       advance();
+      consume(TokenKind::IDENTIFIER, "Expected parameter name");
+      std::string param = previousToken.start;
+      params.push_back(param);
+    } while (match(TokenKind::COMMA));
+  }
 
-//     } while (match(TokenKind::COMMA));
-//     consume(TokenKind::RIGHT_PAREN, "Expected ')' after function parameters");
-//   }
+  std::string returnType = findType(checkType());
+  TypeAST *resultType = buildType(returnType);
+  advance();
 
-//   // The type to be returned '<type>'
-//   AstNode *type = nullptr;
-//   type = (currentToken.kind == TokenKind::RIGHT_BRACKET) ? expression() : findType(type);
-//   if (type == nullptr)
-//     Error::error(currentToken, "Expected return type for the function.", lexer);
-//   advance();
+  consume(TokenKind::LEFT_BRACE, "Expected '{' before function body");
 
-//   consume(TokenKind::LEFT_BRACE, "Expected '{' before function body");
-//   AstNode *body = blockStatement();
+  std::unique_ptr<StmtAST> body = blockStatement();
 
-//   return new AstNode(AstNodeType::FUNCTION_DECLARATION,
-//                      new AstNode::FunctionDeclaration(name, parameters,
-//                                                       paramType, type, body));
-// }
-
-// AstNode *Parser::varDeclaration() {
-//   consume(TokenKind::IDENTIFIER, "Expected variable name");
-
-//   Lexer::Token name = previousToken;
-
-//   AstNode *type = nullptr;
-//   if (match(TokenKind::COLON)) {
-//     if (match(TokenKind::LEFT_BRACKET)) {
-//       type = expression();
-//     } else {
-//       type = findType(type);
-//     }
-//     advance();
-//   }
-
-//   AstNode *initializer = nullptr;
-//   if (match(TokenKind::EQUAL))
-//     initializer = expression();
-//   else
-//     Error::error(currentToken,
-//                        "Expected '=' after variable type "
-//                        "annotation or var name.",
-//                        lexer);
-
-//   consume(TokenKind::SEMICOLON, "Expected ';' after variable declaration");
-//   return new AstNode(AstNodeType::VAR_DECLARATION,
-//                      new AstNode::VarDeclaration(name, type, initializer));
-// }
+  return std::make_unique<FunctionDeclStmtAST>(name, std::move(params), std::move(paramTypes), std::move(resultType),
+                                               std::move(body));
+}
 
 std::unique_ptr<StmtAST> Parser::varDeclaration() {
   consume(TokenKind::IDENTIFIER, "Expected variable name");
@@ -166,11 +128,8 @@ std::unique_ptr<StmtAST> Parser::varDeclaration() {
 
   std::unique_ptr<TypeAST> type = nullptr;
   if (match(TokenKind::COLON)) {
-    if (match(TokenKind::LEFT_BRACKET)) {
-      type = std::make_unique<TypeAST>(expression);
-    } else {
-      type = std::make_unique<TypeAST>(findType(type.get()));
-    }
+    std::string typeName = findType(checkType());
+    type = std::make_unique<TypeAST>(typeName);
     advance();
   }
 
@@ -179,10 +138,11 @@ std::unique_ptr<StmtAST> Parser::varDeclaration() {
     initializer = expression(0);
   else
     Error::error(currentToken,
-                       "Expected '=' after variable type "
-                       "annotation or var name.",
-                       lexer);
+                 "Expected '=' after variable type "
+                 "annotation or var name.",
+                 lexer);
 
-  consume(TokenKind::SEMICOLON, "Expected ';' after variable declaration");
-  return std::make_unique<VarDeclStmtAST>(name, std::move(type), std::move(initializer));
+  // consume(TokenKind::SEMICOLON, "Expected ';' after variable declaration");
+  return std::make_unique<VarDeclStmtAST>(name, std::move(type),
+                                          std::move(initializer));
 }
