@@ -15,6 +15,7 @@ To start make sure you have the following installed:
 - [make](https://www.gnu.org/software/make/)
 - [gcc](https://gcc.gnu.org/)
 - [gcc-multilib](https://packages.ubuntu.com/jammy/gcc-multilib)
+- [llvm](https://llvm.org/docs/GettingStarted.html)
 
 Commands to install the above packages on Windows:
 ```bash
@@ -23,16 +24,16 @@ Set-ExecutionPolicy Bypass -Scope Process -Force; `
   iex ((New-Object System.Net.WebClient).DownloadString('https://chocolatey.org/install.ps1'))
 
 # Install packages
-choco install cmake make mingw
+choco install cmake make mingw llvm
 ```
 
 Commands to install the above packages on Ubuntu and Debian: 
 ```bash
-sudo apt install cmake make gcc gcc-multilib
+sudo apt install cmake make gcc gcc-multilib llvm
 ```
 For Arch Linux:
 ```bash
-sudo pacman -S cmake make gcc gcc-multilib
+sudo pacman -S cmake make gcc gcc-multilib llvm
 ```
 
 Run the following commands if on Windows:
@@ -73,3 +74,12 @@ Then run the output file with:
 ```bash
 ./<output name>
 ```
+
+## Example of syntax and errors
+not yet down
+
+## Command that you can run
+```bash 
+zura --help
+```
+This command will show you all of the commands that you can run in the zura compiler.
