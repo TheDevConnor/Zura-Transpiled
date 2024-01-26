@@ -1,4 +1,5 @@
 fn main() i8 {
-  have x: i8 = 1;
+  have x: i8 = 1 * (-2 + 20) * 10;
   exit 0;
 }
+

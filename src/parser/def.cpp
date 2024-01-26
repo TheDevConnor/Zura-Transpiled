@@ -42,30 +42,6 @@ void Parser::consume(TokenKind kind, std::string message) {
   Error::error(currentToken, message, lexer);
 }
 
-void Parser::synchronize() {
-  advance();
-
-  while (currentToken.kind != TokenKind::END_OF_FILE) {
-    if (previousToken.kind == TokenKind::SEMICOLON)
-      return;
-
-    switch (currentToken.kind) {
-    case TokenKind::CLASS:
-    case TokenKind::FUN:
-    case TokenKind::VAR:
-    case TokenKind::IF:
-    case TokenKind::LOOP:
-    case TokenKind::PRINT:
-    case TokenKind::RETURN:
-      return;
-    default:
-      break;
-    }
-
-    advance();
-  }
-}
-
 int Parser::getPrecedence() {
   switch (currentToken.kind) {
   case TokenKind::PLUS:
@@ -95,16 +71,13 @@ TypeAST *Parser::buildType(std::string type) {
 }
 
 std::vector<std::unique_ptr<StmtAST>> Parser::lookupMain() {
-  std::cout << "Looking up main function" << std::endl;
   std::vector<std::unique_ptr<StmtAST>> statements;
   StmtAST *main = nullptr;
 
-  std::cout << "parsing statements" << std::endl;
   while (!match(TokenKind::END_OF_FILE)) {
     std::unique_ptr<StmtAST> stmt = declaration();
     statements.push_back(std::move(stmt));
   }
-  std::cout << "done parsing statements" << std::endl;
 
   // for (std::unique_ptr<StmtAST> &stmt : statements) {
   //   if (stmt->getNodeType() == AstNodeType::FUNCTION_DECLARATION) {
@@ -118,13 +91,10 @@ std::vector<std::unique_ptr<StmtAST>> Parser::lookupMain() {
   //     }
   //   }
   // }
-
-  main = statements[0].get();
-
-  if (!main)
-    Error::error(previousToken,
-                 "No main function found. Please include a main function",
-                 lexer);
+  // if (!main)
+  //   Error::error(previousToken,
+  //               "No main function found. Please include a main function",
+  //               lexer);
 
   return statements;
 }

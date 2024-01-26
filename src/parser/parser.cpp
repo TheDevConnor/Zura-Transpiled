@@ -1,4 +1,3 @@
-#include <iostream>
 #include <vector>
 #include <memory>
 
@@ -9,7 +8,6 @@
 Parser::Parser(const char *source, Lexer &lexer) : source(source), lexer(lexer) {}
 
 std::unique_ptr<AstNode> Parser::parse() {
-  std::cout << "Parsing..." << std::endl;
   advance();
   std::vector<std::unique_ptr<StmtAST>> statements = lookupMain();
   return std::make_unique<AstNode>(AstNodeType::PROGRAM, std::move(statements));

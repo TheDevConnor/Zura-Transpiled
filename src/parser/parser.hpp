@@ -21,7 +21,7 @@ private:
   bool hadError = false;
 
   // Expressions
-  std::unique_ptr<ExprAST> expression(int precedence);
+  std::unique_ptr<ExprAST> expression(int precedence = 0);
   std::unique_ptr<ExprAST> binary(std::unique_ptr<ExprAST> left,
                                   int precedence);
   std::unique_ptr<ExprAST> unary();
