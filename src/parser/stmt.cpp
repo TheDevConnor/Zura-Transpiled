@@ -132,7 +132,7 @@ std::unique_ptr<StmtAST> Parser::varDeclaration() {
     type = std::make_unique<TypeAST>(typeName);
     advance();
   } else {
-    Error::error(previousToken,
+    ErrorClass::error(previousToken,
                  "Expected a ':' before declaring the variable type", lexer);
   }
 
@@ -140,7 +140,7 @@ std::unique_ptr<StmtAST> Parser::varDeclaration() {
   if (match(TokenKind::EQUAL))
     initializer = expression();
   else
-    Error::error(currentToken,
+    ErrorClass::error(currentToken,
                  "Expected '=' after variable type "
                  "annotation or var name.",
                  lexer);

@@ -56,10 +56,14 @@ char *Flags::readFile(const char *path) {
 
 void Flags::runFile(const char *path, std::string outName, bool save) {
   const char *source = readFile(path);
+  
+  InitBuilder();
 
   Lexer lexer(source);
   Parser parser(source, lexer);
   std::unique_ptr<AstNode> expression = parser.parse();
+  
+  // TheModule->print(errs(), nullptr); 
 
   // Type type(expression);
   // type.typeCheck(expression);

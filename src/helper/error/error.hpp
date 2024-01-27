@@ -2,12 +2,10 @@
 
 #include "../../../inc/colorize.hpp"
 #include "../../lexer/lexer.hpp"
-#include "../../ast/ast.hpp"
 #include "../../common.hpp"
 #include <iostream>
-#include <cstring>
 
-class Error {
+class ErrorClass {
 public:
   static void error(Lexer::Token token, std::string msg, Lexer &lexer) {
     int errorCount = 0;

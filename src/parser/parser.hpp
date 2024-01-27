@@ -30,8 +30,7 @@ private:
   std::unique_ptr<ExprAST> grouping();
   std::unique_ptr<ExprAST> assignment();
 
-  // Main function
-  std::vector<std::unique_ptr<StmtAST>> lookupMain();
+  std::vector<std::unique_ptr<StmtAST>> getProgram();
 
   // Statements
   std::unique_ptr<StmtAST> functionDeclaration();

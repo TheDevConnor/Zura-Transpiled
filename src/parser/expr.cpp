@@ -118,7 +118,7 @@ std::unique_ptr<ExprAST> Parser::literal() {
     return std::make_unique<IdentifierExprAST>(value.start);
   }
   default:
-    Error::error(currentToken, "Expected literal", lexer);
+    ErrorClass::error(currentToken, "Expected literal", lexer);
   }
 
   synchronize();

@@ -52,7 +52,7 @@ bool Lexer::match(char expected) {
 bool Lexer::isAtEnd() { return *scanner.current == '\0'; }
 
 Lexer::Token Lexer::errorToken(std::string message) {
-  Error::error(token, message, *this);
+  ErrorClass::error(token, message, *this);
   return makeToken(TokenKind::ERROR_);
 }
 
@@ -250,6 +250,6 @@ Lexer::Token Lexer::scanToken() {
     return String();
   }
 
-  Error::error(token, "Unexpected character: " + std::string(1, c), *this);
+  ErrorClass::error(token, "Unexpected character: " + std::string(1, c), *this);
   return makeToken(TokenKind::ERROR_);
 }

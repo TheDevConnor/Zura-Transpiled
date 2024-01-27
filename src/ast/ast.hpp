@@ -1,12 +1,21 @@
 #pragma once
 
+#include <map>
 #include <memory>
 #include <vector>
 
 #include "../lexer/lexer.hpp"
+#include "llvm/IR/IRBuilder.h"
 #include "llvm/IR/Value.h"
 
 using namespace llvm;
+
+static std::unique_ptr<LLVMContext> TheContext;
+static std::unique_ptr<Module> TheModule;
+static std::unique_ptr<IRBuilder<>> Builder;
+static std::map<std::string, Value *> NamedValues;
+
+void InitBuilder();
 
 enum class AstNodeType {
   // Program
@@ -52,7 +61,7 @@ public:
 class StmtAST {
 public:
   virtual ~StmtAST() = default;
-  virtual AstNodeType getNodeType() = 0;
+  virtual AstNodeType getNodeType() const = 0;
   virtual Value *codegen() = 0;
 };
 
@@ -172,7 +181,7 @@ public:
 class ExpressionStmtAST : public StmtAST {
 public:
   ExpressionStmtAST(std::unique_ptr<ExprAST> Expr) : Expr(std::move(Expr)) {}
-  AstNodeType getNodeType() override { return AstNodeType::EXPRESSION; }
+  AstNodeType getNodeType() const override { return AstNodeType::EXPRESSION; }
   std::unique_ptr<ExprAST> Expr;
   ~ExpressionStmtAST() override = default;
   Value *codegen() override;
@@ -182,7 +191,7 @@ public:
   PrintStmtAST(std::unique_ptr<ExprAST> Expr,
                std::vector<std::unique_ptr<ExprAST>> idents)
       : Expr(std::move(Expr)), Idents(std::move(idents)) {}
-  AstNodeType getNodeType() override { return AstNodeType::PRINT; }
+  AstNodeType getNodeType() const override { return AstNodeType::PRINT; }
   std::unique_ptr<ExprAST> Expr;
   std::vector<std::unique_ptr<ExprAST>> Idents;
   ~PrintStmtAST() override = default;
@@ -193,7 +202,9 @@ public:
   VarDeclStmtAST(Lexer::Token Name, std::unique_ptr<TypeAST> Type,
                  std::unique_ptr<ExprAST> Expr)
       : Name(Name), Type(std::move(Type)), Expr(std::move(Expr)) {}
-  AstNodeType getNodeType() override { return AstNodeType::VAR_DECLARATION; }
+  AstNodeType getNodeType() const override {
+    return AstNodeType::VAR_DECLARATION;
+  }
   Lexer::Token Name;
   std::unique_ptr<TypeAST> Type;
   std::unique_ptr<ExprAST> Expr;
@@ -202,15 +213,18 @@ public:
 };
 class FunctionDeclStmtAST : public StmtAST {
 public:
-  FunctionDeclStmtAST(std::string Name, std::vector<std::string> Params, std::vector<TypeAST*> ParamTypes,
-                      TypeAST *ResultType ,std::unique_ptr<StmtAST> Body)
-      : Name(Name), Params(std::move(Params)), ParamTypes(std::move(ParamTypes)), ResultType(ResultType), Body(std::move(Body)) {}
-  AstNodeType getNodeType() override {
+  FunctionDeclStmtAST(std::string Name, std::vector<std::string> Params,
+                      std::vector<TypeAST *> ParamTypes, TypeAST *ResultType,
+                      std::unique_ptr<StmtAST> Body)
+      : Name(Name), Params(std::move(Params)),
+        ParamTypes(std::move(ParamTypes)), ResultType(ResultType),
+        Body(std::move(Body)) {}
+  AstNodeType getNodeType() const override {
     return AstNodeType::FUNCTION_DECLARATION;
   }
   std::string Name;
   std::vector<std::string> Params;
-  std::vector<TypeAST*> ParamTypes;
+  std::vector<TypeAST *> ParamTypes;
   TypeAST *ResultType;
   std::unique_ptr<StmtAST> Body;
   ~FunctionDeclStmtAST() override = default;
@@ -220,7 +234,7 @@ class BlockStmtAST : public StmtAST {
 public:
   BlockStmtAST(std::vector<std::unique_ptr<StmtAST>> Stmts)
       : Stmts(std::move(Stmts)) {}
-  AstNodeType getNodeType() override { return AstNodeType::BLOCK; }
+  AstNodeType getNodeType() const override { return AstNodeType::BLOCK; }
   std::vector<std::unique_ptr<StmtAST>> Stmts;
   ~BlockStmtAST() override = default;
   Value *codegen() override;
@@ -229,14 +243,14 @@ class ExitStmtAST : public StmtAST {
 public:
   ExitStmtAST(std::unique_ptr<ExprAST> value) : value(std::move(value)) {}
   std::unique_ptr<ExprAST> value;
-  AstNodeType getNodeType() override { return AstNodeType::EXIT; }
+  AstNodeType getNodeType() const override { return AstNodeType::EXIT; }
   ~ExitStmtAST() override = default;
   Value *codegen() override;
 };
 class ReturnStmtAST : public StmtAST {
 public:
   ReturnStmtAST(std::unique_ptr<ExprAST> Expr) : Expr(std::move(Expr)) {}
-  AstNodeType getNodeType() override { return AstNodeType::RETURN; }
+  AstNodeType getNodeType() const override { return AstNodeType::RETURN; }
   std::unique_ptr<ExprAST> Expr;
   ~ReturnStmtAST() override = default;
   Value *codegen() override;
@@ -268,3 +282,4 @@ public:
   std::vector<std::unique_ptr<StmtAST>> Stmts;
   std::vector<std::unique_ptr<TypeAST>> Types;
 };
+

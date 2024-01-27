@@ -21,8 +21,9 @@ set(llvm_libs LLVM)
 # Specify header and source files
 set(ZURA_HEADER_FILES
     src/helper/error/error.hpp
+    src/visitor/visit.hpp
     src/parser/parser.hpp
-    src/helper/flags.hpp
+    src/helper/flags.hpp 
     src/lexer/lexer.hpp
     inc/colorize.hpp
     src/ast/ast.hpp
@@ -32,6 +33,7 @@ set(ZURA_HEADER_FILES
 
 set(ZURA_SOURCE_FILES
     src/parser/parser.cpp
+    src/visitor/visit.cpp
     src/helper/flags.cpp
     src/parser/expr.cpp
     src/parser/stmt.cpp
