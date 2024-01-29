@@ -54,7 +54,7 @@ enum class AstNodeType {
 class ExprAST {
 public:
   virtual ~ExprAST() = default;
-  virtual AstNodeType getNodeType() = 0;
+  virtual AstNodeType getNodeType() const = 0;
   virtual Value *codegen() = 0;
 };
 
@@ -71,7 +71,7 @@ public:
   BinaryExprAST(std::unique_ptr<ExprAST> LHS, std::unique_ptr<ExprAST> RHS,
                 TokenKind Op)
       : LHS(std::move(LHS)), RHS(std::move(RHS)), Op(Op) {}
-  AstNodeType getNodeType() override { return AstNodeType::BINARY; }
+  AstNodeType getNodeType() const override { return AstNodeType::BINARY; }
   std::unique_ptr<ExprAST> LHS;
   std::unique_ptr<ExprAST> RHS;
   TokenKind Op;
@@ -81,7 +81,7 @@ public:
 class LiteralExprAST : public ExprAST {
 public:
   LiteralExprAST(Lexer::Token value) : value(value) {}
-  AstNodeType getNodeType() override { return AstNodeType::NUMBER_LITERAL; }
+  AstNodeType getNodeType() const override { return AstNodeType::NUMBER_LITERAL; }
   Lexer::Token value;
   ~LiteralExprAST() override = default;
   Value *codegen() override;
@@ -89,7 +89,7 @@ public:
 class NumberExprAST : public ExprAST {
 public:
   NumberExprAST(double Val) : Val(Val) {}
-  AstNodeType getNodeType() override { return AstNodeType::NUMBER_LITERAL; }
+  AstNodeType getNodeType() const override { return AstNodeType::NUMBER_LITERAL; }
   double Val;
   ~NumberExprAST() override = default;
   Value *codegen() override;
@@ -98,7 +98,7 @@ class UnaryExprAST : public ExprAST {
 public:
   UnaryExprAST(std::unique_ptr<ExprAST> RHS, TokenKind Op)
       : RHS(std::move(RHS)), Op(Op) {}
-  AstNodeType getNodeType() override { return AstNodeType::UNARY; }
+  AstNodeType getNodeType() const override { return AstNodeType::UNARY; }
   std::unique_ptr<ExprAST> RHS;
   TokenKind Op;
   ~UnaryExprAST() override = default;
@@ -107,7 +107,7 @@ public:
 class GroupingExprAST : public ExprAST {
 public:
   GroupingExprAST(std::unique_ptr<ExprAST> Expr) : Expr(std::move(Expr)) {}
-  AstNodeType getNodeType() override { return AstNodeType::GROUPING; }
+  AstNodeType getNodeType() const override { return AstNodeType::GROUPING; }
   std::unique_ptr<ExprAST> Expr;
   ~GroupingExprAST() override = default;
   Value *codegen() override;
@@ -117,7 +117,7 @@ public:
   CallExprAST(std::unique_ptr<ExprAST> Callee,
               std::vector<std::unique_ptr<ExprAST>> Args)
       : Callee(std::move(Callee)), Args(std::move(Args)) {}
-  AstNodeType getNodeType() override { return AstNodeType::CALL; }
+  AstNodeType getNodeType() const override { return AstNodeType::CALL; }
   std::unique_ptr<ExprAST> Callee;
   std::vector<std::unique_ptr<ExprAST>> Args;
   ~CallExprAST() override = default;
@@ -126,7 +126,7 @@ public:
 class IdentifierExprAST : public ExprAST {
 public:
   IdentifierExprAST(std::string Name) : Name(Name) {}
-  AstNodeType getNodeType() override { return AstNodeType::IDENTIFIER; }
+  AstNodeType getNodeType() const override { return AstNodeType::IDENTIFIER; }
   std::string Name;
   ~IdentifierExprAST() override = default;
   Value *codegen() override;
@@ -136,7 +136,7 @@ public:
 class TypeAST : public ExprAST {
 public:
   TypeAST(std::string Name) : Name(Name) {}
-  AstNodeType getNodeType() override { return AstNodeType::TYPE; }
+  AstNodeType getNodeType() const override { return AstNodeType::TYPE; }
   std::string Name;
   ~TypeAST() override = default;
   Value *codegen() override;
@@ -144,7 +144,7 @@ public:
 class TypePointerAST : public ExprAST {
 public:
   TypePointerAST(std::string Name) : Name(Name) {}
-  AstNodeType getNodeType() override { return AstNodeType::TYPE_POINTER; }
+  AstNodeType getNodeType() const override { return AstNodeType::TYPE_POINTER; }
   std::string Name;
   ~TypePointerAST() override = default;
   Value *codegen() override;
@@ -152,7 +152,7 @@ public:
 class TypeArrayAST : public ExprAST {
 public:
   TypeArrayAST(std::string Name) : Name(Name) {}
-  AstNodeType getNodeType() override { return AstNodeType::TYPE_ARRAY; }
+  AstNodeType getNodeType() const override { return AstNodeType::TYPE_ARRAY; }
   std::string Name;
   ~TypeArrayAST() override = default;
   Value *codegen() override;
@@ -162,7 +162,7 @@ public:
 class ArrayTypeAST : public ExprAST {
 public:
   ArrayTypeAST(std::unique_ptr<TypeAST> Type) : Type(std::move(Type)) {}
-  AstNodeType getNodeType() override { return AstNodeType::ARRAY_TYPE; }
+  AstNodeType getNodeType() const override { return AstNodeType::ARRAY_TYPE; }
   std::unique_ptr<TypeAST> Type;
   ~ArrayTypeAST() override = default;
   Value *codegen() override;
@@ -171,7 +171,7 @@ class ArrayExprAST : public ExprAST {
 public:
   ArrayExprAST(std::vector<std::unique_ptr<ExprAST>> Elements)
       : Elements(std::move(Elements)) {}
-  AstNodeType getNodeType() override { return AstNodeType::ARRAY; }
+  AstNodeType getNodeType() const override { return AstNodeType::ARRAY; }
   std::vector<std::unique_ptr<ExprAST>> Elements;
   ~ArrayExprAST() override = default;
   Value *codegen() override;

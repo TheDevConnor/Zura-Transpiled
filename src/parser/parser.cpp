@@ -4,6 +4,7 @@
 #include "../ast/ast.hpp"
 #include "../helper/error/error.hpp"
 #include "../lexer/lexer.hpp"
+#include "../type/type.hpp"
 #include "../visitor/visit.hpp"
 #include "parser.hpp"
 
@@ -24,6 +25,9 @@ std::unique_ptr<AstNode> Parser::parse() {
                       "No 'main' function found! Please add in a main function "
                       "Example: 'fn main() { dis \"hello Wold\"; exit 0;}",
                       lexer);
+
+  TypeClass typecheck;
+  typecheck.typeCheck(*main);
 
   return main;
 }

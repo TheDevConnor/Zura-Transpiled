@@ -1,7 +1,8 @@
-fn add() i8 {}
+fn add() i16 {
+  exit 0;
+}
 
 fn main() i8 {
-  have x: i8 = 1 * (-2 + 20) * 10;
-  exit 0;
+  exit 128;
 }
 

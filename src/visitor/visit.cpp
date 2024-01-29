@@ -1,5 +1,5 @@
-#include "../ast/ast.hpp"
 #include "visit.hpp"
+#include "../ast/ast.hpp"
 
 void AstVisitor::visit(const AstNode &node) {
   switch (node.type) {
@@ -22,7 +22,6 @@ void AstVisitor::visitStmt(const StmtAST &stmt) {
   case AstNodeType::FUNCTION_DECLARATION:
     visitFuncDec(static_cast<const FunctionDeclStmtAST &>(stmt));
     break;
-  // Add cases for other statement types if needed
   default:
     break;
   }
