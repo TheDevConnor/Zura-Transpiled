@@ -1,5 +1,7 @@
 #include "../ast/ast.hpp"
+#include "../helper/error/error.hpp"
 #include "../type/type.hpp"
+
 #include "visit.hpp"
 #include <iostream>
 #include <memory>
@@ -62,6 +64,8 @@ void AstVisitor::visitTypeCheckFuncDec(const FunctionDeclStmtAST &func) {
   std::cout << "function name: " << functionName << "\n";
   std::cout << "functionType: " << type->Name << "\n";
   std::cout << "returnType: " << returnType->Name << "\n";
+
+  ErrorClass::errorType(type.get(), returnType.get(), functionName);
 }
 
 void AstVisitor::visitTypeCheckExit(const ExitStmtAST &exit) {
