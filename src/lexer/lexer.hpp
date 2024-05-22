@@ -1,6 +1,6 @@
 #pragma once
 
-#include <string>
+#include <cstring>
 
 enum TokenKind {
   // Single-character tokens.
@@ -91,25 +91,13 @@ public:
   struct Token {
     const char *start;
     TokenKind kind;
+    std::string value; // This is also know as the lexeme
     int current;
     int column;
     int line;
   };
-
-  struct Keyword {
-    std::string name;
-    TokenKind kind;
-  };
-
-  Token scanToken();
   Token token;
-  Token errorToken(std::string message);
 
-  const char *lineStart(int line);
-
-  void reset();
-
-private:
   struct Scanner {
     const char *current;
     const char *source;
@@ -117,9 +105,21 @@ private:
     int column;
     int line;
   };
-
   Scanner scanner;
 
+  struct Keyword {
+    std::string name;
+    TokenKind kind;
+  };
+
+  Token scanToken();
+  Token errorToken(std::string message);
+
+  const char *lineStart(int line, const char *source);
+
+  void reset();
+
+private:
   char peekNext();
   char advance();
   char peek();

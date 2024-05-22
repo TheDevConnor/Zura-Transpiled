@@ -2,10 +2,11 @@
 #include <fstream>
 #include <iostream>
 
-#include "../parser/parser.hpp"
-#include "../type/type.hpp"
-#include "../ast/ast.hpp"
+// #include "../parser/parser.hpp"
+// #include "../type/type.hpp"
+// #include "../ast/ast.hpp"
 #include "../common.hpp"
+#include "../lexer/lexer.hpp"
 #include "flags.hpp"
 
 using namespace std;
@@ -30,10 +31,9 @@ void Flags::compilerDelete(char **argv) {
   Exit(ExitValue::FLAGS_PRINTED);
 }
 
-void Flags::compileToC(std::string name) {
-  std::string compileCommand = "gcc -o " + name + " out.c";
-  system(compileCommand.c_str());
-}
+void Flags::compile(std::string name) {}
+
+void Flags::outputFile(const char *path) {}
 
 char *Flags::readFile(const char *path) {
   ifstream file(path, ios::binary);
@@ -57,41 +57,11 @@ char *Flags::readFile(const char *path) {
 void Flags::runFile(const char *path, std::string outName, bool save) {
   const char *source = readFile(path);
   
-  InitBuilder();
-
   Lexer lexer(source);
-  Parser parser(source, lexer);
-  std::unique_ptr<AstNode> expression = parser.parse();
-  
-  // TheModule->print(errs(), nullptr); 
-
-  // Type type(expression);
-  // type.typeCheck(expression);
-
-  if (!save) {
-#ifdef _WIN32
-    system("del out.c");
-#else
-    system("rm -rf out.c");
-#endif
-}
-
-  delete[] source;
-}
-
-void Flags::outputCFile(const char *path) {
-  const char *source = readFile(path);
-
-  std::cout << "Generating the c file" << std::endl;
-
-  Lexer lexer(source);
-  Parser parser(source, lexer);
-  std::unique_ptr<AstNode> expr = parser.parse();
-
-  // Type type(expr);
-  // type.typeCheck(expr);
-
-  std::cout << "Generated the c file" << std::endl;
+  while (lexer.token.kind != TokenKind::END_OF_FILE) {
+    lexer.scanToken();
+    std::cout << lexer.token.kind << " " << lexer.token.value << std::endl;
+  }
 
   delete[] source;
 }

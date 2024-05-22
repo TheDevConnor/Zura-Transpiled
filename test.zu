@@ -1,8 +1,5 @@
-fn add() i8 {
-  exit 0;
-}
+fn main() void {
+  if (1 != 1) print "TRUE!";
 
-fn main() i8 {
-  exit 128;
+  ret 0;
 }
-
