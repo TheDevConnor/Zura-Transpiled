@@ -1,7 +1,23 @@
 #include <unordered_map>
+#include <functional>
 #include <string>
 
 #include "lexer.hpp"
+
+using WhiteSpaceFunction = std::function<void(Lexer&)>;
+const std::unordered_map<char, WhiteSpaceFunction> whiteSpaceMap = {
+    {' ',  [](Lexer &lexer) { lexer.advance(); }},
+    {'\r', [](Lexer &lexer) { lexer.advance(); }},
+    {'\t', [](Lexer &lexer) { lexer.advance(); }},
+    {'\n', [](Lexer &lexer) {
+      lexer.scanner.line++;
+      lexer.scanner.column = 0;
+      lexer.advance();
+    }},
+    {'#', [](Lexer &lexer) {
+      while (lexer.peek() != '\n' && !lexer.isAtEnd()) lexer.advance();
+    }},
+};
 
 const std::unordered_map<std::string, TokenKind> keywords = {
       {"and", TokenKind::AND},

@@ -72,9 +72,7 @@ Lexer::Token Lexer::number() {
 
   if (peek() == '.' && isdigit(peekNext())) {
     advance();
-
-    while (isdigit(peek()))
-      advance();
+    while (isdigit(peek())) advance();
   }
 
   return makeToken(TokenKind::NUMBER);
@@ -109,30 +107,11 @@ TokenKind Lexer::identifierType() {
 void Lexer::skipWhitespace() {
   for (;;) {
     char c = peek();
-    switch (c) {
-    case ' ':
-    case '\r':
-    case '\t':
-      advance();
-      break;
-    case '\n':
-      scanner.line++;
-      scanner.column = 0;
-      advance();
-      break;
-    case '/':
-      advance();
-      // check for a comment (//) and a block comment (/*)
-      if (peek() == '/') {
-        while (peek() != '\n' && !isAtEnd())
-          advance();
-      } else {
-        return;
-      }
-      break;
-    default:
-      return;
-    }
+
+    auto it = whiteSpaceMap.find(c);
+    if (it != whiteSpaceMap.end()) {
+      it->second(*this);
+    } else break;
   }
 }
 

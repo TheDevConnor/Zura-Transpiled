@@ -118,14 +118,14 @@ public:
   const char *lineStart(int line, const char *source);
 
   void reset();
+  char advance();
+  bool isAtEnd();
+  char peek();
 
 private:
   char peekNext();
-  char advance();
-  char peek();
 
   bool match(char expected);
-  bool isAtEnd();
 
   Token makeToken(TokenKind kind);
   Token identifier();
