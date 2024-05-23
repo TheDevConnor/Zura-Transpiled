@@ -6,16 +6,12 @@
 #include "../../common.hpp"
 #include "error.hpp"
 
-/*
-    TODO: Need to fix this. 
-    [3::29] (main.zu)
-    ↳ Lexer Error Unexpected character.
-    [1]    10243 segmentation fault (core dumped)  ./build/zura test.zu -o main
-    We are segfaulting when trying to get the value from the start 
-    value in currentLine, beforeLine, and afterLine.
-*/
-
-Lexer lexer;
+void ErrorClass::printIgnoreSpaces(int line) {
+    if (line < 10) std::cout << " ";
+    if (line >= 10 && line < 100) std::cout << "  ";
+    if (line >= 100) std::cout << "   ";
+    if (line >= 1000) std::cout << "    ";
+}
 
 const char *ErrorClass::lineNumber(int line) {
     if (line < 10) return "0";
@@ -30,23 +26,24 @@ void ErrorClass::printLine(int line, const char *start) {
               << std::endl;
 }
 
-void ErrorClass::beforeLine(int line) {
+void ErrorClass::beforeLine(int line, Lexer &lexer) {
     if (line < 1) return;
     const char *start = lexer.lineStart(line);
     printLine(line, start);
 }
 
-void ErrorClass::currentLine(int line, int pos) {
+void ErrorClass::currentLine(int line, int pos, Lexer &lexer) {
     const char *start = lexer.lineStart(line);
     printLine(line, start);
 }
 
-void ErrorClass::afterLine(int line) {
+void ErrorClass::afterLine(int line, Lexer &lexer) {
     const char *start = lexer.lineStart(line);
     printLine(line, start);
 }
 
-void ErrorClass::error(int line, int pos, std::string msg, std::string errorType, std::string filename) {
+void ErrorClass::error(int line, int pos, std::string msg, std::string errorType, 
+                       std::string filename, Lexer &lexer) {
     int cPos = pos;
     if (line == 1) cPos += 1;
 
@@ -54,7 +51,9 @@ void ErrorClass::error(int line, int pos, std::string msg, std::string errorType
               << filename << ") \n ↳ " << termcolor::red 
               << errorType << termcolor::reset << " " << msg << std::endl;
 
-    // beforeLine(line - 1);
-    currentLine(line, cPos);
-    // afterLine(line + 1);
+    beforeLine(line - 1, lexer);
+    currentLine(line, cPos, lexer);
+    afterLine(line + 1, lexer);
+
+    std::cout << std::endl;
 }

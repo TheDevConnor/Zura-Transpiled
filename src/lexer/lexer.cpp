@@ -53,7 +53,7 @@ bool Lexer::match(char expected) {
 }
 
 Lexer::Token Lexer::errorToken(std::string message) {
-  ErrorClass::error(token.line, token.column, message, "Lexer Error", "main.zu");
+  ErrorClass::error(token.line, token.column, message, "Lexer Error", "main.zu", *this);
   return makeToken(TokenKind::ERROR_);
 }
 
@@ -139,6 +139,5 @@ Lexer::Token Lexer::scanToken() {
   if (it != scMap.end())
     return makeToken(it->second);
 
-  ErrorClass::error(token.line, token.column, "Unexpected character.", "Lexer Error", "main.zu");
-  return makeToken(TokenKind::ERROR_);
+  return errorToken("Unexpected character.");
 }
