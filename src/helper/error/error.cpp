@@ -7,15 +7,12 @@
 #include "error.hpp"
 
 void ErrorClass::printIgnoreSpaces(int line) {
-    if (line < 10) std::cout << " ";
-    if (line >= 10 && line < 100) std::cout << "  ";
-    if (line >= 100) std::cout << "   ";
-    if (line >= 1000) std::cout << "    ";
+    int numSpaces = 5 - std::to_string(line).length();
+    std::cout << std::string(numSpaces, ' ');
 }
 
 const char *ErrorClass::lineNumber(int line) {
-    if (line < 10) return "0";
-    return "";
+    return (line < 10) ? "0" : "";
 }
 
 void ErrorClass::printLine(int line, const char *start) {
@@ -35,6 +32,13 @@ void ErrorClass::beforeLine(int line, Lexer &lexer) {
 void ErrorClass::currentLine(int line, int pos, Lexer &lexer) {
     const char *start = lexer.lineStart(line);
     printLine(line, start);
+
+    printIgnoreSpaces(line);
+    for (int i = 0; i < pos + 1; i++) {
+        if (start[i] == '\t') std::cout << '\t';
+        else std::cout << termcolor::green << "~" << termcolor::reset;
+    }
+    std::cout << termcolor::red << "^" << termcolor::reset << std::endl;
 }
 
 void ErrorClass::afterLine(int line, Lexer &lexer) {
