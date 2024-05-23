@@ -16,6 +16,7 @@ set(ZURA_HEADER_FILES
 )
 
 set(ZURA_SOURCE_FILES
+    src/helper/error/error.cpp
     src/helper/flags.cpp
     src/lexer/lexer.cpp
     src/main.cpp

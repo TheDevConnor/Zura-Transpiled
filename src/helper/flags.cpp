@@ -1,4 +1,4 @@
-#include <cstring>
+#include <string>
 #include <fstream>
 #include <iostream>
 
@@ -12,22 +12,6 @@
 using namespace std;
 
 void Flags::compilerDelete(char **argv) {
-  cout << "Deleting the executable file" << endl;
-  std::string outName = argv[2];
-  char rmCommand[256];
-
-#ifdef _WIN32
-  strcat(rmCommand, "del ");
-  strcat(rmCommand, outName.c_str());
-  strcat(rmCommand, ".exe");
-  strcat(rmCommand, "out.c");
-  system(rmCommand);
-#else
-  strcat(rmCommand, "rm -rf ");
-  strcat(rmCommand, outName.c_str());
-  strcat(rmCommand, "out.c");
-  system(rmCommand);
-#endif
   Exit(ExitValue::FLAGS_PRINTED);
 }
 
@@ -57,7 +41,8 @@ char *Flags::readFile(const char *path) {
 void Flags::runFile(const char *path, std::string outName, bool save) {
   const char *source = readFile(path);
   
-  Lexer lexer(source);
+  Lexer lexer;
+  lexer.initLexer(source);
   while (lexer.token.kind != TokenKind::END_OF_FILE) {
     lexer.scanToken();
     std::cout << lexer.token.kind << " " << lexer.token.value << std::endl;

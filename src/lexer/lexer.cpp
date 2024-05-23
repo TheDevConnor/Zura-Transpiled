@@ -1,10 +1,11 @@
 #include <unordered_map>
+#include <string>
 
 #include "../helper/error/error.hpp"
 #include "maps.hpp"
 #include "lexer.hpp"
 
-Lexer::Lexer(const char *source) {
+void Lexer::initLexer(const char *source) {
   scanner.current = source;
   scanner.source = source;
   scanner.start = source;
@@ -28,12 +29,11 @@ char Lexer::peek() { return *scanner.current; }
 
 bool Lexer::isAtEnd() { return *scanner.current == '\0'; }
 
-const char *Lexer::lineStart(int line, const char *source) {
-  const char *start = source;
+const char *Lexer::lineStart(int line) {
+  const char *start = scanner.source;
   int cLine = 1;
 
   while (cLine != line) {
-    if (*start == '\0') return "Line not found";
     if (*start == '\n') cLine++;
     start++;
   }
@@ -53,7 +53,7 @@ bool Lexer::match(char expected) {
 }
 
 Lexer::Token Lexer::errorToken(std::string message) {
-  ErrorClass::error(token, message, *this);
+  ErrorClass::error(token.line, token.column, message, "Lexer Error", "main.zu");
   return makeToken(TokenKind::ERROR_);
 }
 
@@ -139,6 +139,6 @@ Lexer::Token Lexer::scanToken() {
   if (it != scMap.end())
     return makeToken(it->second);
 
-  ErrorClass::error(token, "Unexpected character: " + std::string(1, c), *this);
+  ErrorClass::error(token.line, token.column, "Unexpected character.", "Lexer Error", "main.zu");
   return makeToken(TokenKind::ERROR_);
 }

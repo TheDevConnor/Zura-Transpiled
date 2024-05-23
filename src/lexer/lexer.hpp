@@ -1,6 +1,6 @@
 #pragma once
 
-#include <cstring>
+#include <string>
 
 enum TokenKind {
   // Single-character tokens.
@@ -85,9 +85,6 @@ enum TokenKind {
 
 class Lexer {
 public:
-
-  Lexer(const char *source);
-
   struct Token {
     const char *start;
     TokenKind kind;
@@ -112,10 +109,12 @@ public:
     TokenKind kind;
   };
 
+  void initLexer(const char *source);
+
   Token scanToken();
   Token errorToken(std::string message);
 
-  const char *lineStart(int line, const char *source);
+  const char *lineStart(int line);
 
   void reset();
   char advance();
@@ -132,7 +131,6 @@ private:
   Token number();
   Token String();
 
-  TokenKind checkKeyword(std::string identifier);
   TokenKind identifierType();
 
   void skipWhitespace();
