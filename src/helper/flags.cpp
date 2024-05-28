@@ -2,7 +2,7 @@
 #include <fstream>
 #include <iostream>
 
-// #include "../parser/parser.hpp"
+#include "../parser/parser.hpp"
 // #include "../type/type.hpp"
 // #include "../ast/ast.hpp"
 #include "../common.hpp"
