@@ -1,5 +1,6 @@
 #pragma once
 
+#include <sys/types.h>
 #include <unordered_map>
 #include <functional>
 #include <iostream>
@@ -13,7 +14,7 @@ class ParserClass;
 
 struct Parser {
     std::vector<Lexer::Token> tks;
-    size_t pos;
+    int pos = 0;
 
     Lexer::Token current(Parser *psr) {
         return psr->tks[psr->pos];
@@ -67,7 +68,7 @@ using led_t = Node::Expr *(ParserClass::*)(Parser*,
 
 class ParserClass {
 public:
-    Node::Stmt parse();
+    static Node::Stmt parse(const char *source);
 private:
     Parser psr;
 
@@ -81,7 +82,7 @@ private:
     Node::Expr* ledHandler(Parser *psr, Node::Expr* left);
 
     // Pratt parser functions.
-    void storeToken(Parser *psr, Lexer::Token tk);
+    static void storeToken(Parser *psr, Lexer *lex, Lexer::Token tk);
     Node::Expr* parseExpr(Parser *psr, BindingPower bp);
 
     // Expr Functions

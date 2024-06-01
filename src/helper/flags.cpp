@@ -41,12 +41,7 @@ char *Flags::readFile(const char *path) {
 void Flags::runFile(const char *path, std::string outName, bool save) {
   const char *source = readFile(path);
   
-  Lexer lexer;
-  lexer.initLexer(source);
-  while (lexer.token.kind != TokenKind::END_OF_FILE) {
-    lexer.scanToken();
-    std::cout << lexer.token.kind << " " << lexer.token.value << std::endl;
-  }
+  ParserClass::parse(source);
 
   delete[] source;
 }
