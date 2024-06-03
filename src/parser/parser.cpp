@@ -1,6 +1,7 @@
 #include "../lexer/lexer.hpp"
 #include "../ast/ast.hpp"
 #include "parser.hpp"
+#include <cstdlib>
 
 Lexer lexer;
 
@@ -25,5 +26,10 @@ Node::Stmt ParserClass::parse(const char *source) {
 
 //    auto expr = ParserClass::parseExpr(&psr, BindingPower::defaultValue);
 
+   while (psr.pos < psr.tks.size()) {
+      std::cout << "Token: " << psr.tks[psr.pos].value << std::endl;
+      psr.pos++;
+   }
+   
    return Node::Stmt();
 }
