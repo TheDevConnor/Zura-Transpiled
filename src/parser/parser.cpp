@@ -3,20 +3,27 @@
 #include "parser.hpp"
 
 Lexer lexer;
-Parser psr;
 
-void ParserClass::storeToken(Parser *psr, Lexer::Token tk) {
-    lexer.scanToken();
-    while(tk.kind != TokenKind::END_OF_FILE) {
+void ParserClass::storeToken(Parser *psr, Lexer *lex, Lexer::Token tk) {
+   while (tk.kind != TokenKind::END_OF_FILE) {
         psr->tks.push_back(tk);
-        lexer.scanToken();
-    }
+        tk = lex->scanToken();
+   } 
 }
 
-Node::Stmt ParserClass::parse() {
-   storeToken(&psr, lexer.scanToken());
+Node::Stmt ParserClass::parse(const char *source) {
+   Parser psr;
 
-   auto expr = ParserClass::parseExpr(&psr, BindingPower::defaultValue);
+   // Initialize the lexer and store the tokens
+   lexer.initLexer(source);
+   storeToken(&psr, &lexer, lexer.scanToken());
+
+    while (psr.pos < psr.tks.size()) {
+        std::cout << "Token: " << psr.current(&psr).value << std::endl;
+        psr.advance(&psr);
+    }
+
+//    auto expr = ParserClass::parseExpr(&psr, BindingPower::defaultValue);
 
    return Node::Stmt();
 }

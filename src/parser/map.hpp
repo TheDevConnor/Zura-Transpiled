@@ -8,6 +8,8 @@
 #include "../lexer/lexer.hpp"
 #include "parser.hpp"
 
+using namespace ParserClass;
+
 const std::unordered_map<TokenKind, BindingPower> ParserClass::bp_table = {
     // Literals
     {TokenKind::NUMBER, BindingPower::defaultValue},
@@ -42,39 +44,39 @@ const std::unordered_map<TokenKind, BindingPower> ParserClass::bp_table = {
 
 const std::unordered_map<TokenKind, nud_t> ParserClass::nud_table = {
     // Literals
-    {TokenKind::NUMBER, &ParserClass::num},
-    {TokenKind::IDENTIFIER, &ParserClass::ident},
-    {TokenKind::STRING, &ParserClass::str},
+    {TokenKind::NUMBER, &num},
+    {TokenKind::IDENTIFIER, &ident},
+    {TokenKind::STRING, &str},
 
     // Prefix
-    {TokenKind::MINUS, &ParserClass::unary},
-    {TokenKind::BANG, &ParserClass::unary},
+    {TokenKind::MINUS, &unary},
+    {TokenKind::BANG, &unary},
 };
 
 const std::unordered_map<TokenKind, led_t> ParserClass::led_table = {
     // Binary
-    {TokenKind::PLUS, &ParserClass::binary},
-    {TokenKind::MINUS, &ParserClass::binary},
-    {TokenKind::STAR, &ParserClass::binary},
-    {TokenKind::SLASH, &ParserClass::binary},
-    {TokenKind::MODULO, &ParserClass::binary},
-    {TokenKind::CARET, &ParserClass::binary},
+    {TokenKind::PLUS, &binary},
+    {TokenKind::MINUS, &binary},
+    {TokenKind::STAR, &binary},
+    {TokenKind::SLASH, &binary},
+    {TokenKind::MODULO, &binary},
+    {TokenKind::CARET, &binary},
 
     // Comparison
-    {TokenKind::LESS, &ParserClass::binary},
-    {TokenKind::GREATER, &ParserClass::binary},
-    {TokenKind::LESS_EQUAL, &ParserClass::binary},
-    {TokenKind::GREATER_EQUAL, &ParserClass::binary},
-    {TokenKind::EQUAL_EQUAL, &ParserClass::binary},
-    {TokenKind::BANG_EQUAL, &ParserClass::binary},
+    {TokenKind::LESS, &binary},
+    {TokenKind::GREATER, &binary},
+    {TokenKind::LESS_EQUAL, &binary},
+    {TokenKind::GREATER_EQUAL, &binary},
+    {TokenKind::EQUAL_EQUAL, &binary},
+    {TokenKind::BANG_EQUAL, &binary},
 };
 
 BindingPower ParserClass::getBP(Parser *psr, TokenKind tk) {
-    if (bp_table.find(tk) == bp_table.end()) {
+    if (ParserClass::bp_table.find(tk) == ParserClass::bp_table.end()) {
         std::cout << "Error: No binding power found for token kind: " << tk << std::endl;
         return BindingPower::err;
     } 
-    return bp_table.at(tk);
+    return ParserClass::bp_table.at(tk);
 }
 
 Node::Expr *ParserClass::nudHandler(Parser *psr, TokenKind tk) {
@@ -84,12 +86,12 @@ Node::Expr *ParserClass::nudHandler(Parser *psr, TokenKind tk) {
     }
 
     nud_t nudFunc = nud_table.at(tk);
-    return (this->*nudFunc)(psr);
+    return nudFunc(psr); 
 }
 
 Node::Expr *ParserClass::ledHandler(Parser *psr, Node::Expr* left) {
     auto op = psr->current(psr);
-    auto bp = getBP(psr, op.kind);
+    auto bp = ParserClass::getBP(psr, op.kind);
 
     if (led_table.find(op.kind) == led_table.end()) {
         std::cout << "Error: No led handler found for token kind: " << op.kind << std::endl;
@@ -97,5 +99,5 @@ Node::Expr *ParserClass::ledHandler(Parser *psr, Node::Expr* left) {
     }
 
     led_t ledFunc = led_table.at(psr->current(psr).kind);
-    return (this->*ledFunc)(psr, left, op.value, bp); 
+    return ledFunc(psr, left, op.value, bp); 
 }

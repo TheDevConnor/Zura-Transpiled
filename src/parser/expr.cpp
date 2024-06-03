@@ -2,11 +2,13 @@
 #include "parser.hpp"
 #include "map.hpp"
 
-Node::Expr *ParserClass::parseExpr(Parser *psr, BindingPower bp) {
-   auto left = nudHandler(psr, psr->current(psr).kind);
+using namespace ParserClass;
 
-   while (getBP(psr, psr->current(psr).kind) > bp) {
-       left = ledHandler(psr, left);
+Node::Expr *ParserClass::parseExpr(Parser *psr, BindingPower bp) {
+   auto left = ParserClass::nudHandler(psr, psr->current(psr).kind);
+
+   while (ParserClass::getBP(psr, psr->current(psr).kind) > bp) {
+       left = ParserClass::ledHandler(psr, left);
        psr->advance(psr);
    }
 
