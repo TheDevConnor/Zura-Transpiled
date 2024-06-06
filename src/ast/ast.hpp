@@ -19,11 +19,13 @@ enum NodeKind {
 class Node {
 public:
     struct Expr {
-        NodeKind kind; 
+        NodeKind kind;
+        virtual void debug() const = 0; 
     };
 
     struct Stmt {
         NodeKind kind;
+        virtual void debug() const = 0;
     };
 };
  

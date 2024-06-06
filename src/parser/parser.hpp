@@ -12,22 +12,22 @@
 
 namespace ParserClass {
     enum BindingPower {
-        defaultValue = -1,
-        comma = 0,
-        assignment = 1,
-        ternary = 2,
-        logicalOr = 3,
-        logicalAnd = 4,
-        relational = 5,
-        comparison = 6,
-        additive = 7,
-        multiplicative = 8,
-        power = 9,
-        prefix = 10,
-        postfix = 11,
-        call = 12,
-        field = 13,
-        err = 14
+        defaultValue = 0,
+        comma = 1,
+        assignment = 2,
+        ternary = 3,
+        logicalOr = 4,
+        logicalAnd = 5,
+        relational = 6,
+        comparison = 7,
+        additive = 8,
+        multiplicative = 9,
+        power = 10,
+        prefix = 11,
+        postfix = 12,
+        call = 13,
+        field = 14,
+        err = 15
     };
     struct Parser;
 
@@ -40,7 +40,7 @@ struct ParserClass::Parser {
     size_t pos = 0;
 
     Lexer::Token current(Parser *psr) {
-        return psr->tks[psr->pos];
+        return psr->tks.at(psr->pos);
     }
 
     Lexer::Token advance(Parser *psr) {
@@ -49,12 +49,18 @@ struct ParserClass::Parser {
         return psr->tks[psr->pos++];
     }
 
+    Lexer::Token advanceGetCurr(Parser *psr) {
+        auto tk = current(psr);
+        advance(psr);
+        return tk;
+    }
+
     Lexer::Token peek(Parser *psr, int offset = 0) {
         return psr->tks[psr->pos + offset];
     }
 
     bool expect(Parser *psr, TokenKind tk) {
-        bool result = (current(psr).kind == tk) ? advance(psr), true : false;
+        bool result = (current(psr).kind == tk) ? true : false;
         if (!result)
             std::cerr << "Expected token " << tk << " but got " << current(psr).kind << std::endl;
         return result;
@@ -62,7 +68,7 @@ struct ParserClass::Parser {
 };
 
 namespace ParserClass {
-    Node::Stmt parse(const char *source);
+    Node::Stmt *parse(const char *source);
 
     // Tables for the Pratt parser and their lookup functions.
     extern const std::unordered_map<TokenKind, BindingPower> bp_table;
@@ -85,4 +91,7 @@ namespace ParserClass {
     Node::Expr *group(Parser *psr);
     Node::Expr *binary(Parser *psr, Node::Expr *left, std::string op,
                        BindingPower bp);
+
+    // Stmt Functions
+    Node::Stmt *exprStmt(Parser *psr);
 }

@@ -1,5 +1,7 @@
 #pragma once
 
+#include <iostream>
+
 #include "ast.hpp"
 
 class NumberExpr : public Node::Expr {
@@ -8,6 +10,10 @@ public:
 
     NumberExpr(std::string value) : value(value) {
         kind = NodeKind::ND_NUMBER;
+    }
+
+    void debug() const override {
+        std::cout << value; 
     }
 };
 
@@ -18,6 +24,10 @@ public:
     IdentExpr(std::string name) : name(name) {
         kind = NodeKind::ND_IDENT;
     }
+
+    void debug() const override {
+        std::cout << name; 
+    }
 };
 
 class StringExpr : public Node::Expr {
@@ -26,6 +36,10 @@ public:
 
     StringExpr(std::string value) : value(value) {
         kind = NodeKind::ND_STRING;
+    }
+
+    void debug() const override {
+        std::cout << value; 
     }
 };
 
@@ -38,6 +52,12 @@ public:
     BinaryExpr(Node::Expr *lhs, Node::Expr *rhs, std::string op) : lhs(lhs), rhs(rhs), op(op) {
         kind = NodeKind::ND_BINARY;
     }
+
+    void debug() const override {
+        lhs->debug();
+        std::cout << op << " ";
+        rhs->debug();
+    }
 };
 
 class UnaryExpr : public Node::Expr {
@@ -48,6 +68,11 @@ public:
     UnaryExpr(Node::Expr *expr, std::string op) : expr(expr), op(op) {
         kind = NodeKind::ND_UNARY;
     }
+
+    void debug() const override {
+        std::cout << op;
+        expr->debug();
+    }
 };
 
 class GroupExpr : public Node::Expr {
@@ -56,5 +81,11 @@ public:
 
     GroupExpr(Node::Expr *expr) : expr(expr) {
         kind = NodeKind::ND_GROUP;
+    }
+
+    void debug() const override {
+        std::cout << "(";
+        expr->debug();
+        std::cout << ")";
     }
 };

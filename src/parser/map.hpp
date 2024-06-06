@@ -51,6 +51,9 @@ const std::unordered_map<TokenKind, nud_t> ParserClass::nud_table = {
     // Prefix
     {TokenKind::MINUS, &unary},
     {TokenKind::BANG, &unary},
+
+    // Parentheses
+    {TokenKind::LEFT_PAREN, &group},
 };
 
 const std::unordered_map<TokenKind, led_t> ParserClass::led_table = {
@@ -84,20 +87,18 @@ Node::Expr *ParserClass::nudHandler(Parser *psr, TokenKind tk) {
         std::cout << "Error: No nud handler found for token kind: " << tk << std::endl;
         return nullptr;
     }
-
-    nud_t nudFunc = nud_table.at(tk);
-    return nudFunc(psr); 
+    return nud_table.at(tk)(psr);
 }
 
 Node::Expr *ParserClass::ledHandler(Parser *psr, Node::Expr* left) {
     auto op = psr->current(psr);
     auto bp = ParserClass::getBP(psr, op.kind);
 
+    psr->advance(psr);
+
     if (led_table.find(op.kind) == led_table.end()) {
         std::cout << "Error: No led handler found for token kind: " << op.kind << std::endl;
         return nullptr;
     }
-
-    led_t ledFunc = led_table.at(psr->current(psr).kind);
-    return ledFunc(psr, left, op.value, bp); 
+    return led_table.at(op.kind)(psr, left, op.value, bp);
 }

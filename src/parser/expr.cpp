@@ -2,17 +2,19 @@
 #include "parser.hpp"
 #include "map.hpp"
 
+#include <iostream>
+
 using namespace ParserClass;
 
 Node::Expr *ParserClass::parseExpr(Parser *psr, BindingPower bp) {
-   auto left = ParserClass::nudHandler(psr, psr->current(psr).kind);
-
-   while (ParserClass::getBP(psr, psr->current(psr).kind) > bp) {
-       left = ParserClass::ledHandler(psr, left);
+    auto left = nudHandler(psr, psr->current(psr).kind);
+        
+    while (bp < getBP(psr, psr->current(psr).kind)) {
+       auto led = ledHandler(psr, left);
        psr->advance(psr);
-   }
+    }
 
-    return left;
+    return left; 
 }
 
 Node::Expr *ParserClass::num(Parser *psr) {
@@ -29,6 +31,7 @@ Node::Expr *ParserClass::str(Parser *psr) {
 
 Node::Expr *ParserClass::unary(Parser *psr) {
     auto op = psr->current(psr).value;
+    psr->advance(psr);
     auto right = parseExpr(psr, BindingPower::prefix);
     return new UnaryExpr(right, op);
 }
