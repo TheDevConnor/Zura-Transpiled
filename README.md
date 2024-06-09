@@ -36,21 +36,25 @@ For Arch Linux:
 sudo pacman -S cmake make gcc gcc-multilib llvm
 ```
 
-Run the following commands if on Windows:
+Now if you want to build zura for the debug mode do
+```bash
+mkdir debug
+cd Debug
+cmake -DCMAKE_BUILD_TYPE=Debug ..
+make
+```
+and now the exacutable will be availbe for you to use to debug with
+
+Or if you want the release version do this
 ```bash
 mkdir build
-cmake -S . -B build -G "MinGW Makefiles"
-cmake --build build
+cd build
+cmake -DCMAKE_BUILD_TYPE=Release 
+make
 ```
-
-Run the following commands if on Linux:
-```bash
-mkdir build
-cmake -S . -B build
-cmake --build build
-```
-
 This will create a `zura` executable in the `build` directory.
+
+or you can use the bash script to build it as well
 
 Or you can download the latest release from [here](https://github.com/TheDevConnor/Zura-Transpiled/releases/tag/pre-release) and add either the `zura.exe` (For Windows) or `zura` (For Linux) executable to your path.
 Eventually, I will add a script to automate this process.
