@@ -94,8 +94,6 @@ Node::Expr *ParserClass::ledHandler(Parser *psr, Node::Expr* left) {
     auto op = psr->current(psr);
     auto bp = ParserClass::getBP(psr, op.kind);
 
-    psr->advance(psr);
-
     if (led_table.find(op.kind) == led_table.end()) {
         std::cout << "Error: No led handler found for token kind: " << op.kind << std::endl;
         return nullptr;

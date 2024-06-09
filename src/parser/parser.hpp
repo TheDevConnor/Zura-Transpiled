@@ -44,9 +44,11 @@ struct ParserClass::Parser {
     }
 
     Lexer::Token advance(Parser *psr) {
-        if (psr->pos >= psr->tks.size())
-            return current(psr);
-        return psr->tks[psr->pos++];
+        if (psr->pos + 1 < psr->tks.size()) {
+            psr->pos++;
+            return psr->current(psr);
+        }
+        return psr->current(psr);
     }
 
     Lexer::Token advanceGetCurr(Parser *psr) {

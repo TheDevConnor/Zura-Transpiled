@@ -6,13 +6,20 @@
 
 using namespace ParserClass;
 
+// a + b
+
 Node::Expr *ParserClass::parseExpr(Parser *psr, BindingPower bp) {
     auto left = nudHandler(psr, psr->current(psr).kind);
-        
-    while (bp < getBP(psr, psr->current(psr).kind)) {
+    // a
+    
+    psr->advance(psr);
+
+    while (bp < getBP(psr, psr->current(psr).kind)) { // + > 0
        auto led = ledHandler(psr, left);
-       psr->advance(psr);
     }
+
+    left->debug();
+    std::cout << std::endl;
 
     return left; 
 }
@@ -46,6 +53,7 @@ Node::Expr *ParserClass::group(Parser *psr) {
 
 Node::Expr *ParserClass::binary(Parser *psr, Node::Expr *left, std::string op, 
                                 BindingPower bp) {
+    psr->advance(psr);
     auto right = parseExpr(psr, bp);
     return new BinaryExpr(left, right, op);
 }

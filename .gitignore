@@ -5,3 +5,8 @@ build
 *.asm
 *.o
 main
+CMakeFiles
+CMakeCache.txt
+cmake_install.cmake
+Makefile
+zura
