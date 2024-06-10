@@ -1,94 +1,56 @@
-#!/bin/sh
+#!/usr/bin/env bash
 
-build_debug() {
-    # check if debug folder exists
-    if [ ! -d "debug" ]; then
-        mkdir debug
-    fi
+# Directories
+DEBUG_DIR="debug"
+RELEASE_DIR="release"
 
-    cd debug
-    cmake -DCMAKE_BUILD_TYPE=Debug
-    make
-    cd ..
+# Global variables
+BUILD_TYPE=""
+
+# Build functions (combined)
+build() {
+  type="$1"
+  BUILD_TYPE="$type"
+  mkdir -p "$type"
+  cmake -DCMAKE_BUILD_TYPE="$type" -B "$type" -S .
+  cmake --build "$type" --config "$type" 
 }
 
-build_release() {
-    # check if release folder exists
-    if [ ! -d "release" ]; then
-        mkdir release
-    fi
-
-    cd release
-    cmake -DCMAKE_BUILD_TYPE=Release
-    make
-    cd ..
-}
-
+# Clean function
 clean() {
-    if [ -d "debug" ]; then
-        rm -rf debug/CMakeFiles
-        find debug -type f ! -name 'CMakeLists.txt' -delete
-    fi
-
-    if [ -d "release" ]; then
-        rm -rf release/CMakeFiles
-        find release -type f ! -name 'CMakeLists.txt' -delete
-    fi
+  rm -rf "$DEBUG_DIR" "$RELEASE_DIR" 
 }
 
-choice() {
-    # ask user to choose debug or release
-    echo "Choose build type: "
-    echo "1. Debug"
-    echo "2. Release"
-    read -p "Enter your choice: " choice
-
-    if [ "$choice" = "1" ]; then
-        build_debug
-        BUILD_TYPE="debug"
-    elif [ "$choice" = "2" ]; then
-        build_release
-        BUILD_TYPE="release"
-    else
-        echo "Invalid choice"
-        exit 1
-    fi
-}
-
+# Choose & Run (combined)
 run() {
-    # call choice function
-    choice
-
-    # ask user to run the program
-    read -p "Run the program? (y/n): " run 
-
-    if [ "$run" = "y" ]; then
-        if [ "$BUILD_TYPE" = "debug" ]; then
-            if [ -f "./debug/zura" ]; then
-                ./debug/zura test.zu -o main
-            else
-                echo "Debug build failed or executable not found."
-            fi
-        elif [ "$BUILD_TYPE" = "release" ]; then
-            if [ -f "./release/zura" ]; then
-                ./release/zura test.zu -o main
-            else
-                echo "Release build failed or executable not found."
-            fi
-        fi
-    else
-        echo "Program not run."
-    fi
+  executable="./$BUILD_TYPE/zura"
+  echo "Executable: $executable"
+  if [ ! -f "$executable" ]; then
+    echo "Executable not found in $BUILD_TYPE build."
+    return 1
+  fi
+  read -p "Run the program? (y/n): " run
+  if [ "$run" = "y" ]; then
+    "$executable" test.zu -o main
+  else
+    echo "Program not run."
+  fi
 }
 
-if [ "$1" = "debug" ]; then
-    build_debug
-elif [ "$1" = "release" ]; then
-    build_release
-elif [ "$1" = "clean" ]; then
-    clean
-elif [ "$1" = "run" ]; then
-    run
-else
-    echo "Usage: $0 {debug|release|clean|run}"
-fi
+# make the commands be able to be sequenced
+for cmd in "$@"; do
+  case "$cmd" in
+    debug|release)
+      build "$cmd"
+      ;;
+    clean)
+      clean
+      ;;
+    run)
+      run "$2"
+      ;;
+    *)
+      echo "Usage: $0 {debug|release|clean|run}"
+      ;;
+  esac
+done
