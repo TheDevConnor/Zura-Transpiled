@@ -73,6 +73,10 @@ const std::unordered_map<TokenKind, led_t> ParserNamespace::led_table = {
     {TokenKind::BANG_EQUAL, &binary},
 };
 
+const std::unordered_map<TokenKind, stmt_t> ParserNamespace::stmt_table = {
+    {TokenKind::VAR, &varStmt},
+};
+
 BindingPower ParserNamespace::getBP(Parser *psr, TokenKind tk) {
     if (ParserNamespace::bp_table.find(tk) == ParserNamespace::bp_table.end()) {
         std::cout << "Error: No binding power found for token kind: " << tk << std::endl;
@@ -100,4 +104,15 @@ Node::Expr *ParserNamespace::ledHandler(Parser *psr, Node::Expr* left) {
         return nullptr;
     }
     return led_table.at(op.kind)(psr, left, op.value, bp);
+}
+
+Node::Stmt *ParserNamespace::stmtHandler(Parser *psr) {
+    auto current = psr->current(psr);
+
+    if (stmt_table.find(current.kind) == stmt_table.end()) {
+        auto expr = exprStmt(psr);
+        return expr;
+    }
+
+    return stmt_table.at(current.kind)(psr);
 }

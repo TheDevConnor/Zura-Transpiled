@@ -32,3 +32,18 @@ public:
         expr->debug();
     }
 };
+
+class VarStmt : public Node::Stmt {
+public:
+    std::string name;
+    ExprStmt *expr;
+
+    VarStmt(std::string name, ExprStmt *expr) : name(name), expr(expr) {
+        kind = NodeKind::ND_VAR_STMT;
+    }
+
+    void debug() const override {
+        std::cout << "var " << name << " = ";
+        expr->debug();
+    } 
+};

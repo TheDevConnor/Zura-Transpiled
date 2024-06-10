@@ -13,6 +13,7 @@ enum NodeKind {
 
     // Statements
     ND_EXPR_STMT,
+    ND_VAR_STMT,
     ND_PROGRAM,
 };
 

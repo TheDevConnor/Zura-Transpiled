@@ -33,6 +33,8 @@ namespace ParserNamespace {
 
     using nud_t = Node::Expr* (*)(Parser*);
     using led_t = Node::Expr* (*)(Parser*, Node::Expr*, std::string, BindingPower);
+
+    using stmt_t = Node::Stmt* (*)(Parser*);
 }
 
 struct ParserNamespace::Parser {
@@ -72,10 +74,12 @@ namespace ParserNamespace {
     extern const std::unordered_map<TokenKind, BindingPower> bp_table;
     extern const std::unordered_map<TokenKind, nud_t> nud_table;
     extern const std::unordered_map<TokenKind, led_t> led_table;
+    extern const std::unordered_map<TokenKind, stmt_t> stmt_table;
 
     BindingPower getBP(Parser *psr, TokenKind tk);
     Node::Expr *nudHandler(Parser *psr, TokenKind tk);
     Node::Expr *ledHandler(Parser *psr, Node::Expr *left);
+    Node::Stmt *stmtHandler(Parser *psr);
 
     // Pratt parser functions.
     void storeToken(Parser *psr, Lexer *lex, Lexer::Token tk);
@@ -86,10 +90,11 @@ namespace ParserNamespace {
     Node::Expr *ident(Parser *psr);
     Node::Expr *str(Parser *psr);
     Node::Expr *unary(Parser *psr);
-    Node::Expr *group(Parser *psr);
+    // Node::Expr *group(Parser *psr);
     Node::Expr *binary(Parser *psr, Node::Expr *left, std::string op,
                        BindingPower bp);
 
     // Stmt Functions
     Node::Stmt *exprStmt(Parser *psr);
+    Node::Stmt *varStmt(Parser *psr);
 }
