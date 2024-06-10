@@ -41,8 +41,9 @@ char *Flags::readFile(const char *path) {
 void Flags::runFile(const char *path, std::string outName, bool save) {
   const char *source = readFile(path);
   
-  auto result = ParserClass::parse(source);
+  auto result = ParserNamespace::parse(source);
   result->debug();
+  std::cout << std::endl;
 
   delete[] source;
 }

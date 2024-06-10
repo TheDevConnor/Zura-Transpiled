@@ -4,56 +4,46 @@
 
 #include <iostream>
 
-using namespace ParserClass;
+using namespace ParserNamespace;
 
-// a + b
-
-Node::Expr *ParserClass::parseExpr(Parser *psr, BindingPower bp) {
+Node::Expr *ParserNamespace::parseExpr(Parser *psr, BindingPower bp) {
     auto left = nudHandler(psr, psr->current(psr).kind);
-    // a
     
-    psr->advance(psr);
-
-    while (bp < getBP(psr, psr->current(psr).kind)) { // + > 0
-       auto led = ledHandler(psr, left);
+    while (bp < getBP(psr, psr->current(psr).kind)) { 
+       left = ledHandler(psr, left);
+       psr->advance(psr);
     }
-
-    left->debug();
-    std::cout << std::endl;
 
     return left; 
 }
 
-Node::Expr *ParserClass::num(Parser *psr) {
-    return new NumberExpr(psr->current(psr).value);
+Node::Expr *ParserNamespace::num(Parser *psr) {
+    auto res = psr->current(psr).value;
+    psr->advance(psr);
+    return new NumberExpr(res);
 }
 
-Node::Expr *ParserClass::ident(Parser *psr) {
-    return new IdentExpr(psr->current(psr).value);
+Node::Expr *ParserNamespace::ident(Parser *psr) {
+    auto res = psr->current(psr).value;
+    psr->advance(psr);
+    return new IdentExpr(res);
 }
 
-Node::Expr *ParserClass::str(Parser *psr) {
-    return new StringExpr(psr->current(psr).value);
+Node::Expr *ParserNamespace::str(Parser *psr) {
+    auto res = psr->current(psr).value;
+    psr->advance(psr);
+    return new StringExpr(res);
 }
 
-Node::Expr *ParserClass::unary(Parser *psr) {
+Node::Expr *ParserNamespace::unary(Parser *psr) {
     auto op = psr->current(psr).value;
     psr->advance(psr);
     auto right = parseExpr(psr, BindingPower::prefix);
     return new UnaryExpr(right, op);
 }
 
-Node::Expr *ParserClass::group(Parser *psr) {
-    psr->expect(psr, TokenKind::LEFT_PAREN);
-    auto expr = parseExpr(psr, BindingPower::defaultValue);
-    psr->expect(psr, TokenKind::RIGHT_PAREN);
-
-    return new GroupExpr(expr);
-}
-
-Node::Expr *ParserClass::binary(Parser *psr, Node::Expr *left, std::string op, 
+Node::Expr *ParserNamespace::binary(Parser *psr, Node::Expr *left, std::string op, 
                                 BindingPower bp) {
-    psr->advance(psr);
     auto right = parseExpr(psr, bp);
     return new BinaryExpr(left, right, op);
 }

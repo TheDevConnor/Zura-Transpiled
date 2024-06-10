@@ -7,14 +7,14 @@
 
 Lexer lexer;
 
-void ParserClass::storeToken(Parser *psr, Lexer *lex, Lexer::Token tk) {
+void ParserNamespace::storeToken(Parser *psr, Lexer *lex, Lexer::Token tk) {
    while (tk.kind != TokenKind::END_OF_FILE) {
         psr->tks.push_back(tk);
         tk = lex->scanToken();
    } 
 }
 
-Node::Stmt *ParserClass::parse(const char *source) {
+Node::Stmt *ParserNamespace::parse(const char *source) {
    Parser psr;
 
    // Initialize the lexer and store the tokens

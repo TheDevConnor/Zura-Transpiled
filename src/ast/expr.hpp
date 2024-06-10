@@ -54,9 +54,11 @@ public:
     }
 
     void debug() const override {
+        std::cout << "(";
         lhs->debug();
-        std::cout << op << " ";
+        std::cout << op;
         rhs->debug();
+        std::cout << ")";
     }
 };
 
@@ -70,8 +72,10 @@ public:
     }
 
     void debug() const override {
+        std::cout << "(";
         std::cout << op;
         expr->debug();
+        std::cout << ")";
     }
 };
 

@@ -8,14 +8,13 @@
 #include "../lexer/lexer.hpp"
 #include "parser.hpp"
 
-using namespace ParserClass;
+using namespace ParserNamespace;
 
-const std::unordered_map<TokenKind, BindingPower> ParserClass::bp_table = {
+const std::unordered_map<TokenKind, BindingPower> ParserNamespace::bp_table = {
     // Literals
     {TokenKind::NUMBER, BindingPower::defaultValue},
     {TokenKind::IDENTIFIER, BindingPower::defaultValue},
     {TokenKind::STRING, BindingPower::defaultValue},
-    {TokenKind::IDENTIFIER, BindingPower::defaultValue},
 
     // Parentheses
     {TokenKind::LEFT_PAREN, BindingPower::call},
@@ -42,7 +41,7 @@ const std::unordered_map<TokenKind, BindingPower> ParserClass::bp_table = {
     {TokenKind::BANG, BindingPower::prefix},
 };
 
-const std::unordered_map<TokenKind, nud_t> ParserClass::nud_table = {
+const std::unordered_map<TokenKind, nud_t> ParserNamespace::nud_table = {
     // Literals
     {TokenKind::NUMBER, &num},
     {TokenKind::IDENTIFIER, &ident},
@@ -53,10 +52,10 @@ const std::unordered_map<TokenKind, nud_t> ParserClass::nud_table = {
     {TokenKind::BANG, &unary},
 
     // Parentheses
-    {TokenKind::LEFT_PAREN, &group},
+    // {TokenKind::LEFT_PAREN, &group},
 };
 
-const std::unordered_map<TokenKind, led_t> ParserClass::led_table = {
+const std::unordered_map<TokenKind, led_t> ParserNamespace::led_table = {
     // Binary
     {TokenKind::PLUS, &binary},
     {TokenKind::MINUS, &binary},
@@ -74,15 +73,15 @@ const std::unordered_map<TokenKind, led_t> ParserClass::led_table = {
     {TokenKind::BANG_EQUAL, &binary},
 };
 
-BindingPower ParserClass::getBP(Parser *psr, TokenKind tk) {
-    if (ParserClass::bp_table.find(tk) == ParserClass::bp_table.end()) {
+BindingPower ParserNamespace::getBP(Parser *psr, TokenKind tk) {
+    if (ParserNamespace::bp_table.find(tk) == ParserNamespace::bp_table.end()) {
         std::cout << "Error: No binding power found for token kind: " << tk << std::endl;
         return BindingPower::err;
     } 
-    return ParserClass::bp_table.at(tk);
+    return ParserNamespace::bp_table.at(tk);
 }
 
-Node::Expr *ParserClass::nudHandler(Parser *psr, TokenKind tk) {
+Node::Expr *ParserNamespace::nudHandler(Parser *psr, TokenKind tk) {
     if (nud_table.find(tk) == nud_table.end()) {
         std::cout << "Error: No nud handler found for token kind: " << tk << std::endl;
         return nullptr;
@@ -90,9 +89,11 @@ Node::Expr *ParserClass::nudHandler(Parser *psr, TokenKind tk) {
     return nud_table.at(tk)(psr);
 }
 
-Node::Expr *ParserClass::ledHandler(Parser *psr, Node::Expr* left) {
+Node::Expr *ParserNamespace::ledHandler(Parser *psr, Node::Expr* left) {
     auto op = psr->current(psr);
-    auto bp = ParserClass::getBP(psr, op.kind);
+    auto bp = ParserNamespace::getBP(psr, op.kind);
+
+    psr->advance(psr);
 
     if (led_table.find(op.kind) == led_table.end()) {
         std::cout << "Error: No led handler found for token kind: " << op.kind << std::endl;

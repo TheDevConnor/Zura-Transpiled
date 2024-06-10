@@ -10,7 +10,7 @@
 #include "../lexer/lexer.hpp"
 #include "../ast/ast.hpp"
 
-namespace ParserClass {
+namespace ParserNamespace {
     enum BindingPower {
         defaultValue = 0,
         comma = 1,
@@ -35,12 +35,12 @@ namespace ParserClass {
     using led_t = Node::Expr* (*)(Parser*, Node::Expr*, std::string, BindingPower);
 }
 
-struct ParserClass::Parser {
+struct ParserNamespace::Parser {
     std::vector<Lexer::Token> tks;
-    size_t pos = 0;
+    u_int pos = 0;
 
     Lexer::Token current(Parser *psr) {
-        return psr->tks.at(psr->pos);
+        return psr->tks[psr->pos];
     }
 
     Lexer::Token advance(Parser *psr) {
@@ -51,25 +51,21 @@ struct ParserClass::Parser {
         return psr->current(psr);
     }
 
-    Lexer::Token advanceGetCurr(Parser *psr) {
-        auto tk = current(psr);
-        advance(psr);
-        return tk;
-    }
-
     Lexer::Token peek(Parser *psr, int offset = 0) {
         return psr->tks[psr->pos + offset];
     }
 
     bool expect(Parser *psr, TokenKind tk) {
-        bool result = (current(psr).kind == tk) ? true : false;
-        if (!result)
-            std::cerr << "Expected token " << tk << " but got " << current(psr).kind << std::endl;
-        return result;
+        if (current(psr).kind == tk) {
+            advance(psr);
+            return true;
+        }
+        std::cerr << "Expected token " << tk << " but got " << current(psr).kind << std::endl;
+        return false;
     }
 };
 
-namespace ParserClass {
+namespace ParserNamespace {
     Node::Stmt *parse(const char *source);
 
     // Tables for the Pratt parser and their lookup functions.
