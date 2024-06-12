@@ -29,6 +29,7 @@ public:
     }
 
     void debug() const override {
+        std::cout << "ExprStmt: \n";
         expr->debug();
     }
 };
@@ -36,14 +37,18 @@ public:
 class VarStmt : public Node::Stmt {
 public:
     std::string name;
+    std::string type;
     ExprStmt *expr;
 
-    VarStmt(std::string name, ExprStmt *expr) : name(name), expr(expr) {
+    VarStmt(std::string name, std::string type, ExprStmt *expr) : name(name), type(type), expr(expr) {
         kind = NodeKind::ND_VAR_STMT;
     }
 
     void debug() const override {
-        std::cout << "var " << name << " = ";
+        std::cout << "VarStmt: \n\t" 
+                  << "Name: " << name << "\n\t" 
+                  << "Type: " << type << "\n\t"
+                  << "Expr: ";
         expr->debug();
     } 
 };

@@ -1,5 +1,6 @@
 #pragma once
 
+#include <iostream>
 #include <string>
 
 enum NodeKind {
@@ -21,12 +22,18 @@ class Node {
 public:
     struct Expr {
         NodeKind kind;
-        virtual void debug() const = 0; 
+        virtual void debug(int ident = 0) const = 0; 
     };
 
     struct Stmt {
         NodeKind kind;
         virtual void debug() const = 0;
     };
+
+    static void printIdent(int ident) {
+        for (int i = 0; i < ident; i++) {
+            std::cout << "    ";
+        }
+    }
 };
  

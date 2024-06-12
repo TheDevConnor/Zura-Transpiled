@@ -10,109 +10,45 @@
 
 using namespace ParserNamespace;
 
-const std::unordered_map<TokenKind, BindingPower> ParserNamespace::bp_table = {
-    // Literals
-    {TokenKind::NUMBER, BindingPower::defaultValue},
-    {TokenKind::IDENTIFIER, BindingPower::defaultValue},
-    {TokenKind::STRING, BindingPower::defaultValue},
-
-    // Parentheses
-    {TokenKind::LEFT_PAREN, BindingPower::call},
-
-    // Binary operators
-    {TokenKind::PLUS, BindingPower::additive},
-    {TokenKind::MINUS, BindingPower::additive},
-
-    {TokenKind::STAR, BindingPower::multiplicative},
-    {TokenKind::SLASH, BindingPower::multiplicative},
-    {TokenKind::MODULO, BindingPower::multiplicative},
-
-    {TokenKind::CARET, BindingPower::power},
-
-    // Comparison
-    {TokenKind::LESS, BindingPower::comparison},
-    {TokenKind::GREATER, BindingPower::comparison},
-    {TokenKind::LESS_EQUAL, BindingPower::comparison},
-    {TokenKind::GREATER_EQUAL, BindingPower::comparison},
-    {TokenKind::EQUAL_EQUAL, BindingPower::comparison},
-    {TokenKind::BANG_EQUAL, BindingPower::comparison},
-
-    // Unary
-    {TokenKind::BANG, BindingPower::prefix},
-};
-
-const std::unordered_map<TokenKind, nud_t> ParserNamespace::nud_table = {
-    // Literals
-    {TokenKind::NUMBER, &num},
-    {TokenKind::IDENTIFIER, &ident},
-    {TokenKind::STRING, &str},
-
-    // Prefix
-    {TokenKind::MINUS, &unary},
-    {TokenKind::BANG, &unary},
-
-    // Parentheses
-    // {TokenKind::LEFT_PAREN, &group},
-};
-
-const std::unordered_map<TokenKind, led_t> ParserNamespace::led_table = {
-    // Binary
-    {TokenKind::PLUS, &binary},
-    {TokenKind::MINUS, &binary},
-    {TokenKind::STAR, &binary},
-    {TokenKind::SLASH, &binary},
-    {TokenKind::MODULO, &binary},
-    {TokenKind::CARET, &binary},
-
-    // Comparison
-    {TokenKind::LESS, &binary},
-    {TokenKind::GREATER, &binary},
-    {TokenKind::LESS_EQUAL, &binary},
-    {TokenKind::GREATER_EQUAL, &binary},
-    {TokenKind::EQUAL_EQUAL, &binary},
-    {TokenKind::BANG_EQUAL, &binary},
-};
-
-const std::unordered_map<TokenKind, stmt_t> ParserNamespace::stmt_table = {
-    {TokenKind::VAR, &varStmt},
-};
-
-BindingPower ParserNamespace::getBP(Parser *psr, TokenKind tk) {
-    if (ParserNamespace::bp_table.find(tk) == ParserNamespace::bp_table.end()) {
-        std::cout << "Error: No binding power found for token kind: " << tk << std::endl;
-        return BindingPower::err;
-    } 
-    return ParserNamespace::bp_table.at(tk);
+void ParserNamespace::led(TokenKind kind, BindingPower bp, LedHandler led_fn) {
+    bp_lu[kind] = bp;
+    led_lu[kind] = led_fn;
 }
 
-Node::Expr *ParserNamespace::nudHandler(Parser *psr, TokenKind tk) {
-    if (nud_table.find(tk) == nud_table.end()) {
-        std::cout << "Error: No nud handler found for token kind: " << tk << std::endl;
-        return nullptr;
-    }
-    return nud_table.at(tk)(psr);
+void ParserNamespace::nud(TokenKind kind, NudHandler nud_fn) {
+    nud_lu[kind] = nud_fn;
 }
 
-Node::Expr *ParserNamespace::ledHandler(Parser *psr, Node::Expr* left) {
-    auto op = psr->current(psr);
-    auto bp = ParserNamespace::getBP(psr, op.kind);
-
-    psr->advance(psr);
-
-    if (led_table.find(op.kind) == led_table.end()) {
-        std::cout << "Error: No led handler found for token kind: " << op.kind << std::endl;
-        return nullptr;
-    }
-    return led_table.at(op.kind)(psr, left, op.value, bp);
+void ParserNamespace::stmt(TokenKind kind, StmtHandler stmt_fn) {
+    bp_lu[kind] = BindingPower::defaultValue;
+    stmt_lu[kind] = stmt_fn;
 }
 
-Node::Stmt *ParserNamespace::stmtHandler(Parser *psr) {
-    auto current = psr->current(psr);
+void ParserNamespace::createTokenLookup() {
+    // Logical
+	led(TokenKind::AND, logicalAnd, binary);
 
-    if (stmt_table.find(current.kind) == stmt_table.end()) {
-        auto expr = exprStmt(psr);
-        return expr;
-    }
+	// Relational
+	led(TokenKind::LESS, relational, binary);
+	led(TokenKind::LESS_EQUAL, relational, binary);
+	led(TokenKind::GREATER, relational, binary);
+	led(TokenKind::GREATER_EQUAL, relational, binary);
+	led(TokenKind::EQUAL_EQUAL, relational, binary);
+	led(TokenKind::BANG, relational, binary);
+    led(TokenKind::BANG_EQUAL, relational, binary);
 
-    return stmt_table.at(current.kind)(psr);
+	// Additive & Multiplicative
+	led(TokenKind::PLUS, additive, binary);
+	led(TokenKind::MINUS, additive, binary);
+
+	led(TokenKind::STAR, multiplicative, binary);
+	led(TokenKind::SLASH, multiplicative, binary);
+	led(TokenKind::MODULO, multiplicative, binary);
+
+	// Literals & Symbols
+	nud(TokenKind::NUMBER, primary);
+	nud(TokenKind::STRING, primary);
+	nud(TokenKind::IDENTIFIER, primary);
+	nud(TokenKind::LEFT_PAREN, group);
+	nud(TokenKind::MINUS, unary);
 }

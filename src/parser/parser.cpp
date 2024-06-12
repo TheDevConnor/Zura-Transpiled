@@ -21,9 +21,7 @@ Node::Stmt *ParserNamespace::parse(const char *source) {
    lexer.initLexer(source);
    storeToken(&psr, &lexer, lexer.scanToken());
 
-   auto stmts = stmtHandler(&psr); 
+   auto stmts = std::vector<Node::Stmt *>{ stmtHandler(&psr) };
    
-   return new ProgramStmt({ 
-        std::vector<Node::Stmt *> { stmts } 
-    });
+   return new ProgramStmt({ stmts });
 }

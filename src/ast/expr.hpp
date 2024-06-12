@@ -12,8 +12,9 @@ public:
         kind = NodeKind::ND_NUMBER;
     }
 
-    void debug() const override {
-        std::cout << value; 
+    void debug(int ident = 0) const override {
+        Node::printIdent(ident);
+        std::cout << "NumberExpr: " << value << "\n";
     }
 };
 
@@ -25,8 +26,9 @@ public:
         kind = NodeKind::ND_IDENT;
     }
 
-    void debug() const override {
-        std::cout << name; 
+    void debug(int ident = 0) const override {
+        Node::printIdent(ident);
+        std::cout << "IdentExpr: " << name << "\n";
     }
 };
 
@@ -38,8 +40,9 @@ public:
         kind = NodeKind::ND_STRING;
     }
 
-    void debug() const override {
-        std::cout << value; 
+    void debug(int ident = 0) const override {
+        Node::printIdent(ident);
+        std::cout << "StringExpr: " << value << "\n";
     }
 };
 
@@ -53,12 +56,15 @@ public:
         kind = NodeKind::ND_BINARY;
     }
 
-    void debug() const override {
-        std::cout << "(";
-        lhs->debug();
-        std::cout << op;
-        rhs->debug();
-        std::cout << ")";
+    void debug(int ident = 0) const override {
+        Node::printIdent(ident);
+        std::cout << "BinaryExpr: " << op << "\n";
+        Node::printIdent(ident + 1);
+        std::cout << "LHS:\n";
+        lhs->debug(ident + 2);
+        Node::printIdent(ident + 1);
+        std::cout << "RHS:\n";
+        rhs->debug(ident + 2);
     }
 };
 
@@ -71,11 +77,10 @@ public:
         kind = NodeKind::ND_UNARY;
     }
 
-    void debug() const override {
-        std::cout << "(";
-        std::cout << op;
-        expr->debug();
-        std::cout << ")";
+    void debug(int ident = 0) const override {
+        Node::printIdent(ident);
+        std::cout << "UnaryExpr: " << op << "\n";
+        expr->debug(ident + 1);
     }
 };
 
@@ -87,9 +92,9 @@ public:
         kind = NodeKind::ND_GROUP;
     }
 
-    void debug() const override {
-        std::cout << "(";
-        expr->debug();
-        std::cout << ")";
+    void debug(int ident = 0) const override {
+         Node::printIdent(ident);
+        std::cout << "GroupExpr:\n";
+        expr->debug(ident + 1);
     }
 };

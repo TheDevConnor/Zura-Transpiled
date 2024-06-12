@@ -4,10 +4,29 @@
 
 Node::Stmt *ParserNamespace::exprStmt(Parser *psr) {
     auto expr = parseExpr(psr, BindingPower::defaultValue);
+    psr->expect(psr, TokenKind::SEMICOLON);
     return new ExprStmt(expr);
 }
 
+/// Parses a variable statement
+/// This is an example of a var in zura:
+/// have x : i8 = 10;
 Node::Stmt *ParserNamespace::varStmt(Parser *psr) {
-    // TODO: Implement varStmt
-    return nullptr;
+    psr->expect(psr, TokenKind::VAR);
+    auto name = (psr->expect(psr, TokenKind::IDENTIFIER)) 
+                ? psr->peek(psr, -1).value
+                : "";
+
+    auto type = (psr->expect(psr, TokenKind::COLON)) 
+                ? psr->peek(psr, 0).value
+                : "";
+
+    psr->advance(psr);
+
+    psr->expect(psr, TokenKind::EQUAL);
+    auto expr = parseExpr(psr, BindingPower::defaultValue);
+    psr->advance(psr);
+    psr->expect(psr, TokenKind::SEMICOLON);
+
+    return new VarStmt(name, type, new ExprStmt(expr));
 }
