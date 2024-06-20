@@ -1,4 +1,5 @@
 #include <iostream>
+#ifdef csk
 #include <string>
 
 #include "../../../inc/colorize.hpp"
@@ -61,3 +62,4 @@ void ErrorClass::error(int line, int pos, std::string msg, std::string errorType
 
     std::cout << std::endl;
 }
+#endif

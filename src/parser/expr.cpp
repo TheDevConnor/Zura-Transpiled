@@ -1,4 +1,5 @@
 #include "../ast/expr.hpp"
+#ifdef csk
 #include "parser.hpp"
 
 #include <iostream>
@@ -48,3 +49,4 @@ Node::Expr *Parser::binary(PStruct *psr, Node::Expr *left, BindingPower bp) {
         op.value
     );
 }
+#endif

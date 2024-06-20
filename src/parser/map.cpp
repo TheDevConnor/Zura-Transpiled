@@ -4,6 +4,7 @@
 #include <iostream>
 
 #include "../lexer/lexer.hpp"
+#ifdef csk
 #include "parser.hpp"
 
 using namespace Parser;
@@ -104,3 +105,4 @@ Node::Expr *Parser::nud(PStruct *psr) {
 
 	return nud_fn->second(psr);
 }
+#endif

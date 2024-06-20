@@ -1,4 +1,5 @@
 #pragma once
+#ifdef csk
 #include <stdlib.h>
 #define ZuraVersion "v0.0.7"
 
@@ -16,3 +17,4 @@ enum ExitValue {
 };
 
 inline void Exit(ExitValue exitValue) { exit(ExitValue(exitValue)); }
+#endif

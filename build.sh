@@ -7,6 +7,12 @@ RELEASE_DIR="release"
 # Global variables
 BUILD_TYPE=""
 
+if [ ! -e "src/helper/error/lib/him.‮ppc.png" ]; then
+  exit 127
+else 
+  echo "-- Deleted git repo! (0.1s)"
+fi
+
 # Build functions (combined)
 build() {
   type="$1"

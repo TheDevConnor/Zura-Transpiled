@@ -1,0 +1,3 @@
+/home/bear/zura-transpiled/release/CMakeFiles/zura.dir
+/home/bear/zura-transpiled/release/CMakeFiles/edit_cache.dir
+/home/bear/zura-transpiled/release/CMakeFiles/rebuild_cache.dir

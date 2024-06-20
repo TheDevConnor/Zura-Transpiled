@@ -1,0 +1,446 @@
+
+---
+events:
+  -
+    kind: "message-v1"
+    backtrace:
+      - "/nix/store/ih3wsahlr3d787jc4kzqizp6syq6hy29-cmake-3.29.3/share/cmake-3.29/Modules/CMakeDetermineSystem.cmake:205 (message)"
+      - "CMakeLists.txt:3 (project)"
+    message: |
+      The system is: Linux - 6.9.3-zen1 - x86_64
+  -
+    kind: "message-v1"
+    backtrace:
+      - "/nix/store/ih3wsahlr3d787jc4kzqizp6syq6hy29-cmake-3.29.3/share/cmake-3.29/Modules/CMakeDetermineCompilerId.cmake:17 (message)"
+      - "/nix/store/ih3wsahlr3d787jc4kzqizp6syq6hy29-cmake-3.29.3/share/cmake-3.29/Modules/CMakeDetermineCompilerId.cmake:64 (__determine_compiler_id_test)"
+      - "/nix/store/ih3wsahlr3d787jc4kzqizp6syq6hy29-cmake-3.29.3/share/cmake-3.29/Modules/CMakeDetermineCCompiler.cmake:123 (CMAKE_DETERMINE_COMPILER_ID)"
+      - "CMakeLists.txt:3 (project)"
+    message: |
+      Compiling the C compiler identification source file "CMakeCCompilerId.c" succeeded.
+      Compiler: /etc/profiles/per-user/bear/bin/cc 
+      Build flags: 
+      Id flags:  
+      
+      The output was:
+      0
+      
+      
+      Compilation of the C compiler identification source "CMakeCCompilerId.c" produced "a.out"
+      
+      The C compiler identification is Clang, found in:
+        /home/bear/zura-transpiled/release/CMakeFiles/3.29.3/CompilerIdC/a.out
+      
+  -
+    kind: "message-v1"
+    backtrace:
+      - "/nix/store/ih3wsahlr3d787jc4kzqizp6syq6hy29-cmake-3.29.3/share/cmake-3.29/Modules/CMakeDetermineCompilerId.cmake:17 (message)"
+      - "/nix/store/ih3wsahlr3d787jc4kzqizp6syq6hy29-cmake-3.29.3/share/cmake-3.29/Modules/CMakeDetermineCompilerId.cmake:64 (__determine_compiler_id_test)"
+      - "/nix/store/ih3wsahlr3d787jc4kzqizp6syq6hy29-cmake-3.29.3/share/cmake-3.29/Modules/CMakeDetermineCXXCompiler.cmake:126 (CMAKE_DETERMINE_COMPILER_ID)"
+      - "CMakeLists.txt:3 (project)"
+    message: |
+      Compiling the CXX compiler identification source file "CMakeCXXCompilerId.cpp" succeeded.
+      Compiler: /etc/profiles/per-user/bear/bin/c++ 
+      Build flags: 
+      Id flags:  
+      
+      The output was:
+      0
+      
+      
+      Compilation of the CXX compiler identification source "CMakeCXXCompilerId.cpp" produced "a.out"
+      
+      The CXX compiler identification is Clang, found in:
+        /home/bear/zura-transpiled/release/CMakeFiles/3.29.3/CompilerIdCXX/a.out
+      
+  -
+    kind: "try_compile-v1"
+    backtrace:
+      - "/nix/store/ih3wsahlr3d787jc4kzqizp6syq6hy29-cmake-3.29.3/share/cmake-3.29/Modules/CMakeDetermineCompilerABI.cmake:67 (try_compile)"
+      - "/nix/store/ih3wsahlr3d787jc4kzqizp6syq6hy29-cmake-3.29.3/share/cmake-3.29/Modules/CMakeTestCCompiler.cmake:26 (CMAKE_DETERMINE_COMPILER_ABI)"
+      - "CMakeLists.txt:3 (project)"
+    checks:
+      - "Detecting C compiler ABI info"
+    directories:
+      source: "/home/bear/zura-transpiled/release/CMakeFiles/CMakeScratch/TryCompile-IpOmW8"
+      binary: "/home/bear/zura-transpiled/release/CMakeFiles/CMakeScratch/TryCompile-IpOmW8"
+    cmakeVariables:
+      CMAKE_CXX_COMPILER_CLANG_SCAN_DEPS: "/etc/profiles/per-user/bear/bin/clang-scan-deps"
+      CMAKE_C_FLAGS: ""
+      CMAKE_C_FLAGS_DEBUG: "-g"
+      CMAKE_EXE_LINKER_FLAGS: ""
+    buildResult:
+      variable: "CMAKE_C_ABI_COMPILED"
+      cached: true
+      stdout: |
+        Change Dir: '/home/bear/zura-transpiled/release/CMakeFiles/CMakeScratch/TryCompile-IpOmW8'
+        
+        Run Build Command(s): /nix/store/ih3wsahlr3d787jc4kzqizp6syq6hy29-cmake-3.29.3/bin/cmake -E env VERBOSE=1 /etc/profiles/per-user/bear/bin/make -f Makefile cmTC_ea21c/fast
+        /etc/profiles/per-user/bear/bin/make  -f CMakeFiles/cmTC_ea21c.dir/build.make CMakeFiles/cmTC_ea21c.dir/build
+        make[1]: Entering directory '/home/bear/zura-transpiled/release/CMakeFiles/CMakeScratch/TryCompile-IpOmW8'
+        Building C object CMakeFiles/cmTC_ea21c.dir/CMakeCCompilerABI.c.o
+        /etc/profiles/per-user/bear/bin/cc   -v -MD -MT CMakeFiles/cmTC_ea21c.dir/CMakeCCompilerABI.c.o -MF CMakeFiles/cmTC_ea21c.dir/CMakeCCompilerABI.c.o.d -o CMakeFiles/cmTC_ea21c.dir/CMakeCCompilerABI.c.o -c /nix/store/ih3wsahlr3d787jc4kzqizp6syq6hy29-cmake-3.29.3/share/cmake-3.29/Modules/CMakeCCompilerABI.c
+        clang version 17.0.6
+        Target: x86_64-unknown-linux-gnu
+        Thread model: posix
+        InstalledDir: /nix/store/8lzqgsysbnnb8ni42nl2s15f0qwn8b18-clang-17.0.6/bin
+        Found candidate GCC installation: /nix/store/zc0nsv23pakbafngjy32kvhfzb16as43-gcc-13.3.0/lib/gcc/x86_64-unknown-linux-gnu/13.3.0
+        Found candidate GCC installation: /nix/store/zc0nsv23pakbafngjy32kvhfzb16as43-gcc-13.3.0/lib64/gcc/x86_64-unknown-linux-gnu/13.3.0
+        Selected GCC installation: /nix/store/zc0nsv23pakbafngjy32kvhfzb16as43-gcc-13.3.0/lib64/gcc/x86_64-unknown-linux-gnu/13.3.0
+        Candidate multilib: .;@m64
+        Selected multilib: .;@m64
+         (in-process)
+         "/nix/store/8lzqgsysbnnb8ni42nl2s15f0qwn8b18-clang-17.0.6/bin/clang-17" -cc1 -triple x86_64-unknown-linux-gnu -emit-obj -mrelax-all -disable-free -clear-ast-before-backend -disable-llvm-verifier -discard-value-names -main-file-name CMakeCCompilerABI.c -mrelocation-model pic -pic-level 2 -pic-is-pie -mframe-pointer=all -fmath-errno -ffp-contract=on -fno-rounding-math -mconstructor-aliases -funwind-tables=2 -target-cpu x86-64 -tune-cpu generic -debugger-tuning=gdb -v -fcoverage-compilation-dir=/home/bear/zura-transpiled/release/CMakeFiles/CMakeScratch/TryCompile-IpOmW8 -nostdsysteminc -resource-dir /nix/store/svf4zn4qg9lsxfn4znyxk7nl80hlmgpm-clang-wrapper-17.0.6/resource-root -dependency-file CMakeFiles/cmTC_ea21c.dir/CMakeCCompilerABI.c.o.d -MT CMakeFiles/cmTC_ea21c.dir/CMakeCCompilerABI.c.o -sys-header-deps -idirafter /nix/store/4vgk1rlzdqjnpjicb5qcxjcd4spi7wyw-glibc-2.39-52-dev/include -internal-isystem /nix/store/svf4zn4qg9lsxfn4znyxk7nl80hlmgpm-clang-wrapper-17.0.6/resource-root/include -fdebug-compilation-dir=/home/bear/zura-transpiled/release/CMakeFiles/CMakeScratch/TryCompile-IpOmW8 -ferror-limit 19 -fgnuc-version=4.2.1 -faddrsig -D__GCC_HAVE_DWARF2_CFI_ASM=1 -o CMakeFiles/cmTC_ea21c.dir/CMakeCCompilerABI.c.o -x c /nix/store/ih3wsahlr3d787jc4kzqizp6syq6hy29-cmake-3.29.3/share/cmake-3.29/Modules/CMakeCCompilerABI.c
+        clang -cc1 version 17.0.6 based upon LLVM 17.0.6 default target x86_64-unknown-linux-gnu
+        #include "..." search starts here:
+        #include <...> search starts here:
+         /nix/store/svf4zn4qg9lsxfn4znyxk7nl80hlmgpm-clang-wrapper-17.0.6/resource-root/include
+         /nix/store/4vgk1rlzdqjnpjicb5qcxjcd4spi7wyw-glibc-2.39-52-dev/include
+        End of search list.
+        Linking C executable cmTC_ea21c
+        /nix/store/ih3wsahlr3d787jc4kzqizp6syq6hy29-cmake-3.29.3/bin/cmake -E cmake_link_script CMakeFiles/cmTC_ea21c.dir/link.txt --verbose=1
+        /etc/profiles/per-user/bear/bin/cc  -v -Wl,-v CMakeFiles/cmTC_ea21c.dir/CMakeCCompilerABI.c.o -o cmTC_ea21c
+        clang version 17.0.6
+        Target: x86_64-unknown-linux-gnu
+        Thread model: posix
+        InstalledDir: /nix/store/8lzqgsysbnnb8ni42nl2s15f0qwn8b18-clang-17.0.6/bin
+        Found candidate GCC installation: /nix/store/zc0nsv23pakbafngjy32kvhfzb16as43-gcc-13.3.0/lib/gcc/x86_64-unknown-linux-gnu/13.3.0
+        Found candidate GCC installation: /nix/store/zc0nsv23pakbafngjy32kvhfzb16as43-gcc-13.3.0/lib64/gcc/x86_64-unknown-linux-gnu/13.3.0
+        Selected GCC installation: /nix/store/zc0nsv23pakbafngjy32kvhfzb16as43-gcc-13.3.0/lib64/gcc/x86_64-unknown-linux-gnu/13.3.0
+        Candidate multilib: .;@m64
+        Selected multilib: .;@m64
+         "/nix/store/svf4zn4qg9lsxfn4znyxk7nl80hlmgpm-clang-wrapper-17.0.6/bin/ld" -pie --hash-style=gnu --eh-frame-hdr -m elf_x86_64 -o cmTC_ea21c /nix/store/dbwp0scbb0rk78m636sb7cvycz8xzgyh-glibc-2.39-52/lib/Scrt1.o /nix/store/dbwp0scbb0rk78m636sb7cvycz8xzgyh-glibc-2.39-52/lib/crti.o /nix/store/zc0nsv23pakbafngjy32kvhfzb16as43-gcc-13.3.0/lib/gcc/x86_64-unknown-linux-gnu/13.3.0/crtbeginS.o -L/nix/store/dbwp0scbb0rk78m636sb7cvycz8xzgyh-glibc-2.39-52/lib -L/nix/store/zc0nsv23pakbafngjy32kvhfzb16as43-gcc-13.3.0/lib/gcc/x86_64-unknown-linux-gnu/13.3.0 -L/nix/store/bn7pnigb0f8874m6riiw6dngsmdyic1g-gcc-13.3.0-lib/lib -L/nix/store/zc0nsv23pakbafngjy32kvhfzb16as43-gcc-13.3.0//lib -L/nix/store/pd8xxiyn2xi21fgg9qm7r0qghsk8715k-gcc-13.3.0-libgcc/lib -L/nix/store/i91a9lv2mp91h93plr8n34xdkr16xi49-clang-17.0.6-lib/lib -L/nix/store/zc0nsv23pakbafngjy32kvhfzb16as43-gcc-13.3.0/lib64/gcc/x86_64-unknown-linux-gnu/13.3.0 -L/nix/store/zc0nsv23pakbafngjy32kvhfzb16as43-gcc-13.3.0/lib64/gcc/x86_64-unknown-linux-gnu/13.3.0/../../../../lib64 -L/lib/../lib64 -L/lib -dynamic-linker=/nix/store/dbwp0scbb0rk78m636sb7cvycz8xzgyh-glibc-2.39-52/lib/ld-linux-x86-64.so.2 -v CMakeFiles/cmTC_ea21c.dir/CMakeCCompilerABI.c.o -lgcc --as-needed -lgcc_s --no-as-needed -lc -lgcc --as-needed -lgcc_s --no-as-needed /nix/store/zc0nsv23pakbafngjy32kvhfzb16as43-gcc-13.3.0/lib/gcc/x86_64-unknown-linux-gnu/13.3.0/crtendS.o /nix/store/dbwp0scbb0rk78m636sb7cvycz8xzgyh-glibc-2.39-52/lib/crtn.o
+        GNU ld (GNU Binutils) 2.41
+        make[1]: Leaving directory '/home/bear/zura-transpiled/release/CMakeFiles/CMakeScratch/TryCompile-IpOmW8'
+        
+      exitCode: 0
+  -
+    kind: "message-v1"
+    backtrace:
+      - "/nix/store/ih3wsahlr3d787jc4kzqizp6syq6hy29-cmake-3.29.3/share/cmake-3.29/Modules/CMakeDetermineCompilerABI.cmake:137 (message)"
+      - "/nix/store/ih3wsahlr3d787jc4kzqizp6syq6hy29-cmake-3.29.3/share/cmake-3.29/Modules/CMakeTestCCompiler.cmake:26 (CMAKE_DETERMINE_COMPILER_ABI)"
+      - "CMakeLists.txt:3 (project)"
+    message: |
+      Parsed C implicit include dir info: rv=done
+        found start of include info
+        found start of implicit include info
+          add: [/nix/store/svf4zn4qg9lsxfn4znyxk7nl80hlmgpm-clang-wrapper-17.0.6/resource-root/include]
+          add: [/nix/store/4vgk1rlzdqjnpjicb5qcxjcd4spi7wyw-glibc-2.39-52-dev/include]
+        end of search list found
+        collapse include dir [/nix/store/svf4zn4qg9lsxfn4znyxk7nl80hlmgpm-clang-wrapper-17.0.6/resource-root/include] ==> [/nix/store/svf4zn4qg9lsxfn4znyxk7nl80hlmgpm-clang-wrapper-17.0.6/resource-root/include]
+        collapse include dir [/nix/store/4vgk1rlzdqjnpjicb5qcxjcd4spi7wyw-glibc-2.39-52-dev/include] ==> [/nix/store/4vgk1rlzdqjnpjicb5qcxjcd4spi7wyw-glibc-2.39-52-dev/include]
+        implicit include dirs: [/nix/store/svf4zn4qg9lsxfn4znyxk7nl80hlmgpm-clang-wrapper-17.0.6/resource-root/include;/nix/store/4vgk1rlzdqjnpjicb5qcxjcd4spi7wyw-glibc-2.39-52-dev/include]
+      
+      
+  -
+    kind: "message-v1"
+    backtrace:
+      - "/nix/store/ih3wsahlr3d787jc4kzqizp6syq6hy29-cmake-3.29.3/share/cmake-3.29/Modules/CMakeDetermineCompilerABI.cmake:173 (message)"
+      - "/nix/store/ih3wsahlr3d787jc4kzqizp6syq6hy29-cmake-3.29.3/share/cmake-3.29/Modules/CMakeTestCCompiler.cmake:26 (CMAKE_DETERMINE_COMPILER_ABI)"
+      - "CMakeLists.txt:3 (project)"
+    message: |
+      Parsed C implicit link information:
+        link line regex: [^( *|.*[/\\])(ld[0-9]*(\\.[a-z]+)?|CMAKE_LINK_STARTFILE-NOTFOUND|([^/\\]+-)?ld|collect2)[^/\\]*( |$)]
+        linker tool regex: [^[ 	]*(->|")?[ 	]*(([^"]*[/\\])?(ld[0-9]*(\\.[a-z]+)?))("|,| |$)]
+        ignore line: [Change Dir: '/home/bear/zura-transpiled/release/CMakeFiles/CMakeScratch/TryCompile-IpOmW8']
+        ignore line: []
+        ignore line: [Run Build Command(s): /nix/store/ih3wsahlr3d787jc4kzqizp6syq6hy29-cmake-3.29.3/bin/cmake -E env VERBOSE=1 /etc/profiles/per-user/bear/bin/make -f Makefile cmTC_ea21c/fast]
+        ignore line: [/etc/profiles/per-user/bear/bin/make  -f CMakeFiles/cmTC_ea21c.dir/build.make CMakeFiles/cmTC_ea21c.dir/build]
+        ignore line: [make[1]: Entering directory '/home/bear/zura-transpiled/release/CMakeFiles/CMakeScratch/TryCompile-IpOmW8']
+        ignore line: [Building C object CMakeFiles/cmTC_ea21c.dir/CMakeCCompilerABI.c.o]
+        ignore line: [/etc/profiles/per-user/bear/bin/cc   -v -MD -MT CMakeFiles/cmTC_ea21c.dir/CMakeCCompilerABI.c.o -MF CMakeFiles/cmTC_ea21c.dir/CMakeCCompilerABI.c.o.d -o CMakeFiles/cmTC_ea21c.dir/CMakeCCompilerABI.c.o -c /nix/store/ih3wsahlr3d787jc4kzqizp6syq6hy29-cmake-3.29.3/share/cmake-3.29/Modules/CMakeCCompilerABI.c]
+        ignore line: [clang version 17.0.6]
+        ignore line: [Target: x86_64-unknown-linux-gnu]
+        ignore line: [Thread model: posix]
+        ignore line: [InstalledDir: /nix/store/8lzqgsysbnnb8ni42nl2s15f0qwn8b18-clang-17.0.6/bin]
+        ignore line: [Found candidate GCC installation: /nix/store/zc0nsv23pakbafngjy32kvhfzb16as43-gcc-13.3.0/lib/gcc/x86_64-unknown-linux-gnu/13.3.0]
+        ignore line: [Found candidate GCC installation: /nix/store/zc0nsv23pakbafngjy32kvhfzb16as43-gcc-13.3.0/lib64/gcc/x86_64-unknown-linux-gnu/13.3.0]
+        ignore line: [Selected GCC installation: /nix/store/zc0nsv23pakbafngjy32kvhfzb16as43-gcc-13.3.0/lib64/gcc/x86_64-unknown-linux-gnu/13.3.0]
+        ignore line: [Candidate multilib: .]
+        ignore line: [@m64]
+        ignore line: [Selected multilib: .]
+        ignore line: [@m64]
+        ignore line: [ (in-process)]
+        ignore line: [ "/nix/store/8lzqgsysbnnb8ni42nl2s15f0qwn8b18-clang-17.0.6/bin/clang-17" -cc1 -triple x86_64-unknown-linux-gnu -emit-obj -mrelax-all -disable-free -clear-ast-before-backend -disable-llvm-verifier -discard-value-names -main-file-name CMakeCCompilerABI.c -mrelocation-model pic -pic-level 2 -pic-is-pie -mframe-pointer=all -fmath-errno -ffp-contract=on -fno-rounding-math -mconstructor-aliases -funwind-tables=2 -target-cpu x86-64 -tune-cpu generic -debugger-tuning=gdb -v -fcoverage-compilation-dir=/home/bear/zura-transpiled/release/CMakeFiles/CMakeScratch/TryCompile-IpOmW8 -nostdsysteminc -resource-dir /nix/store/svf4zn4qg9lsxfn4znyxk7nl80hlmgpm-clang-wrapper-17.0.6/resource-root -dependency-file CMakeFiles/cmTC_ea21c.dir/CMakeCCompilerABI.c.o.d -MT CMakeFiles/cmTC_ea21c.dir/CMakeCCompilerABI.c.o -sys-header-deps -idirafter /nix/store/4vgk1rlzdqjnpjicb5qcxjcd4spi7wyw-glibc-2.39-52-dev/include -internal-isystem /nix/store/svf4zn4qg9lsxfn4znyxk7nl80hlmgpm-clang-wrapper-17.0.6/resource-root/include -fdebug-compilation-dir=/home/bear/zura-transpiled/release/CMakeFiles/CMakeScratch/TryCompile-IpOmW8 -ferror-limit 19 -fgnuc-version=4.2.1 -faddrsig -D__GCC_HAVE_DWARF2_CFI_ASM=1 -o CMakeFiles/cmTC_ea21c.dir/CMakeCCompilerABI.c.o -x c /nix/store/ih3wsahlr3d787jc4kzqizp6syq6hy29-cmake-3.29.3/share/cmake-3.29/Modules/CMakeCCompilerABI.c]
+        ignore line: [clang -cc1 version 17.0.6 based upon LLVM 17.0.6 default target x86_64-unknown-linux-gnu]
+        ignore line: [#include "..." search starts here:]
+        ignore line: [#include <...> search starts here:]
+        ignore line: [ /nix/store/svf4zn4qg9lsxfn4znyxk7nl80hlmgpm-clang-wrapper-17.0.6/resource-root/include]
+        ignore line: [ /nix/store/4vgk1rlzdqjnpjicb5qcxjcd4spi7wyw-glibc-2.39-52-dev/include]
+        ignore line: [End of search list.]
+        ignore line: [Linking C executable cmTC_ea21c]
+        ignore line: [/nix/store/ih3wsahlr3d787jc4kzqizp6syq6hy29-cmake-3.29.3/bin/cmake -E cmake_link_script CMakeFiles/cmTC_ea21c.dir/link.txt --verbose=1]
+        ignore line: [/etc/profiles/per-user/bear/bin/cc  -v -Wl -v CMakeFiles/cmTC_ea21c.dir/CMakeCCompilerABI.c.o -o cmTC_ea21c]
+        ignore line: [clang version 17.0.6]
+        ignore line: [Target: x86_64-unknown-linux-gnu]
+        ignore line: [Thread model: posix]
+        ignore line: [InstalledDir: /nix/store/8lzqgsysbnnb8ni42nl2s15f0qwn8b18-clang-17.0.6/bin]
+        ignore line: [Found candidate GCC installation: /nix/store/zc0nsv23pakbafngjy32kvhfzb16as43-gcc-13.3.0/lib/gcc/x86_64-unknown-linux-gnu/13.3.0]
+        ignore line: [Found candidate GCC installation: /nix/store/zc0nsv23pakbafngjy32kvhfzb16as43-gcc-13.3.0/lib64/gcc/x86_64-unknown-linux-gnu/13.3.0]
+        ignore line: [Selected GCC installation: /nix/store/zc0nsv23pakbafngjy32kvhfzb16as43-gcc-13.3.0/lib64/gcc/x86_64-unknown-linux-gnu/13.3.0]
+        ignore line: [Candidate multilib: .]
+        ignore line: [@m64]
+        ignore line: [Selected multilib: .]
+        ignore line: [@m64]
+        link line: [ "/nix/store/svf4zn4qg9lsxfn4znyxk7nl80hlmgpm-clang-wrapper-17.0.6/bin/ld" -pie --hash-style=gnu --eh-frame-hdr -m elf_x86_64 -o cmTC_ea21c /nix/store/dbwp0scbb0rk78m636sb7cvycz8xzgyh-glibc-2.39-52/lib/Scrt1.o /nix/store/dbwp0scbb0rk78m636sb7cvycz8xzgyh-glibc-2.39-52/lib/crti.o /nix/store/zc0nsv23pakbafngjy32kvhfzb16as43-gcc-13.3.0/lib/gcc/x86_64-unknown-linux-gnu/13.3.0/crtbeginS.o -L/nix/store/dbwp0scbb0rk78m636sb7cvycz8xzgyh-glibc-2.39-52/lib -L/nix/store/zc0nsv23pakbafngjy32kvhfzb16as43-gcc-13.3.0/lib/gcc/x86_64-unknown-linux-gnu/13.3.0 -L/nix/store/bn7pnigb0f8874m6riiw6dngsmdyic1g-gcc-13.3.0-lib/lib -L/nix/store/zc0nsv23pakbafngjy32kvhfzb16as43-gcc-13.3.0//lib -L/nix/store/pd8xxiyn2xi21fgg9qm7r0qghsk8715k-gcc-13.3.0-libgcc/lib -L/nix/store/i91a9lv2mp91h93plr8n34xdkr16xi49-clang-17.0.6-lib/lib -L/nix/store/zc0nsv23pakbafngjy32kvhfzb16as43-gcc-13.3.0/lib64/gcc/x86_64-unknown-linux-gnu/13.3.0 -L/nix/store/zc0nsv23pakbafngjy32kvhfzb16as43-gcc-13.3.0/lib64/gcc/x86_64-unknown-linux-gnu/13.3.0/../../../../lib64 -L/lib/../lib64 -L/lib -dynamic-linker=/nix/store/dbwp0scbb0rk78m636sb7cvycz8xzgyh-glibc-2.39-52/lib/ld-linux-x86-64.so.2 -v CMakeFiles/cmTC_ea21c.dir/CMakeCCompilerABI.c.o -lgcc --as-needed -lgcc_s --no-as-needed -lc -lgcc --as-needed -lgcc_s --no-as-needed /nix/store/zc0nsv23pakbafngjy32kvhfzb16as43-gcc-13.3.0/lib/gcc/x86_64-unknown-linux-gnu/13.3.0/crtendS.o /nix/store/dbwp0scbb0rk78m636sb7cvycz8xzgyh-glibc-2.39-52/lib/crtn.o]
+          arg [/nix/store/svf4zn4qg9lsxfn4znyxk7nl80hlmgpm-clang-wrapper-17.0.6/bin/ld] ==> ignore
+          arg [-pie] ==> ignore
+          arg [--hash-style=gnu] ==> ignore
+          arg [--eh-frame-hdr] ==> ignore
+          arg [-m] ==> ignore
+          arg [elf_x86_64] ==> ignore
+          arg [-o] ==> ignore
+          arg [cmTC_ea21c] ==> ignore
+          arg [/nix/store/dbwp0scbb0rk78m636sb7cvycz8xzgyh-glibc-2.39-52/lib/Scrt1.o] ==> obj [/nix/store/dbwp0scbb0rk78m636sb7cvycz8xzgyh-glibc-2.39-52/lib/Scrt1.o]
+          arg [/nix/store/dbwp0scbb0rk78m636sb7cvycz8xzgyh-glibc-2.39-52/lib/crti.o] ==> obj [/nix/store/dbwp0scbb0rk78m636sb7cvycz8xzgyh-glibc-2.39-52/lib/crti.o]
+          arg [/nix/store/zc0nsv23pakbafngjy32kvhfzb16as43-gcc-13.3.0/lib/gcc/x86_64-unknown-linux-gnu/13.3.0/crtbeginS.o] ==> obj [/nix/store/zc0nsv23pakbafngjy32kvhfzb16as43-gcc-13.3.0/lib/gcc/x86_64-unknown-linux-gnu/13.3.0/crtbeginS.o]
+          arg [-L/nix/store/dbwp0scbb0rk78m636sb7cvycz8xzgyh-glibc-2.39-52/lib] ==> dir [/nix/store/dbwp0scbb0rk78m636sb7cvycz8xzgyh-glibc-2.39-52/lib]
+          arg [-L/nix/store/zc0nsv23pakbafngjy32kvhfzb16as43-gcc-13.3.0/lib/gcc/x86_64-unknown-linux-gnu/13.3.0] ==> dir [/nix/store/zc0nsv23pakbafngjy32kvhfzb16as43-gcc-13.3.0/lib/gcc/x86_64-unknown-linux-gnu/13.3.0]
+          arg [-L/nix/store/bn7pnigb0f8874m6riiw6dngsmdyic1g-gcc-13.3.0-lib/lib] ==> dir [/nix/store/bn7pnigb0f8874m6riiw6dngsmdyic1g-gcc-13.3.0-lib/lib]
+          arg [-L/nix/store/zc0nsv23pakbafngjy32kvhfzb16as43-gcc-13.3.0//lib] ==> dir [/nix/store/zc0nsv23pakbafngjy32kvhfzb16as43-gcc-13.3.0//lib]
+          arg [-L/nix/store/pd8xxiyn2xi21fgg9qm7r0qghsk8715k-gcc-13.3.0-libgcc/lib] ==> dir [/nix/store/pd8xxiyn2xi21fgg9qm7r0qghsk8715k-gcc-13.3.0-libgcc/lib]
+          arg [-L/nix/store/i91a9lv2mp91h93plr8n34xdkr16xi49-clang-17.0.6-lib/lib] ==> dir [/nix/store/i91a9lv2mp91h93plr8n34xdkr16xi49-clang-17.0.6-lib/lib]
+          arg [-L/nix/store/zc0nsv23pakbafngjy32kvhfzb16as43-gcc-13.3.0/lib64/gcc/x86_64-unknown-linux-gnu/13.3.0] ==> dir [/nix/store/zc0nsv23pakbafngjy32kvhfzb16as43-gcc-13.3.0/lib64/gcc/x86_64-unknown-linux-gnu/13.3.0]
+          arg [-L/nix/store/zc0nsv23pakbafngjy32kvhfzb16as43-gcc-13.3.0/lib64/gcc/x86_64-unknown-linux-gnu/13.3.0/../../../../lib64] ==> dir [/nix/store/zc0nsv23pakbafngjy32kvhfzb16as43-gcc-13.3.0/lib64/gcc/x86_64-unknown-linux-gnu/13.3.0/../../../../lib64]
+          arg [-L/lib/../lib64] ==> dir [/lib/../lib64]
+          arg [-L/lib] ==> dir [/lib]
+          arg [-dynamic-linker=/nix/store/dbwp0scbb0rk78m636sb7cvycz8xzgyh-glibc-2.39-52/lib/ld-linux-x86-64.so.2] ==> ignore
+          arg [-v] ==> ignore
+          arg [CMakeFiles/cmTC_ea21c.dir/CMakeCCompilerABI.c.o] ==> ignore
+          arg [-lgcc] ==> lib [gcc]
+          arg [--as-needed] ==> ignore
+          arg [-lgcc_s] ==> lib [gcc_s]
+          arg [--no-as-needed] ==> ignore
+          arg [-lc] ==> lib [c]
+          arg [-lgcc] ==> lib [gcc]
+          arg [--as-needed] ==> ignore
+          arg [-lgcc_s] ==> lib [gcc_s]
+          arg [--no-as-needed] ==> ignore
+          arg [/nix/store/zc0nsv23pakbafngjy32kvhfzb16as43-gcc-13.3.0/lib/gcc/x86_64-unknown-linux-gnu/13.3.0/crtendS.o] ==> obj [/nix/store/zc0nsv23pakbafngjy32kvhfzb16as43-gcc-13.3.0/lib/gcc/x86_64-unknown-linux-gnu/13.3.0/crtendS.o]
+          arg [/nix/store/dbwp0scbb0rk78m636sb7cvycz8xzgyh-glibc-2.39-52/lib/crtn.o] ==> obj [/nix/store/dbwp0scbb0rk78m636sb7cvycz8xzgyh-glibc-2.39-52/lib/crtn.o]
+        linker tool for 'C': /nix/store/svf4zn4qg9lsxfn4znyxk7nl80hlmgpm-clang-wrapper-17.0.6/bin/ld
+        collapse library dir [/nix/store/dbwp0scbb0rk78m636sb7cvycz8xzgyh-glibc-2.39-52/lib] ==> [/nix/store/dbwp0scbb0rk78m636sb7cvycz8xzgyh-glibc-2.39-52/lib]
+        collapse library dir [/nix/store/zc0nsv23pakbafngjy32kvhfzb16as43-gcc-13.3.0/lib/gcc/x86_64-unknown-linux-gnu/13.3.0] ==> [/nix/store/zc0nsv23pakbafngjy32kvhfzb16as43-gcc-13.3.0/lib/gcc/x86_64-unknown-linux-gnu/13.3.0]
+        collapse library dir [/nix/store/bn7pnigb0f8874m6riiw6dngsmdyic1g-gcc-13.3.0-lib/lib] ==> [/nix/store/bn7pnigb0f8874m6riiw6dngsmdyic1g-gcc-13.3.0-lib/lib]
+        collapse library dir [/nix/store/zc0nsv23pakbafngjy32kvhfzb16as43-gcc-13.3.0//lib] ==> [/nix/store/zc0nsv23pakbafngjy32kvhfzb16as43-gcc-13.3.0/lib]
+        collapse library dir [/nix/store/pd8xxiyn2xi21fgg9qm7r0qghsk8715k-gcc-13.3.0-libgcc/lib] ==> [/nix/store/pd8xxiyn2xi21fgg9qm7r0qghsk8715k-gcc-13.3.0-libgcc/lib]
+        collapse library dir [/nix/store/i91a9lv2mp91h93plr8n34xdkr16xi49-clang-17.0.6-lib/lib] ==> [/nix/store/i91a9lv2mp91h93plr8n34xdkr16xi49-clang-17.0.6-lib/lib]
+        collapse library dir [/nix/store/zc0nsv23pakbafngjy32kvhfzb16as43-gcc-13.3.0/lib64/gcc/x86_64-unknown-linux-gnu/13.3.0] ==> [/nix/store/zc0nsv23pakbafngjy32kvhfzb16as43-gcc-13.3.0/lib64/gcc/x86_64-unknown-linux-gnu/13.3.0]
+        collapse library dir [/nix/store/zc0nsv23pakbafngjy32kvhfzb16as43-gcc-13.3.0/lib64/gcc/x86_64-unknown-linux-gnu/13.3.0/../../../../lib64] ==> [/nix/store/zc0nsv23pakbafngjy32kvhfzb16as43-gcc-13.3.0/lib64]
+        collapse library dir [/lib/../lib64] ==> [/lib64]
+        collapse library dir [/lib] ==> [/lib]
+        implicit libs: [gcc;gcc_s;c;gcc;gcc_s]
+        implicit objs: [/nix/store/dbwp0scbb0rk78m636sb7cvycz8xzgyh-glibc-2.39-52/lib/Scrt1.o;/nix/store/dbwp0scbb0rk78m636sb7cvycz8xzgyh-glibc-2.39-52/lib/crti.o;/nix/store/zc0nsv23pakbafngjy32kvhfzb16as43-gcc-13.3.0/lib/gcc/x86_64-unknown-linux-gnu/13.3.0/crtbeginS.o;/nix/store/zc0nsv23pakbafngjy32kvhfzb16as43-gcc-13.3.0/lib/gcc/x86_64-unknown-linux-gnu/13.3.0/crtendS.o;/nix/store/dbwp0scbb0rk78m636sb7cvycz8xzgyh-glibc-2.39-52/lib/crtn.o]
+        implicit dirs: [/nix/store/dbwp0scbb0rk78m636sb7cvycz8xzgyh-glibc-2.39-52/lib;/nix/store/zc0nsv23pakbafngjy32kvhfzb16as43-gcc-13.3.0/lib/gcc/x86_64-unknown-linux-gnu/13.3.0;/nix/store/bn7pnigb0f8874m6riiw6dngsmdyic1g-gcc-13.3.0-lib/lib;/nix/store/zc0nsv23pakbafngjy32kvhfzb16as43-gcc-13.3.0/lib;/nix/store/pd8xxiyn2xi21fgg9qm7r0qghsk8715k-gcc-13.3.0-libgcc/lib;/nix/store/i91a9lv2mp91h93plr8n34xdkr16xi49-clang-17.0.6-lib/lib;/nix/store/zc0nsv23pakbafngjy32kvhfzb16as43-gcc-13.3.0/lib64/gcc/x86_64-unknown-linux-gnu/13.3.0;/nix/store/zc0nsv23pakbafngjy32kvhfzb16as43-gcc-13.3.0/lib64;/lib64;/lib]
+        implicit fwks: []
+      
+      
+  -
+    kind: "message-v1"
+    backtrace:
+      - "/nix/store/ih3wsahlr3d787jc4kzqizp6syq6hy29-cmake-3.29.3/share/cmake-3.29/Modules/Internal/CMakeDetermineLinkerId.cmake:40 (message)"
+      - "/nix/store/ih3wsahlr3d787jc4kzqizp6syq6hy29-cmake-3.29.3/share/cmake-3.29/Modules/CMakeDetermineCompilerABI.cmake:210 (cmake_determine_linker_id)"
+      - "/nix/store/ih3wsahlr3d787jc4kzqizp6syq6hy29-cmake-3.29.3/share/cmake-3.29/Modules/CMakeTestCCompiler.cmake:26 (CMAKE_DETERMINE_COMPILER_ABI)"
+      - "CMakeLists.txt:3 (project)"
+    message: |
+      Running the C compiler's linker: "/nix/store/svf4zn4qg9lsxfn4znyxk7nl80hlmgpm-clang-wrapper-17.0.6/bin/ld" "-v"
+      GNU ld (GNU Binutils) 2.41
+  -
+    kind: "try_compile-v1"
+    backtrace:
+      - "/nix/store/ih3wsahlr3d787jc4kzqizp6syq6hy29-cmake-3.29.3/share/cmake-3.29/Modules/CMakeDetermineCompilerABI.cmake:67 (try_compile)"
+      - "/nix/store/ih3wsahlr3d787jc4kzqizp6syq6hy29-cmake-3.29.3/share/cmake-3.29/Modules/CMakeTestCXXCompiler.cmake:26 (CMAKE_DETERMINE_COMPILER_ABI)"
+      - "CMakeLists.txt:3 (project)"
+    checks:
+      - "Detecting CXX compiler ABI info"
+    directories:
+      source: "/home/bear/zura-transpiled/release/CMakeFiles/CMakeScratch/TryCompile-OmBJVz"
+      binary: "/home/bear/zura-transpiled/release/CMakeFiles/CMakeScratch/TryCompile-OmBJVz"
+    cmakeVariables:
+      CMAKE_CXX_COMPILER_CLANG_SCAN_DEPS: "/etc/profiles/per-user/bear/bin/clang-scan-deps"
+      CMAKE_CXX_FLAGS: ""
+      CMAKE_CXX_FLAGS_DEBUG: "-g"
+      CMAKE_CXX_SCAN_FOR_MODULES: "OFF"
+      CMAKE_EXE_LINKER_FLAGS: ""
+    buildResult:
+      variable: "CMAKE_CXX_ABI_COMPILED"
+      cached: true
+      stdout: |
+        Change Dir: '/home/bear/zura-transpiled/release/CMakeFiles/CMakeScratch/TryCompile-OmBJVz'
+        
+        Run Build Command(s): /nix/store/ih3wsahlr3d787jc4kzqizp6syq6hy29-cmake-3.29.3/bin/cmake -E env VERBOSE=1 /etc/profiles/per-user/bear/bin/make -f Makefile cmTC_87021/fast
+        /etc/profiles/per-user/bear/bin/make  -f CMakeFiles/cmTC_87021.dir/build.make CMakeFiles/cmTC_87021.dir/build
+        make[1]: Entering directory '/home/bear/zura-transpiled/release/CMakeFiles/CMakeScratch/TryCompile-OmBJVz'
+        Building CXX object CMakeFiles/cmTC_87021.dir/CMakeCXXCompilerABI.cpp.o
+        /etc/profiles/per-user/bear/bin/c++   -v -MD -MT CMakeFiles/cmTC_87021.dir/CMakeCXXCompilerABI.cpp.o -MF CMakeFiles/cmTC_87021.dir/CMakeCXXCompilerABI.cpp.o.d -o CMakeFiles/cmTC_87021.dir/CMakeCXXCompilerABI.cpp.o -c /nix/store/ih3wsahlr3d787jc4kzqizp6syq6hy29-cmake-3.29.3/share/cmake-3.29/Modules/CMakeCXXCompilerABI.cpp
+        clang version 17.0.6
+        Target: x86_64-unknown-linux-gnu
+        Thread model: posix
+        InstalledDir: /nix/store/8lzqgsysbnnb8ni42nl2s15f0qwn8b18-clang-17.0.6/bin
+        Found candidate GCC installation: /nix/store/zc0nsv23pakbafngjy32kvhfzb16as43-gcc-13.3.0/lib/gcc/x86_64-unknown-linux-gnu/13.3.0
+        Found candidate GCC installation: /nix/store/zc0nsv23pakbafngjy32kvhfzb16as43-gcc-13.3.0/lib64/gcc/x86_64-unknown-linux-gnu/13.3.0
+        Selected GCC installation: /nix/store/zc0nsv23pakbafngjy32kvhfzb16as43-gcc-13.3.0/lib64/gcc/x86_64-unknown-linux-gnu/13.3.0
+        Candidate multilib: .;@m64
+        Selected multilib: .;@m64
+         (in-process)
+         "/nix/store/8lzqgsysbnnb8ni42nl2s15f0qwn8b18-clang-17.0.6/bin/clang++" -cc1 -triple x86_64-unknown-linux-gnu -emit-obj -mrelax-all -disable-free -clear-ast-before-backend -disable-llvm-verifier -discard-value-names -main-file-name CMakeCXXCompilerABI.cpp -mrelocation-model pic -pic-level 2 -pic-is-pie -mframe-pointer=all -fmath-errno -ffp-contract=on -fno-rounding-math -mconstructor-aliases -funwind-tables=2 -target-cpu x86-64 -tune-cpu generic -debugger-tuning=gdb -v -fcoverage-compilation-dir=/home/bear/zura-transpiled/release/CMakeFiles/CMakeScratch/TryCompile-OmBJVz -nostdsysteminc -resource-dir /nix/store/svf4zn4qg9lsxfn4znyxk7nl80hlmgpm-clang-wrapper-17.0.6/resource-root -dependency-file CMakeFiles/cmTC_87021.dir/CMakeCXXCompilerABI.cpp.o.d -MT CMakeFiles/cmTC_87021.dir/CMakeCXXCompilerABI.cpp.o -sys-header-deps -idirafter /nix/store/4vgk1rlzdqjnpjicb5qcxjcd4spi7wyw-glibc-2.39-52-dev/include -isystem /nix/store/zc0nsv23pakbafngjy32kvhfzb16as43-gcc-13.3.0/include/c++/13.3.0 -isystem /nix/store/zc0nsv23pakbafngjy32kvhfzb16as43-gcc-13.3.0/include/c++/13.3.0/x86_64-unknown-linux-gnu -internal-isystem /nix/store/svf4zn4qg9lsxfn4znyxk7nl80hlmgpm-clang-wrapper-17.0.6/resource-root/include -fdeprecated-macro -fdebug-compilation-dir=/home/bear/zura-transpiled/release/CMakeFiles/CMakeScratch/TryCompile-OmBJVz -ferror-limit 19 -fgnuc-version=4.2.1 -fcxx-exceptions -fexceptions -faddrsig -D__GCC_HAVE_DWARF2_CFI_ASM=1 -o CMakeFiles/cmTC_87021.dir/CMakeCXXCompilerABI.cpp.o -x c++ /nix/store/ih3wsahlr3d787jc4kzqizp6syq6hy29-cmake-3.29.3/share/cmake-3.29/Modules/CMakeCXXCompilerABI.cpp
+        clang -cc1 version 17.0.6 based upon LLVM 17.0.6 default target x86_64-unknown-linux-gnu
+        #include "..." search starts here:
+        #include <...> search starts here:
+         /nix/store/zc0nsv23pakbafngjy32kvhfzb16as43-gcc-13.3.0/include/c++/13.3.0
+         /nix/store/zc0nsv23pakbafngjy32kvhfzb16as43-gcc-13.3.0/include/c++/13.3.0/x86_64-unknown-linux-gnu
+         /nix/store/svf4zn4qg9lsxfn4znyxk7nl80hlmgpm-clang-wrapper-17.0.6/resource-root/include
+         /nix/store/4vgk1rlzdqjnpjicb5qcxjcd4spi7wyw-glibc-2.39-52-dev/include
+        End of search list.
+        Linking CXX executable cmTC_87021
+        /nix/store/ih3wsahlr3d787jc4kzqizp6syq6hy29-cmake-3.29.3/bin/cmake -E cmake_link_script CMakeFiles/cmTC_87021.dir/link.txt --verbose=1
+        /etc/profiles/per-user/bear/bin/c++  -v -Wl,-v CMakeFiles/cmTC_87021.dir/CMakeCXXCompilerABI.cpp.o -o cmTC_87021
+        clang version 17.0.6
+        Target: x86_64-unknown-linux-gnu
+        Thread model: posix
+        InstalledDir: /nix/store/8lzqgsysbnnb8ni42nl2s15f0qwn8b18-clang-17.0.6/bin
+        Found candidate GCC installation: /nix/store/zc0nsv23pakbafngjy32kvhfzb16as43-gcc-13.3.0/lib/gcc/x86_64-unknown-linux-gnu/13.3.0
+        Found candidate GCC installation: /nix/store/zc0nsv23pakbafngjy32kvhfzb16as43-gcc-13.3.0/lib64/gcc/x86_64-unknown-linux-gnu/13.3.0
+        Selected GCC installation: /nix/store/zc0nsv23pakbafngjy32kvhfzb16as43-gcc-13.3.0/lib64/gcc/x86_64-unknown-linux-gnu/13.3.0
+        Candidate multilib: .;@m64
+        Selected multilib: .;@m64
+         "/nix/store/svf4zn4qg9lsxfn4znyxk7nl80hlmgpm-clang-wrapper-17.0.6/bin/ld" -pie --hash-style=gnu --eh-frame-hdr -m elf_x86_64 -o cmTC_87021 /nix/store/dbwp0scbb0rk78m636sb7cvycz8xzgyh-glibc-2.39-52/lib/Scrt1.o /nix/store/dbwp0scbb0rk78m636sb7cvycz8xzgyh-glibc-2.39-52/lib/crti.o /nix/store/zc0nsv23pakbafngjy32kvhfzb16as43-gcc-13.3.0/lib/gcc/x86_64-unknown-linux-gnu/13.3.0/crtbeginS.o -L/nix/store/dbwp0scbb0rk78m636sb7cvycz8xzgyh-glibc-2.39-52/lib -L/nix/store/zc0nsv23pakbafngjy32kvhfzb16as43-gcc-13.3.0/lib/gcc/x86_64-unknown-linux-gnu/13.3.0 -L/nix/store/bn7pnigb0f8874m6riiw6dngsmdyic1g-gcc-13.3.0-lib/lib -L/nix/store/zc0nsv23pakbafngjy32kvhfzb16as43-gcc-13.3.0//lib -L/nix/store/pd8xxiyn2xi21fgg9qm7r0qghsk8715k-gcc-13.3.0-libgcc/lib -L/nix/store/i91a9lv2mp91h93plr8n34xdkr16xi49-clang-17.0.6-lib/lib -L/nix/store/zc0nsv23pakbafngjy32kvhfzb16as43-gcc-13.3.0/lib64/gcc/x86_64-unknown-linux-gnu/13.3.0 -L/nix/store/zc0nsv23pakbafngjy32kvhfzb16as43-gcc-13.3.0/lib64/gcc/x86_64-unknown-linux-gnu/13.3.0/../../../../lib64 -L/lib/../lib64 -L/lib -dynamic-linker=/nix/store/dbwp0scbb0rk78m636sb7cvycz8xzgyh-glibc-2.39-52/lib/ld-linux-x86-64.so.2 -v CMakeFiles/cmTC_87021.dir/CMakeCXXCompilerABI.cpp.o -lstdc++ -lm -lgcc_s -lgcc -lc -lgcc_s -lgcc /nix/store/zc0nsv23pakbafngjy32kvhfzb16as43-gcc-13.3.0/lib/gcc/x86_64-unknown-linux-gnu/13.3.0/crtendS.o /nix/store/dbwp0scbb0rk78m636sb7cvycz8xzgyh-glibc-2.39-52/lib/crtn.o
+        GNU ld (GNU Binutils) 2.41
+        make[1]: Leaving directory '/home/bear/zura-transpiled/release/CMakeFiles/CMakeScratch/TryCompile-OmBJVz'
+        
+      exitCode: 0
+  -
+    kind: "message-v1"
+    backtrace:
+      - "/nix/store/ih3wsahlr3d787jc4kzqizp6syq6hy29-cmake-3.29.3/share/cmake-3.29/Modules/CMakeDetermineCompilerABI.cmake:137 (message)"
+      - "/nix/store/ih3wsahlr3d787jc4kzqizp6syq6hy29-cmake-3.29.3/share/cmake-3.29/Modules/CMakeTestCXXCompiler.cmake:26 (CMAKE_DETERMINE_COMPILER_ABI)"
+      - "CMakeLists.txt:3 (project)"
+    message: |
+      Parsed CXX implicit include dir info: rv=done
+        found start of include info
+        found start of implicit include info
+          add: [/nix/store/zc0nsv23pakbafngjy32kvhfzb16as43-gcc-13.3.0/include/c++/13.3.0]
+          add: [/nix/store/zc0nsv23pakbafngjy32kvhfzb16as43-gcc-13.3.0/include/c++/13.3.0/x86_64-unknown-linux-gnu]
+          add: [/nix/store/svf4zn4qg9lsxfn4znyxk7nl80hlmgpm-clang-wrapper-17.0.6/resource-root/include]
+          add: [/nix/store/4vgk1rlzdqjnpjicb5qcxjcd4spi7wyw-glibc-2.39-52-dev/include]
+        end of search list found
+        collapse include dir [/nix/store/zc0nsv23pakbafngjy32kvhfzb16as43-gcc-13.3.0/include/c++/13.3.0] ==> [/nix/store/zc0nsv23pakbafngjy32kvhfzb16as43-gcc-13.3.0/include/c++/13.3.0]
+        collapse include dir [/nix/store/zc0nsv23pakbafngjy32kvhfzb16as43-gcc-13.3.0/include/c++/13.3.0/x86_64-unknown-linux-gnu] ==> [/nix/store/zc0nsv23pakbafngjy32kvhfzb16as43-gcc-13.3.0/include/c++/13.3.0/x86_64-unknown-linux-gnu]
+        collapse include dir [/nix/store/svf4zn4qg9lsxfn4znyxk7nl80hlmgpm-clang-wrapper-17.0.6/resource-root/include] ==> [/nix/store/svf4zn4qg9lsxfn4znyxk7nl80hlmgpm-clang-wrapper-17.0.6/resource-root/include]
+        collapse include dir [/nix/store/4vgk1rlzdqjnpjicb5qcxjcd4spi7wyw-glibc-2.39-52-dev/include] ==> [/nix/store/4vgk1rlzdqjnpjicb5qcxjcd4spi7wyw-glibc-2.39-52-dev/include]
+        implicit include dirs: [/nix/store/zc0nsv23pakbafngjy32kvhfzb16as43-gcc-13.3.0/include/c++/13.3.0;/nix/store/zc0nsv23pakbafngjy32kvhfzb16as43-gcc-13.3.0/include/c++/13.3.0/x86_64-unknown-linux-gnu;/nix/store/svf4zn4qg9lsxfn4znyxk7nl80hlmgpm-clang-wrapper-17.0.6/resource-root/include;/nix/store/4vgk1rlzdqjnpjicb5qcxjcd4spi7wyw-glibc-2.39-52-dev/include]
+      
+      
+  -
+    kind: "message-v1"
+    backtrace:
+      - "/nix/store/ih3wsahlr3d787jc4kzqizp6syq6hy29-cmake-3.29.3/share/cmake-3.29/Modules/CMakeDetermineCompilerABI.cmake:173 (message)"
+      - "/nix/store/ih3wsahlr3d787jc4kzqizp6syq6hy29-cmake-3.29.3/share/cmake-3.29/Modules/CMakeTestCXXCompiler.cmake:26 (CMAKE_DETERMINE_COMPILER_ABI)"
+      - "CMakeLists.txt:3 (project)"
+    message: |
+      Parsed CXX implicit link information:
+        link line regex: [^( *|.*[/\\])(ld[0-9]*(\\.[a-z]+)?|CMAKE_LINK_STARTFILE-NOTFOUND|([^/\\]+-)?ld|collect2)[^/\\]*( |$)]
+        linker tool regex: [^[ 	]*(->|")?[ 	]*(([^"]*[/\\])?(ld[0-9]*(\\.[a-z]+)?))("|,| |$)]
+        ignore line: [Change Dir: '/home/bear/zura-transpiled/release/CMakeFiles/CMakeScratch/TryCompile-OmBJVz']
+        ignore line: []
+        ignore line: [Run Build Command(s): /nix/store/ih3wsahlr3d787jc4kzqizp6syq6hy29-cmake-3.29.3/bin/cmake -E env VERBOSE=1 /etc/profiles/per-user/bear/bin/make -f Makefile cmTC_87021/fast]
+        ignore line: [/etc/profiles/per-user/bear/bin/make  -f CMakeFiles/cmTC_87021.dir/build.make CMakeFiles/cmTC_87021.dir/build]
+        ignore line: [make[1]: Entering directory '/home/bear/zura-transpiled/release/CMakeFiles/CMakeScratch/TryCompile-OmBJVz']
+        ignore line: [Building CXX object CMakeFiles/cmTC_87021.dir/CMakeCXXCompilerABI.cpp.o]
+        ignore line: [/etc/profiles/per-user/bear/bin/c++   -v -MD -MT CMakeFiles/cmTC_87021.dir/CMakeCXXCompilerABI.cpp.o -MF CMakeFiles/cmTC_87021.dir/CMakeCXXCompilerABI.cpp.o.d -o CMakeFiles/cmTC_87021.dir/CMakeCXXCompilerABI.cpp.o -c /nix/store/ih3wsahlr3d787jc4kzqizp6syq6hy29-cmake-3.29.3/share/cmake-3.29/Modules/CMakeCXXCompilerABI.cpp]
+        ignore line: [clang version 17.0.6]
+        ignore line: [Target: x86_64-unknown-linux-gnu]
+        ignore line: [Thread model: posix]
+        ignore line: [InstalledDir: /nix/store/8lzqgsysbnnb8ni42nl2s15f0qwn8b18-clang-17.0.6/bin]
+        ignore line: [Found candidate GCC installation: /nix/store/zc0nsv23pakbafngjy32kvhfzb16as43-gcc-13.3.0/lib/gcc/x86_64-unknown-linux-gnu/13.3.0]
+        ignore line: [Found candidate GCC installation: /nix/store/zc0nsv23pakbafngjy32kvhfzb16as43-gcc-13.3.0/lib64/gcc/x86_64-unknown-linux-gnu/13.3.0]
+        ignore line: [Selected GCC installation: /nix/store/zc0nsv23pakbafngjy32kvhfzb16as43-gcc-13.3.0/lib64/gcc/x86_64-unknown-linux-gnu/13.3.0]
+        ignore line: [Candidate multilib: .]
+        ignore line: [@m64]
+        ignore line: [Selected multilib: .]
+        ignore line: [@m64]
+        ignore line: [ (in-process)]
+        ignore line: [ "/nix/store/8lzqgsysbnnb8ni42nl2s15f0qwn8b18-clang-17.0.6/bin/clang++" -cc1 -triple x86_64-unknown-linux-gnu -emit-obj -mrelax-all -disable-free -clear-ast-before-backend -disable-llvm-verifier -discard-value-names -main-file-name CMakeCXXCompilerABI.cpp -mrelocation-model pic -pic-level 2 -pic-is-pie -mframe-pointer=all -fmath-errno -ffp-contract=on -fno-rounding-math -mconstructor-aliases -funwind-tables=2 -target-cpu x86-64 -tune-cpu generic -debugger-tuning=gdb -v -fcoverage-compilation-dir=/home/bear/zura-transpiled/release/CMakeFiles/CMakeScratch/TryCompile-OmBJVz -nostdsysteminc -resource-dir /nix/store/svf4zn4qg9lsxfn4znyxk7nl80hlmgpm-clang-wrapper-17.0.6/resource-root -dependency-file CMakeFiles/cmTC_87021.dir/CMakeCXXCompilerABI.cpp.o.d -MT CMakeFiles/cmTC_87021.dir/CMakeCXXCompilerABI.cpp.o -sys-header-deps -idirafter /nix/store/4vgk1rlzdqjnpjicb5qcxjcd4spi7wyw-glibc-2.39-52-dev/include -isystem /nix/store/zc0nsv23pakbafngjy32kvhfzb16as43-gcc-13.3.0/include/c++/13.3.0 -isystem /nix/store/zc0nsv23pakbafngjy32kvhfzb16as43-gcc-13.3.0/include/c++/13.3.0/x86_64-unknown-linux-gnu -internal-isystem /nix/store/svf4zn4qg9lsxfn4znyxk7nl80hlmgpm-clang-wrapper-17.0.6/resource-root/include -fdeprecated-macro -fdebug-compilation-dir=/home/bear/zura-transpiled/release/CMakeFiles/CMakeScratch/TryCompile-OmBJVz -ferror-limit 19 -fgnuc-version=4.2.1 -fcxx-exceptions -fexceptions -faddrsig -D__GCC_HAVE_DWARF2_CFI_ASM=1 -o CMakeFiles/cmTC_87021.dir/CMakeCXXCompilerABI.cpp.o -x c++ /nix/store/ih3wsahlr3d787jc4kzqizp6syq6hy29-cmake-3.29.3/share/cmake-3.29/Modules/CMakeCXXCompilerABI.cpp]
+        ignore line: [clang -cc1 version 17.0.6 based upon LLVM 17.0.6 default target x86_64-unknown-linux-gnu]
+        ignore line: [#include "..." search starts here:]
+        ignore line: [#include <...> search starts here:]
+        ignore line: [ /nix/store/zc0nsv23pakbafngjy32kvhfzb16as43-gcc-13.3.0/include/c++/13.3.0]
+        ignore line: [ /nix/store/zc0nsv23pakbafngjy32kvhfzb16as43-gcc-13.3.0/include/c++/13.3.0/x86_64-unknown-linux-gnu]
+        ignore line: [ /nix/store/svf4zn4qg9lsxfn4znyxk7nl80hlmgpm-clang-wrapper-17.0.6/resource-root/include]
+        ignore line: [ /nix/store/4vgk1rlzdqjnpjicb5qcxjcd4spi7wyw-glibc-2.39-52-dev/include]
+        ignore line: [End of search list.]
+        ignore line: [Linking CXX executable cmTC_87021]
+        ignore line: [/nix/store/ih3wsahlr3d787jc4kzqizp6syq6hy29-cmake-3.29.3/bin/cmake -E cmake_link_script CMakeFiles/cmTC_87021.dir/link.txt --verbose=1]
+        ignore line: [/etc/profiles/per-user/bear/bin/c++  -v -Wl -v CMakeFiles/cmTC_87021.dir/CMakeCXXCompilerABI.cpp.o -o cmTC_87021]
+        ignore line: [clang version 17.0.6]
+        ignore line: [Target: x86_64-unknown-linux-gnu]
+        ignore line: [Thread model: posix]
+        ignore line: [InstalledDir: /nix/store/8lzqgsysbnnb8ni42nl2s15f0qwn8b18-clang-17.0.6/bin]
+        ignore line: [Found candidate GCC installation: /nix/store/zc0nsv23pakbafngjy32kvhfzb16as43-gcc-13.3.0/lib/gcc/x86_64-unknown-linux-gnu/13.3.0]
+        ignore line: [Found candidate GCC installation: /nix/store/zc0nsv23pakbafngjy32kvhfzb16as43-gcc-13.3.0/lib64/gcc/x86_64-unknown-linux-gnu/13.3.0]
+        ignore line: [Selected GCC installation: /nix/store/zc0nsv23pakbafngjy32kvhfzb16as43-gcc-13.3.0/lib64/gcc/x86_64-unknown-linux-gnu/13.3.0]
+        ignore line: [Candidate multilib: .]
+        ignore line: [@m64]
+        ignore line: [Selected multilib: .]
+        ignore line: [@m64]
+        link line: [ "/nix/store/svf4zn4qg9lsxfn4znyxk7nl80hlmgpm-clang-wrapper-17.0.6/bin/ld" -pie --hash-style=gnu --eh-frame-hdr -m elf_x86_64 -o cmTC_87021 /nix/store/dbwp0scbb0rk78m636sb7cvycz8xzgyh-glibc-2.39-52/lib/Scrt1.o /nix/store/dbwp0scbb0rk78m636sb7cvycz8xzgyh-glibc-2.39-52/lib/crti.o /nix/store/zc0nsv23pakbafngjy32kvhfzb16as43-gcc-13.3.0/lib/gcc/x86_64-unknown-linux-gnu/13.3.0/crtbeginS.o -L/nix/store/dbwp0scbb0rk78m636sb7cvycz8xzgyh-glibc-2.39-52/lib -L/nix/store/zc0nsv23pakbafngjy32kvhfzb16as43-gcc-13.3.0/lib/gcc/x86_64-unknown-linux-gnu/13.3.0 -L/nix/store/bn7pnigb0f8874m6riiw6dngsmdyic1g-gcc-13.3.0-lib/lib -L/nix/store/zc0nsv23pakbafngjy32kvhfzb16as43-gcc-13.3.0//lib -L/nix/store/pd8xxiyn2xi21fgg9qm7r0qghsk8715k-gcc-13.3.0-libgcc/lib -L/nix/store/i91a9lv2mp91h93plr8n34xdkr16xi49-clang-17.0.6-lib/lib -L/nix/store/zc0nsv23pakbafngjy32kvhfzb16as43-gcc-13.3.0/lib64/gcc/x86_64-unknown-linux-gnu/13.3.0 -L/nix/store/zc0nsv23pakbafngjy32kvhfzb16as43-gcc-13.3.0/lib64/gcc/x86_64-unknown-linux-gnu/13.3.0/../../../../lib64 -L/lib/../lib64 -L/lib -dynamic-linker=/nix/store/dbwp0scbb0rk78m636sb7cvycz8xzgyh-glibc-2.39-52/lib/ld-linux-x86-64.so.2 -v CMakeFiles/cmTC_87021.dir/CMakeCXXCompilerABI.cpp.o -lstdc++ -lm -lgcc_s -lgcc -lc -lgcc_s -lgcc /nix/store/zc0nsv23pakbafngjy32kvhfzb16as43-gcc-13.3.0/lib/gcc/x86_64-unknown-linux-gnu/13.3.0/crtendS.o /nix/store/dbwp0scbb0rk78m636sb7cvycz8xzgyh-glibc-2.39-52/lib/crtn.o]
+          arg [/nix/store/svf4zn4qg9lsxfn4znyxk7nl80hlmgpm-clang-wrapper-17.0.6/bin/ld] ==> ignore
+          arg [-pie] ==> ignore
+          arg [--hash-style=gnu] ==> ignore
+          arg [--eh-frame-hdr] ==> ignore
+          arg [-m] ==> ignore
+          arg [elf_x86_64] ==> ignore
+          arg [-o] ==> ignore
+          arg [cmTC_87021] ==> ignore
+          arg [/nix/store/dbwp0scbb0rk78m636sb7cvycz8xzgyh-glibc-2.39-52/lib/Scrt1.o] ==> obj [/nix/store/dbwp0scbb0rk78m636sb7cvycz8xzgyh-glibc-2.39-52/lib/Scrt1.o]
+          arg [/nix/store/dbwp0scbb0rk78m636sb7cvycz8xzgyh-glibc-2.39-52/lib/crti.o] ==> obj [/nix/store/dbwp0scbb0rk78m636sb7cvycz8xzgyh-glibc-2.39-52/lib/crti.o]
+          arg [/nix/store/zc0nsv23pakbafngjy32kvhfzb16as43-gcc-13.3.0/lib/gcc/x86_64-unknown-linux-gnu/13.3.0/crtbeginS.o] ==> obj [/nix/store/zc0nsv23pakbafngjy32kvhfzb16as43-gcc-13.3.0/lib/gcc/x86_64-unknown-linux-gnu/13.3.0/crtbeginS.o]
+          arg [-L/nix/store/dbwp0scbb0rk78m636sb7cvycz8xzgyh-glibc-2.39-52/lib] ==> dir [/nix/store/dbwp0scbb0rk78m636sb7cvycz8xzgyh-glibc-2.39-52/lib]
+          arg [-L/nix/store/zc0nsv23pakbafngjy32kvhfzb16as43-gcc-13.3.0/lib/gcc/x86_64-unknown-linux-gnu/13.3.0] ==> dir [/nix/store/zc0nsv23pakbafngjy32kvhfzb16as43-gcc-13.3.0/lib/gcc/x86_64-unknown-linux-gnu/13.3.0]
+          arg [-L/nix/store/bn7pnigb0f8874m6riiw6dngsmdyic1g-gcc-13.3.0-lib/lib] ==> dir [/nix/store/bn7pnigb0f8874m6riiw6dngsmdyic1g-gcc-13.3.0-lib/lib]
+          arg [-L/nix/store/zc0nsv23pakbafngjy32kvhfzb16as43-gcc-13.3.0//lib] ==> dir [/nix/store/zc0nsv23pakbafngjy32kvhfzb16as43-gcc-13.3.0//lib]
+          arg [-L/nix/store/pd8xxiyn2xi21fgg9qm7r0qghsk8715k-gcc-13.3.0-libgcc/lib] ==> dir [/nix/store/pd8xxiyn2xi21fgg9qm7r0qghsk8715k-gcc-13.3.0-libgcc/lib]
+          arg [-L/nix/store/i91a9lv2mp91h93plr8n34xdkr16xi49-clang-17.0.6-lib/lib] ==> dir [/nix/store/i91a9lv2mp91h93plr8n34xdkr16xi49-clang-17.0.6-lib/lib]
+          arg [-L/nix/store/zc0nsv23pakbafngjy32kvhfzb16as43-gcc-13.3.0/lib64/gcc/x86_64-unknown-linux-gnu/13.3.0] ==> dir [/nix/store/zc0nsv23pakbafngjy32kvhfzb16as43-gcc-13.3.0/lib64/gcc/x86_64-unknown-linux-gnu/13.3.0]
+          arg [-L/nix/store/zc0nsv23pakbafngjy32kvhfzb16as43-gcc-13.3.0/lib64/gcc/x86_64-unknown-linux-gnu/13.3.0/../../../../lib64] ==> dir [/nix/store/zc0nsv23pakbafngjy32kvhfzb16as43-gcc-13.3.0/lib64/gcc/x86_64-unknown-linux-gnu/13.3.0/../../../../lib64]
+          arg [-L/lib/../lib64] ==> dir [/lib/../lib64]
+          arg [-L/lib] ==> dir [/lib]
+          arg [-dynamic-linker=/nix/store/dbwp0scbb0rk78m636sb7cvycz8xzgyh-glibc-2.39-52/lib/ld-linux-x86-64.so.2] ==> ignore
+          arg [-v] ==> ignore
+          arg [CMakeFiles/cmTC_87021.dir/CMakeCXXCompilerABI.cpp.o] ==> ignore
+          arg [-lstdc++] ==> lib [stdc++]
+          arg [-lm] ==> lib [m]
+          arg [-lgcc_s] ==> lib [gcc_s]
+          arg [-lgcc] ==> lib [gcc]
+          arg [-lc] ==> lib [c]
+          arg [-lgcc_s] ==> lib [gcc_s]
+          arg [-lgcc] ==> lib [gcc]
+          arg [/nix/store/zc0nsv23pakbafngjy32kvhfzb16as43-gcc-13.3.0/lib/gcc/x86_64-unknown-linux-gnu/13.3.0/crtendS.o] ==> obj [/nix/store/zc0nsv23pakbafngjy32kvhfzb16as43-gcc-13.3.0/lib/gcc/x86_64-unknown-linux-gnu/13.3.0/crtendS.o]
+          arg [/nix/store/dbwp0scbb0rk78m636sb7cvycz8xzgyh-glibc-2.39-52/lib/crtn.o] ==> obj [/nix/store/dbwp0scbb0rk78m636sb7cvycz8xzgyh-glibc-2.39-52/lib/crtn.o]
+        linker tool for 'CXX': /nix/store/svf4zn4qg9lsxfn4znyxk7nl80hlmgpm-clang-wrapper-17.0.6/bin/ld
+        collapse library dir [/nix/store/dbwp0scbb0rk78m636sb7cvycz8xzgyh-glibc-2.39-52/lib] ==> [/nix/store/dbwp0scbb0rk78m636sb7cvycz8xzgyh-glibc-2.39-52/lib]
+        collapse library dir [/nix/store/zc0nsv23pakbafngjy32kvhfzb16as43-gcc-13.3.0/lib/gcc/x86_64-unknown-linux-gnu/13.3.0] ==> [/nix/store/zc0nsv23pakbafngjy32kvhfzb16as43-gcc-13.3.0/lib/gcc/x86_64-unknown-linux-gnu/13.3.0]
+        collapse library dir [/nix/store/bn7pnigb0f8874m6riiw6dngsmdyic1g-gcc-13.3.0-lib/lib] ==> [/nix/store/bn7pnigb0f8874m6riiw6dngsmdyic1g-gcc-13.3.0-lib/lib]
+        collapse library dir [/nix/store/zc0nsv23pakbafngjy32kvhfzb16as43-gcc-13.3.0//lib] ==> [/nix/store/zc0nsv23pakbafngjy32kvhfzb16as43-gcc-13.3.0/lib]
+        collapse library dir [/nix/store/pd8xxiyn2xi21fgg9qm7r0qghsk8715k-gcc-13.3.0-libgcc/lib] ==> [/nix/store/pd8xxiyn2xi21fgg9qm7r0qghsk8715k-gcc-13.3.0-libgcc/lib]
+        collapse library dir [/nix/store/i91a9lv2mp91h93plr8n34xdkr16xi49-clang-17.0.6-lib/lib] ==> [/nix/store/i91a9lv2mp91h93plr8n34xdkr16xi49-clang-17.0.6-lib/lib]
+        collapse library dir [/nix/store/zc0nsv23pakbafngjy32kvhfzb16as43-gcc-13.3.0/lib64/gcc/x86_64-unknown-linux-gnu/13.3.0] ==> [/nix/store/zc0nsv23pakbafngjy32kvhfzb16as43-gcc-13.3.0/lib64/gcc/x86_64-unknown-linux-gnu/13.3.0]
+        collapse library dir [/nix/store/zc0nsv23pakbafngjy32kvhfzb16as43-gcc-13.3.0/lib64/gcc/x86_64-unknown-linux-gnu/13.3.0/../../../../lib64] ==> [/nix/store/zc0nsv23pakbafngjy32kvhfzb16as43-gcc-13.3.0/lib64]
+        collapse library dir [/lib/../lib64] ==> [/lib64]
+        collapse library dir [/lib] ==> [/lib]
+        implicit libs: [stdc++;m;gcc_s;gcc;c;gcc_s;gcc]
+        implicit objs: [/nix/store/dbwp0scbb0rk78m636sb7cvycz8xzgyh-glibc-2.39-52/lib/Scrt1.o;/nix/store/dbwp0scbb0rk78m636sb7cvycz8xzgyh-glibc-2.39-52/lib/crti.o;/nix/store/zc0nsv23pakbafngjy32kvhfzb16as43-gcc-13.3.0/lib/gcc/x86_64-unknown-linux-gnu/13.3.0/crtbeginS.o;/nix/store/zc0nsv23pakbafngjy32kvhfzb16as43-gcc-13.3.0/lib/gcc/x86_64-unknown-linux-gnu/13.3.0/crtendS.o;/nix/store/dbwp0scbb0rk78m636sb7cvycz8xzgyh-glibc-2.39-52/lib/crtn.o]
+        implicit dirs: [/nix/store/dbwp0scbb0rk78m636sb7cvycz8xzgyh-glibc-2.39-52/lib;/nix/store/zc0nsv23pakbafngjy32kvhfzb16as43-gcc-13.3.0/lib/gcc/x86_64-unknown-linux-gnu/13.3.0;/nix/store/bn7pnigb0f8874m6riiw6dngsmdyic1g-gcc-13.3.0-lib/lib;/nix/store/zc0nsv23pakbafngjy32kvhfzb16as43-gcc-13.3.0/lib;/nix/store/pd8xxiyn2xi21fgg9qm7r0qghsk8715k-gcc-13.3.0-libgcc/lib;/nix/store/i91a9lv2mp91h93plr8n34xdkr16xi49-clang-17.0.6-lib/lib;/nix/store/zc0nsv23pakbafngjy32kvhfzb16as43-gcc-13.3.0/lib64/gcc/x86_64-unknown-linux-gnu/13.3.0;/nix/store/zc0nsv23pakbafngjy32kvhfzb16as43-gcc-13.3.0/lib64;/lib64;/lib]
+        implicit fwks: []
+      
+      
+  -
+    kind: "message-v1"
+    backtrace:
+      - "/nix/store/ih3wsahlr3d787jc4kzqizp6syq6hy29-cmake-3.29.3/share/cmake-3.29/Modules/Internal/CMakeDetermineLinkerId.cmake:40 (message)"
+      - "/nix/store/ih3wsahlr3d787jc4kzqizp6syq6hy29-cmake-3.29.3/share/cmake-3.29/Modules/CMakeDetermineCompilerABI.cmake:210 (cmake_determine_linker_id)"
+      - "/nix/store/ih3wsahlr3d787jc4kzqizp6syq6hy29-cmake-3.29.3/share/cmake-3.29/Modules/CMakeTestCXXCompiler.cmake:26 (CMAKE_DETERMINE_COMPILER_ABI)"
+      - "CMakeLists.txt:3 (project)"
+    message: |
+      Running the CXX compiler's linker: "/nix/store/svf4zn4qg9lsxfn4znyxk7nl80hlmgpm-clang-wrapper-17.0.6/bin/ld" "-v"
+      GNU ld (GNU Binutils) 2.41
+...

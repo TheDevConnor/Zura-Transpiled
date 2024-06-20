@@ -1,0 +1,115 @@
+{
+	"kind" : "toolchains",
+	"toolchains" : 
+	[
+		{
+			"compiler" : 
+			{
+				"id" : "Clang",
+				"implicit" : 
+				{
+					"includeDirectories" : 
+					[
+						"/nix/store/svf4zn4qg9lsxfn4znyxk7nl80hlmgpm-clang-wrapper-17.0.6/resource-root/include",
+						"/nix/store/4vgk1rlzdqjnpjicb5qcxjcd4spi7wyw-glibc-2.39-52-dev/include"
+					],
+					"linkDirectories" : 
+					[
+						"/nix/store/dbwp0scbb0rk78m636sb7cvycz8xzgyh-glibc-2.39-52/lib",
+						"/nix/store/zc0nsv23pakbafngjy32kvhfzb16as43-gcc-13.3.0/lib/gcc/x86_64-unknown-linux-gnu/13.3.0",
+						"/nix/store/bn7pnigb0f8874m6riiw6dngsmdyic1g-gcc-13.3.0-lib/lib",
+						"/nix/store/zc0nsv23pakbafngjy32kvhfzb16as43-gcc-13.3.0/lib",
+						"/nix/store/pd8xxiyn2xi21fgg9qm7r0qghsk8715k-gcc-13.3.0-libgcc/lib",
+						"/nix/store/i91a9lv2mp91h93plr8n34xdkr16xi49-clang-17.0.6-lib/lib",
+						"/nix/store/zc0nsv23pakbafngjy32kvhfzb16as43-gcc-13.3.0/lib64/gcc/x86_64-unknown-linux-gnu/13.3.0",
+						"/nix/store/zc0nsv23pakbafngjy32kvhfzb16as43-gcc-13.3.0/lib64",
+						"/lib64",
+						"/lib"
+					],
+					"linkFrameworkDirectories" : [],
+					"linkLibraries" : 
+					[
+						"gcc",
+						"gcc_s",
+						"c",
+						"gcc",
+						"gcc_s"
+					]
+				},
+				"path" : "/etc/profiles/per-user/bear/bin/cc",
+				"version" : "17.0.6"
+			},
+			"language" : "C",
+			"sourceFileExtensions" : 
+			[
+				"c",
+				"m"
+			]
+		},
+		{
+			"compiler" : 
+			{
+				"id" : "Clang",
+				"implicit" : 
+				{
+					"includeDirectories" : 
+					[
+						"/nix/store/zc0nsv23pakbafngjy32kvhfzb16as43-gcc-13.3.0/include/c++/13.3.0",
+						"/nix/store/zc0nsv23pakbafngjy32kvhfzb16as43-gcc-13.3.0/include/c++/13.3.0/x86_64-unknown-linux-gnu",
+						"/nix/store/svf4zn4qg9lsxfn4znyxk7nl80hlmgpm-clang-wrapper-17.0.6/resource-root/include",
+						"/nix/store/4vgk1rlzdqjnpjicb5qcxjcd4spi7wyw-glibc-2.39-52-dev/include"
+					],
+					"linkDirectories" : 
+					[
+						"/nix/store/dbwp0scbb0rk78m636sb7cvycz8xzgyh-glibc-2.39-52/lib",
+						"/nix/store/zc0nsv23pakbafngjy32kvhfzb16as43-gcc-13.3.0/lib/gcc/x86_64-unknown-linux-gnu/13.3.0",
+						"/nix/store/bn7pnigb0f8874m6riiw6dngsmdyic1g-gcc-13.3.0-lib/lib",
+						"/nix/store/zc0nsv23pakbafngjy32kvhfzb16as43-gcc-13.3.0/lib",
+						"/nix/store/pd8xxiyn2xi21fgg9qm7r0qghsk8715k-gcc-13.3.0-libgcc/lib",
+						"/nix/store/i91a9lv2mp91h93plr8n34xdkr16xi49-clang-17.0.6-lib/lib",
+						"/nix/store/zc0nsv23pakbafngjy32kvhfzb16as43-gcc-13.3.0/lib64/gcc/x86_64-unknown-linux-gnu/13.3.0",
+						"/nix/store/zc0nsv23pakbafngjy32kvhfzb16as43-gcc-13.3.0/lib64",
+						"/lib64",
+						"/lib"
+					],
+					"linkFrameworkDirectories" : [],
+					"linkLibraries" : 
+					[
+						"stdc++",
+						"m",
+						"gcc_s",
+						"gcc",
+						"c",
+						"gcc_s",
+						"gcc"
+					]
+				},
+				"path" : "/etc/profiles/per-user/bear/bin/c++",
+				"version" : "17.0.6"
+			},
+			"language" : "CXX",
+			"sourceFileExtensions" : 
+			[
+				"C",
+				"M",
+				"c++",
+				"cc",
+				"cpp",
+				"cxx",
+				"mm",
+				"mpp",
+				"CPP",
+				"ixx",
+				"cppm",
+				"ccm",
+				"cxxm",
+				"c++m"
+			]
+		}
+	],
+	"version" : 
+	{
+		"major" : 1,
+		"minor" : 0
+	}
+}

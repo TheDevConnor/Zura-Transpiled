@@ -1,4 +1,5 @@
 #pragma once
+#ifdef csk
 
 #include <string>
 
@@ -135,3 +136,4 @@ private:
 
   void skipWhitespace();
 };
+#endif

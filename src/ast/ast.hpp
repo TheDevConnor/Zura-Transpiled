@@ -1,4 +1,5 @@
 #pragma once
+#ifdef csk
 
 #include <iostream>
 #include <string>
@@ -38,4 +39,4 @@ public:
         }
     }
 };
- 
+#endif

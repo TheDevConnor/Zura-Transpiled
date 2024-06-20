@@ -1,4 +1,5 @@
 #include "parser.hpp"
+#ifdef csk
 #include "../ast/ast.hpp"
 #include "../ast/stmt.hpp"
 
@@ -36,3 +37,4 @@ Node::Stmt *Parser::varStmt(PStruct *psr) {
 
     return new VarStmt(name, type, new ExprStmt(expr));
 }
+#endif

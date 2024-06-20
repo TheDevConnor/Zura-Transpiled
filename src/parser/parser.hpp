@@ -1,5 +1,6 @@
 #pragma once
 
+#ifdef csk
 #include <unordered_map>
 #include <functional>
 #include <iostream>
@@ -101,3 +102,4 @@ namespace Parser {
     Node::Stmt *exprStmt(PStruct *psr);
     Node::Stmt *varStmt(PStruct *psr);
 }
+#endif

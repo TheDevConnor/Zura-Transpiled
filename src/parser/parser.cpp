@@ -2,6 +2,7 @@
 #include "../ast/ast.hpp"
 #include "../ast/stmt.hpp"
 #include "parser.hpp"
+#ifdef csk
 
 #include <vector>
 
@@ -31,3 +32,4 @@ Node::Stmt *Parser::parse(const char *source) {
    delete vect_tk;
    return new ProgramStmt(stmts);
 }
+#endif

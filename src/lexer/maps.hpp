@@ -1,4 +1,5 @@
 #include <unordered_map>
+#ifdef csk
 #include <functional>
 #include <string>
 
@@ -89,3 +90,4 @@ const std::unordered_map<std::string, TokenKind> dcMap = {
       {"<=", TokenKind::LESS_EQUAL},
       {":=", TokenKind::WALRUS},
 };
+#endif

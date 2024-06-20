@@ -1,4 +1,5 @@
 #pragma once
+#ifdef csk
 
 #include <string>
 
@@ -10,3 +11,4 @@ public:
   static void compilerDelete(char **argv);
   static char *readFile(const char *path);
 };
+#endif

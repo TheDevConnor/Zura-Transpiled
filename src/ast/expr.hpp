@@ -3,6 +3,7 @@
 #include <iostream>
 
 #include "ast.hpp"
+#ifdef csk
 
 class NumberExpr : public Node::Expr {
 public:
@@ -111,3 +112,4 @@ public:
         delete expr;
     }
 };
+#endif

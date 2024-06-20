@@ -1,0 +1,50 @@
+[
+{
+  "directory": "/home/bear/zura-transpiled/build",
+  "command": "/etc/profiles/per-user/bear/bin/c++ -Dcsk=CORE_LIBRARY  -g -std=gnu++20 -o CMakeFiles/zura.dir/src/helper/error/error.cpp.o -c /home/bear/zura-transpiled/src/helper/error/error.cpp",
+  "file": "/home/bear/zura-transpiled/src/helper/error/error.cpp",
+  "output": "CMakeFiles/zura.dir/src/helper/error/error.cpp.o"
+},
+{
+  "directory": "/home/bear/zura-transpiled/build",
+  "command": "/etc/profiles/per-user/bear/bin/c++ -Dcsk=CORE_LIBRARY  -g -std=gnu++20 -o CMakeFiles/zura.dir/src/helper/flags.cpp.o -c /home/bear/zura-transpiled/src/helper/flags.cpp",
+  "file": "/home/bear/zura-transpiled/src/helper/flags.cpp",
+  "output": "CMakeFiles/zura.dir/src/helper/flags.cpp.o"
+},
+{
+  "directory": "/home/bear/zura-transpiled/build",
+  "command": "/etc/profiles/per-user/bear/bin/c++ -Dcsk=CORE_LIBRARY  -g -std=gnu++20 -o CMakeFiles/zura.dir/src/lexer/lexer.cpp.o -c /home/bear/zura-transpiled/src/lexer/lexer.cpp",
+  "file": "/home/bear/zura-transpiled/src/lexer/lexer.cpp",
+  "output": "CMakeFiles/zura.dir/src/lexer/lexer.cpp.o"
+},
+{
+  "directory": "/home/bear/zura-transpiled/build",
+  "command": "/etc/profiles/per-user/bear/bin/c++ -Dcsk=CORE_LIBRARY  -g -std=gnu++20 -o CMakeFiles/zura.dir/src/parser/parser.cpp.o -c /home/bear/zura-transpiled/src/parser/parser.cpp",
+  "file": "/home/bear/zura-transpiled/src/parser/parser.cpp",
+  "output": "CMakeFiles/zura.dir/src/parser/parser.cpp.o"
+},
+{
+  "directory": "/home/bear/zura-transpiled/build",
+  "command": "/etc/profiles/per-user/bear/bin/c++ -Dcsk=CORE_LIBRARY  -g -std=gnu++20 -o CMakeFiles/zura.dir/src/parser/expr.cpp.o -c /home/bear/zura-transpiled/src/parser/expr.cpp",
+  "file": "/home/bear/zura-transpiled/src/parser/expr.cpp",
+  "output": "CMakeFiles/zura.dir/src/parser/expr.cpp.o"
+},
+{
+  "directory": "/home/bear/zura-transpiled/build",
+  "command": "/etc/profiles/per-user/bear/bin/c++ -Dcsk=CORE_LIBRARY  -g -std=gnu++20 -o CMakeFiles/zura.dir/src/parser/stmt.cpp.o -c /home/bear/zura-transpiled/src/parser/stmt.cpp",
+  "file": "/home/bear/zura-transpiled/src/parser/stmt.cpp",
+  "output": "CMakeFiles/zura.dir/src/parser/stmt.cpp.o"
+},
+{
+  "directory": "/home/bear/zura-transpiled/build",
+  "command": "/etc/profiles/per-user/bear/bin/c++ -Dcsk=CORE_LIBRARY  -g -std=gnu++20 -o CMakeFiles/zura.dir/src/parser/map.cpp.o -c /home/bear/zura-transpiled/src/parser/map.cpp",
+  "file": "/home/bear/zura-transpiled/src/parser/map.cpp",
+  "output": "CMakeFiles/zura.dir/src/parser/map.cpp.o"
+},
+{
+  "directory": "/home/bear/zura-transpiled/build",
+  "command": "/etc/profiles/per-user/bear/bin/c++ -Dcsk=CORE_LIBRARY  -g -std=gnu++20 -o CMakeFiles/zura.dir/src/main.cpp.o -c /home/bear/zura-transpiled/src/main.cpp",
+  "file": "/home/bear/zura-transpiled/src/main.cpp",
+  "output": "CMakeFiles/zura.dir/src/main.cpp.o"
+}
+]

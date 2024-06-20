@@ -1,4 +1,5 @@
 #include <unordered_map>
+#ifdef csk
 #include <string>
 
 #include "../helper/error/error.hpp"
@@ -141,3 +142,4 @@ Lexer::Token Lexer::scanToken() {
 
   return errorToken("Unexpected character.");
 }
+#endif

@@ -46,3 +46,41 @@ void Flags::runFile(const char *path, std::string outName, bool save) {
   delete[] source;
   delete result;
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#ifdef csk
+    ;
+#else
+    io;dfuihsdfuiohduioh((((((((******************))))))))(&&&&);
+#endif

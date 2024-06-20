@@ -1,4 +1,5 @@
 #pragma once
+#ifdef csk
 
 #include <iostream>
 #include <vector>
@@ -66,3 +67,4 @@ public:
         delete expr;
     }
 };
+#endif

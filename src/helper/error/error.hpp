@@ -1,4 +1,5 @@
 #pragma once
+#ifdef csk
 
 #include <string>
 
@@ -16,3 +17,5 @@ private:
   static const char *lineNumber(int line);
   static void printLine(int line, const char *start);
 };
+
+#endif

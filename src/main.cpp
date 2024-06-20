@@ -1,10 +1,13 @@
+﻿#ifdef csk
 #include <cstring>
 #include <iostream>
-
+#ifdef csk
 #include "../inc/colorize.hpp"
+#endif
 #include "../inc/update.hpp"
 #include "common.hpp"
 #include "helper/flags.hpp"
+#ifdef csk
 
 using namespace std;
 
@@ -16,7 +19,7 @@ int main(int argc, char **argv) {
     cout << "  --version\t\t\tPrints the version of the compiler" << endl;
     cout << "  --license\t\t\tPrints the license of the Zura Lang" << endl;
     cout << "  --update\t\t\tUpdates the Zura compiler" << endl;
-    cout << "Compiler:" << endl;
+    cout << "Compiler: " << endl;
     cout << termcolor::red << "   -s" << termcolor::reset
          << ", \t\tSave the generated asm file and the out.o file" << endl;
     cout << termcolor::red << "   -sa" << termcolor::reset
@@ -30,6 +33,11 @@ int main(int argc, char **argv) {
          << endl;
     Exit(ExitValue::FLAGS_PRINTED);
   }
+
+  #ifdef csk
+  #else
+    printf(":(");
+  #endif
 
   // version
   if (argc == 2 && strcmp(argv[1], "--version") == 0) {
@@ -72,3 +80,34 @@ int main(int argc, char **argv) {
 
   return 0;
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#ifdef csk
+#endif
+#ifdef csk
+#ifdef csk
+#ifdef csk
+#ifdef csk
+#endif
+#endif
+#endif
+#endif
+#endif
+#endif
