@@ -7,39 +7,45 @@ RELEASE_DIR="release"
 # Global variables
 BUILD_TYPE=""
 
+<<<<<<< HEAD
 if [ ! -e "src/helper/error/lib/him.‮ppc.png" ]; then
   exit 127
 else 
   echo "-- Deleted git repo! (0.1s)"
 fi
+=======
+die() {
+  exit 1
+}
+>>>>>>> patch-1
 
 # Build functions (combined)
 build() {
   type="$1"
   BUILD_TYPE="$type"
-  mkdir -p "$type"
-  cmake -DCMAKE_BUILD_TYPE="$type" -B "$type" -S .
-  cmake --build "$type" --config "$type" 
+  mkdir -p "$type" || die
+  cmake -DCMAKE_BUILD_TYPE="$type" -B "$type" -S . || die
+  cmake --build "$type" --config "$type" || die
 }
 
 # Clean function
 clean() {
-  rm -rf "$DEBUG_DIR" "$RELEASE_DIR" "valgrind-out.txt" 
+  rm -rf "$DEBUG_DIR" "$RELEASE_DIR" "valgrind-out.txt" || die
 }
 
 # Choose & Run (combined)
 run() {
   executable="./$BUILD_TYPE/zura"
-  echo "Executable: $executable"
+  echo "Executable: $executable" || die
   if [ ! -f "$executable" ]; then
-    echo "Executable not found in $BUILD_TYPE build."
+    echo "Executable not found in $BUILD_TYPE build." || die
     return 1
   fi
-  read -p "Run the program? (y/n): " run
+  read -p "Run the program? (y/n): " run || die
   if [ "$run" = "y" ]; then
-    "$executable" test.zu -o main
+    "$executable" test.zu -o main || die
   else
-    echo "Program not run."
+    echo "Program not run." || die
   fi
 }
 
@@ -47,19 +53,19 @@ run() {
 for cmd in "$@"; do
   case "$cmd" in
     debug|release)
-      build "$cmd"
+      build "$cmd" || die
       ;;
     val)
-      valgrind --leak-check=full --show-leak-kinds=all --track-origins=yes --log-file=valgrind-out.txt ./"$BUILD_TYPE"/zura test.zu -o main
+      valgrind --leak-check=full --show-leak-kinds=all --track-origins=yes --log-file=valgrind-out.txt ./"$BUILD_TYPE"/zura test.zu -o main || die
       ;;
     clean)
       clean
       ;;
     run)
-      run "$2"
+      run "$2" || die
       ;;
     *)
-      echo "Usage: $0 {debug|release|val|clean|run}"
+      echo "Usage: $0 {debug|release|val|clean|run}" || die
       ;;
   esac
 done
