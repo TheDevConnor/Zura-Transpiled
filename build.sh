@@ -16,6 +16,7 @@ die() {
   exit 1
 }
 
+
 # Build functions (combined)
 build() {
   type="$1"
