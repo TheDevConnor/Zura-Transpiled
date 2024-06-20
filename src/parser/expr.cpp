@@ -7,7 +7,7 @@
 Node::Expr *Parser::parseExpr(PStruct *psr, BindingPower bp) {
     auto left = nud(psr);
 
-    while (bp < getBP(psr->current(psr).kind)) {
+    while (bp < getBP(psr->advance(psr).kind)) {
         left = led(psr, left, bp);
     }
 
@@ -39,7 +39,8 @@ Node::Expr *Parser::unary(PStruct *psr) {
 }
 
 Node::Expr *Parser::binary(PStruct *psr, Node::Expr *left, BindingPower bp) {
-    auto op = psr->advance(psr);
+    auto op = psr->current(psr);
+    psr->advance(psr);
     auto right = parseExpr(psr, defaultValue);
     return new BinaryExpr(
         left,

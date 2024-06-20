@@ -10,7 +10,6 @@ Node::Stmt *Parser::parseStmt(PStruct *psr) {
 
 Node::Stmt *Parser::exprStmt(PStruct *psr) {
     auto expr = parseExpr(psr, BindingPower::defaultValue);
-    psr->advance(psr);
     psr->expect(psr, TokenKind::SEMICOLON);
     return new ExprStmt(expr);
 }

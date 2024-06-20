@@ -73,7 +73,8 @@ BindingPower Parser::getBP(TokenKind tk) {
 
 		{ TokenKind::IDENTIFIER, BindingPower::defaultValue },
 		{ TokenKind::NUMBER, BindingPower::defaultValue },
-		{ TokenKind::STRING, BindingPower::defaultValue }
+		{ TokenKind::STRING, BindingPower::defaultValue },
+		{ TokenKind::SEMICOLON, BindingPower::defaultValue },
 	};
 	auto bp = bp_lu.find(tk);
 
@@ -92,7 +93,6 @@ Node::Expr * Parser::nud(PStruct *psr) {
 		{ TokenKind::STRING, primary },
 		{ TokenKind::LEFT_PAREN, group },
 		{ TokenKind::MINUS, unary },
-		{ TokenKind::PLUS, unary }
 	};
 	auto op = psr->current(psr);
 	auto nud_fn = nud_lu.find(op.kind);
