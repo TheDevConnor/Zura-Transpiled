@@ -21,7 +21,6 @@ set(ZURA_HEADER_FILES
 
     # Parser Files
     src/parser/parser.hpp
-    src/parser/map.hpp
 
     inc/update.hpp
     src/common.hpp
@@ -35,7 +34,8 @@ set(ZURA_SOURCE_FILES
     # Parser Files
     src/parser/parser.cpp
     src/parser/expr.cpp
-    src/parser/stmt.cpp 
+    src/parser/stmt.cpp
+    src/parser/map.cpp 
     
     src/main.cpp
 )

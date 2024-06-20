@@ -9,7 +9,7 @@
 #include "../lexer/lexer.hpp"
 #include "../ast/ast.hpp"
 
-namespace ParserNamespace {
+namespace Parser {
     enum BindingPower {
         defaultValue = 0,
         comma = 1,
@@ -25,21 +25,21 @@ namespace ParserNamespace {
         prefix = 11,
         postfix = 12,
         call = 13,
-        field = 14,
+        _primary = 14,
         err = 15
     };
-    struct Parser;
+    struct PStruct;
 }
 
-struct ParserNamespace::Parser {
+struct Parser::PStruct {
     std::vector<Lexer::Token> tks;
     int pos = 0;
 
-    Lexer::Token current(Parser *psr) {
+    Lexer::Token current(PStruct *psr) {
         return psr->tks[psr->pos];
     }
 
-    Lexer::Token advance(Parser *psr) {
+    Lexer::Token advance(PStruct *psr) {
         if (psr->pos + 1 < psr->tks.size()) {
             psr->pos++;
             return psr->current(psr);
@@ -47,60 +47,57 @@ struct ParserNamespace::Parser {
         return psr->current(psr);
     }
 
-    Lexer::Token peek(Parser *psr, int offset = 0) {
+    Lexer::Token peek(PStruct *psr, int offset = 0) {
         return psr->tks[psr->pos + offset];
     }
 
-    bool hasTokens(Parser *psr) {
+    bool hasTokens(PStruct *psr) {
         return psr->pos < psr->tks.size();
     }
 
-    bool expect(Parser *psr, TokenKind tk) {
-        if (current(psr).kind == tk) {
-            advance(psr);
-            return true;
+    bool expect(PStruct *psr, TokenKind tk) {
+        bool res = current(psr).kind == tk ? true : false;
+        if (res == false) {
+            std::cerr << "Expected token " << tk << " but got " << current(psr).kind << std::endl;
+            return false;
         }
-        std::cerr << "Expected token " << tk << " but got " << current(psr).kind << std::endl;
-        return false;
+        advance(psr);
+        return res;
     }
 };
 
-namespace ParserNamespace {
+namespace Parser {
     Node::Stmt *parse(const char *source);
 
     // Maps for the Pratt Parser
-    using StmtHandler = std::function<Node::Stmt(Parser*)>;
-    using NudHandler = std::function<Node::Expr*(Parser*)>;
-    using LedHandler = std::function<Node::Expr*(Parser*, Node::Expr*, BindingPower)>;
+    using StmtHandler = std::function<Node::Stmt *(PStruct *)>;
+    using NudHandler = std::function<Node::Expr *(PStruct *)>;
+    using LedHandler = std::function<Node::Expr *(PStruct *, 
+                                                  Node::Expr *, 
+                                                  BindingPower)>;
 
-    using StmtLookup = std::unordered_map<TokenKind, StmtHandler>;
-    using NudLookup = std::unordered_map<TokenKind, NudHandler>;
-    using LedLookup = std::unordered_map<TokenKind, LedHandler>;
-    using BpLookup = std::unordered_map<TokenKind, BindingPower>;
+    static std::unordered_map<TokenKind, StmtHandler> stmt_lu;
+    static std::unordered_map<TokenKind, NudHandler> nud_lu;
+    static std::unordered_map<TokenKind, LedHandler> led_lu;
+    static std::unordered_map<TokenKind, BindingPower> bp_lu;
 
-    extern BpLookup bp_lu;
-    extern NudLookup nud_lu;
-    extern LedLookup led_lu;
-    extern StmtLookup stmt_lu;
-
-    void led(TokenKind kind, BindingPower bp, LedHandler led_fn);
-    void nud(TokenKind kind, NudHandler nud_fn);
-    void stmt(TokenKind kind, StmtHandler stmt_fn);
-    void createTokenLookup();
+    Node::Expr *led(PStruct *psr, Node::Expr *left, BindingPower bp);
+    BindingPower getBP(TokenKind tk);
+    Node::Expr *nud(PStruct *psr);
+    
 
     // Pratt parser functions.
-    std::vector<Lexer::Token> storeToken(Parser *psr, Lexer *lex, Lexer::Token tk);
-    Parser *createParser(std::vector<Lexer::Token> tks);
-    Node::Expr *parseExpr(Parser *psr, BindingPower bp);
+    PStruct *setupParser(PStruct *psr, Lexer *lex, Lexer::Token tk); 
+    Node::Expr *parseExpr(PStruct *psr, BindingPower bp);
 
     // Expr Functions
-    Node::Expr *primary(Parser * psr);
-    Node::Expr *unary(Parser *psr);
-    Node::Expr *group(Parser *psr);
-    Node::Expr *binary(Parser *psr, Node::Expr *left, BindingPower bp);
+    Node::Expr *primary(PStruct * psr);
+    Node::Expr *unary(PStruct *psr);
+    Node::Expr *group(PStruct *psr);
+    Node::Expr *binary(PStruct *psr, Node::Expr *left, BindingPower bp);
 
     // Stmt Functions
-    Node::Stmt *parseStmt(Parser *psr);
-    Node::Stmt *exprStmt(Parser *psr);
-    Node::Stmt *varStmt(Parser *psr);
+    Node::Stmt *parseStmt(PStruct *psr);
+    Node::Stmt *exprStmt(PStruct *psr);
+    Node::Stmt *varStmt(PStruct *psr);
 }

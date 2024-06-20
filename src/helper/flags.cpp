@@ -3,8 +3,8 @@
 #include <iostream>
 
 #include "../parser/parser.hpp"
-#include "../common.hpp"
 #include "../lexer/lexer.hpp"
+#include "../common.hpp"
 #include "flags.hpp"
 
 using namespace std;
@@ -39,7 +39,7 @@ char *Flags::readFile(const char *path) {
 void Flags::runFile(const char *path, std::string outName, bool save) {
   const char *source = readFile(path);
   
-  auto result = ParserNamespace::parse(source);
+  auto result = Parser::parse(source);
   result->debug();
   std::cout << std::endl;
 

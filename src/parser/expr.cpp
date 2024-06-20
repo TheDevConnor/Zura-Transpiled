@@ -1,21 +1,20 @@
 #include "../ast/expr.hpp"
 #include "parser.hpp"
-#include "map.hpp"
 
 #include <iostream>
 #include <sstream>
 
-using namespace ParserNamespace;
+Node::Expr *Parser::parseExpr(PStruct *psr, BindingPower bp) {
+    auto left = nud(psr);
 
-Node::Expr *ParserNamespace::parseExpr(Parser *psr, BindingPower bp) {
-    auto left = nud_lu[psr->current(psr).kind](psr);
-    while (bp < bp_lu[psr->current(psr).kind]) {
-        left = led_lu[psr->current(psr).kind](psr, left, bp);
+    while (bp < getBP(psr->current(psr).kind)) {
+        left = led(psr, left, bp);
     }
-    return left; 
+
+    return left;
 }
 
-Node::Expr *ParserNamespace::primary(Parser* psr) {
+Node::Expr *Parser::primary(PStruct* psr) {
     std::unordered_map<TokenKind, Node::Expr *> primaryMap = {
         { TokenKind::NUMBER, new NumberExpr(psr->current(psr).value) },
         { TokenKind::IDENTIFIER, new IdentExpr(psr->current(psr).value) },
@@ -24,12 +23,13 @@ Node::Expr *ParserNamespace::primary(Parser* psr) {
     return primaryMap[psr->current(psr).kind];
 }
 
-Node::Expr *ParserNamespace::group(Parser *psr) {
+Node::Expr *Parser::group(PStruct *psr) {
     return nullptr;
 }
 
-Node::Expr *ParserNamespace::unary(Parser *psr) {
+Node::Expr *Parser::unary(PStruct *psr) {
     auto op = psr->current(psr);
+    psr->advance(psr);
     auto right = parseExpr(psr, defaultValue);
 
     return new UnaryExpr(
@@ -38,7 +38,7 @@ Node::Expr *ParserNamespace::unary(Parser *psr) {
     );
 }
 
-Node::Expr *ParserNamespace::binary(Parser *psr, Node::Expr *left, BindingPower bp) {
+Node::Expr *Parser::binary(PStruct *psr, Node::Expr *left, BindingPower bp) {
     auto op = psr->advance(psr);
     auto right = parseExpr(psr, defaultValue);
     return new BinaryExpr(
