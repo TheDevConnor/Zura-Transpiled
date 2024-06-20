@@ -22,12 +22,14 @@ class Node {
 public:
     struct Expr {
         NodeKind kind;
-        virtual void debug(int ident = 0) const = 0; 
+        virtual void debug(int ident = 0) const = 0;
+        virtual ~Expr() = default; 
     };
 
     struct Stmt {
         NodeKind kind;
         virtual void debug() const = 0;
+        virtual ~Stmt() = default;
     };
 
     static void printIdent(int ident) {

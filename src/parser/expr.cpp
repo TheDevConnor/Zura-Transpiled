@@ -5,7 +5,7 @@
 #include <sstream>
 
 Node::Expr *Parser::parseExpr(PStruct *psr, BindingPower bp) {
-    auto left = nud(psr);
+    auto *left = nud(psr);
 
     while (bp < getBP(psr->advance(psr).kind)) {
         left = led(psr, left, bp);
@@ -30,7 +30,7 @@ Node::Expr *Parser::group(PStruct *psr) {
 Node::Expr *Parser::unary(PStruct *psr) {
     auto op = psr->current(psr);
     psr->advance(psr);
-    auto right = parseExpr(psr, defaultValue);
+    auto *right = parseExpr(psr, defaultValue);
 
     return new UnaryExpr(
         right,
@@ -41,7 +41,7 @@ Node::Expr *Parser::unary(PStruct *psr) {
 Node::Expr *Parser::binary(PStruct *psr, Node::Expr *left, BindingPower bp) {
     auto op = psr->current(psr);
     psr->advance(psr);
-    auto right = parseExpr(psr, defaultValue);
+    auto *right = parseExpr(psr, defaultValue);
     return new BinaryExpr(
         left,
         right,

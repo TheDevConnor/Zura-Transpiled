@@ -66,6 +66,11 @@ public:
         std::cout << "RHS:\n";
         rhs->debug(ident + 2);
     }
+
+    ~BinaryExpr() {
+        delete lhs;
+        delete rhs;
+    }
 };
 
 class UnaryExpr : public Node::Expr {
@@ -82,6 +87,10 @@ public:
         std::cout << "UnaryExpr: " << op << "\n";
         expr->debug(ident + 1);
     }
+
+    ~UnaryExpr() {
+        delete expr;
+    }
 };
 
 class GroupExpr : public Node::Expr {
@@ -96,5 +105,9 @@ public:
          Node::printIdent(ident);
         std::cout << "GroupExpr:\n";
         expr->debug(ident + 1);
+    }
+
+    ~GroupExpr() {
+        delete expr;
     }
 };

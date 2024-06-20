@@ -25,8 +25,9 @@ Node::Stmt *Parser::parse(const char *source) {
    auto vect_tk = setupParser(&psr, &lexer, lexer.scanToken());
 
    auto stmts = std::vector<Node::Stmt *>();
-   
-   stmts.push_back(parseStmt(vect_tk));
 
+   stmts.push_back(parseStmt(vect_tk));
+   
+   delete vect_tk;
    return new ProgramStmt(stmts);
 }

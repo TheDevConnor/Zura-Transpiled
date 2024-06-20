@@ -8,7 +8,7 @@
 
 using namespace Parser;
 
-Node::Expr * Parser::led(PStruct *psr, Node::Expr *left, BindingPower bp) {
+Node::Expr *Parser::led(PStruct *psr, Node::Expr *left, BindingPower bp) {
 	std::unordered_map<TokenKind, LedHandler> led_lu = {
 		// additive 
 		{ TokenKind::PLUS, binary },
@@ -86,7 +86,7 @@ BindingPower Parser::getBP(TokenKind tk) {
 	return bp->second;
 }
 
-Node::Expr * Parser::nud(PStruct *psr) {
+Node::Expr *Parser::nud(PStruct *psr) {
 	std::unordered_map<TokenKind, NudHandler> nud_lu = {
 		{ TokenKind::NUMBER, primary },
 		{ TokenKind::IDENTIFIER, primary },

@@ -44,4 +44,5 @@ void Flags::runFile(const char *path, std::string outName, bool save) {
   std::cout << std::endl;
 
   delete[] source;
+  delete result;
 }

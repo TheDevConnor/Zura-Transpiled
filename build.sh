@@ -18,7 +18,7 @@ build() {
 
 # Clean function
 clean() {
-  rm -rf "$DEBUG_DIR" "$RELEASE_DIR" 
+  rm -rf "$DEBUG_DIR" "$RELEASE_DIR" "valgrind-out.txt" 
 }
 
 # Choose & Run (combined)
@@ -43,6 +43,9 @@ for cmd in "$@"; do
     debug|release)
       build "$cmd"
       ;;
+    val)
+      valgrind --leak-check=full --show-leak-kinds=all --track-origins=yes --log-file=valgrind-out.txt ./"$BUILD_TYPE"/zura test.zu -o main
+      ;;
     clean)
       clean
       ;;
@@ -50,7 +53,7 @@ for cmd in "$@"; do
       run "$2"
       ;;
     *)
-      echo "Usage: $0 {debug|release|clean|run}"
+      echo "Usage: $0 {debug|release|val|clean|run}"
       ;;
   esac
 done

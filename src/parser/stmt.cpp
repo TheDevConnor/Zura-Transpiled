@@ -9,7 +9,7 @@ Node::Stmt *Parser::parseStmt(PStruct *psr) {
 }
 
 Node::Stmt *Parser::exprStmt(PStruct *psr) {
-    auto expr = parseExpr(psr, BindingPower::defaultValue);
+    auto *expr = parseExpr(psr, BindingPower::defaultValue);
     psr->expect(psr, TokenKind::SEMICOLON);
     return new ExprStmt(expr);
 }
@@ -30,7 +30,7 @@ Node::Stmt *Parser::varStmt(PStruct *psr) {
     psr->advance(psr);
 
     psr->expect(psr, TokenKind::EQUAL);
-    auto expr = parseExpr(psr, BindingPower::defaultValue);
+    auto *expr = parseExpr(psr, BindingPower::defaultValue);
     psr->advance(psr);
     psr->expect(psr, TokenKind::SEMICOLON);
 

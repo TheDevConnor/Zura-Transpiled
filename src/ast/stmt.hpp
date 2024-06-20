@@ -14,8 +14,14 @@ public:
     }
 
     void debug() const override {
-        for (auto &s : stmt) {
+        for (auto s : stmt) {
             s->debug();
+        }
+    }
+
+    ~ProgramStmt() {
+        for (auto s : stmt) {
+            delete s;
         }
     }
 };
@@ -31,6 +37,10 @@ public:
     void debug() const override {
         std::cout << "ExprStmt: \n";
         expr->debug();
+    }
+
+    ~ExprStmt() {
+        delete expr;
     }
 };
 
@@ -51,4 +61,8 @@ public:
                   << "Expr: ";
         expr->debug();
     } 
+
+    ~VarStmt() {
+        delete expr;
+    }
 };
