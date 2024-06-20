@@ -51,6 +51,10 @@ struct ParserNamespace::Parser {
         return psr->tks[psr->pos + offset];
     }
 
+    bool hasTokens(Parser *psr) {
+        return psr->pos < psr->tks.size();
+    }
+
     bool expect(Parser *psr, TokenKind tk) {
         if (current(psr).kind == tk) {
             advance(psr);
@@ -74,10 +78,10 @@ namespace ParserNamespace {
     using LedLookup = std::unordered_map<TokenKind, LedHandler>;
     using BpLookup = std::unordered_map<TokenKind, BindingPower>;
 
-    BpLookup bp_lu;
-    NudLookup nud_lu;
-    LedLookup led_lu;
-    StmtLookup stmt_lu;
+    extern BpLookup bp_lu;
+    extern NudLookup nud_lu;
+    extern LedLookup led_lu;
+    extern StmtLookup stmt_lu;
 
     void led(TokenKind kind, BindingPower bp, LedHandler led_fn);
     void nud(TokenKind kind, NudHandler nud_fn);
@@ -85,7 +89,8 @@ namespace ParserNamespace {
     void createTokenLookup();
 
     // Pratt parser functions.
-    void storeToken(Parser *psr, Lexer *lex, Lexer::Token tk);
+    std::vector<Lexer::Token> storeToken(Parser *psr, Lexer *lex, Lexer::Token tk);
+    Parser *createParser(std::vector<Lexer::Token> tks);
     Node::Expr *parseExpr(Parser *psr, BindingPower bp);
 
     // Expr Functions
@@ -95,6 +100,7 @@ namespace ParserNamespace {
     Node::Expr *binary(Parser *psr, Node::Expr *left, BindingPower bp);
 
     // Stmt Functions
+    Node::Stmt *parseStmt(Parser *psr);
     Node::Stmt *exprStmt(Parser *psr);
     Node::Stmt *varStmt(Parser *psr);
 }

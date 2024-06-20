@@ -3,8 +3,6 @@
 #include <iostream>
 
 #include "../parser/parser.hpp"
-// #include "../type/type.hpp"
-// #include "../ast/ast.hpp"
 #include "../common.hpp"
 #include "../lexer/lexer.hpp"
 #include "flags.hpp"

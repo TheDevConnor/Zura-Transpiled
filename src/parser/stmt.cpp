@@ -2,6 +2,13 @@
 #include "../ast/ast.hpp"
 #include "../ast/stmt.hpp"
 
+Node::Stmt *ParserNamespace::parseStmt(Parser *psr) {
+    std::cout << "Parsing statement\n";
+    auto stmt_it = stmt_lu[psr->current(psr).kind];
+
+    return exprStmt(psr);
+}
+
 Node::Stmt *ParserNamespace::exprStmt(Parser *psr) {
     auto expr = parseExpr(psr, BindingPower::defaultValue);
     psr->expect(psr, TokenKind::SEMICOLON);

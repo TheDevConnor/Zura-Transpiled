@@ -8,7 +8,10 @@
 #include "../lexer/lexer.hpp"
 #include "parser.hpp"
 
-using namespace ParserNamespace;
+ParserNamespace::BpLookup ParserNamespace::bp_lu;
+ParserNamespace::LedLookup ParserNamespace::led_lu;
+ParserNamespace::NudLookup ParserNamespace::nud_lu;
+ParserNamespace::StmtLookup ParserNamespace::stmt_lu;
 
 void ParserNamespace::led(TokenKind kind, BindingPower bp, LedHandler led_fn) {
     bp_lu[kind] = bp;
@@ -16,6 +19,7 @@ void ParserNamespace::led(TokenKind kind, BindingPower bp, LedHandler led_fn) {
 }
 
 void ParserNamespace::nud(TokenKind kind, NudHandler nud_fn) {
+	bp_lu[kind] = defaultValue;
     nud_lu[kind] = nud_fn;
 }
 
