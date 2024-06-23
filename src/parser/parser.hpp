@@ -67,6 +67,9 @@ struct Parser::PStruct {
 };
 
 namespace Parser {
+    template <typename T, typename U>
+    T lookup(const std::vector<std::pair<U, T>>& lu, U key);
+
     Node::Stmt *parse(const char *source);
 
     // Maps for the Pratt Parser
@@ -76,13 +79,15 @@ namespace Parser {
                                                   Node::Expr *, 
                                                   BindingPower)>;
 
-    static std::unordered_map<TokenKind, StmtHandler> stmt_lu;
-    static std::unordered_map<TokenKind, NudHandler> nud_lu;
-    static std::unordered_map<TokenKind, LedHandler> led_lu;
-    static std::unordered_map<TokenKind, BindingPower> bp_lu;
+    static std::vector<std::pair<TokenKind, StmtHandler>> stmt_lu;
+    static std::vector<std::pair<TokenKind, NudHandler>> nud_lu;
+    static std::vector<std::pair<TokenKind, LedHandler>> led_lu;
+    static std::vector<std::pair<TokenKind, BindingPower>> bp_lu;
+    void createMaps();
 
     Node::Expr *led(PStruct *psr, Node::Expr *left, BindingPower bp);
     BindingPower getBP(TokenKind tk);
+    Node::Stmt *stmt(PStruct *psr);
     Node::Expr *nud(PStruct *psr);
     
 

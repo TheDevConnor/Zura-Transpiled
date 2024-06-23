@@ -24,6 +24,7 @@ Node::Stmt *Parser::parse(const char *source) {
    lexer.initLexer(source);
    auto vect_tk = setupParser(&psr, &lexer, lexer.scanToken());
 
+   createMaps();
    auto stmts = std::vector<Node::Stmt *>();
 
    stmts.push_back(parseStmt(vect_tk));

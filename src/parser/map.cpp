@@ -1,5 +1,6 @@
 #include <unordered_map>
 #include <functional>
+#include <vector>
 #include <string>
 #include <iostream>
 
@@ -8,21 +9,40 @@
 
 using namespace Parser;
 
-Node::Expr *Parser::led(PStruct *psr, Node::Expr *left, BindingPower bp) {
-	std::unordered_map<TokenKind, LedHandler> led_lu = {
-		// additive 
+template <typename T, typename U>
+T Parser::lookup(const std::vector<std::pair<U, T>> &lu, U key) {
+	auto it = std::find_if(lu.begin(), lu.end(), [key](auto &p) {
+		return p.first == key;
+	});
+
+	if (it == lu.end()) {
+		std::cerr << "No value found for key " << key << std::endl;
+		throw std::runtime_error("No value found for key");
+	}
+
+	return it->second;
+}
+
+void Parser::createMaps() {
+	stmt_lu = {
+		{ TokenKind::VAR, varStmt },
+	};
+	nud_lu = {
+		{ TokenKind::NUMBER, primary },
+		{ TokenKind::IDENTIFIER, primary },
+		{ TokenKind::STRING, primary },
+		{ TokenKind::LEFT_PAREN, group },
+		{ TokenKind::MINUS, unary },
+	};
+	led_lu = {
 		{ TokenKind::PLUS, binary },
 		{ TokenKind::MINUS, binary },
 
-		// multiplicative
 		{ TokenKind::STAR, binary },
 		{ TokenKind::SLASH, binary },
-
-		// power && modulo
 		{ TokenKind::CARET, binary },
 		{ TokenKind::MODULO, binary },
 
-		// comparison
 		{ TokenKind::EQUAL_EQUAL, binary },
 		{ TokenKind::BANG_EQUAL, binary },
 		{ TokenKind::GREATER, binary },
@@ -30,23 +50,10 @@ Node::Expr *Parser::led(PStruct *psr, Node::Expr *left, BindingPower bp) {
 		{ TokenKind::LESS, binary },
 		{ TokenKind::LESS_EQUAL, binary },
 
-		// logical
 		{ TokenKind::AND, binary },
 		{ TokenKind::OR, binary }
 	};
-	auto op = psr->current(psr);
-	auto led_fn = led_lu.find(op.kind);
-
-	if (led_fn == led_lu.end()) {
-		std::cerr << "No led function found for " << op.kind << std::endl;
-		return nullptr;
-	}
-
-	return led_fn->second(psr, left, bp);
-}
-
-BindingPower Parser::getBP(TokenKind tk) {
-	std::unordered_map<TokenKind, BindingPower> bp_lu = {
+	bp_lu = {
 		{ TokenKind::COMMA, BindingPower::comma },
 		{ TokenKind::EQUAL, BindingPower::assignment },
 
@@ -76,31 +83,34 @@ BindingPower Parser::getBP(TokenKind tk) {
 		{ TokenKind::STRING, BindingPower::defaultValue },
 		{ TokenKind::SEMICOLON, BindingPower::defaultValue },
 	};
-	auto bp = bp_lu.find(tk);
-
-	if (bp == bp_lu.end()) {
-		std::cerr << "No binding power found for " << tk << std::endl;
-		return BindingPower::defaultValue;
-	}
-
-	return bp->second;
 }
 
 Node::Expr *Parser::nud(PStruct *psr) {
-	std::unordered_map<TokenKind, NudHandler> nud_lu = {
-		{ TokenKind::NUMBER, primary },
-		{ TokenKind::IDENTIFIER, primary },
-		{ TokenKind::STRING, primary },
-		{ TokenKind::LEFT_PAREN, group },
-		{ TokenKind::MINUS, unary },
-	};
 	auto op = psr->current(psr);
-	auto nud_fn = nud_lu.find(op.kind);
-
-	if (nud_fn == nud_lu.end()) {
-		std::cerr << "No nud function found for " << op.kind << std::endl;
+	try {
+		return lookup(nud_lu, op.kind)(psr);
+	} catch (std::exception &e) {
+		std::cerr << "Error in nud: " << e.what() << std::endl;
 		return nullptr;
 	}
+}
 
-	return nud_fn->second(psr);
+Node::Expr *Parser::led(PStruct *psr, Node::Expr *left, BindingPower bp) {
+	auto op = psr->current(psr);
+	try {
+		return lookup(led_lu, op.kind)(psr, left, bp);
+	} catch (std::exception &e) {
+		std::cerr << "Error in led: " << e.what() << std::endl;
+		return nullptr;
+	}
+}
+
+Node::Stmt *Parser::stmt(PStruct *psr) {
+	auto stmt_it = lookup(stmt_lu, psr->current(psr).kind);
+
+	return stmt_it(psr);
+}
+
+BindingPower Parser::getBP(TokenKind tk) {
+	return lookup(bp_lu, tk);
 }

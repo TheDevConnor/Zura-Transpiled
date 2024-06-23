@@ -3,7 +3,8 @@
 #include "../ast/stmt.hpp"
 
 Node::Stmt *Parser::parseStmt(PStruct *psr) {
-    auto stmt_it = stmt_lu.find(psr->current(psr).kind);
+    // TODO: Implement a loop to parse all statements and handle the lookup properly
+    // auto stmt_it = stmt(psr);
 
     return exprStmt(psr);
 }
