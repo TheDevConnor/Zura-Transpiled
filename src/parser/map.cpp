@@ -5,6 +5,7 @@
 #include <iostream>
 
 #include "../lexer/lexer.hpp"
+#include "../ast/ast.hpp"
 #include "parser.hpp"
 
 using namespace Parser;
@@ -51,7 +52,7 @@ void Parser::createMaps() {
 		{ TokenKind::LESS_EQUAL, binary },
 
 		{ TokenKind::AND, binary },
-		{ TokenKind::OR, binary }
+		{ TokenKind::OR, binary },
 	};
 	bp_lu = {
 		{ TokenKind::COMMA, BindingPower::comma },
@@ -82,6 +83,7 @@ void Parser::createMaps() {
 		{ TokenKind::NUMBER, BindingPower::defaultValue },
 		{ TokenKind::STRING, BindingPower::defaultValue },
 		{ TokenKind::SEMICOLON, BindingPower::defaultValue },
+		{ TokenKind::RIGHT_PAREN, BindingPower::defaultValue },
 	};
 }
 

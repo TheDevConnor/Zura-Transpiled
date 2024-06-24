@@ -114,6 +114,8 @@ public:
   Token scanToken();
   Token errorToken(std::string message);
 
+  const char *tokenToString(TokenKind kind);
+
   const char *lineStart(int line);
 
   void reset();

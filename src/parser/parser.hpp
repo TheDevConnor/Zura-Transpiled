@@ -6,6 +6,7 @@
 #include <string>
 #include <vector>
 
+#include "../helper/error/error.hpp"
 #include "../lexer/lexer.hpp"
 #include "../ast/ast.hpp"
 
@@ -40,11 +41,9 @@ struct Parser::PStruct {
     }
 
     Lexer::Token advance(PStruct *psr) {
-        if (psr->pos + 1 < psr->tks.size()) {
-            psr->pos++;
-            return psr->current(psr);
-        }
-        return psr->current(psr);
+        auto tk = current(psr);
+        psr->pos++;
+        return tk; 
     }
 
     Lexer::Token peek(PStruct *psr, int offset = 0) {
@@ -52,13 +51,15 @@ struct Parser::PStruct {
     }
 
     bool hasTokens(PStruct *psr) {
-        return psr->pos < psr->tks.size();
+        return psr->pos < psr->tks.size() && current(psr).kind != TokenKind::END_OF_FILE;
     }
 
     bool expect(PStruct *psr, TokenKind tk) {
+        Lexer lexer;
         bool res = current(psr).kind == tk ? true : false;
         if (res == false) {
-            std::cerr << "Expected token " << tk << " but got " << current(psr).kind << std::endl;
+            std::cout << "Expected " << lexer.tokenToString(tk) << " but got " 
+                      << lexer.tokenToString(current(psr).kind) << std::endl; 
             return false;
         }
         advance(psr);
@@ -89,7 +90,6 @@ namespace Parser {
     BindingPower getBP(TokenKind tk);
     Node::Stmt *stmt(PStruct *psr);
     Node::Expr *nud(PStruct *psr);
-    
 
     // Pratt parser functions.
     PStruct *setupParser(PStruct *psr, Lexer *lex, Lexer::Token tk); 

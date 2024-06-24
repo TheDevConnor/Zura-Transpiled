@@ -2,34 +2,43 @@
 #include "parser.hpp"
 
 #include <iostream>
-#include <sstream>
 
 Node::Expr *Parser::parseExpr(PStruct *psr, BindingPower bp) {
     auto *left = nud(psr);
 
-    while (bp < getBP(psr->advance(psr).kind)) {
-        left = led(psr, left, bp);
+    while (getBP(psr->current(psr).kind) > bp) {
+       left = led(psr, left, getBP(psr->current(psr).kind));
     }
 
     return left;
 }
 
 Node::Expr *Parser::primary(PStruct* psr) {
-    std::unordered_map<TokenKind, Node::Expr *> primaryMap = {
-        { TokenKind::NUMBER, new NumberExpr(psr->current(psr).value) },
-        { TokenKind::IDENTIFIER, new IdentExpr(psr->current(psr).value) },
-        { TokenKind::STRING, new StringExpr(psr->current(psr).value) }
-    };
-    return primaryMap[psr->current(psr).kind];
+    switch (psr->current(psr).kind) {
+    case TokenKind::NUMBER: {
+        return new NumberExpr(std::stod(psr->advance(psr).value));
+    }
+    case TokenKind::IDENTIFIER: {
+        return new IdentExpr(psr->advance(psr).value);
+    }
+    case TokenKind::STRING: {
+        return new StringExpr(psr->advance(psr).value);
+    }
+    default:
+        std::cout << "Could not parse primary expression" << std::endl;
+        return nullptr;
+    }
 }
 
 Node::Expr *Parser::group(PStruct *psr) {
-    return nullptr;
+    psr->expect(psr, TokenKind::LEFT_PAREN);
+    auto *expr = parseExpr(psr, defaultValue);
+    psr->expect(psr, TokenKind::RIGHT_PAREN);
+    return new GroupExpr(expr);
 }
 
 Node::Expr *Parser::unary(PStruct *psr) {
-    auto op = psr->current(psr);
-    psr->advance(psr);
+    auto op = psr->advance(psr);
     auto *right = parseExpr(psr, defaultValue);
 
     return new UnaryExpr(
@@ -39,9 +48,9 @@ Node::Expr *Parser::unary(PStruct *psr) {
 }
 
 Node::Expr *Parser::binary(PStruct *psr, Node::Expr *left, BindingPower bp) {
-    auto op = psr->current(psr);
-    psr->advance(psr);
-    auto *right = parseExpr(psr, defaultValue);
+    auto op = psr->advance(psr);
+    auto *right = parseExpr(psr, bp);
+
     return new BinaryExpr(
         left,
         right,

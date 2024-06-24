@@ -115,6 +115,13 @@ void Lexer::skipWhitespace() {
   }
 }
 
+const char *Lexer::tokenToString(TokenKind kind) {
+  auto it = tokenMap.find(kind);
+  if (it != tokenMap.end())
+    return it->second;
+  return "Unknown";
+}
+
 Lexer::Token Lexer::scanToken() {
   skipWhitespace();
 
