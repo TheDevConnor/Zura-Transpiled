@@ -35,7 +35,6 @@ public:
     }
 
     void debug() const override {
-        std::cout << "ExprStmt: \n";
         expr->debug();
     }
 
@@ -58,8 +57,8 @@ public:
         std::cout << "VarStmt: \n\t" 
                   << "Name: " << name << "\n\t" 
                   << "Type: " << type << "\n\t"
-                  << "Expr: ";
-        expr->debug();
+                  << "Expr: "; expr->debug(); 
+        std::cout << std::endl;
     } 
 
     ~VarStmt() {

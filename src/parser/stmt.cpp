@@ -3,8 +3,11 @@
 #include "../ast/stmt.hpp"
 
 Node::Stmt *Parser::parseStmt(PStruct *psr) {
-    // TODO: Implement a loop to parse all statements and handle the lookup properly
-    // auto stmt_it = stmt(psr);
+    auto stmt_it = stmt(psr);
+
+    if (stmt_it != nullptr) {
+        return stmt_it;
+    }
 
     return exprStmt(psr);
 }
@@ -18,22 +21,13 @@ Node::Stmt *Parser::exprStmt(PStruct *psr) {
 /// Parses a variable statement
 /// This is an example of a var in zura:
 /// have x : i8 = 10;
-Node::Stmt *Parser::varStmt(PStruct *psr) {
+Node::Stmt *Parser::varStmt(PStruct *psr) { 
     psr->expect(psr, TokenKind::VAR);
-    auto name = (psr->expect(psr, TokenKind::IDENTIFIER)) 
-                ? psr->peek(psr, -1).value
-                : "";
-
-    auto type = (psr->expect(psr, TokenKind::COLON)) 
-                ? psr->peek(psr, 0).value
-                : "";
-
-    psr->advance(psr);
+    auto varName = psr->expect(psr, TokenKind::IDENTIFIER).value;
 
     psr->expect(psr, TokenKind::EQUAL);
-    auto *expr = parseExpr(psr, BindingPower::defaultValue);
-    psr->advance(psr);
+    auto assignedValue = parseExpr(psr, BindingPower::defaultValue);
     psr->expect(psr, TokenKind::SEMICOLON);
 
-    return new VarStmt(name, type, new ExprStmt(expr));
+    return new VarStmt(varName, "i8", new ExprStmt(assignedValue));
 }

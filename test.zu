@@ -1,1 +1,12 @@
-(5 + -5)^7;
+have x = 5.89 * -7^(6 / 1);
+have y = (10 * 3.14) / 2^10;
+
+# Expected output:
+# VarStmt: 
+#         Name: x
+#         Type: i8
+#         Expr: (5.89 * -(7 ^ ((6 / 1))))
+# VarStmt: 
+#         Name: y
+#         Type: i8
+#         Expr: (((10 * 3.14)) / (2 ^ 10))

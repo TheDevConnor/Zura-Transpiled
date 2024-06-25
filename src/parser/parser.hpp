@@ -50,20 +50,19 @@ struct Parser::PStruct {
         return psr->tks[psr->pos + offset];
     }
 
-    bool hasTokens(PStruct *psr) {
-        return psr->pos < psr->tks.size() && current(psr).kind != TokenKind::END_OF_FILE;
+    bool hadTokens(PStruct *psr) {
+        return psr->pos < psr->tks.size();
     }
 
-    bool expect(PStruct *psr, TokenKind tk) {
+    Lexer::Token expect(PStruct *psr, TokenKind tk) {
         Lexer lexer;
         bool res = current(psr).kind == tk ? true : false;
         if (res == false) {
             std::cout << "Expected " << lexer.tokenToString(tk) << " but got " 
                       << lexer.tokenToString(current(psr).kind) << std::endl; 
-            return false;
+            return current(psr);
         }
-        advance(psr);
-        return res;
+        return advance(psr);
     }
 };
 
@@ -100,6 +99,7 @@ namespace Parser {
     Node::Expr *unary(PStruct *psr);
     Node::Expr *group(PStruct *psr);
     Node::Expr *binary(PStruct *psr, Node::Expr *left, BindingPower bp);
+    // Node::Expr *assign(PStruct *psr, Node::Expr *left, BindingPower bp);
 
     // Stmt Functions
     Node::Stmt *parseStmt(PStruct *psr);

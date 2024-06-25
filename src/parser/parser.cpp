@@ -27,7 +27,8 @@ Node::Stmt *Parser::parse(const char *source) {
    createMaps();
    auto stmts = std::vector<Node::Stmt *>();
 
-   stmts.push_back(parseStmt(vect_tk));
+   while (vect_tk->hadTokens(vect_tk)) 
+      stmts.push_back(parseStmt(vect_tk));
    
    delete vect_tk;
    return new ProgramStmt(stmts);

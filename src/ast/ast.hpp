@@ -11,6 +11,7 @@ enum NodeKind {
     ND_BINARY,
     ND_UNARY,
     ND_GROUP,
+    ND_ASSIGN,
 
     // Statements
     ND_EXPR_STMT,
@@ -33,8 +34,12 @@ public:
     };
 
     static void printIdent(int ident) {
-        for (int i = 0; i < ident; i++) {
-            std::cout << "    ";
+        if (ident == 0) {
+            std::cout << "";
+        } else {
+            for (int i = 0; i < ident; i++) {
+                std::cout << "    ";
+            }
         }
     }
 };

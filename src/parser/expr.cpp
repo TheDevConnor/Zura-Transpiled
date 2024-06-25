@@ -57,3 +57,14 @@ Node::Expr *Parser::binary(PStruct *psr, Node::Expr *left, BindingPower bp) {
         op.value
     );
 }
+
+// Node::Expr *Parser::assign(PStruct *psr, Node::Expr *left, BindingPower bp) {
+//     auto op = psr->advance(psr);
+//     auto *right = parseExpr(psr, defaultValue);
+
+//     return new AssignmentExpr(
+//         left,
+//         op.value,
+//         right 
+//     );
+// }

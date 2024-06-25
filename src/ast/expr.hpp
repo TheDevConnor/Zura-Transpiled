@@ -14,7 +14,7 @@ public:
 
     void debug(int ident = 0) const override {
         Node::printIdent(ident);
-        std::cout << "NumberExpr: " << value << "\n";
+        std::cout << value;
     }
 };
 
@@ -28,7 +28,7 @@ public:
 
     void debug(int ident = 0) const override {
         Node::printIdent(ident);
-        std::cout << "IdentExpr: " << name << "\n";
+        std::cout << name;
     }
 };
 
@@ -42,7 +42,7 @@ public:
 
     void debug(int ident = 0) const override {
         Node::printIdent(ident);
-        std::cout << "StringExpr: " << value << "\n";
+        std::cout << value;
     }
 };
 
@@ -57,14 +57,11 @@ public:
     }
 
     void debug(int ident = 0) const override {
-        Node::printIdent(ident);
-        std::cout << "BinaryExpr: " << op << "\n";
-        Node::printIdent(ident + 1);
-        std::cout << "LHS:\n";
-        lhs->debug(ident + 2);
-        Node::printIdent(ident + 1);
-        std::cout << "RHS:\n";
-        rhs->debug(ident + 2);
+       std::cout << "(";
+        lhs->debug(0);
+        std::cout << " " << op << " ";
+        rhs->debug(0);
+        std::cout << ")"; 
     }
 
     ~BinaryExpr() {
@@ -84,8 +81,8 @@ public:
 
     void debug(int ident = 0) const override {
         Node::printIdent(ident);
-        std::cout << "UnaryExpr: " << op << "\n";
-        expr->debug(ident + 1);
+        std::cout << op ;
+        expr->debug(ident);
     }
 
     ~UnaryExpr() {
@@ -102,12 +99,36 @@ public:
     }
 
     void debug(int ident = 0) const override {
-         Node::printIdent(ident);
-        std::cout << "GroupExpr:\n";
-        expr->debug(ident + 1);
+        Node::printIdent(ident);
+        std::cout << "(";
+        expr->debug(ident);
+        std::cout << ")";
     }
 
     ~GroupExpr() {
         delete expr;
+    }
+};
+
+class AssignmentExpr : public Node::Expr {
+public:
+    Expr *assigne;
+    std::string op;
+    Expr *rhs;
+
+    AssignmentExpr(Expr *assigne, std::string op, Expr *rhs) : assigne(assigne), op(op), rhs(rhs) {
+        kind = NodeKind::ND_ASSIGN;
+    }
+
+    void debug(int ident = 0) const override {
+        Node::printIdent(ident);
+        assigne->debug(ident);
+        std::cout << " " << op << " ";
+        rhs->debug(ident);
+    }
+
+    ~AssignmentExpr() {
+        delete assigne;
+        delete rhs;
     }
 };

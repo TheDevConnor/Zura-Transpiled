@@ -51,6 +51,9 @@ void Parser::createMaps() {
 		{ TokenKind::LESS, binary },
 		{ TokenKind::LESS_EQUAL, binary },
 
+		// { TokenKind::PLUS_PLUS, assign},
+		// { TokenKind::MINUS_MINUS, assign},
+
 		{ TokenKind::AND, binary },
 		{ TokenKind::OR, binary },
 	};

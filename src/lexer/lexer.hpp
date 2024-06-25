@@ -32,6 +32,8 @@ enum TokenKind {
   LESS,
   LESS_EQUAL,
   WALRUS,
+  PLUS_PLUS,
+  MINUS_MINUS,
 
   // Literals.
   IDENTIFIER,
