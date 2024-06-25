@@ -51,8 +51,11 @@ void Parser::createMaps() {
 		{ TokenKind::LESS, binary },
 		{ TokenKind::LESS_EQUAL, binary },
 
-		// { TokenKind::PLUS_PLUS, assign},
-		// { TokenKind::MINUS_MINUS, assign},
+		{ TokenKind::EQUAL, assign},
+		{ TokenKind::PLUS_EQUAL, assign },
+		{ TokenKind::MINUS_EQUAL, assign },
+		{ TokenKind::STAR_EQUAL, assign },
+		{ TokenKind::SLASH_EQUAL, assign },
 
 		{ TokenKind::AND, binary },
 		{ TokenKind::OR, binary },
@@ -81,6 +84,12 @@ void Parser::createMaps() {
 		{ TokenKind::CARET, BindingPower::power },
 
 		{ TokenKind::LEFT_PAREN, BindingPower::call },
+
+		{ TokenKind::EQUAL, BindingPower::assignment},
+		{ TokenKind::PLUS_EQUAL, BindingPower::assignment },
+		{ TokenKind::MINUS_EQUAL, BindingPower::assignment },
+		{ TokenKind::STAR_EQUAL, BindingPower::assignment },
+		{ TokenKind::SLASH_EQUAL, BindingPower::assignment },
 
 		{ TokenKind::IDENTIFIER, BindingPower::defaultValue },
 		{ TokenKind::NUMBER, BindingPower::defaultValue },
@@ -111,9 +120,11 @@ Node::Expr *Parser::led(PStruct *psr, Node::Expr *left, BindingPower bp) {
 }
 
 Node::Stmt *Parser::stmt(PStruct *psr) {
-	auto stmt_it = lookup(stmt_lu, psr->current(psr).kind);
+	auto stmt_it = std::find_if(stmt_lu.begin(), stmt_lu.end(), [psr](auto &p) {
+		return p.first == psr->current(psr).kind;
+	}); 
 
-	return stmt_it(psr);
+	return stmt_it != stmt_lu.end() ? stmt_it->second(psr) : nullptr;
 }
 
 BindingPower Parser::getBP(TokenKind tk) {

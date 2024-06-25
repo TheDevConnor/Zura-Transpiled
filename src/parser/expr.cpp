@@ -58,13 +58,13 @@ Node::Expr *Parser::binary(PStruct *psr, Node::Expr *left, BindingPower bp) {
     );
 }
 
-// Node::Expr *Parser::assign(PStruct *psr, Node::Expr *left, BindingPower bp) {
-//     auto op = psr->advance(psr);
-//     auto *right = parseExpr(psr, defaultValue);
+Node::Expr *Parser::assign(PStruct *psr, Node::Expr *left, BindingPower bp) {
+    auto op = psr->advance(psr);
+    auto *right = parseExpr(psr, defaultValue);
 
-//     return new AssignmentExpr(
-//         left,
-//         op.value,
-//         right 
-//     );
-// }
+    return new AssignmentExpr(
+        left,
+        op.value,
+        right 
+    );
+}

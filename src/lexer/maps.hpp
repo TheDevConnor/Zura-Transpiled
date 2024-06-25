@@ -90,6 +90,12 @@ const std::unordered_map<std::string, TokenKind> dcMap = {
       {":=", TokenKind::WALRUS},
       {"++", TokenKind::PLUS_PLUS},
       {"--", TokenKind::MINUS_MINUS},
+      {"+=", TokenKind::PLUS_EQUAL},
+      {"-=", TokenKind::MINUS_EQUAL},
+      {"*=", TokenKind::STAR_EQUAL},
+      {"/=", TokenKind::SLASH_EQUAL},
+      {"&&", TokenKind::AND},
+      {"||", TokenKind::OR},
 };
 
 const std::unordered_map<TokenKind, const char *> tokenMap = {

@@ -79,6 +79,7 @@ namespace Parser {
                                                   Node::Expr *, 
                                                   BindingPower)>;
 
+    // Maps for the Pratt Parser for statements and expressions. 
     static std::vector<std::pair<TokenKind, StmtHandler>> stmt_lu;
     static std::vector<std::pair<TokenKind, NudHandler>> nud_lu;
     static std::vector<std::pair<TokenKind, LedHandler>> led_lu;
@@ -90,6 +91,22 @@ namespace Parser {
     Node::Stmt *stmt(PStruct *psr);
     Node::Expr *nud(PStruct *psr);
 
+    // Maps for the Pratt Parser for types.
+    using TypeNudHandler = std::function<Node::Type *(PStruct *)>;
+    using TypeLedHandler = std::function<Node::Type *(PStruct *, 
+                                                  Node::Type *, 
+                                                  BindingPower)>;
+
+
+    static std::vector<std::pair<TokenKind, TypeNudHandler>> type_nud_lu;
+    static std::vector<std::pair<TokenKind, TypeLedHandler>> type_led_lu;
+    static std::vector<std::pair<TokenKind, BindingPower>> type_bp_lu;
+    void createTypeMaps();
+
+    Node::Type *type_led(PStruct *psr, Node::Expr *left, BindingPower bp);
+    BindingPower type_getBP(TokenKind tk);
+    Node::Type *type_nud(PStruct *psr);
+
     // Pratt parser functions.
     PStruct *setupParser(PStruct *psr, Lexer *lex, Lexer::Token tk); 
     Node::Expr *parseExpr(PStruct *psr, BindingPower bp);
@@ -99,7 +116,7 @@ namespace Parser {
     Node::Expr *unary(PStruct *psr);
     Node::Expr *group(PStruct *psr);
     Node::Expr *binary(PStruct *psr, Node::Expr *left, BindingPower bp);
-    // Node::Expr *assign(PStruct *psr, Node::Expr *left, BindingPower bp);
+    Node::Expr *assign(PStruct *psr, Node::Expr *left, BindingPower bp);
 
     // Stmt Functions
     Node::Stmt *parseStmt(PStruct *psr);

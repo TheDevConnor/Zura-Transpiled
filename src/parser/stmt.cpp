@@ -5,9 +5,8 @@
 Node::Stmt *Parser::parseStmt(PStruct *psr) {
     auto stmt_it = stmt(psr);
 
-    if (stmt_it != nullptr) {
+    if (stmt_it != nullptr)
         return stmt_it;
-    }
 
     return exprStmt(psr);
 }
@@ -25,9 +24,12 @@ Node::Stmt *Parser::varStmt(PStruct *psr) {
     psr->expect(psr, TokenKind::VAR);
     auto varName = psr->expect(psr, TokenKind::IDENTIFIER).value;
 
+    psr->expect(psr, TokenKind::COLON);
+    auto varType = psr->expect(psr, TokenKind::IDENTIFIER).value;
+
     psr->expect(psr, TokenKind::EQUAL);
     auto assignedValue = parseExpr(psr, BindingPower::defaultValue);
     psr->expect(psr, TokenKind::SEMICOLON);
 
-    return new VarStmt(varName, "i8", new ExprStmt(assignedValue));
+    return new VarStmt(varName, varType, new ExprStmt(assignedValue));
 }

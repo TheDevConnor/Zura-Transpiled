@@ -122,9 +122,12 @@ public:
 
     void debug(int ident = 0) const override {
         Node::printIdent(ident);
-        assigne->debug(ident);
-        std::cout << " " << op << " ";
-        rhs->debug(ident);
+        std::cout << "AssignmentExpr: \n\t";
+        std::cout << "assigne: "; assigne->debug(0);
+        std::cout << "\n\t";
+        std::cout << "op: " << op;
+        std::cout << "\n\t";
+        std::cout << "rhs: "; rhs->debug(0); 
     }
 
     ~AssignmentExpr() {

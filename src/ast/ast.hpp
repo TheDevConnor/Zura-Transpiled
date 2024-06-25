@@ -17,6 +17,10 @@ enum NodeKind {
     ND_EXPR_STMT,
     ND_VAR_STMT,
     ND_PROGRAM,
+
+    // Types
+    ND_SYMBOL_TYPE,
+    ND_ARRAY_TYPE,
 };
 
 class Node {
@@ -31,6 +35,12 @@ public:
         NodeKind kind;
         virtual void debug() const = 0;
         virtual ~Stmt() = default;
+    };
+
+    struct Type {
+        NodeKind kind;
+        virtual void debug() const = 0;
+        virtual ~Type() = default;
     };
 
     static void printIdent(int ident) {
