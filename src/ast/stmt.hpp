@@ -46,17 +46,17 @@ public:
 class VarStmt : public Node::Stmt {
 public:
     std::string name;
-    std::string type;
+    Node::Type *type;
     ExprStmt *expr;
 
-    VarStmt(std::string name, std::string type, ExprStmt *expr) : name(name), type(type), expr(expr) {
+    VarStmt(std::string name, Node::Type *type, ExprStmt *expr) : name(name), type(type), expr(expr) {
         kind = NodeKind::ND_VAR_STMT;
     }
 
     void debug() const override {
         std::cout << "VarStmt: \n\t" 
                   << "Name: " << name << "\n\t" 
-                  << "Type: " << type << "\n\t"
+                  << "Type: "; type->debug(); std::cout << "\n\t"
                   << "Expr: "; expr->debug(); 
         std::cout << std::endl;
     } 

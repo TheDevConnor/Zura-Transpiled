@@ -14,7 +14,8 @@ public:
     }
 
     void debug() const override {
-        std::cout << name;
+        std::cout << "SymbolType: ";
+        std::cout << name; 
     }
 };
 

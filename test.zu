@@ -1,4 +1,4 @@
-have x: a = 5.89 * -7^(6 / 1);
-have u: b = 45.1;
+have x: number = 5.89 * -7^(6 / 1);
+have u: number = 45.1;
 
 u = (5.89 * -7)^6 / 1;

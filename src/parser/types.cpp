@@ -20,7 +20,7 @@ void Parser::createTypeMaps() {
         { TokenKind::IDENTIFIER, symbol_table },
     };
     type_led_lu = {};
-    type_bp_lu = bp_lu;
+    type_bp_lu = bp_lu; 
 }
 
 Node::Type *Parser::type_led(PStruct *psr, Node::Type *left, BindingPower bp) {
@@ -51,4 +51,15 @@ Parser::BindingPower Parser::type_getBP(TokenKind tk) {
 
 Node::Type *Parser::symbol_table(PStruct *psr) {
     return new SymbolType(psr->expect(psr, TokenKind::IDENTIFIER).value);
+}
+
+Node::Type *Parser::parseType(PStruct *psr, BindingPower bp) {
+    auto left = type_nud(psr);
+
+    // TODO: Fix the weird bug with the getBP function for types
+    // while (type_getBP(psr->current(psr).kind) > bp){
+    //     left = type_led(psr, left, type_getBP(psr->current(psr).kind));
+    // }
+
+    return left;
 }

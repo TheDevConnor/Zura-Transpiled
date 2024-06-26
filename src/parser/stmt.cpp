@@ -25,7 +25,7 @@ Node::Stmt *Parser::varStmt(PStruct *psr) {
     auto varName = psr->expect(psr, TokenKind::IDENTIFIER).value;
 
     psr->expect(psr, TokenKind::COLON);
-    auto varType = psr->expect(psr, TokenKind::IDENTIFIER).value;
+    auto varType = parseType(psr, BindingPower::defaultValue); 
 
     psr->expect(psr, TokenKind::EQUAL);
     auto assignedValue = parseExpr(psr, BindingPower::defaultValue);
