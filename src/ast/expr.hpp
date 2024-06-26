@@ -6,9 +6,9 @@
 
 class NumberExpr : public Node::Expr {
 public:
-    _Float64 value;
+    double value;
 
-    NumberExpr(_Float64 value) : value(value) {
+    NumberExpr(double value) : value(value) {
         kind = NodeKind::ND_NUMBER;
     }
 

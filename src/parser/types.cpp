@@ -1,7 +1,9 @@
 #include "parser.hpp"
 
 void Parser::createTypeMaps() {
-    type_nud_lu = {};
+    type_nud_lu = {
+        // { TokenKind::IDENTIFIER, symbol_table },
+    };
     type_led_lu = {};
     type_bp_lu = {};
 }
