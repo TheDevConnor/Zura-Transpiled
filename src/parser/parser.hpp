@@ -97,15 +97,16 @@ namespace Parser {
                                                   Node::Type *, 
                                                   BindingPower)>;
 
-
     static std::vector<std::pair<TokenKind, TypeNudHandler>> type_nud_lu;
     static std::vector<std::pair<TokenKind, TypeLedHandler>> type_led_lu;
     static std::vector<std::pair<TokenKind, BindingPower>> type_bp_lu;
     void createTypeMaps();
 
-    Node::Type *type_led(PStruct *psr, Node::Expr *left, BindingPower bp);
+    Node::Type *type_led(PStruct *psr, Node::Type *left, BindingPower bp);
     BindingPower type_getBP(TokenKind tk);
     Node::Type *type_nud(PStruct *psr);
+
+    Node::Type *symbol_table(PStruct *psr);
 
     // Pratt parser functions.
     PStruct *setupParser(PStruct *psr, Lexer *lex, Lexer::Token tk); 

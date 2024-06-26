@@ -40,7 +40,7 @@ This denotes the conclusion of the main function, a standard requirement for all
 ## Comments
 ```zura
 fn main(argc: i8, argv: []str) i8 {
-    // This is a single line comment
+    # This is a single line comment
     /*
         :( Not supported yet
     */
