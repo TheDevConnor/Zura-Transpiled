@@ -63,5 +63,6 @@ public:
 
     ~VarStmt() {
         delete expr;
+        delete type;
     }
 };
