@@ -36,7 +36,8 @@ set(ZURA_SOURCE_FILES
     src/parser/parser.cpp
     src/parser/expr.cpp
     src/parser/stmt.cpp
-    src/parser/types.cpp
+    src/parser/type.cpp
+    src/parser/tmaps.cpp
     src/parser/map.cpp 
     
     src/main.cpp

@@ -14,7 +14,6 @@ public:
     }
 
     void debug() const override {
-        std::cout << "SymbolType: ";
         std::cout << name; 
     }
 };
@@ -30,5 +29,9 @@ public:
     void debug() const override {
         std::cout << "[]";
         underlying->debug();
+    }
+
+    ~ArrayType() {
+        delete underlying;
     }
 };

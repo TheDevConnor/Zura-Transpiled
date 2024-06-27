@@ -1,6 +1,8 @@
 #include "../ast/types.hpp"
 #include "parser.hpp"
 
+Lexer lex;
+
 template <typename T, typename U>
 T Parser::lookup(const std::vector<std::pair<U, T>> &lu, U key) {
     auto it = std::find_if(lu.begin(), lu.end(), [key](auto &p) {
@@ -8,7 +10,7 @@ T Parser::lookup(const std::vector<std::pair<U, T>> &lu, U key) {
     });
 
     if (it == lu.end()) {
-        std::cerr << "No value found for key " << key << std::endl;
+        std::cerr << "No value found for key " << lex.tokenToString(key) << std::endl;
         throw std::runtime_error("No value found for key");
     }
 
@@ -18,9 +20,10 @@ T Parser::lookup(const std::vector<std::pair<U, T>> &lu, U key) {
 void Parser::createTypeMaps() {
     type_nud_lu = {
         { TokenKind::IDENTIFIER, symbol_table },
+        { TokenKind::LEFT_BRACKET, array_type },
     };
     type_led_lu = {};
-    type_bp_lu = bp_lu; 
+    type_bp_lu = bp_lu;
 }
 
 Node::Type *Parser::type_led(PStruct *psr, Node::Type *left, BindingPower bp) {
@@ -47,19 +50,4 @@ Node::Type *Parser::type_nud(PStruct *psr) {
 
 Parser::BindingPower Parser::type_getBP(TokenKind tk) {
     return lookup(type_bp_lu, tk);
-}
-
-Node::Type *Parser::symbol_table(PStruct *psr) {
-    return new SymbolType(psr->expect(psr, TokenKind::IDENTIFIER).value);
-}
-
-Node::Type *Parser::parseType(PStruct *psr, BindingPower bp) {
-    auto left = type_nud(psr);
-
-    // TODO: Fix the weird bug with the getBP function for types
-    // while (type_getBP(psr->current(psr).kind) > bp){
-    //     left = type_led(psr, left, type_getBP(psr->current(psr).kind));
-    // }
-
-    return left;
 }

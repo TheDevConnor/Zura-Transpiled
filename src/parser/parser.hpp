@@ -107,6 +107,7 @@ namespace Parser {
     Node::Type *type_nud(PStruct *psr);
 
     Node::Type *symbol_table(PStruct *psr);
+    Node::Type *array_type(PStruct *psr);
     Node::Type *parseType(PStruct *psr, BindingPower bp);
 
     // Pratt parser functions.
