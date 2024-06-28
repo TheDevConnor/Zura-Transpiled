@@ -1,6 +1,7 @@
 #pragma once
 
 #include <iostream>
+#include <vector>
 
 #include "ast.hpp"
 
@@ -133,5 +134,34 @@ public:
     ~AssignmentExpr() {
         delete assigne;
         delete rhs;
+    }
+};
+
+class CallExpr : public Node::Expr {
+public:
+    Node::Expr *callee;
+    std::vector<Node::Expr *> args;
+
+    CallExpr(Node::Expr *callee, std::vector<Node::Expr *> args) : callee(callee), args(args) {
+        kind = NodeKind::ND_CALL;
+    }
+
+    void debug(int ident = 0) const override {
+        Node::printIdent(ident);
+        std::cout << "CallExpr: \n\t";
+        std::cout << "callee: "; callee->debug(0);
+        std::cout << "\n\t";
+        std::cout << "args: \n";
+        for (auto a : args) {
+            a->debug(ident + 1);
+            std::cout << "\n";
+        }
+    }
+
+    ~CallExpr() {
+        delete callee;
+        for (auto a : args) {
+            delete a;
+        }
     }
 };

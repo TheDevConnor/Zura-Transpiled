@@ -11,12 +11,16 @@ enum NodeKind {
     ND_BINARY,
     ND_UNARY,
     ND_GROUP,
+    ND_CALL,
     ND_ASSIGN,
 
     // Statements
     ND_EXPR_STMT,
     ND_VAR_STMT,
+    ND_BLOCK_STMT,
+    ND_FN_STMT,
     ND_PROGRAM,
+    ND_RETURN_STMT,
 
     // Types
     ND_SYMBOL_TYPE,

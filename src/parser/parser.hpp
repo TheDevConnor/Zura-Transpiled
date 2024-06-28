@@ -120,9 +120,13 @@ namespace Parser {
     Node::Expr *group(PStruct *psr);
     Node::Expr *binary(PStruct *psr, Node::Expr *left, BindingPower bp);
     Node::Expr *assign(PStruct *psr, Node::Expr *left, BindingPower bp);
+    Node::Expr *parse_call(PStruct *psr, Node::Expr *left, BindingPower bp);
 
     // Stmt Functions
     Node::Stmt *parseStmt(PStruct *psr);
+    Node::Stmt *blockStmt(PStruct *psr);
     Node::Stmt *exprStmt(PStruct *psr);
     Node::Stmt *varStmt(PStruct *psr);
+    Node::Stmt *funStmt(PStruct *psr);
+    Node::Stmt *returnStmt(PStruct *psr);
 }

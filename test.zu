@@ -1,1 +1,7 @@
-have x: []char = "Hello World";
+fn add(x: num, y: num) num {
+    return x + y;
+}
+
+fn main(argc: num, argv: []char) num {
+    return 0;
+}

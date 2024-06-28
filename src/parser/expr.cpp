@@ -68,3 +68,23 @@ Node::Expr *Parser::assign(PStruct *psr, Node::Expr *left, BindingPower bp) {
         right 
     );
 }
+
+Node::Expr *Parser::parse_call(PStruct *psr, Node::Expr *left, BindingPower bp) {
+    psr->expect(psr, TokenKind::LEFT_PAREN);
+    std::vector<Node::Expr *> args;
+
+    while (psr->current(psr).kind != TokenKind::RIGHT_PAREN) {
+        args.push_back(parseExpr(psr, defaultValue));
+
+        if (psr->current(psr).kind == TokenKind::COMMA) {
+            psr->advance(psr);
+        }
+    }
+
+    psr->expect(psr, TokenKind::RIGHT_PAREN);
+
+    return new CallExpr(
+        left,
+        args
+    );
+}
