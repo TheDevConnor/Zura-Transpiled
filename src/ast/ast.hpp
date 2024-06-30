@@ -13,6 +13,7 @@ enum NodeKind {
     ND_GROUP,
     ND_CALL,
     ND_ASSIGN,
+    ND_TERNARY,
 
     // Statements
     ND_EXPR_STMT,
@@ -25,6 +26,7 @@ enum NodeKind {
     // Types
     ND_SYMBOL_TYPE,
     ND_ARRAY_TYPE,
+    ND_POINTER_TYPE,
 };
 
 class Node {

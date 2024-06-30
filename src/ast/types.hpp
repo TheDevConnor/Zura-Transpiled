@@ -35,3 +35,21 @@ public:
         delete underlying;
     }
 };
+
+class PointerType : public Node::Type {
+public:
+    Node::Type *underlying; // *int
+
+    PointerType(Node::Type *underlying) : underlying(underlying) {
+        kind = NodeKind::ND_POINTER_TYPE;
+    }
+
+    void debug() const override {
+        std::cout << "*";
+        underlying->debug();
+    }
+
+    ~PointerType() {
+        delete underlying;
+    }
+};

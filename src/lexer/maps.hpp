@@ -57,6 +57,7 @@ const std::unordered_map<char, TokenKind> scMap = {
     {'^', TokenKind::CARET},
     {'[', TokenKind::LEFT_BRACKET},
     {']', TokenKind::RIGHT_BRACKET},
+    { '?', TokenKind::QUESTION},
     {':', TokenKind::COLON},
     {'=', TokenKind::EQUAL},
     {'!', TokenKind::BANG},

@@ -75,10 +75,6 @@ Node::Expr *Parser::parse_call(PStruct *psr, Node::Expr *left, BindingPower bp) 
 
     while (psr->current(psr).kind != TokenKind::RIGHT_PAREN) {
         args.push_back(parseExpr(psr, defaultValue));
-
-        if (psr->current(psr).kind == TokenKind::COMMA) {
-            psr->advance(psr);
-        }
     }
 
     psr->expect(psr, TokenKind::RIGHT_PAREN);
@@ -86,5 +82,18 @@ Node::Expr *Parser::parse_call(PStruct *psr, Node::Expr *left, BindingPower bp) 
     return new CallExpr(
         left,
         args
+    );
+}
+
+Node::Expr *Parser::_ternary(PStruct *psr, Node::Expr *left, BindingPower bp) {
+    psr->expect(psr, TokenKind::QUESTION);
+    auto *true_expr = parseExpr(psr, defaultValue);
+    psr->expect(psr, TokenKind::COLON);
+    auto *false_expr = parseExpr(psr, defaultValue);
+
+    return new TernaryExpr(
+        left,
+        true_expr,
+        false_expr
     );
 }

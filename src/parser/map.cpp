@@ -60,6 +60,9 @@ void Parser::createMaps() {
 		{ TokenKind::STAR_EQUAL, assign },
 		{ TokenKind::SLASH_EQUAL, assign },
 
+		{ TokenKind::QUESTION, _ternary },
+		{ TokenKind::COLON, _ternary },
+
 		{ TokenKind::LEFT_PAREN, parse_call },
 
 		{ TokenKind::AND, binary },
@@ -96,10 +99,15 @@ void Parser::createMaps() {
 		{ TokenKind::STAR_EQUAL, BindingPower::assignment },
 		{ TokenKind::SLASH_EQUAL, BindingPower::assignment },
 
+		{ TokenKind::QUESTION, BindingPower::ternary },
+
 		{ TokenKind::IDENTIFIER, BindingPower::defaultValue },
 		{ TokenKind::NUMBER, BindingPower::defaultValue },
 		{ TokenKind::STRING, BindingPower::defaultValue },
+
+		// TODO: Make it so that i do not need to add these 
 		{ TokenKind::SEMICOLON, BindingPower::defaultValue },
+		{ TokenKind::COLON, BindingPower::defaultValue },
 		{ TokenKind::RIGHT_PAREN, BindingPower::defaultValue },
 	};
 }

@@ -165,3 +165,31 @@ public:
         }
     }
 };
+
+// have x: num = ( 1 < 2 ) ? 1 : 2;
+class TernaryExpr : public Node::Expr {
+public: 
+    Node::Expr *condition;
+    Node::Expr *lhs;
+    Node::Expr *rhs;
+
+    TernaryExpr(Node::Expr *condition, Node::Expr *lhs, Node::Expr *rhs) : condition(condition), lhs(lhs), rhs(rhs) {
+        kind = NodeKind::ND_TERNARY;
+    }
+
+    void debug(int ident = 0) const override {
+        Node::printIdent(ident);
+        std::cout << "TernaryExpr: \n\t";
+        std::cout << "condition: "; condition->debug(0);
+        std::cout << "\n\t";
+        std::cout << "lhs: "; lhs->debug(0);
+        std::cout << "\n\t";
+        std::cout << "rhs: "; rhs->debug(0);
+    }
+
+    ~TernaryExpr() {
+        delete condition;
+        delete lhs;
+        delete rhs;
+    }
+};

@@ -109,6 +109,7 @@ namespace Parser {
     Node::Type *symbol_table(PStruct *psr);
     Node::Type *array_type(PStruct *psr);
     Node::Type *parseType(PStruct *psr, BindingPower bp);
+    Node::Type *pointer_type(PStruct *psr);
 
     // Pratt parser functions.
     PStruct *setupParser(PStruct *psr, Lexer *lex, Lexer::Token tk); 
@@ -121,6 +122,7 @@ namespace Parser {
     Node::Expr *binary(PStruct *psr, Node::Expr *left, BindingPower bp);
     Node::Expr *assign(PStruct *psr, Node::Expr *left, BindingPower bp);
     Node::Expr *parse_call(PStruct *psr, Node::Expr *left, BindingPower bp);
+    Node::Expr *_ternary(PStruct *psr, Node::Expr *left, BindingPower bp);
 
     // Stmt Functions
     Node::Stmt *parseStmt(PStruct *psr);

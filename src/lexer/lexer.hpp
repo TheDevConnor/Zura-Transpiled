@@ -20,6 +20,7 @@ enum TokenKind {
   MODULO,
   CARET,
   COLON,
+  QUESTION,
   STRUCT,
 
   // One or two character tokens.
