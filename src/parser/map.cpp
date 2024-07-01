@@ -27,6 +27,7 @@ T Parser::lookup(const std::vector<std::pair<U, T>> &lu, U key) {
 void Parser::createMaps() {
 	stmt_lu = {
 		{ TokenKind::VAR, varStmt },
+		{ TokenKind::CONST, varStmt },
 		{ TokenKind::LEFT_BRACE, blockStmt },
 		{ TokenKind::FUN, funStmt },
 		{ TokenKind::RETURN, returnStmt },

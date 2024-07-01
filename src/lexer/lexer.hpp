@@ -22,6 +22,8 @@ enum TokenKind {
   COLON,
   QUESTION,
   STRUCT,
+  LAND, 
+  LOR, 
 
   // One or two character tokens.
   BANG,
@@ -61,6 +63,7 @@ enum TokenKind {
   THS,
   TR,
   VAR,
+  CONST,
   PKG,
   TYPE,
   EXIT,

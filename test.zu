@@ -3,7 +3,6 @@ fn add(x: num, y: num) num {
 }
 
 fn main(argc: num, argv: []char) num {
-    have x: *num = 56;
-    add(x y);
+    have x: *num = (add(5 6) == 10) ? 1 : 0;
     return 0;
 }

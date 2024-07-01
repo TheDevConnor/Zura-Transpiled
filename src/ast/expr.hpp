@@ -14,8 +14,8 @@ public:
     }
 
     void debug(int ident = 0) const override {
-        Node::printIdent(ident);
-        std::cout << value;
+        Node::printIndent(ident);
+        std::cout << "NumberExpr: " << value << "\n";
     }
 };
 
@@ -28,8 +28,8 @@ public:
     }
 
     void debug(int ident = 0) const override {
-        Node::printIdent(ident);
-        std::cout << name;
+        Node::printIndent(ident);
+        std::cout << "IdentExpr: " << name << "\n";
     }
 };
 
@@ -42,8 +42,8 @@ public:
     }
 
     void debug(int ident = 0) const override {
-        Node::printIdent(ident);
-        std::cout << value;
+        Node::printIndent(ident);
+        std::cout << "StringExpr: " << value << "\n";
     }
 };
 
@@ -58,11 +58,12 @@ public:
     }
 
     void debug(int ident = 0) const override {
-       std::cout << "(";
-        lhs->debug(0);
-        std::cout << " " << op << " ";
-        rhs->debug(0);
-        std::cout << ")"; 
+        Node::printIndent(ident);
+        std::cout << "BinaryExpr: \n";
+        lhs->debug(ident + 1);
+        Node::printIndent(ident + 1);
+        std::cout << op << "\n";
+        rhs->debug(ident + 1);
     }
 
     ~BinaryExpr() {
@@ -81,9 +82,11 @@ public:
     }
 
     void debug(int ident = 0) const override {
-        Node::printIdent(ident);
-        std::cout << op ;
-        expr->debug(ident);
+        Node::printIndent(ident);
+        std::cout << "UnaryExpr: \n";
+        Node::printIndent(ident + 1);
+        std::cout << op << "\n";
+        expr->debug(ident + 1);
     }
 
     ~UnaryExpr() {
@@ -100,10 +103,9 @@ public:
     }
 
     void debug(int ident = 0) const override {
-        Node::printIdent(ident);
-        std::cout << "(";
-        expr->debug(ident);
-        std::cout << ")";
+        Node::printIndent(ident);
+        std::cout << "GroupExpr: \n";
+        expr->debug(ident + 1);
     }
 
     ~GroupExpr() {
@@ -113,26 +115,29 @@ public:
 
 class AssignmentExpr : public Node::Expr {
 public:
-    Expr *assigne;
+    Expr *assignee;
     std::string op;
     Expr *rhs;
 
-    AssignmentExpr(Expr *assigne, std::string op, Expr *rhs) : assigne(assigne), op(op), rhs(rhs) {
+    AssignmentExpr(Expr *assignee, std::string op, Expr *rhs) : assignee(assignee), op(op), rhs(rhs) {
         kind = NodeKind::ND_ASSIGN;
     }
 
     void debug(int ident = 0) const override {
-        Node::printIdent(ident);
-        std::cout << "AssignmentExpr: \n\t";
-        std::cout << "assigne: "; assigne->debug(0);
-        std::cout << "\n\t";
-        std::cout << "op: " << op;
-        std::cout << "\n\t";
-        std::cout << "rhs: "; rhs->debug(0); 
+        Node::printIndent(ident);
+        std::cout << "AssignmentExpr: \n";
+        Node::printIndent(ident + 1);
+        std::cout << "Assignee: \n";
+        assignee->debug(ident + 2);
+        Node::printIndent(ident + 1);
+        std::cout << "Operator: " << op << "\n";
+        Node::printIndent(ident + 1);
+        std::cout << "RHS: \n";
+        rhs->debug(ident + 2);
     }
 
     ~AssignmentExpr() {
-        delete assigne;
+        delete assignee;
         delete rhs;
     }
 };
@@ -147,26 +152,26 @@ public:
     }
 
     void debug(int ident = 0) const override {
-        Node::printIdent(ident);
-        std::cout << "CallExpr: \n\t";
-        std::cout << "callee: "; callee->debug(0);
-        std::cout << "\n\t";
-        std::cout << "args: \n";
-        for (auto a : args) {
-            a->debug(ident + 1);
-            std::cout << "\n";
+        Node::printIndent(ident);
+        std::cout << "CallExpr: \n";
+        Node::printIndent(ident + 1);
+        std::cout << "Callee: \n";
+        callee->debug(ident + 2);
+        Node::printIndent(ident + 1);
+        std::cout << "Arguments: \n";
+        for (auto arg : args) {
+            arg->debug(ident + 2);
         }
     }
 
     ~CallExpr() {
         delete callee;
-        for (auto a : args) {
-            delete a;
+        for (auto arg : args) {
+            delete arg;
         }
     }
 };
 
-// have x: num = ( 1 < 2 ) ? 1 : 2;
 class TernaryExpr : public Node::Expr {
 public: 
     Node::Expr *condition;
@@ -178,13 +183,17 @@ public:
     }
 
     void debug(int ident = 0) const override {
-        Node::printIdent(ident);
-        std::cout << "TernaryExpr: \n\t";
-        std::cout << "condition: "; condition->debug(0);
-        std::cout << "\n\t";
-        std::cout << "lhs: "; lhs->debug(0);
-        std::cout << "\n\t";
-        std::cout << "rhs: "; rhs->debug(0);
+        Node::printIndent(ident);
+        std::cout << "TernaryExpr: \n";
+        Node::printIndent(ident + 1);
+        std::cout << "Condition: \n";
+        condition->debug(ident + 2);
+        Node::printIndent(ident + 1);
+        std::cout << "LHS: \n";
+        lhs->debug(ident + 2);
+        Node::printIndent(ident + 1);
+        std::cout << "RHS: \n";
+        rhs->debug(ident + 2);
     }
 
     ~TernaryExpr() {

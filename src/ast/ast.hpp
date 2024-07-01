@@ -39,23 +39,19 @@ public:
 
     struct Stmt {
         NodeKind kind;
-        virtual void debug() const = 0;
+        virtual void debug(int ident = 0) const = 0;
         virtual ~Stmt() = default;
     };
 
     struct Type {
         NodeKind kind;
-        virtual void debug() const = 0;
+        virtual void debug(int ident = 0) const = 0;
         virtual ~Type() = default;
     };
 
-    static void printIdent(int ident) {
-        if (ident == 0) {
-            std::cout << "";
-        } else {
-            for (int i = 0; i < ident; i++) {
-                std::cout << "    ";
-            }
+    static void printIndent(int ident) {
+        for (int i = 0; i < ident; i++) {
+            std::cout << "    ";
         }
     }
 };

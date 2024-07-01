@@ -13,7 +13,7 @@ public:
         kind = NodeKind::ND_SYMBOL_TYPE;
     }
 
-    void debug() const override {
+    void debug(int ident = 0) const override {
         std::cout << name; 
     }
 };
@@ -26,7 +26,7 @@ public:
         kind = NodeKind::ND_ARRAY_TYPE;
     }
 
-    void debug() const override {
+    void debug(int ident = 0) const override {
         std::cout << "[]";
         underlying->debug();
     }
@@ -38,14 +38,15 @@ public:
 
 class PointerType : public Node::Type {
 public:
+    std::string pointer_type; // * or &
     Node::Type *underlying; // *int
 
-    PointerType(Node::Type *underlying) : underlying(underlying) {
+    PointerType(std::string pointer_type, Node::Type *underlying) : pointer_type(pointer_type), underlying(underlying) {
         kind = NodeKind::ND_POINTER_TYPE;
     }
 
-    void debug() const override {
-        std::cout << "*";
+    void debug(int ident = 0) const override {
+        std::cout << pointer_type;
         underlying->debug();
     }
 

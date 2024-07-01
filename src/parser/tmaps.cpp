@@ -21,7 +21,8 @@ void Parser::createTypeMaps() {
     type_nud_lu = {
         { TokenKind::IDENTIFIER, symbol_table },
         { TokenKind::LEFT_BRACKET, array_type },
-        { TokenKind::STAR, pointer_type },
+        { TokenKind::STAR, pointer_type }, // * 
+        { TokenKind::LAND, pointer_type }, // &
     };
     type_led_lu = {};
     type_bp_lu = bp_lu;

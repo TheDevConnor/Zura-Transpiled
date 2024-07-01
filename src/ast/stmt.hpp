@@ -13,9 +13,11 @@ public:
         kind = NodeKind::ND_PROGRAM;
     }
 
-    void debug() const override {
+    void debug(int ident = 0) const override {
+        Node::printIndent(ident);
+        std::cout << "ProgramStmt: \n";
         for (auto s : stmt) {
-            s->debug();
+            s->debug(ident + 1);
         }
     }
 
@@ -34,8 +36,10 @@ public:
         kind = NodeKind::ND_EXPR_STMT;
     }
 
-    void debug() const override {
-        expr->debug();
+    void debug(int ident = 0) const override {
+        Node::printIndent(ident);
+        std::cout << "ExprStmt: \n";
+        expr->debug(ident + 1);
     }
 
     ~ExprStmt() {
@@ -51,12 +55,14 @@ public:
         kind = NodeKind::ND_BLOCK_STMT;
     }
 
-    void debug() const override {
+    void debug(int ident = 0) const override {
+        Node::printIndent(ident);
         std::cout << "BlockStmt: \n";
         for (auto s : stmts) {
-            s->debug();
+            s->debug(ident + 1);
         }
-        std::cout << "\nEnd of BlockStmt\n";
+        Node::printIndent(ident);
+        std::cout << "End of BlockStmt\n";
     }
 
     ~BlockStmt() {
@@ -68,21 +74,30 @@ public:
 
 class VarStmt : public Node::Stmt {
 public:
+    bool isConst;
     std::string name;
     Node::Type *type;
     ExprStmt *expr;
 
-    VarStmt(std::string name, Node::Type *type, ExprStmt *expr) : name(name), type(type), expr(expr) {
+    VarStmt(bool isConst, std::string name, Node::Type *type, ExprStmt *expr) : isConst(isConst), name(name), type(type), expr(expr) {
         kind = NodeKind::ND_VAR_STMT;
     }
 
-    void debug() const override {
-        std::cout << "VarStmt: \n\t" 
-                  << "Name: " << name << "\n\t" 
-                  << "Type: "; type->debug(); std::cout << "\n\t"
-                  << "Expr: "; expr->debug(); 
-        std::cout << std::endl;
-    } 
+    void debug(int ident = 0) const override {
+        Node::printIndent(ident);
+        std::cout << "VarStmt: \n";
+        Node::printIndent(ident + 1);
+        std::cout << "IsConst: " << isConst << "\n";
+        Node::printIndent(ident + 1);
+        std::cout << "Name: " << name << "\n";
+        Node::printIndent(ident + 1);
+        std::cout << "Type: ";
+        type->debug(ident + 2);
+        std::cout << "\n";
+        Node::printIndent(ident + 1);
+        std::cout << "Expr: \n";
+        expr->debug(ident + 2);
+    }
 
     ~VarStmt() {
         delete expr;
@@ -97,25 +112,29 @@ public:
     Node::Type *returnType;
     Node::Stmt *block;
 
-    fnStmt(std::string name, std::vector<std::pair<std::string, Node::Type *>> params, 
-            Node::Type *returnType, Node::Stmt *block) : 
-            name(name), params(params), returnType(returnType), block(block) {
+    fnStmt(std::string name, std::vector<std::pair<std::string, Node::Type *>> params, Node::Type *returnType, Node::Stmt *block) : name(name), params(params), returnType(returnType), block(block) {
         kind = NodeKind::ND_FN_STMT;
     }
 
-    void debug() const override {
-        std::cout << "fnStmt: \n\t" 
-                  << "Name: " << name << "\n\t" 
-                  << "Params: "; 
+    void debug(int ident = 0) const override {
+        Node::printIndent(ident);
+        std::cout << "fnStmt: \n";
+        Node::printIndent(ident + 1);
+        std::cout << "Name: " << name << "\n";
+        Node::printIndent(ident + 1);
+        std::cout << "Params: \n";
         for (auto p : params) {
-            std::cout << "\n\t\t"
-                      << "Name: " << p.first << "\n\t\t"
-                      << "Type: "; p.second->debug();
+            Node::printIndent(ident + 2);
+            std::cout << "Name: " << p.first << ", Type: ";
+            p.second->debug(ident + 2);
+            std::cout << "\n";
         }
-        std::cout << "\n\t"
-                  << "ReturnType: "; returnType->debug(); std::cout << "\n\t"
-                  << "Block: "; block->debug(); 
-        std::cout << std::endl;
+        Node::printIndent(ident + 1);
+        std::cout << "ReturnType: ";
+        returnType->debug(ident);
+        std::cout << "\n";
+        Node::printIndent(ident);
+        block->debug(ident + 2);
     }
 
     ~fnStmt() {
@@ -135,10 +154,12 @@ public:
         kind = NodeKind::ND_RETURN_STMT;
     }
 
-    void debug() const override {
-        std::cout << "ReturnStmt: \n\t"
-                  << "Expr: "; expr->debug();
-        std::cout << std::endl;
+    void debug(int ident = 0) const override {
+        Node::printIndent(ident);
+        std::cout << "ReturnStmt: \n";
+        Node::printIndent(ident + 1);
+        std::cout << "Expr: \n";
+        expr->debug(ident + 2);
     }
 
     ~ReturnStmt() {

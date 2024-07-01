@@ -39,6 +39,7 @@ const std::unordered_map<std::string, TokenKind> keywords = {
       {"pkg", TokenKind::PKG},
       {"type", TokenKind::TYPE},
       {"struct", TokenKind::STRUCT},
+      {"const", TokenKind::CONST},
 };
 
 const std::unordered_map<char, TokenKind> scMap = {
@@ -57,12 +58,14 @@ const std::unordered_map<char, TokenKind> scMap = {
     {'^', TokenKind::CARET},
     {'[', TokenKind::LEFT_BRACKET},
     {']', TokenKind::RIGHT_BRACKET},
-    { '?', TokenKind::QUESTION},
+    {'?', TokenKind::QUESTION},
     {':', TokenKind::COLON},
     {'=', TokenKind::EQUAL},
     {'!', TokenKind::BANG},
     {'<', TokenKind::LESS},
     {'>', TokenKind::GREATER},
+    {'&', TokenKind::LAND},
+    {'|', TokenKind::LOR},
 };
 
 const std::unordered_map<std::string, TokenKind> dcMap = {
@@ -126,6 +129,7 @@ const std::unordered_map<TokenKind, const char *> tokenMap = {
     {TokenKind::THS, "THS"},
     {TokenKind::TR, "TRUE"},
     {TokenKind::VAR, "VAR"},
+    {TokenKind::CONST, "CONST"},
     {TokenKind::PKG, "PKG"},
     {TokenKind::TYPE, "TYPE"},
     {TokenKind::EXIT, "EXIT"},

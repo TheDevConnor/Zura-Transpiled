@@ -29,12 +29,13 @@ Node::Stmt *Parser::blockStmt(PStruct *psr) {
     return new BlockStmt(stmts);
 }
 
-
 /// Parses a variable statement
 /// This is an example of a var in zura:
 /// have x : i8 = 10;
 Node::Stmt *Parser::varStmt(PStruct *psr) { 
-    psr->expect(psr, TokenKind::VAR);
+    auto isConst = psr->current(psr).kind == TokenKind::CONST;
+    if (isConst) psr->expect(psr, TokenKind::CONST); else psr->expect(psr, TokenKind::VAR);
+
     auto varName = psr->expect(psr, TokenKind::IDENTIFIER).value;
 
     psr->expect(psr, TokenKind::COLON);
@@ -44,7 +45,7 @@ Node::Stmt *Parser::varStmt(PStruct *psr) {
     auto assignedValue = parseExpr(psr, BindingPower::defaultValue);
     psr->expect(psr, TokenKind::SEMICOLON);
 
-    return new VarStmt(varName, varType, new ExprStmt(assignedValue));
+    return new VarStmt(isConst, varName, varType, new ExprStmt(assignedValue));
 }
 
 Node::Stmt *Parser::funStmt(PStruct *psr) {

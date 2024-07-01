@@ -26,7 +26,7 @@ Node::Type *Parser::array_type(PStruct *psr) {
 }
 
 Node::Type *Parser::pointer_type(PStruct *psr) {
-    psr->advance(psr);
+    auto op = psr->advance(psr);
     auto underlying = parseType(psr, defaultValue);
-    return new PointerType(underlying);
+    return new PointerType(op.value, underlying);
 }
