@@ -1,8 +1,7 @@
-fn add(x: num, y: num) num {
-    return x + y;
-}
-
-fn main(argc: num, argv: []char) num {
-    have x: *num = (add(5 6) == 10) ? 1 : 0;
-    return 0;
-}
+const main := fn() int {
+    if (1 > 2) {
+        have x: int = 1 + 2;
+        return x;
+    }
+    else return 0;
+};

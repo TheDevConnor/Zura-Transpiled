@@ -47,6 +47,30 @@ public:
     }
 };
 
+class ConstStmt : public Node::Stmt {
+public:
+    std::string name;
+    Node::Stmt *value;
+
+    ConstStmt(std::string name, Node::Stmt *value) : name(name), value(value) {
+        kind = NodeKind::ND_CONST_STMT;
+    }
+
+    void debug(int ident = 0) const override {
+        Node::printIndent(ident);
+        std::cout << "ConstStmt: \n";
+        Node::printIndent(ident + 1);
+        std::cout << "Name: " << name << "\n";
+        Node::printIndent(ident + 1);
+        std::cout << "Value: \n";
+        value->debug(ident + 2);
+    }
+
+    ~ConstStmt() {
+        delete value;
+    }
+};  
+
 class BlockStmt : public Node::Stmt {
 public:
     std::vector<Node::Stmt *> stmts;
@@ -133,8 +157,7 @@ public:
         std::cout << "ReturnType: ";
         returnType->debug(ident);
         std::cout << "\n";
-        Node::printIndent(ident);
-        block->debug(ident + 2);
+        block->debug(ident + 1);
     }
 
     ~fnStmt() {
@@ -164,5 +187,38 @@ public:
 
     ~ReturnStmt() {
         delete expr;
+    }
+};
+
+class IfStmt : public Node::Stmt {
+public:
+    Node::Expr *condition;
+    Node::Stmt *thenStmt;
+    Node::Stmt *elseStmt;
+
+    IfStmt(Node::Expr *condition, Node::Stmt *thenStmt, Node::Stmt *elseStmt) : condition(condition), thenStmt(thenStmt), elseStmt(elseStmt) {
+        kind = NodeKind::ND_IF_STMT;
+    }
+
+    void debug(int ident = 0) const override {
+        Node::printIndent(ident);
+        std::cout << "IfStmt: \n";
+        Node::printIndent(ident + 1);
+        std::cout << "Condition: \n";
+        condition->debug(ident + 2);
+        Node::printIndent(ident + 1);
+        std::cout << "ThenStmt: \n";
+        thenStmt->debug(ident + 2);
+        if (elseStmt) {
+            Node::printIndent(ident + 1);
+            std::cout << "ElseStmt: \n";
+            elseStmt->debug(ident + 2);
+        }
+    }
+
+    ~IfStmt() {
+        delete condition;
+        delete thenStmt;
+        delete elseStmt;
     }
 };

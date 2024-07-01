@@ -59,7 +59,9 @@ struct Parser::PStruct {
         bool res = current(psr).kind == tk ? true : false;
         if (res == false) {
             std::cout << "Expected " << lexer.tokenToString(tk) << " but got " 
-                      << lexer.tokenToString(current(psr).kind) << std::endl; 
+                      << lexer.tokenToString(current(psr).kind) << "! On line: "
+                      << current(psr).line << " and column: " << current(psr).column
+                      << std::endl;
             return current(psr);
         }
         return advance(psr);
@@ -73,7 +75,7 @@ namespace Parser {
     Node::Stmt *parse(const char *source);
 
     // Maps for the Pratt Parser
-    using StmtHandler = std::function<Node::Stmt *(PStruct *)>;
+    using StmtHandler = std::function<Node::Stmt *(PStruct *, std::string)>;
     using NudHandler = std::function<Node::Expr *(PStruct *)>;
     using LedHandler = std::function<Node::Expr *(PStruct *, 
                                                   Node::Expr *, 
@@ -88,7 +90,7 @@ namespace Parser {
 
     Node::Expr *led(PStruct *psr, Node::Expr *left, BindingPower bp);
     BindingPower getBP(TokenKind tk);
-    Node::Stmt *stmt(PStruct *psr);
+    Node::Stmt *stmt(PStruct *psr, std::string name);
     Node::Expr *nud(PStruct *psr);
 
     // Maps for the Pratt Parser for types.
@@ -125,10 +127,12 @@ namespace Parser {
     Node::Expr *_ternary(PStruct *psr, Node::Expr *left, BindingPower bp);
 
     // Stmt Functions
-    Node::Stmt *parseStmt(PStruct *psr);
-    Node::Stmt *blockStmt(PStruct *psr);
+    Node::Stmt *returnStmt(PStruct *psr, std::string name);
+    Node::Stmt *parseStmt(PStruct *psr, std::string name);
+    Node::Stmt *blockStmt(PStruct *psr, std::string name);
+    Node::Stmt *constStmt(PStruct *psr, std::string name);
+    Node::Stmt *varStmt(PStruct *psr, std::string name);
+    Node::Stmt *funStmt(PStruct *psr, std::string name);
+    Node::Stmt *ifStmt(PStruct *psr, std::string name);
     Node::Stmt *exprStmt(PStruct *psr);
-    Node::Stmt *varStmt(PStruct *psr);
-    Node::Stmt *funStmt(PStruct *psr);
-    Node::Stmt *returnStmt(PStruct *psr);
 }

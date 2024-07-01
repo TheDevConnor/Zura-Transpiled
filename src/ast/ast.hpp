@@ -18,10 +18,12 @@ enum NodeKind {
     // Statements
     ND_EXPR_STMT,
     ND_VAR_STMT,
+    ND_CONST_STMT,
     ND_BLOCK_STMT,
     ND_FN_STMT,
     ND_PROGRAM,
     ND_RETURN_STMT,
+    ND_IF_STMT,
 
     // Types
     ND_SYMBOL_TYPE,

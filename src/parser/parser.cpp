@@ -29,7 +29,7 @@ Node::Stmt *Parser::parse(const char *source) {
    auto stmts = std::vector<Node::Stmt *>();
 
    while (vect_tk->hadTokens(vect_tk)) 
-      stmts.push_back(parseStmt(vect_tk));
+      stmts.push_back(parseStmt(vect_tk, ""));
    
    delete vect_tk;
    return new ProgramStmt(stmts);

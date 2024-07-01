@@ -26,11 +26,12 @@ T Parser::lookup(const std::vector<std::pair<U, T>> &lu, U key) {
 
 void Parser::createMaps() {
 	stmt_lu = {
+		{ TokenKind::CONST, constStmt },
 		{ TokenKind::VAR, varStmt },
-		{ TokenKind::CONST, varStmt },
 		{ TokenKind::LEFT_BRACE, blockStmt },
 		{ TokenKind::FUN, funStmt },
 		{ TokenKind::RETURN, returnStmt },
+		{ TokenKind::IF, ifStmt },
 	};
 	nud_lu = {
 		{ TokenKind::NUMBER, primary },
@@ -133,12 +134,12 @@ Node::Expr *Parser::led(PStruct *psr, Node::Expr *left, BindingPower bp) {
 	}
 }
 
-Node::Stmt *Parser::stmt(PStruct *psr) {
+Node::Stmt *Parser::stmt(PStruct *psr, std::string name) {
 	auto stmt_it = std::find_if(stmt_lu.begin(), stmt_lu.end(), [psr](auto &p) {
 		return p.first == psr->current(psr).kind;
 	}); 
 
-	return stmt_it != stmt_lu.end() ? stmt_it->second(psr) : nullptr;
+	return stmt_it != stmt_lu.end() ? stmt_it->second(psr, name) : nullptr;
 }
 
 BindingPower Parser::getBP(TokenKind tk) {
