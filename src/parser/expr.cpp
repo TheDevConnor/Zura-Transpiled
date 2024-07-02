@@ -97,3 +97,13 @@ Node::Expr *Parser::_ternary(PStruct *psr, Node::Expr *left, BindingPower bp) {
         false_expr
     );
 }
+
+Node::Expr *Parser::_member(PStruct *psr, Node::Expr *left, BindingPower bp) {
+   auto op = psr->advance(psr);
+   auto *right = parseExpr(psr, defaultValue);
+
+   return new MemberExpr(
+       left,
+       right
+   );
+}

@@ -14,6 +14,7 @@ enum NodeKind {
     ND_CALL,
     ND_ASSIGN,
     ND_TERNARY,
+    ND_MEMBER,
 
     // Statements
     ND_EXPR_STMT,
@@ -24,6 +25,7 @@ enum NodeKind {
     ND_PROGRAM,
     ND_RETURN_STMT,
     ND_IF_STMT,
+    ND_STRUCT_STMT,
 
     // Types
     ND_SYMBOL_TYPE,

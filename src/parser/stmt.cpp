@@ -36,7 +36,12 @@ Node::Stmt *Parser::varStmt(PStruct *psr, std::string name) {
     name = psr->expect(psr, TokenKind::IDENTIFIER).value;
 
     psr->expect(psr, TokenKind::COLON);
-    auto varType = parseType(psr, BindingPower::defaultValue); 
+    auto varType = parseType(psr, BindingPower::defaultValue);
+
+    if (psr->current(psr).kind == TokenKind::SEMICOLON) {
+        psr->expect(psr, TokenKind::SEMICOLON);
+        return new VarStmt(isConst, name, varType, nullptr);    
+    }
 
     psr->expect(psr, TokenKind::EQUAL);
     auto assignedValue = parseExpr(psr, BindingPower::defaultValue);
@@ -57,6 +62,7 @@ Node::Stmt *Parser::constStmt(PStruct *psr, std::string name) {
 }
 
 Node::Stmt *Parser::funStmt(PStruct *psr, std::string name) {
+    std::cout << "Parsing function: " << name << std::endl;
     psr->expect(psr, TokenKind::FUN);
 
     psr->expect(psr, TokenKind::LEFT_PAREN);
@@ -101,4 +107,31 @@ Node::Stmt *Parser::ifStmt(PStruct *psr, std::string name) {
     }
 
     return new IfStmt(condition, thenStmt, elseStmt);
+}
+
+Node::Stmt *Parser::structStmt(PStruct *psr, std::string name) {
+    psr->expect(psr, TokenKind::STRUCT);
+
+    psr->expect(psr, TokenKind::LEFT_BRACE);
+
+    std::vector<std::pair<std::string, Node::Type *>> fields;
+    auto stmts = std::vector<Node::Stmt *>();
+
+    while (psr->current(psr).kind != TokenKind::RIGHT_BRACE) { 
+        auto fieldName = psr->expect(psr, TokenKind::IDENTIFIER).value;
+        psr->expect(psr, TokenKind::COLON);
+        auto fieldType = parseType(psr, BindingPower::defaultValue);
+        fields.push_back({fieldName, fieldType});
+        psr->expect(psr, TokenKind::SEMICOLON); 
+
+        // if (psr->current(psr).kind == TokenKind::CONST) {
+        //     auto constStmt = parseStmt(psr, name);
+        //     stmts.push_back(constStmt);
+        // }
+    }
+
+    psr->expect(psr, TokenKind::RIGHT_BRACE);
+    psr->expect(psr, TokenKind::SEMICOLON);
+
+    return new StructStmt(name, fields, stmts);
 }

@@ -1,7 +1,13 @@
+const Person := struct {
+    name: string;
+    age: int;
+};
+
 const main := fn() int {
-    if (1 > 2) {
-        have x: int = 1 + 2;
-        return x;
-    }
-    else return 0;
+    have p: Peron;
+
+    p.name = "John";
+    p.age = 30;
+
+    return 0;
 };

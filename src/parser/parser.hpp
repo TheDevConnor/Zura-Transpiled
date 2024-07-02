@@ -26,6 +26,7 @@ namespace Parser {
         prefix = 11,
         postfix = 12,
         call = 13,
+        member = 13,
         _primary = 14,
         err = 15
     };
@@ -125,9 +126,11 @@ namespace Parser {
     Node::Expr *assign(PStruct *psr, Node::Expr *left, BindingPower bp);
     Node::Expr *parse_call(PStruct *psr, Node::Expr *left, BindingPower bp);
     Node::Expr *_ternary(PStruct *psr, Node::Expr *left, BindingPower bp);
+    Node::Expr *_member(PStruct *psr, Node::Expr *left, BindingPower bp);
 
     // Stmt Functions
     Node::Stmt *returnStmt(PStruct *psr, std::string name);
+    Node::Stmt *structStmt(PStruct *psr, std::string name);
     Node::Stmt *parseStmt(PStruct *psr, std::string name);
     Node::Stmt *blockStmt(PStruct *psr, std::string name);
     Node::Stmt *constStmt(PStruct *psr, std::string name);

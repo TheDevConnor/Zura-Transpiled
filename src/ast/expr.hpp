@@ -202,3 +202,29 @@ public:
         delete rhs;
     }
 };
+
+class MemberExpr : public Node::Expr {
+public:
+    Node::Expr *lhs;
+    Node::Expr *rhs;
+
+    MemberExpr(Node::Expr *lhs, Node::Expr *rhs) : lhs(lhs), rhs(rhs) {
+        kind = NodeKind::ND_MEMBER;
+    }
+
+    void debug(int ident = 0) const override {
+        Node::printIndent(ident);
+        std::cout << "MemberExpr: \n";
+        Node::printIndent(ident + 1);
+        std::cout << "LHS: \n";
+        lhs->debug(ident + 2);
+        Node::printIndent(ident + 1);
+        std::cout << "RHS: \n";
+        rhs->debug(ident + 2);
+    }
+
+    ~MemberExpr() {
+        delete lhs;
+        delete rhs;
+    }
+};
