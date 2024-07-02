@@ -25,9 +25,11 @@ COPY . .
 
 # Make the build script executable
 RUN chmod +x ./build.sh
+RUN chmod +x ./entrypoint.sh
 
 # Build the application in release mode
-RUN ./build.sh release
-
-# Optionally, set up a default command or entrypoint for development, such as opening a shell
-CMD ["/bin/bash"]
+# Copy the entrypoint script and make it executable
+COPY entrypoint.sh /usr/local/bin/entrypoint.sh
+#RUN chmod +x /usr/local/bin/entrypoint.sh
+# Set the entrypoint script to be executed
+ENTRYPOINT ["/usr/local/bin/entrypoint.sh"]
