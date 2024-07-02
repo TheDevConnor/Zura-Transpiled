@@ -32,6 +32,7 @@ void Parser::createMaps() {
 		{ TokenKind::FUN, funStmt },
 		{ TokenKind::RETURN, returnStmt },
 		{ TokenKind::IF, ifStmt },
+		{ TokenKind::STRUCT, structStmt },
 	};
 	nud_lu = {
 		{ TokenKind::NUMBER, primary },
@@ -66,6 +67,8 @@ void Parser::createMaps() {
 		{ TokenKind::COLON, _ternary },
 
 		{ TokenKind::LEFT_PAREN, parse_call },
+
+		{ TokenKind::DOT, _member },
 
 		{ TokenKind::AND, binary },
 		{ TokenKind::OR, binary },
@@ -106,6 +109,8 @@ void Parser::createMaps() {
 		{ TokenKind::IDENTIFIER, BindingPower::defaultValue },
 		{ TokenKind::NUMBER, BindingPower::defaultValue },
 		{ TokenKind::STRING, BindingPower::defaultValue },
+
+		{ TokenKind::DOT, BindingPower::member },
 
 		// TODO: Make it so that i do not need to add these 
 		{ TokenKind::SEMICOLON, BindingPower::defaultValue },

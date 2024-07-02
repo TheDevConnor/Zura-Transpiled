@@ -118,9 +118,11 @@ public:
         std::cout << "Type: ";
         type->debug(ident + 2);
         std::cout << "\n";
-        Node::printIndent(ident + 1);
-        std::cout << "Expr: \n";
-        expr->debug(ident + 2);
+        if (expr) {
+            Node::printIndent(ident + 1);
+            std::cout << "Expr: \n";
+            expr->debug(ident + 2);
+        }
     }
 
     ~VarStmt() {
@@ -220,5 +222,44 @@ public:
         delete condition;
         delete thenStmt;
         delete elseStmt;
+    }
+};
+
+class StructStmt : public Node::Stmt {
+public:
+    std::string name;
+    std::vector<std::pair<std::string, Node::Type *>> fields;
+    std::vector<Node::Stmt *> stmts;
+
+    StructStmt(std::string name, std::vector<std::pair<std::string, 
+               Node::Type *>> fields, std::vector<Node::Stmt *> stmts) 
+               : name(name), fields(fields), stmts(stmts) {
+        kind = NodeKind::ND_STRUCT_STMT;
+    }
+
+    void debug(int ident = 0) const override {
+        Node::printIndent(ident);
+        std::cout << "StructStmt: \n";
+        Node::printIndent(ident + 1);
+        std::cout << "Name: " << name << "\n";
+        Node::printIndent(ident + 1);
+        std::cout << "Fields: \n";
+        for (auto f : fields) {
+            Node::printIndent(ident + 2);
+            std::cout << "Name: " << f.first << ", Type: ";
+            f.second->debug(ident + 2);
+            std::cout << "\n";
+        }
+        // Node::printIndent(ident + 1);
+        // std::cout << "Stmts: \n";
+        // for (auto s : stmts) {
+        //     s->debug(ident + 2);
+        // }
+    }
+
+    ~StructStmt() {
+        for (auto f : fields) {
+            delete f.second;
+        }
     }
 };
