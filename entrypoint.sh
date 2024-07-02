@@ -3,4 +3,3 @@
 ./build.sh release
 # Start a bash shell
 exec /bin/bash
-

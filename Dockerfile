@@ -13,10 +13,8 @@ RUN apt-get update && apt-get install -y \
 	make \
 	gcc \
 	g++ \
-	gcc-multilib \
 	valgrind \
-	git \
-    ninja-build \
+	ninja-build \
 	&& rm -rf /var/lib/apt/lists/*
 
 # Copy the current directory contents into the container at /usr/src/app
