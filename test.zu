@@ -1,13 +1,20 @@
-const Person := struct {
-    name: string;
-    age: int;
-};
-
 const main := fn() int {
-    have p: Peron;
+   # While loop
+   # have x: int = 0;
+   # loop(x < 10) {
+   #    # Do nothing 
+   # }
 
-    p.name = "John";
-    p.age = 30;
+   # For loop
+   # loop(i in 0..10) {
+   #     # Do nothing
+   # }
+
+   # ForEach loop
+   # have arr: [5]int = {1, 2, 3, 4, 5};
+   # loop(i in arr) {
+   #     # Do nothing
+   # }
 
     return 0;
 };

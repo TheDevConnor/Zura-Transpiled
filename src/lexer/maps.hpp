@@ -21,7 +21,6 @@ const std::unordered_map<char, WhiteSpaceFunction> whiteSpaceMap = {
 
 const std::unordered_map<std::string, TokenKind> keywords = {
       {"and", TokenKind::AND},
-      {"class", TokenKind::CLASS},
       {"else", TokenKind::ELSE},
       {"false", TokenKind::FAL},
       {"fn", TokenKind::FUN},
@@ -33,10 +32,10 @@ const std::unordered_map<std::string, TokenKind> keywords = {
       {"return", TokenKind::RETURN},
       {"exit", TokenKind::EXIT},
       {"super", TokenKind::SUPER},
-      {"this", TokenKind::THS},
       {"true", TokenKind::TR},
       {"have", TokenKind::VAR},
       {"pkg", TokenKind::PKG},
+      {"in", TokenKind::IN},
       {"type", TokenKind::TYPE},
       {"struct", TokenKind::STRUCT},
       {"const", TokenKind::CONST},
@@ -82,6 +81,7 @@ const std::unordered_map<std::string, TokenKind> dcMap = {
       {"/=", TokenKind::SLASH_EQUAL},
       {"&&", TokenKind::AND},
       {"||", TokenKind::OR},
+      {"..", TokenKind::RANGE},
 };
 
 const std::unordered_map<TokenKind, const char *> tokenMap = {
@@ -111,11 +111,13 @@ const std::unordered_map<TokenKind, const char *> tokenMap = {
     {TokenKind::LESS, "LESS"},
     {TokenKind::LESS_EQUAL, "LESS_EQUAL"},
     {TokenKind::WALRUS, "WALRUS"},
+    {TokenKind::PLUS_PLUS, "PLUS_PLUS"},
+    {TokenKind::MINUS_MINUS, "MINUS_MINUS"},
+    {TokenKind::RANGE, "RANGE"},
     {TokenKind::IDENTIFIER, "IDENTIFIER"},
     {TokenKind::STRING, "STRING"},
     {TokenKind::NUMBER, "NUMBER"},
     {TokenKind::AND, "AND"},
-    {TokenKind::CLASS, "CLASS"},
     {TokenKind::ELSE, "ELSE"},
     {TokenKind::FAL, "FAL"},
     {TokenKind::FUN, "FUN"},
@@ -126,9 +128,9 @@ const std::unordered_map<TokenKind, const char *> tokenMap = {
     {TokenKind::PRINT, "PRINT"},
     {TokenKind::RETURN, "RETURN"},
     {TokenKind::SUPER, "SUPER"},
-    {TokenKind::THS, "THS"},
     {TokenKind::TR, "TRUE"},
     {TokenKind::VAR, "VAR"},
+    {TokenKind::IN, "IN"},
     {TokenKind::CONST, "CONST"},
     {TokenKind::PKG, "PKG"},
     {TokenKind::TYPE, "TYPE"},

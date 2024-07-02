@@ -10,6 +10,7 @@ enum NodeKind {
     ND_STRING,
     ND_BINARY,
     ND_UNARY,
+    ND_PREFIX,
     ND_GROUP,
     ND_CALL,
     ND_ASSIGN,

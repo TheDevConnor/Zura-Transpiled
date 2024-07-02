@@ -41,6 +41,7 @@ enum TokenKind {
   MINUS_EQUAL,
   STAR_EQUAL,
   SLASH_EQUAL,
+  RANGE,
 
   // Literals.
   IDENTIFIER,
@@ -49,7 +50,6 @@ enum TokenKind {
 
   // Keywords.
   AND,
-  CLASS,
   ELSE,
   FAL,
   FUN,
@@ -60,13 +60,13 @@ enum TokenKind {
   PRINT,
   RETURN,
   SUPER,
-  THS,
   TR,
   VAR,
   CONST,
   PKG,
   TYPE,
   EXIT,
+  IN,
 
   // Error
   ERROR_,

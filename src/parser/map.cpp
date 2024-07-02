@@ -33,6 +33,7 @@ void Parser::createMaps() {
 		{ TokenKind::RETURN, returnStmt },
 		{ TokenKind::IF, ifStmt },
 		{ TokenKind::STRUCT, structStmt },
+		{ TokenKind::LOOP, loopStmt },
 	};
 	nud_lu = {
 		{ TokenKind::NUMBER, primary },
@@ -40,6 +41,8 @@ void Parser::createMaps() {
 		{ TokenKind::STRING, primary },
 		{ TokenKind::LEFT_PAREN, group },
 		{ TokenKind::MINUS, unary },
+		{ TokenKind::PLUS_PLUS, _prefix },
+		{ TokenKind::MINUS_MINUS, _prefix },	
 	};
 	led_lu = {
 		{ TokenKind::PLUS, binary },
@@ -69,6 +72,8 @@ void Parser::createMaps() {
 		{ TokenKind::LEFT_PAREN, parse_call },
 
 		{ TokenKind::DOT, _member },
+
+		{ TokenKind::RANGE, binary },
 
 		{ TokenKind::AND, binary },
 		{ TokenKind::OR, binary },
@@ -106,13 +111,19 @@ void Parser::createMaps() {
 
 		{ TokenKind::QUESTION, BindingPower::ternary },
 
+		{ TokenKind::PLUS_PLUS, BindingPower::prefix},
+		{ TokenKind::MINUS_MINUS, BindingPower::prefix},
+
 		{ TokenKind::IDENTIFIER, BindingPower::defaultValue },
 		{ TokenKind::NUMBER, BindingPower::defaultValue },
 		{ TokenKind::STRING, BindingPower::defaultValue },
 
+		{ TokenKind::RANGE, BindingPower::range },
+
 		{ TokenKind::DOT, BindingPower::member },
 
 		// TODO: Make it so that i do not need to add these 
+		{ TokenKind::WALRUS, BindingPower::defaultValue },
 		{ TokenKind::SEMICOLON, BindingPower::defaultValue },
 		{ TokenKind::COLON, BindingPower::defaultValue },
 		{ TokenKind::RIGHT_PAREN, BindingPower::defaultValue },

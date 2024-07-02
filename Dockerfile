@@ -14,7 +14,6 @@ RUN apt-get update && apt-get install -y \
 	gcc \
 	g++ \
 	gcc-multilib \
-	llvm \
 	valgrind \
 	git \
     ninja-build \

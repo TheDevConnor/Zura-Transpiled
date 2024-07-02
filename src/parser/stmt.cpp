@@ -62,7 +62,6 @@ Node::Stmt *Parser::constStmt(PStruct *psr, std::string name) {
 }
 
 Node::Stmt *Parser::funStmt(PStruct *psr, std::string name) {
-    std::cout << "Parsing function: " << name << std::endl;
     psr->expect(psr, TokenKind::FUN);
 
     psr->expect(psr, TokenKind::LEFT_PAREN);
@@ -134,4 +133,56 @@ Node::Stmt *Parser::structStmt(PStruct *psr, std::string name) {
     psr->expect(psr, TokenKind::SEMICOLON);
 
     return new StructStmt(name, fields, stmts);
+}
+
+Node::Stmt *Parser::loopStmt(PStruct *psr, std::string name) {
+    // psr->expect(psr, TokenKind::LOOP);
+
+    // psr->expect(psr, TokenKind::LEFT_PAREN);
+    // bool isForLoop = false;
+
+    // std::string varName;
+    // auto forLoop = nullptr;
+
+    // while (psr->current(psr).kind != TokenKind::RIGHT_PAREN) {
+    //     if (psr->current(psr).kind == TokenKind::IDENTIFIER) {
+    //         varName = psr->expect(psr, TokenKind::IDENTIFIER).value;
+
+    //         // First condition is the for loop condition
+    //         // Second condition is the while loop condition 
+    //         if (psr->current(psr).kind == TokenKind::IN) {
+    //             isForLoop = true;
+    //             psr->expect(psr, TokenKind::IN);
+    //             forLoop = parseExpr(psr, BindingPower::defaultValue);
+    //         } else {
+    //             auto expr = parseExpr(psr, BindingPower::defaultValue);
+    //         }
+    //     }
+    // }
+    // psr->expect(psr, TokenKind::RIGHT_PAREN);
+
+    // TODO: Implement optional condition
+
+    // auto body = parseStmt(psr, name);
+
+    // There are a couple of different cases for loops
+    // While Loop Condition
+    //    have x: int = 0;
+    //    loop(x < 10) {
+    //       # Do nothing 
+    //    }
+
+    // While Loop with optional condition
+    //    have x: int = 0;
+    //    loop(x < 10) : (i++) {
+    //       # Do nothing 
+    //    }
+
+
+    // For Loop Condition
+    //    loop(i in 0..10) {
+    //       # Do nothing
+    //    }
+
+    return nullptr;
 }

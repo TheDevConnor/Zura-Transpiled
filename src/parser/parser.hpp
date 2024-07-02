@@ -22,6 +22,7 @@ namespace Parser {
         comparison = 7,
         additive = 8,
         multiplicative = 9,
+        range = 9,
         power = 10,
         prefix = 11,
         postfix = 12,
@@ -121,6 +122,7 @@ namespace Parser {
     // Expr Functions
     Node::Expr *primary(PStruct * psr);
     Node::Expr *unary(PStruct *psr);
+    Node::Expr *_prefix(PStruct *psr);
     Node::Expr *group(PStruct *psr);
     Node::Expr *binary(PStruct *psr, Node::Expr *left, BindingPower bp);
     Node::Expr *assign(PStruct *psr, Node::Expr *left, BindingPower bp);
@@ -134,6 +136,7 @@ namespace Parser {
     Node::Stmt *parseStmt(PStruct *psr, std::string name);
     Node::Stmt *blockStmt(PStruct *psr, std::string name);
     Node::Stmt *constStmt(PStruct *psr, std::string name);
+    Node::Stmt *loopStmt(PStruct *psr, std::string name);
     Node::Stmt *varStmt(PStruct *psr, std::string name);
     Node::Stmt *funStmt(PStruct *psr, std::string name);
     Node::Stmt *ifStmt(PStruct *psr, std::string name);

@@ -94,6 +94,28 @@ public:
     }
 };
 
+class PrefixExpr : public Node::Expr {
+public:
+    Node::Expr *expr;
+    std::string op;
+
+    PrefixExpr(Node::Expr *expr, std::string op) : expr(expr), op(op) {
+        kind = NodeKind::ND_PREFIX;
+    }
+
+    void debug(int ident = 0) const override {
+        Node::printIndent(ident);
+        std::cout << "PrefixExpr: \n";
+        Node::printIndent(ident + 1);
+        std::cout << op << "\n";
+        expr->debug(ident + 1);
+    }
+
+    ~PrefixExpr() {
+        delete expr;
+    }
+};
+
 class GroupExpr : public Node::Expr {
 public:
     Node::Expr *expr;

@@ -47,6 +47,17 @@ Node::Expr *Parser::unary(PStruct *psr) {
     );
 }
 
+Node::Expr *Parser::_prefix(PStruct *psr) {
+    auto op = psr->advance(psr);
+    auto *right = parseExpr(psr, defaultValue);
+
+    return new PrefixExpr(
+        right,
+        op.value
+    );
+}
+
+
 Node::Expr *Parser::binary(PStruct *psr, Node::Expr *left, BindingPower bp) {
     auto op = psr->advance(psr);
     auto *right = parseExpr(psr, bp);
