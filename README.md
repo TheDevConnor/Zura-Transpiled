@@ -61,7 +61,7 @@ developers. A successor language for C++ requires:
 
 -   **Performance matching C++**, an essential property for developers.
 -   **Seamless, bidirectional interoperability with C++**, such that a library
-    anywhere in an existing C++ stack can adopt Carbon without porting the rest.
+    anywhere in an existing C++ stack can adopt Zura without porting the rest.
 -   **A gentle learning curve** with reasonable familiarity for C++ developers.
 -   **Comparable expressivity** and support for existing software's design and
     architecture.
@@ -100,7 +100,7 @@ I also have explicit _non-goals_ for Zura, notably including:
 -   Perfect backwards or forwards compatibility
 
 My detailed [goals](/docs/project/goals.md) document fleshes out these ideas
-and provides a deeper view into my goals for the Carbon project and language.
+and provides a deeper view into my goals for the Zura project and language.
 
 
 ## Project Status
