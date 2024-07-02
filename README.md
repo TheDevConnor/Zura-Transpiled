@@ -114,11 +114,11 @@ Commands to install the above packages on Windows:
 #### Linux
 Commands to install the above packages on Ubuntu and Debian: 
 ```console
-$ sudo apt-get install cmake make gcc gcc-multilib ninja-build
+$ sudo apt-get install cmake make gcc ninja-build valgrind
 ```
 For Arch Linux:
 ```console
-$ sudo pacman -S cmake make gcc gcc-multilib ninja
+$ sudo pacman -S cmake make gcc ninja valgrind 
 ```
 ##### Building
 Now if you want to build zura for the debug mode do
@@ -128,7 +128,7 @@ $ cd debug
 $ cmake -G Ninja -DCMAKE_BUILD_TYPE=Debug ..
 $ make
 ```
-and now the exacutable will be availbe for you to use to debug with
+and now the exacutable will be available for you to use to debug with
 
 Or if you want the release version do this
 ```console
