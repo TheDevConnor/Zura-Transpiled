@@ -87,3 +87,21 @@ not yet down
 zura --help
 ```
 This command will show you all of the commands that you can run in the zura compiler.
+
+##  Developement env
+
+This `Dockerfile` sets up a basic development environment with the necessary compilers, build tools, and utilities for developing the Zura language. It also includes Vim and Emacs as text editors for code editing directly within the container. The final command (`CMD ["/bin/bash"]`) opens a bash shell when the container starts, allowing you to run build commands, edit files, or use version control directly inside the container.
+
+To build and run this Docker container, use the following commands:
+
+
+```console
+# Build the Docker image
+docker build -t zura-dev .
+
+# Run the Docker container, mounting the current directory for development
+docker run -it --rm -v $(pwd):/usr/src/app zura-dev
+```
+
+
+This setup mounts the current directory to `/usr/src/app` inside the container, allowing you to develop on your host machine while running and testing inside the container.
