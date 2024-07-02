@@ -5,7 +5,7 @@
   <a href="#why"> Why? </a> | 
   <a href="#language-goals"> Goals </a> | 
   <a href="#Project-Status"> Status </a> |
-  <a href="#Getting-Started"> Getting Started> </a> |
+  <a href="#Getting-Started"> Getting Started </a> |
   <a href="#usage"> Usage </a> |
   <a href="#join-us"> Join Us </a>
 </p>
