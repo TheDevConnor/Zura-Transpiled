@@ -10,11 +10,5 @@ const main := fn() int {
        # Do nothing
    }
 
-   # ForEach loop
-   # have arr: [5]int = {1, 2, 3, 4, 5};
-   # loop(i in arr) {
-   #     # Do nothing
-   # }
-
     return 0;
 };

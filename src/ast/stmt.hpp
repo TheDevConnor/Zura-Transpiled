@@ -300,12 +300,12 @@ public:
 
 class ForStmt : public Node::Stmt {
 public: 
-    Node::Expr *varName;
+    std::string varName;
     Node::Expr *forLoop;
     Node::Expr *optional;
     Node::Stmt *block;
 
-    ForStmt(Node::Expr *varName, Node::Expr *forLoop, Node::Expr *optional, Node::Stmt *block) : varName(varName), 
+    ForStmt(std::string varName, Node::Expr *forLoop, Node::Expr *optional, Node::Stmt *block) : varName(varName), 
                                                               forLoop(forLoop), optional(optional), block(block) {
         kind = NodeKind::ND_FOR_STMT;
     }
@@ -314,8 +314,7 @@ public:
         Node::printIndent(ident);
         std::cout << "ForStmt: \n";
         Node::printIndent(ident + 1);
-        std::cout << "VarName: \n";
-        varName->debug(ident + 2); 
+        std::cout << "VarName: " << varName << "\n";
         Node::printIndent(ident + 1);
         std::cout << "ForLoop: \n";
         forLoop->debug(ident + 2);

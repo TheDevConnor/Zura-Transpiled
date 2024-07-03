@@ -140,7 +140,7 @@ Node::Stmt *Parser::loopStmt(PStruct *psr, std::string name) {
 
     psr->expect(psr, TokenKind::LEFT_PAREN);
 
-    Node::Expr *varName;
+    std::string varName;
     Node::Expr *forLoop;
     Node::Expr *whileLoop;
     Node::Expr *opCondition;
@@ -148,12 +148,11 @@ Node::Stmt *Parser::loopStmt(PStruct *psr, std::string name) {
     bool isOptional = false;
 
     while (psr->current(psr).kind != TokenKind::RIGHT_PAREN) {
-        varName = primary(psr);
-
         // First condition is the for loop condition
         // Second condition is the while loop condition 
-        if (psr->current(psr).kind == TokenKind::IN) {
+        if (psr->peek(psr, 1).kind == TokenKind::IN) {
             isForLoop = true;
+            varName = psr->expect(psr, TokenKind::IDENTIFIER).value;
             psr->expect(psr, TokenKind::IN);
             forLoop = parseExpr(psr, BindingPower::defaultValue);
         } else {
