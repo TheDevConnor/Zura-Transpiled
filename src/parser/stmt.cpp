@@ -136,53 +136,46 @@ Node::Stmt *Parser::structStmt(PStruct *psr, std::string name) {
 }
 
 Node::Stmt *Parser::loopStmt(PStruct *psr, std::string name) {
-    // psr->expect(psr, TokenKind::LOOP);
+    psr->expect(psr, TokenKind::LOOP);
 
-    // psr->expect(psr, TokenKind::LEFT_PAREN);
-    // bool isForLoop = false;
+    psr->expect(psr, TokenKind::LEFT_PAREN);
 
-    // std::string varName;
-    // auto forLoop = nullptr;
+    Node::Expr *varName;
+    Node::Expr *forLoop;
+    Node::Expr *whileLoop;
+    Node::Expr *opCondition;
+    bool isForLoop = false;
+    bool isOptional = false;
 
-    // while (psr->current(psr).kind != TokenKind::RIGHT_PAREN) {
-    //     if (psr->current(psr).kind == TokenKind::IDENTIFIER) {
-    //         varName = psr->expect(psr, TokenKind::IDENTIFIER).value;
+    while (psr->current(psr).kind != TokenKind::RIGHT_PAREN) {
+        varName = primary(psr);
 
-    //         // First condition is the for loop condition
-    //         // Second condition is the while loop condition 
-    //         if (psr->current(psr).kind == TokenKind::IN) {
-    //             isForLoop = true;
-    //             psr->expect(psr, TokenKind::IN);
-    //             forLoop = parseExpr(psr, BindingPower::defaultValue);
-    //         } else {
-    //             auto expr = parseExpr(psr, BindingPower::defaultValue);
-    //         }
-    //     }
-    // }
-    // psr->expect(psr, TokenKind::RIGHT_PAREN);
+        // First condition is the for loop condition
+        // Second condition is the while loop condition 
+        if (psr->current(psr).kind == TokenKind::IN) {
+            isForLoop = true;
+            psr->expect(psr, TokenKind::IN);
+            forLoop = parseExpr(psr, BindingPower::defaultValue);
+        } else {
+            whileLoop = parseExpr(psr, BindingPower::defaultValue);
+        }
+    }
+    psr->expect(psr, TokenKind::RIGHT_PAREN);
 
-    // TODO: Implement optional condition
+    if (psr->current(psr).kind == TokenKind::COLON) {
+        isOptional = true;
+        psr->expect(psr, TokenKind::COLON);
+        psr->expect(psr, TokenKind::LEFT_PAREN);
+        opCondition = parseExpr(psr, BindingPower::defaultValue);
+        psr->expect(psr, TokenKind::RIGHT_PAREN);
+    }
 
-    // auto body = parseStmt(psr, name);
+    auto body = parseStmt(psr, name);
 
-    // There are a couple of different cases for loops
-    // While Loop Condition
-    //    have x: int = 0;
-    //    loop(x < 10) {
-    //       # Do nothing 
-    //    }
-
-    // While Loop with optional condition
-    //    have x: int = 0;
-    //    loop(x < 10) : (i++) {
-    //       # Do nothing 
-    //    }
-
-
-    // For Loop Condition
-    //    loop(i in 0..10) {
-    //       # Do nothing
-    //    }
-
-    return nullptr;
+    if(isOptional) {
+        if(isForLoop) return new ForStmt(varName, forLoop, opCondition, body); 
+        return new WhileStmt(whileLoop, opCondition, body);
+    }
+    if(isForLoop) return new ForStmt(varName, forLoop, nullptr, body);
+    return new WhileStmt(whileLoop, nullptr, body);
 }

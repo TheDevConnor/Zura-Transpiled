@@ -27,6 +27,8 @@ enum NodeKind {
     ND_RETURN_STMT,
     ND_IF_STMT,
     ND_STRUCT_STMT,
+    ND_WHILE_STMT,
+    ND_FOR_STMT,
 
     // Types
     ND_SYMBOL_TYPE,

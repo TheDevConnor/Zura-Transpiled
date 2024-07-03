@@ -1,6 +1,7 @@
 #pragma once
 
 #include <iostream>
+#include <string>
 #include <vector>
 
 #include "ast.hpp"
@@ -261,5 +262,75 @@ public:
         for (auto f : fields) {
             delete f.second;
         }
+    }
+};
+
+class WhileStmt : public Node::Stmt {
+public:
+    Node::Expr *condition;
+    Node::Expr *optional;
+    Node::Stmt *block;
+
+    WhileStmt(Node::Expr *condition, Node::Expr* optional, Node::Stmt *block) : condition(condition), 
+                                                                   block(block), optional(optional) {
+        kind = NodeKind::ND_WHILE_STMT;
+    }
+
+    void debug(int ident = 0) const override {
+        Node::printIndent(ident);
+        std::cout << "WhileStmt: \n";
+        Node::printIndent(ident + 1);
+        std::cout << "Condition: \n";
+        condition->debug(ident + 2);
+        Node::printIndent(ident + 1);
+        if (optional) {
+            std::cout << "Optional: \n";
+            optional->debug(ident + 2);
+            Node::printIndent(ident + 1);
+        }
+        std::cout << "Block: \n";
+        block->debug(ident + 2);
+    }
+
+    ~WhileStmt() {
+        delete condition;
+        delete block;
+    }
+};
+
+class ForStmt : public Node::Stmt {
+public: 
+    Node::Expr *varName;
+    Node::Expr *forLoop;
+    Node::Expr *optional;
+    Node::Stmt *block;
+
+    ForStmt(Node::Expr *varName, Node::Expr *forLoop, Node::Expr *optional, Node::Stmt *block) : varName(varName), 
+                                                              forLoop(forLoop), optional(optional), block(block) {
+        kind = NodeKind::ND_FOR_STMT;
+    }
+
+    void debug(int ident = 0) const override {
+        Node::printIndent(ident);
+        std::cout << "ForStmt: \n";
+        Node::printIndent(ident + 1);
+        std::cout << "VarName: \n";
+        varName->debug(ident + 2); 
+        Node::printIndent(ident + 1);
+        std::cout << "ForLoop: \n";
+        forLoop->debug(ident + 2);
+        Node::printIndent(ident + 1);
+        if (optional) {
+            std::cout << "Optional: \n";
+            optional->debug(ident + 2);
+            Node::printIndent(ident + 1);
+        }
+        std::cout << "Block: \n";
+        block->debug(ident + 2);
+    }
+
+    ~ForStmt() {
+        delete forLoop;
+        delete block;
     }
 };
