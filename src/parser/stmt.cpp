@@ -114,7 +114,7 @@ Node::Stmt *Parser::structStmt(PStruct *psr, std::string name) {
     psr->expect(psr, TokenKind::LEFT_BRACE);
 
     std::vector<std::pair<std::string, Node::Type *>> fields;
-    auto stmts = std::vector<Node::Stmt *>();
+    std::vector<Node::Stmt *> stmts;
 
     while (psr->current(psr).kind != TokenKind::RIGHT_BRACE) { 
         auto fieldName = psr->expect(psr, TokenKind::IDENTIFIER).value;
@@ -123,16 +123,18 @@ Node::Stmt *Parser::structStmt(PStruct *psr, std::string name) {
         fields.push_back({fieldName, fieldType});
         psr->expect(psr, TokenKind::SEMICOLON); 
 
-        // if (psr->current(psr).kind == TokenKind::CONST) {
-        //     auto constStmt = parseStmt(psr, name);
-        //     stmts.push_back(constStmt);
-        // }
+        if (psr->current(psr).kind == TokenKind::CONST) {
+            auto constStmt = parseStmt(psr, name);
+            stmts.push_back(constStmt);
+        }
     }
 
     psr->expect(psr, TokenKind::RIGHT_BRACE);
     psr->expect(psr, TokenKind::SEMICOLON);
 
-    return new StructStmt(name, fields, stmts);
+    if (stmts.size() > 0)
+        return new StructStmt(name, fields, stmts);
+    return new StructStmt(name, fields, {});
 }
 
 Node::Stmt *Parser::loopStmt(PStruct *psr, std::string name) {

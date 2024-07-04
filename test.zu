@@ -1,14 +1,19 @@
-const main := fn() int {
-   # While loop
-   have x: int = 0;
-   loop(1 < 10) : (++x) {
-       # Do nothing 
-   }
+const Person := struct {
+    name: string;
+    age: int;
 
-   # For loop
-   loop(i in 0..10) {
-       # Do nothing
-   }
+    const print := fn(self: Person) void {
+        # dis("Name: ", self.name, ", Age: ", self.age, "\n");
+    };
+};
+
+const main := fn() int {
+    have p: Person;
+
+    p.name = "John";
+    p.age = 30;
+
+    p.print();
 
     return 0;
 };

@@ -251,11 +251,13 @@ public:
             f.second->debug(ident + 2);
             std::cout << "\n";
         }
-        // Node::printIndent(ident + 1);
-        // std::cout << "Stmts: \n";
-        // for (auto s : stmts) {
-        //     s->debug(ident + 2);
-        // }
+        if (stmts.size() > 0) {
+            Node::printIndent(ident + 1);
+            std::cout << "Stmts: \n";
+            for (auto s : stmts) {
+                s->debug(ident + 2);
+            }   
+        }
     }
 
     ~StructStmt() {
