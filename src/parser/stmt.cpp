@@ -50,6 +50,23 @@ Node::Stmt *Parser::varStmt(PStruct *psr, std::string name) {
     return new VarStmt(isConst, name, varType, new ExprStmt(assignedValue));
 }
 
+// dis("print %d", .{1});
+Node::Stmt *Parser::printStmt(PStruct *psr, std::string name) {
+    psr->expect(psr, TokenKind::PRINT);
+    psr->expect(psr, TokenKind::LEFT_PAREN);
+
+    std::vector<Node::Expr *> args; // Change the type of args vector
+
+    while (psr->current(psr).kind != TokenKind::RIGHT_PAREN) {
+        args.push_back(parseExpr(psr, BindingPower::defaultValue));
+    }
+
+    psr->expect(psr, TokenKind::RIGHT_PAREN);
+    psr->expect(psr, TokenKind::SEMICOLON);
+
+    return new PrintStmt(args);
+}
+
 Node::Stmt *Parser::constStmt(PStruct *psr, std::string name) {
    psr->expect(psr, TokenKind::CONST);
    name = psr->expect(psr, TokenKind::IDENTIFIER).value; 

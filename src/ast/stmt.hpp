@@ -132,6 +132,29 @@ public:
     }
 };
 
+class PrintStmt : public Node::Stmt {
+public:
+    std::vector<Node::Expr *> args;
+
+    PrintStmt(std::vector<Node::Expr *> args) : args(args) {
+        kind = NodeKind::ND_PRINT_STMT;
+    }
+
+    void debug(int ident = 0) const override {
+        Node::printIndent(ident);
+        std::cout << "PrintStmt: \n";
+        for (auto a : args) {
+            a->debug(ident + 1);
+        }
+    }
+
+    ~PrintStmt() {
+        for (auto a : args) {
+            delete a;
+        }
+    }
+};
+
 class fnStmt : public Node::Stmt {
 public:
     std::string name;

@@ -34,6 +34,7 @@ void Parser::createMaps() {
 		{ TokenKind::IF, ifStmt },
 		{ TokenKind::STRUCT, structStmt },
 		{ TokenKind::LOOP, loopStmt },
+		{ TokenKind::PRINT, printStmt },
 	};
 	nud_lu = {
 		{ TokenKind::NUMBER, primary },

@@ -3,7 +3,7 @@ const Person := struct {
     age: int;
 
     const print := fn(self: Person) void {
-        # dis("Name: ", self.name, ", Age: ", self.age, "\n");
+        dis("Name: " + name + "\nAge: " + age);
     };
 };
 
