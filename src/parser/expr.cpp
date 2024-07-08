@@ -86,6 +86,8 @@ Node::Expr *Parser::parse_call(PStruct *psr, Node::Expr *left, BindingPower bp) 
 
     while (psr->current(psr).kind != TokenKind::RIGHT_PAREN) {
         args.push_back(parseExpr(psr, defaultValue));
+        if (psr->current(psr).kind == TokenKind::COMMA)
+            psr->expect(psr, TokenKind::COMMA);
     }
 
     psr->expect(psr, TokenKind::RIGHT_PAREN);

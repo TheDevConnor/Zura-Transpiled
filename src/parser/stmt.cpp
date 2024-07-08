@@ -215,7 +215,6 @@ Node::Stmt *Parser::enumStmt(PStruct *psr, std::string name) {
 
     std::vector<std::string> fields;
     while (psr->current(psr).kind != TokenKind::RIGHT_BRACE) {
-        std::cout << "Current: " << psr->current(psr).value << std::endl;
         fields.push_back(psr->expect(psr, TokenKind::IDENTIFIER).value);
         if (psr->current(psr).kind == TokenKind::COMMA) 
             psr->expect(psr, TokenKind::COMMA);

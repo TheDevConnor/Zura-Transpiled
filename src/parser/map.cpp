@@ -16,6 +16,10 @@ T Parser::lookup(const std::vector<std::pair<U, T>> &lu, U key) {
 		return p.first == key;
 	});
 
+	if (isIgnoreToken(key)) {
+		return nullptr;
+	}
+
 	if (it == lu.end()) {
 		std::cerr << "No value found for key " << key << std::endl;
 		throw std::runtime_error("No value found for key");
@@ -123,33 +127,39 @@ void Parser::createMaps() {
 		{ TokenKind::RANGE, BindingPower::range },
 
 		{ TokenKind::DOT, BindingPower::member },
-
-		// TODO: Make it so that i do not need to add these 
-		{ TokenKind::WALRUS, BindingPower::defaultValue },
-		{ TokenKind::SEMICOLON, BindingPower::defaultValue },
-		{ TokenKind::COLON, BindingPower::defaultValue },
-		{ TokenKind::RIGHT_PAREN, BindingPower::defaultValue },
 	};
+	ignore_tokens = {
+		TokenKind::SEMICOLON,
+		TokenKind::COMMA,
+		TokenKind::RIGHT_PAREN,
+		TokenKind::COLON,
+		TokenKind::WALRUS,
+	};
+}
+
+bool Parser::isIgnoreToken(TokenKind tk) {
+	return std::find(ignore_tokens.begin(), ignore_tokens.end(), tk) 
+			!= ignore_tokens.end();
 }
 
 Node::Expr *Parser::nud(PStruct *psr) {
 	auto op = psr->current(psr);
 	try {
 		return lookup(nud_lu, op.kind)(psr);
-	} catch (std::exception &e) {
-		std::cerr << "Error in nud: " << e.what() << std::endl;
+	} catch (std::runtime_error &e) {
+		std::cerr << "Could not parse expression" << std::endl;
 		return nullptr;
 	}
+
 }
 
 Node::Expr *Parser::led(PStruct *psr, Node::Expr *left, BindingPower bp) {
 	auto op = psr->current(psr);
-	try {
-		return lookup(led_lu, op.kind)(psr, left, bp);
-	} catch (std::exception &e) {
-		std::cerr << "Error in led: " << e.what() << std::endl;
-		return nullptr;
+	if (isIgnoreToken(op.kind)) {
+		psr->advance(psr);
+		return left;
 	}
+	return lookup(led_lu, op.kind)(psr, left, bp);
 }
 
 Node::Stmt *Parser::stmt(PStruct *psr, std::string name) {
@@ -161,5 +171,9 @@ Node::Stmt *Parser::stmt(PStruct *psr, std::string name) {
 }
 
 BindingPower Parser::getBP(TokenKind tk) {
-	return lookup(bp_lu, tk);
+	auto bp_it = std::find_if(bp_lu.begin(), bp_lu.end(), [tk](auto &p) {
+		return p.first == tk;
+	});
+
+	return bp_it != bp_lu.end() ? bp_it->second : BindingPower::defaultValue;
 }

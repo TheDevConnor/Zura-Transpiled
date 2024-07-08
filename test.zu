@@ -7,6 +7,25 @@ const Person := struct {
         AGE
     };
 
+    const init := fn(n: string, a: int) Person {
+        have p: Person;
+
+        if n == "" {
+            error = NAME;
+            return p;
+        }
+
+        if a < 0 {
+            error = AGE;
+            return p;
+        }
+
+        p.name = n;
+        p.age = a;
+
+        return p;
+    };
+
     const print := fn() void {
         print("Name: " + name + ", Age: " + age + "\n");
     };
@@ -15,9 +34,7 @@ const Person := struct {
 const main := fn() int {
     have p: Person;
 
-    p.name = "John";
-    p.age = 30;
-
+    p.init("John", 25);
     p.print();
 
     return 0;
