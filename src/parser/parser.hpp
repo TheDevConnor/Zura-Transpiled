@@ -56,6 +56,19 @@ struct Parser::PStruct {
         return psr->pos < psr->tks.size();
     }
 
+    std::string formCurrentLine(const PStruct* psr) {
+        std::string currentLine;
+        int currentLineNum = psr->tks[psr->pos].line;
+
+        for (size_t i = 0; i <= psr->pos; ++i) {
+            if (psr->tks[i].line == currentLineNum) {
+                currentLine += psr->tks[i].value + " ";
+            }
+        }
+
+        return currentLine;
+    }
+
     Lexer::Token expect(PStruct *psr, TokenKind tk) {
         Lexer lexer;
         bool res = current(psr).kind == tk ? true : false;
@@ -64,6 +77,7 @@ struct Parser::PStruct {
                       << lexer.tokenToString(current(psr).kind) << "! On line: "
                       << current(psr).line << " and column: " << current(psr).column
                       << std::endl;
+            std::cout << "Current line: " << formCurrentLine(psr) << std::endl;
             return current(psr);
         }
         return advance(psr);
