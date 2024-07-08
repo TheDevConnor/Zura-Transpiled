@@ -358,3 +358,26 @@ public:
         delete block;
     }
 };
+
+class EnumStmt : public Node::Stmt {
+public:
+    std::string name;
+    std::vector<std::string> fields;
+
+    EnumStmt(std::string name, std::vector<std::string> fields) : name(name), fields(fields) {
+        kind = NodeKind::ND_ENUM_STMT;
+    }
+
+    void debug(int ident = 0) const override {
+        Node::printIndent(ident);
+        std::cout << "EnumStmt: \n";
+        Node::printIndent(ident + 1);
+        std::cout << "Name: " << name << "\n";
+        Node::printIndent(ident + 1);
+        std::cout << "Fields: \n";
+        for (auto f : fields) {
+            Node::printIndent(ident + 2);
+            std::cout << f << "\n";
+        }
+    }
+};

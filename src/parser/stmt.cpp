@@ -89,7 +89,8 @@ Node::Stmt *Parser::funStmt(PStruct *psr, std::string name) {
         auto paramType = parseType(psr, BindingPower::defaultValue);
         params.push_back({paramName, paramType});
 
-        if (psr->current(psr).kind == TokenKind::COMMA) psr->expect(psr, TokenKind::COMMA); 
+        if (psr->current(psr).kind == TokenKind::COMMA) 
+            psr->expect(psr, TokenKind::COMMA); 
     }
     psr->expect(psr, TokenKind::RIGHT_PAREN);
 
@@ -133,16 +134,26 @@ Node::Stmt *Parser::structStmt(PStruct *psr, std::string name) {
     std::vector<std::pair<std::string, Node::Type *>> fields;
     std::vector<Node::Stmt *> stmts;
 
-    while (psr->current(psr).kind != TokenKind::RIGHT_BRACE) { 
-        auto fieldName = psr->expect(psr, TokenKind::IDENTIFIER).value;
-        psr->expect(psr, TokenKind::COLON);
-        auto fieldType = parseType(psr, BindingPower::defaultValue);
-        fields.push_back({fieldName, fieldType});
-        psr->expect(psr, TokenKind::SEMICOLON); 
-
-        if (psr->current(psr).kind == TokenKind::CONST) {
-            auto constStmt = parseStmt(psr, name);
-            stmts.push_back(constStmt);
+    while (psr->current(psr).kind != TokenKind::RIGHT_BRACE) {
+        auto tokenKind = psr->current(psr).kind;
+        switch (tokenKind) {
+            case TokenKind::IDENTIFIER: {
+                auto fieldName = psr->expect(psr, TokenKind::IDENTIFIER).value;
+                psr->expect(psr, TokenKind::COLON);
+                auto fieldType = parseType(psr, BindingPower::defaultValue);
+                fields.push_back({fieldName, fieldType});
+                psr->expect(psr, TokenKind::SEMICOLON);
+                break;
+            }
+            case TokenKind::SEMICOLON:
+                psr->expect(psr, TokenKind::SEMICOLON);
+                break;
+            case TokenKind::CONST:
+                stmts.push_back(constStmt(psr, name));
+                break;
+            default:
+                stmts.push_back(parseStmt(psr, name));
+                break;
         }
     }
 
@@ -196,4 +207,21 @@ Node::Stmt *Parser::loopStmt(PStruct *psr, std::string name) {
     }
     if(isForLoop) return new ForStmt(varName, forLoop, nullptr, body);
     return new WhileStmt(whileLoop, nullptr, body);
+}
+
+Node::Stmt *Parser::enumStmt(PStruct *psr, std::string name) {
+    psr->expect(psr, TokenKind::ENUM);
+    psr->expect(psr, TokenKind::LEFT_BRACE);
+
+    std::vector<std::string> fields;
+    while (psr->current(psr).kind != TokenKind::RIGHT_BRACE) {
+        std::cout << "Current: " << psr->current(psr).value << std::endl;
+        fields.push_back(psr->expect(psr, TokenKind::IDENTIFIER).value);
+        if (psr->current(psr).kind == TokenKind::COMMA) 
+            psr->expect(psr, TokenKind::COMMA);
+    }
+    psr->expect(psr, TokenKind::RIGHT_BRACE);
+    psr->expect(psr, TokenKind::SEMICOLON);
+
+    return new EnumStmt(name, fields);
 }

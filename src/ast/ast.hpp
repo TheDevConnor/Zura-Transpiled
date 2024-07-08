@@ -30,6 +30,7 @@ enum NodeKind {
     ND_WHILE_STMT,
     ND_FOR_STMT,
     ND_PRINT_STMT,
+    ND_ENUM_STMT,
 
     // Types
     ND_SYMBOL_TYPE,

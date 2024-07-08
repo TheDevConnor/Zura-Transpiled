@@ -21,7 +21,6 @@ enum TokenKind {
   CARET,
   COLON,
   QUESTION,
-  STRUCT,
   LAND, 
   LOR, 
 
@@ -67,6 +66,9 @@ enum TokenKind {
   TYPE,
   EXIT,
   IN,
+  STRUCT,
+  ENUM,
+  UNION,
 
   // Error
   ERROR_,

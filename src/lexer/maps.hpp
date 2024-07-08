@@ -38,6 +38,8 @@ const std::unordered_map<std::string, TokenKind> keywords = {
       {"in", TokenKind::IN},
       {"type", TokenKind::TYPE},
       {"struct", TokenKind::STRUCT},
+      {"enum", TokenKind::ENUM},
+      {"union", TokenKind::UNION},
       {"const", TokenKind::CONST},
 };
 
@@ -131,7 +133,10 @@ const std::unordered_map<TokenKind, const char *> tokenMap = {
     {TokenKind::TR, "TRUE"},
     {TokenKind::VAR, "VAR"},
     {TokenKind::IN, "IN"},
+    {TokenKind::ENUM, "ENUM"},
+    {TokenKind::UNION, "UNION"},
     {TokenKind::CONST, "CONST"},
+    {TokenKind::STRUCT, "STRUCT"},
     {TokenKind::PKG, "PKG"},
     {TokenKind::TYPE, "TYPE"},
     {TokenKind::EXIT, "EXIT"},

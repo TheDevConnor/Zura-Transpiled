@@ -2,8 +2,13 @@ const Person := struct {
     name: string;
     age: int;
 
-    const print := fn(self: Person) void {
-        dis("Name: " + name + "\nAge: " + age);
+    const error := enum {
+        NAME,
+        AGE
+    };
+
+    const print := fn() void {
+        print("Name: " + name + ", Age: " + age + "\n");
     };
 };
 

@@ -33,6 +33,7 @@ void Parser::createMaps() {
 		{ TokenKind::RETURN, returnStmt },
 		{ TokenKind::IF, ifStmt },
 		{ TokenKind::STRUCT, structStmt },
+		{ TokenKind::ENUM, enumStmt },
 		{ TokenKind::LOOP, loopStmt },
 		{ TokenKind::PRINT, printStmt },
 	};

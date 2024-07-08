@@ -136,6 +136,7 @@ namespace Parser {
     Node::Stmt *parseStmt(PStruct *psr, std::string name);
     Node::Stmt *blockStmt(PStruct *psr, std::string name);
     Node::Stmt *constStmt(PStruct *psr, std::string name);
+    Node::Stmt *enumStmt(PStruct *psr, std::string name);
     Node::Stmt *loopStmt(PStruct *psr, std::string name);
     Node::Stmt *printStmt(PStruct *psr, std::string name);
     Node::Stmt *varStmt(PStruct *psr, std::string name);
