@@ -145,7 +145,12 @@ bool Parser::isIgnoreToken(TokenKind tk) {
 Node::Expr *Parser::nud(PStruct *psr) {
 	auto op = psr->current(psr);
 	try {
-		return lookup(nud_lu, op.kind)(psr);
+		auto result = lookup(nud_lu, op.kind);
+		if (result == nullptr) {
+			psr->advance(psr);
+			return nullptr;
+		}
+		return result(psr);
 	} catch (std::runtime_error &e) {
 		std::cerr << "Could not parse expression" << std::endl;
 		return nullptr;
@@ -155,11 +160,17 @@ Node::Expr *Parser::nud(PStruct *psr) {
 
 Node::Expr *Parser::led(PStruct *psr, Node::Expr *left, BindingPower bp) {
 	auto op = psr->current(psr);
-	if (isIgnoreToken(op.kind)) {
-		psr->advance(psr);
-		return left;
-	}
-	return lookup(led_lu, op.kind)(psr, left, bp);
+	try {
+		auto result = lookup(led_lu, op.kind);
+		if (result == nullptr) {
+			psr->advance(psr);
+			return left;
+		}
+		return result(psr, left, bp);
+	} catch (std::runtime_error &e) {
+		std::cerr << "Could not parse expression" << std::endl;
+		return nullptr;
+	}	
 }
 
 Node::Stmt *Parser::stmt(PStruct *psr, std::string name) {

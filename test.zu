@@ -10,12 +10,12 @@ const Person := struct {
     const init := fn(n: string, a: int) Person {
         have p: Person;
 
-        if n == "" {
+        if (n == "") {
             error = NAME;
             return p;
         }
 
-        if a < 0 {
+        if (a < 0) {
             error = AGE;
             return p;
         }
@@ -35,7 +35,7 @@ const main := fn() int {
     have p: Person;
 
     p.init("John", 25);
-    p.print();
+    p.print(a, b);
 
     return 0;
 };
