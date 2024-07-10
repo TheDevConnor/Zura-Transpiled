@@ -7,14 +7,30 @@
 
 Lexer lexer;
 
+using namespace Parser;
+
+std::string Parser::formCurrentLine(const PStruct *psr) {
+    std::string currentLine;
+      int currentLineNum = psr->tks[psr->pos].line;
+
+      for (size_t i = 0; i <= psr->pos; ++i) {
+         if (psr->tks[i].line == currentLineNum) {
+               currentLine += psr->tks[i].value + " ";
+         }
+      }
+
+      return currentLine;
+}
+
 Parser::PStruct *Parser::setupParser(PStruct *psr, Lexer *lex,
                                      Lexer::Token tk) {
    while (tk.kind != TokenKind::END_OF_FILE) {
         psr->tks.push_back(tk);
         tk = lex->scanToken();
    }
-   
-   return new Parser::PStruct { psr->tks, 0 };
+
+   std::vector<std::string> errors = {};
+   return new Parser::PStruct { errors, psr->tks, 0};
 }
 
 Node::Stmt *Parser::parse(const char *source) {
@@ -30,6 +46,13 @@ Node::Stmt *Parser::parse(const char *source) {
 
    while (vect_tk->hadTokens(vect_tk)) 
       stmts.push_back(parseStmt(vect_tk, ""));
+
+   if (psr.errors.size() > 0) {
+      std::cout << "Errors found in the program!" << std::endl;
+      for (auto &err : psr.errors) {
+         std::cout << err << std::endl;
+      }
+   }
    
    delete vect_tk;
    return new ProgramStmt(stmts);

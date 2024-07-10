@@ -15,12 +15,12 @@ Node::Type *Parser::parseType(PStruct *psr, BindingPower bp) {
 }
 
 Node::Type *Parser::symbol_table(PStruct *psr) {
-    return new SymbolType(psr->expect(psr, TokenKind::IDENTIFIER).value);
+    return new SymbolType(psr->expect(psr, TokenKind::IDENTIFIER, "Expected an identifier for a symbol table!").value);
 }
 
 Node::Type *Parser::array_type(PStruct *psr) {
     psr->advance(psr);
-    psr->expect(psr, TokenKind::RIGHT_BRACKET);
+    psr->expect(psr, TokenKind::RIGHT_BRACKET, "Expected a right bracket after an array type!");
     auto underlying = parseType(psr, defaultValue);
     return new ArrayType(underlying);
 }

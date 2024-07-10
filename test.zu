@@ -10,7 +10,7 @@ const Person := struct {
     const init := fn(n: string, a: int) Person {
         have p: Person;
 
-        if (n == "" {
+        if (n == "") {
             error = NAME;
             return p;
         }

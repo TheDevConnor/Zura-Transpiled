@@ -287,6 +287,9 @@ public:
         for (auto f : fields) {
             delete f.second;
         }
+        for (auto s : stmts) {
+            delete s;
+        }
     }
 };
 
@@ -318,6 +321,7 @@ public:
     }
 
     ~WhileStmt() {
+        delete optional;
         delete condition;
         delete block;
     }
@@ -355,6 +359,7 @@ public:
 
     ~ForStmt() {
         delete forLoop;
+        delete optional;
         delete block;
     }
 };

@@ -31,9 +31,9 @@ Node::Expr *Parser::primary(PStruct* psr) {
 }
 
 Node::Expr *Parser::group(PStruct *psr) {
-    psr->expect(psr, TokenKind::LEFT_PAREN);
+    psr->expect(psr, TokenKind::LEFT_PAREN, "Expected L_Paran before a grouping expr!");
     auto *expr = parseExpr(psr, defaultValue);
-    psr->expect(psr, TokenKind::RIGHT_PAREN);
+    psr->expect(psr, TokenKind::RIGHT_PAREN, "Expected R_Paran after a grouping expr!");
     return new GroupExpr(expr);
 }
 
@@ -81,16 +81,16 @@ Node::Expr *Parser::assign(PStruct *psr, Node::Expr *left, BindingPower bp) {
 }
 
 Node::Expr *Parser::parse_call(PStruct *psr, Node::Expr *left, BindingPower bp) {
-    psr->expect(psr, TokenKind::LEFT_PAREN);
+    psr->expect(psr, TokenKind::LEFT_PAREN, "Expected a L_Paran to start a call expr!");
     std::vector<Node::Expr *> args;
 
     while (psr->current(psr).kind != TokenKind::RIGHT_PAREN) {
         args.push_back(parseExpr(psr, defaultValue));
         if (psr->current(psr).kind == TokenKind::COMMA)
-            psr->expect(psr, TokenKind::COMMA);
+            psr->expect(psr, TokenKind::COMMA, "Expected a COMMA after an arguement!");
     }
 
-    psr->expect(psr, TokenKind::RIGHT_PAREN);
+    psr->expect(psr, TokenKind::RIGHT_PAREN, "Expected a R_Paren to end a call expr!");
 
     return new CallExpr(
         left,
@@ -99,9 +99,9 @@ Node::Expr *Parser::parse_call(PStruct *psr, Node::Expr *left, BindingPower bp) 
 }
 
 Node::Expr *Parser::_ternary(PStruct *psr, Node::Expr *left, BindingPower bp) {
-    psr->expect(psr, TokenKind::QUESTION);
+    psr->expect(psr, TokenKind::QUESTION, "Expected a '?' to define the true value of an ternary expr!");
     auto *true_expr = parseExpr(psr, defaultValue);
-    psr->expect(psr, TokenKind::COLON);
+    psr->expect(psr, TokenKind::COLON, "Expected a ':' to define the false value of a ternary Expr!");
     auto *false_expr = parseExpr(psr, defaultValue);
 
     return new TernaryExpr(

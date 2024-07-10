@@ -32,10 +32,14 @@ namespace Parser {
         err = 15
     };
     struct PStruct;
+
+    std::string formCurrentLine(const PStruct* psr);
 }
 
 struct Parser::PStruct {
+    std::vector<std::string> errors;
     std::vector<Lexer::Token> tks;
+    const char *path;
     int pos = 0;
 
     Lexer::Token current(PStruct *psr) {
@@ -56,28 +60,16 @@ struct Parser::PStruct {
         return psr->pos < psr->tks.size();
     }
 
-    std::string formCurrentLine(const PStruct* psr) {
-        std::string currentLine;
-        int currentLineNum = psr->tks[psr->pos].line;
-
-        for (size_t i = 0; i <= psr->pos; ++i) {
-            if (psr->tks[i].line == currentLineNum) {
-                currentLine += psr->tks[i].value + " ";
-            }
-        }
-
-        return currentLine;
-    }
-
-    Lexer::Token expect(PStruct *psr, TokenKind tk) {
+    Lexer::Token expect(PStruct *psr, TokenKind tk, std::string msg) {
         Lexer lexer;
-        bool res = current(psr).kind == tk ? true : false;
-        if (res == false) {
-            std::cout << "Expected " << lexer.tokenToString(tk) << " but got " 
-                      << lexer.tokenToString(current(psr).kind) << "! On line: "
-                      << current(psr).line << " and column: " << current(psr).column
-                      << std::endl;
-            std::cout << "Current line: " << formCurrentLine(psr) << std::endl;
+        bool res = current(psr).kind == tk;
+        if (!res) {
+            std::string error = "[" + std::to_string(psr->tks[psr->pos].line) + "::" + std::to_string(psr->tks[psr->pos].column) 
+                                + "] (main.zu)\n";
+            error += "↳ " + msg + "\n";
+            error += std::to_string(psr->tks[psr->pos].line) + " | " + formCurrentLine(psr) + "\n";
+            errors.push_back(error);
+            std::cout << error << std::endl;
             return current(psr);
         }
         return advance(psr);
