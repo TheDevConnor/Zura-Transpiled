@@ -9,17 +9,25 @@ Lexer lexer;
 
 using namespace Parser;
 
-std::string Parser::formCurrentLine(const PStruct *psr) {
+std::string Parser::formCurrentLine(Parser::PStruct* psr) {
+    int line = psr->tks[psr->pos].line;
     std::string currentLine;
-      int currentLineNum = psr->tks[psr->pos].line;
+    for (const auto& tk : psr->tks) {
+        if (tk.line == line) {
+            currentLine += tk.value + " ";
+        }
+    }
+    return currentLine;
+}
 
-      for (size_t i = 0; i <= psr->pos; ++i) {
-         if (psr->tks[i].line == currentLineNum) {
-               currentLine += psr->tks[i].value + " ";
-         }
+void printErrors(const Parser::PStruct* psr) {
+   if (psr->errors.size() > 0) {
+      std::cout << "Total number of Errors: " << psr->errors.size() << std::endl;
+      for (const auto& [line, errMsg] : psr->errors) {
+         std::cout << errMsg << std::endl;
       }
-
-      return currentLine;
+      exit(15);
+   }
 }
 
 Parser::PStruct *Parser::setupParser(PStruct *psr, Lexer *lex,
@@ -29,8 +37,8 @@ Parser::PStruct *Parser::setupParser(PStruct *psr, Lexer *lex,
         tk = lex->scanToken();
    }
 
-   std::vector<std::string> errors = {};
-   return new Parser::PStruct { errors, psr->tks, 0};
+   std::unordered_map<std::string, std::string> errors = {};
+   return new Parser::PStruct {psr->tks, psr->pos};
 }
 
 Node::Stmt *Parser::parse(const char *source) {
@@ -47,13 +55,8 @@ Node::Stmt *Parser::parse(const char *source) {
    while (vect_tk->hadTokens(vect_tk)) 
       stmts.push_back(parseStmt(vect_tk, ""));
 
-   if (psr.errors.size() > 0) {
-      std::cout << "Errors found in the program!" << std::endl;
-      for (auto &err : psr.errors) {
-         std::cout << err << std::endl;
-      }
-   }
-   
+   printErrors(vect_tk); 
+
    delete vect_tk;
    return new ProgramStmt(stmts);
 }
