@@ -1,5 +1,8 @@
 #pragma once
 #include <stdlib.h>
+#include <unordered_map>
+#include <string>
+
 #define ZuraVersion "v0.0.7"
 
 enum ExitValue {

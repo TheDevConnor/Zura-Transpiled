@@ -32,14 +32,11 @@ namespace Parser {
         err = 15
     };
     struct PStruct;
-    std::string formCurrentLine(PStruct* psr);
 }
 
 struct Parser::PStruct {
     std::vector<Lexer::Token> tks;
     int pos = 0;
-
-    std::unordered_map<int, std::string> errors;
 
     Lexer::Token current(PStruct *psr) {
         return psr->tks[psr->pos];
@@ -59,27 +56,12 @@ struct Parser::PStruct {
         return psr->pos < psr->tks.size();
     }
 
-    void logError(int line, const std::string& errMsg) {
-        if (errors.find(line) == errors.end()) errors[line] = errMsg;
-        else errors[line] += "\n" + errMsg;
-    }
-
-    std::string error(PStruct *psr, std::string msg) {
-        int line = psr->tks[psr->pos].line;
-        std::string err = "[" + std::to_string(line) + "::" + std::to_string(psr->tks[psr->pos].column)
-                            + "] (main.zu)\n";
-        err += "↳ " + msg + "\n";
-        err += std::to_string(line) + " | " + formCurrentLine(psr) + "\n";
-        logError(line, err);
-        return err;
-    }
-
     Lexer::Token expect(PStruct *psr, TokenKind tk, std::string msg) {
         Lexer lexer;
         bool res = current(psr).kind == tk;
     
         if (!res) {
-            error(psr, msg); 
+            ErrorClass::error(current(psr).line, current(psr).column, msg, "Parser Error", "main.zu", lexer, psr->tks, true, true, false, false);
             return current(psr);
         }
     

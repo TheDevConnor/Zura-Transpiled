@@ -10,18 +10,18 @@ const Person := struct {
     const init := fn(n: string, a: int) Person {
         have p: Person;
 
-        if (n == "" {
+        if (n == "") {
             error = NAME;
             return p;
         }
 
-        if a < 0) {
+        if (a < 0) {
             error = AGE;
             return p;
         }
 
         p.name = n;
-        p.age = a
+        p.age = a;
 
         return p;
     };

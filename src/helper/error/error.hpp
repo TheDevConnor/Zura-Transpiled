@@ -1,18 +1,19 @@
 #pragma once
 
+#include <unordered_map>
+#include <vector>
 #include <string>
 
 #include "../../lexer/lexer.hpp"
 
-class ErrorClass {
-public:
-  static void error(int line, int pos, std::string msg, std::string errorType, std::string filename, Lexer &lexer);
-private: 
-  static void beforeLine(int line, Lexer &lexer);
-  static void currentLine(int line, int pos, Lexer &lexer);
-  static void afterLine(int line, Lexer &lexer);
+namespace ErrorClass {
+  inline static std::unordered_map<int, std::string> errors;
+  std::string error(int line, int pos, std::string msg, std::string errorType, std::string filename, 
+                    Lexer &lexer, std::vector<Lexer::Token> tokens, bool isParser = false,
+                    bool isWarning = false, bool isNote = false, bool isFatal = false);
+  void printError();
+  std::string currentLine(int line, int pos, Lexer &lexer, bool isParser, std::vector<Lexer::Token> tokens);
 
-  static void printIgnoreSpaces(int line);
-  static const char *lineNumber(int line);
-  static void printLine(int line, const char *start);
+  std::string lineNumber(int line);
+  std::string printLine(int line, const char *start);
 };
