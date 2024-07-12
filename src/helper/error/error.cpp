@@ -2,9 +2,9 @@
 #include <vector>
 #include <string>
 
-#include "../../../inc/colorize.hpp"
 #include "../../parser/parser.hpp"
 #include "../../lexer/lexer.hpp"
+#include "../color.hpp"
 #include "../../common.hpp"
 #include "error.hpp"
 
@@ -32,8 +32,12 @@ std::string ErrorClass::currentLine(int line, int pos, Lexer &lexer, bool isPars
 std::string ErrorClass::error(int line, int pos, std::string msg, std::string errorType, 
                        std::string filename, Lexer &lexer, std::vector<Lexer::Token> tokens,
                        bool isParser, bool isWarning, bool isNote, bool isFatal) {
+    Color col;
     std::string line_error = "[" + std::to_string(line) + "::" + std::to_string(pos) + "] (";
-    line_error += (isWarning) ? "warning" : (isNote) ? "note" : (isFatal) ? "fatal" : "error";
+    line_error += (isWarning) ? col.color("Warning", Color::YELLOW) : 
+                    (isNote) ? col.color("Note", Color::BLUE) : 
+                    (isFatal) ? col.color("Fatal", Color::RED) : 
+                    col.color("Error", Color::RED);
     line_error += ") (" + filename + ")\n ↳ " + errorType + " " + msg + "\n"; 
     line_error += currentLine(line, pos, lexer, isParser, tokens); 
     line_error += "\n";
