@@ -40,7 +40,7 @@ const std::unordered_map<std::string, TokenKind> keywords = {
       {"struct", TokenKind::STRUCT},
       {"enum", TokenKind::ENUM},
       {"union", TokenKind::UNION},
-      {"const", TokenKind::CONST},
+      {"const", TokenKind::_CONST},
 };
 
 const std::unordered_map<char, TokenKind> scMap = {
@@ -135,7 +135,7 @@ const std::unordered_map<TokenKind, const char *> tokenMap = {
     {TokenKind::IN, "IN"},
     {TokenKind::ENUM, "ENUM"},
     {TokenKind::UNION, "UNION"},
-    {TokenKind::CONST, "CONST"},
+    {TokenKind::_CONST, "CONST"},
     {TokenKind::STRUCT, "STRUCT"},
     {TokenKind::PKG, "PKG"},
     {TokenKind::TYPE, "TYPE"},

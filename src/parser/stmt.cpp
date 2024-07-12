@@ -30,7 +30,7 @@ Node::Stmt *Parser::blockStmt(PStruct *psr, std::string name) {
 }
 
 Node::Stmt *Parser::varStmt(PStruct *psr, std::string name) { 
-    auto isConst = psr->current(psr).kind == TokenKind::CONST;
+    auto isConst = psr->current(psr).kind == TokenKind::_CONST;
     psr->expect(psr, TokenKind::VAR, "Expected a VAR or CONST keyword to start a var stmt");
 
     name = psr->expect(psr, TokenKind::IDENTIFIER, "Expected an IDENTIFIER after a VAR or CONST keyword").value;
@@ -68,7 +68,7 @@ Node::Stmt *Parser::printStmt(PStruct *psr, std::string name) {
 }
 
 Node::Stmt *Parser::constStmt(PStruct *psr, std::string name) {
-   psr->expect(psr, TokenKind::CONST, "Expected a CONST keyword to start a const stmt");
+   psr->expect(psr, TokenKind::_CONST, "Expected a CONST keyword to start a const stmt");
    name = psr->expect(psr, TokenKind::IDENTIFIER, "Expected an IDENTIFIER after a CONST keyword").value;
 
    psr->expect(psr, TokenKind::WALRUS, "Expected a WALRUS after the variable name in a const stmt");
@@ -149,7 +149,7 @@ Node::Stmt *Parser::structStmt(PStruct *psr, std::string name) {
             case TokenKind::SEMICOLON:
                 psr->expect(psr, TokenKind::SEMICOLON, "Expected a SEMICOLON after a field in a struct stmt");
                 break;
-            case TokenKind::CONST:
+            case TokenKind::_CONST:
                 stmts.push_back(constStmt(psr, name));
                 break;
             default:

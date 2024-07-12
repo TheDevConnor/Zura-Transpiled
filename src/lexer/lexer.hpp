@@ -61,7 +61,7 @@ enum TokenKind {
   SUPER,
   TR,
   VAR,
-  CONST,
+  _CONST,
   PKG,
   TYPE,
   EXIT,
