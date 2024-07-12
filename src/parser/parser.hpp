@@ -36,6 +36,7 @@ namespace Parser {
 
 struct Parser::PStruct {
     std::vector<Lexer::Token> tks;
+    bool isMain = false;
     int pos = 0;
 
     Lexer::Token current(PStruct *psr) {
@@ -61,7 +62,7 @@ struct Parser::PStruct {
         bool res = current(psr).kind == tk;
     
         if (!res) {
-            ErrorClass::error(current(psr).line, current(psr).column, msg, "Parser Error", "main.zu", lexer, psr->tks, true, false, false, false);
+            ErrorClass::error(current(psr).line, current(psr).column, msg, "", "Parser Error", "main.zu", lexer, psr->tks, true, false, false, false);
             return current(psr);
         }
     

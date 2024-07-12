@@ -79,6 +79,7 @@ Node::Stmt *Parser::constStmt(PStruct *psr, std::string name) {
 }
 
 Node::Stmt *Parser::funStmt(PStruct *psr, std::string name) {
+    if (name == "main") psr->isMain = true; // Set the main flag to true if the function is main
     psr->expect(psr, TokenKind::FUN, "Expected a FUN keyword to start a function stmt");
 
     psr->expect(psr, TokenKind::LEFT_PAREN, "Expected a L_PAREN to start a function stmt");

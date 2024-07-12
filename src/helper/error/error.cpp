@@ -31,15 +31,24 @@ std::string ErrorClass::currentLine(int line, int pos, Lexer &lexer, bool isPars
     return printLine(line, start);
 }
 
-std::string ErrorClass::error(int line, int pos, std::string msg, std::string errorType, 
+std::string ErrorClass::error(int line, int pos, std::string msg, std::string note, std::string errorType, 
                        std::string filename, Lexer &lexer, std::vector<Lexer::Token> tokens,
-                       bool isParser, bool isWarning, bool isNote, bool isFatal) {
+                       bool isParser, bool isWarning, bool isFatal, bool isMain) {
     std::string line_error = "[" + std::to_string(line) + "::" + std::to_string(pos) + "] (";
     line_error += (isWarning) ? col.color("Warning", Color::YELLOW, false, true) : 
-                    (isNote) ? col.color("Note", Color::BLUE, false, true) : 
                     (isFatal) ? col.color("Fatal", Color::RED, false, true) : 
                     col.color("Error", Color::RED);
     line_error += ") (" + filename + ")\n ↳ " + errorType + " " + msg + "\n"; 
+
+    if (isMain) {
+        line_error += "\t" + col.color("Note", Color::CYAN, false, true) + ": ";
+        line_error += note + "\n";
+        if (errors.find(line) == errors.end()) errors[line] = line_error;
+        return line_error;
+    }
+
+    if (note != "") line_error += " ↳ " + note + "\n";
+
     line_error += currentLine(line, pos, lexer, isParser, tokens); 
     line_error += "\n";
 

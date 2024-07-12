@@ -8,9 +8,9 @@
 
 namespace ErrorClass {
   inline static std::unordered_map<int, std::string> errors;
-  std::string error(int line, int pos, std::string msg, std::string errorType, std::string filename, 
+  std::string error(int line, int pos, std::string msg, std::string note, std::string errorType, std::string filename, 
                     Lexer &lexer, std::vector<Lexer::Token> tokens, bool isParser = false,
-                    bool isWarning = false, bool isNote = false, bool isFatal = false);
+                    bool isWarning = false, bool isFatal = false, bool isMain = false);
   void printError();
   std::string currentLine(int line, int pos, Lexer &lexer, bool isParser, std::vector<Lexer::Token> tokens);
 

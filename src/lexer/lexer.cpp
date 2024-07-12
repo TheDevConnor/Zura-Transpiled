@@ -54,7 +54,7 @@ bool Lexer::match(char expected) {
 
 Lexer::Token Lexer::errorToken(std::string message) {
   std::vector<Lexer::Token> tokens = {};
-  ErrorClass::error(token.line, token.column, message, "Lexer Error", "main.zu", *this, tokens, false, false, false, true);
+  ErrorClass::error(token.line, token.column, message, "", "Lexer Error", "main.zu", *this, tokens, false, false, true, false);
   return makeToken(TokenKind::ERROR_);
 }
 
