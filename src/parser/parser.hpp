@@ -61,7 +61,7 @@ struct Parser::PStruct {
         bool res = current(psr).kind == tk;
     
         if (!res) {
-            ErrorClass::error(current(psr).line, current(psr).column, msg, "Parser Error", "main.zu", lexer, psr->tks, true, true, false, false);
+            ErrorClass::error(current(psr).line, current(psr).column, msg, "Parser Error", "main.zu", lexer, psr->tks, true, false, false, false);
             return current(psr);
         }
     
