@@ -1,17 +1,17 @@
-const Person = struct {
+const Person := struct {
     name: string;
-    age: int;
+    age: int
 
     const error := enum {
         NAME,
         AGE
     };
 
-    const init := fn(n: string, a: int) Person {
+    const init = fn(n: string, a: int) Person {
         have p: Person;
 
-        if (n == "") {
-            error = NAME
+        if (n == "" {
+            error = NAME;
             return p;
         }
 
@@ -29,9 +29,9 @@ const Person = struct {
     const print := fn() void { 
         print("Name: " + name + ", Age: " + age + "\n");
     };
-}
+};
 
-const mai := fn() int {
+const main = fn() int {
     have p: Person;
 
     p.init("John", 25);

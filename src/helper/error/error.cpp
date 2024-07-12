@@ -20,11 +20,16 @@ std::string ErrorClass::printLine(int line, const char *start) {
     return lineNumber(line) + std::to_string(line) + " | " + std::string(start, end - start) + "\n";
 }
 
+// TODO: Think about how to refactor this function so that we can have the pointer on a new line in the correct position
 std::string ErrorClass::currentLine(int line, int pos, Lexer &lexer, bool isParser, std::vector<Lexer::Token> tokens) {
     if (isParser) {
         std::string currentLine = lineNumber(line) + std::to_string(line) + " | ";
-        for (const auto& tk : tokens)
-            if (tk.line == line) currentLine += tk.value + " ";
+        for (const auto& tk : tokens) {
+            if (tk.line == line) {
+                if (tk.column == pos) currentLine += col.color("_", Color::RED, true, true);
+                currentLine += tk.value + " ";
+            }
+        }
         return currentLine;
     }
     const char *start = lexer.lineStart(line);
@@ -49,7 +54,7 @@ std::string ErrorClass::error(int line, int pos, std::string msg, std::string no
 
     if (note != "") line_error += " ↳ " + note + "\n";
 
-    line_error += currentLine(line, pos, lexer, isParser, tokens); 
+    line_error += currentLine(line, pos, lexer, isParser, tokens);
     line_error += "\n";
 
     if (errors.find(line) == errors.end()) errors[line] = line_error;
