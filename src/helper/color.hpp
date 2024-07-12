@@ -15,8 +15,10 @@ public:
         BLACK
     };
 
-    std::string color(std::string text, C color) {
+    std::string color(std::string text, C color, bool isUnderline = false, bool isBold = false) {
         if (terminal_supports_color()) return text;
+        if (isUnderline) return colorCode(color) + "\033[4m" + text + "\033[0m";
+        if (isBold) return colorCode(color) + "\033[1m" + text + "\033[0m";
         return colorCode(color) + text + "\033[0m";
     } 
 private:

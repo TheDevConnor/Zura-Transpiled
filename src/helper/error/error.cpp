@@ -8,6 +8,8 @@
 #include "../../common.hpp"
 #include "error.hpp"
 
+Color col;
+
 std::string ErrorClass::lineNumber(int line) {
     return (line < 10) ? "0" : "";
 }
@@ -32,11 +34,10 @@ std::string ErrorClass::currentLine(int line, int pos, Lexer &lexer, bool isPars
 std::string ErrorClass::error(int line, int pos, std::string msg, std::string errorType, 
                        std::string filename, Lexer &lexer, std::vector<Lexer::Token> tokens,
                        bool isParser, bool isWarning, bool isNote, bool isFatal) {
-    Color col;
     std::string line_error = "[" + std::to_string(line) + "::" + std::to_string(pos) + "] (";
-    line_error += (isWarning) ? col.color("Warning", Color::YELLOW) : 
-                    (isNote) ? col.color("Note", Color::BLUE) : 
-                    (isFatal) ? col.color("Fatal", Color::RED) : 
+    line_error += (isWarning) ? col.color("Warning", Color::YELLOW, false, true) : 
+                    (isNote) ? col.color("Note", Color::BLUE, false, true) : 
+                    (isFatal) ? col.color("Fatal", Color::RED, false, true) : 
                     col.color("Error", Color::RED);
     line_error += ") (" + filename + ")\n ↳ " + errorType + " " + msg + "\n"; 
     line_error += currentLine(line, pos, lexer, isParser, tokens); 
@@ -48,7 +49,7 @@ std::string ErrorClass::error(int line, int pos, std::string msg, std::string er
 
 void ErrorClass::printError() {
     if (errors.size() > 0) {
-      std::cout << "Total number of Errors: " << errors.size() << std::endl;
+      std::cout << "Total number of Errors: " << col.color(std::to_string(errors.size()), Color::RED, true, false) << std::endl;
       for (const auto& [line, errMsg] : errors) {
          std::cout << errMsg << std::endl;
       }
