@@ -32,6 +32,7 @@ namespace Parser {
         err = 15
     };
     struct PStruct;
+    inline Lexer lexer;
 }
 
 struct Parser::PStruct {
@@ -72,7 +73,7 @@ struct Parser::PStruct {
 
 namespace Parser {
     template <typename T, typename U>
-    T lookup(const std::vector<std::pair<U, T>>& lu, U key);
+    T lookup(PStruct *psr, const std::vector<std::pair<U, T>>& lu, U key);
 
     Node::Stmt *parse(const char *source);
 
@@ -109,7 +110,7 @@ namespace Parser {
     void createTypeMaps();
 
     Node::Type *type_led(PStruct *psr, Node::Type *left, BindingPower bp);
-    BindingPower type_getBP(TokenKind tk);
+    BindingPower type_getBP(PStruct *psr, TokenKind tk);
     Node::Type *type_nud(PStruct *psr);
 
     Node::Type *symbol_table(PStruct *psr);

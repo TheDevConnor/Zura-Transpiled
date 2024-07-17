@@ -1,6 +1,7 @@
 #pragma once
 
 #include <iostream>
+#include <vector>
 #include <string>
 
 enum NodeKind {
@@ -36,6 +37,8 @@ enum NodeKind {
     ND_SYMBOL_TYPE,
     ND_ARRAY_TYPE,
     ND_POINTER_TYPE,
+    ND_CALLABLE_TYPE,
+    ND_FUNCTION_TYPE,
 };
 
 class Node {
@@ -64,4 +67,3 @@ public:
         }
     }
 };
- 

@@ -11,7 +11,7 @@
 using namespace Parser;
 
 template <typename T, typename U>
-T Parser::lookup(const std::vector<std::pair<U, T>> &lu, U key) {
+T Parser::lookup(PStruct *psr, const std::vector<std::pair<U, T>> &lu, U key) {
 	auto it = std::find_if(lu.begin(), lu.end(), [key](auto &p) {
 		return p.first == key;
 	});
@@ -21,8 +21,10 @@ T Parser::lookup(const std::vector<std::pair<U, T>> &lu, U key) {
 	}
 
 	if (it == lu.end()) {
-		std::cerr << "No value found for key " << key << std::endl;
-		throw std::runtime_error("No value found for key");
+		ErrorClass::error(0, 0, 
+						  "No value found for key Expr Maps!", "", "Parser Error", "main.zu", 
+						  lexer, psr->tks, true, false, false, false);
+		return nullptr;		
 	}
 
 	return it->second;
@@ -145,14 +147,16 @@ bool Parser::isIgnoreToken(TokenKind tk) {
 Node::Expr *Parser::nud(PStruct *psr) {
 	auto op = psr->current(psr);
 	try {
-		auto result = lookup(nud_lu, op.kind);
+		auto result = lookup(psr, nud_lu, op.kind);
 		if (result == nullptr) {
 			psr->advance(psr);
 			return nullptr;
 		}
 		return result(psr);
 	} catch (std::runtime_error &e) {
-		std::cerr << "Could not parse expression" << std::endl;
+		ErrorClass::error(psr->current(psr).line, psr->current(psr).column, 
+							"Could not parse expression in NUD!", "", "Parser Error", "main.zu", 
+							lexer, psr->tks, true, false, false, false);	
 		return nullptr;
 	}
 
@@ -161,14 +165,16 @@ Node::Expr *Parser::nud(PStruct *psr) {
 Node::Expr *Parser::led(PStruct *psr, Node::Expr *left, BindingPower bp) {
 	auto op = psr->current(psr);
 	try {
-		auto result = lookup(led_lu, op.kind);
+		auto result = lookup(psr, led_lu, op.kind);
 		if (result == nullptr) {
 			psr->advance(psr);
 			return left;
 		}
 		return result(psr, left, bp);
 	} catch (std::runtime_error &e) {
-		std::cerr << "Could not parse expression" << std::endl;
+		ErrorClass::error(psr->current(psr).line, psr->current(psr).column, 
+							"Could not parse expression in LED!", "", "Parser Error", "main.zu", 
+							lexer, psr->tks, true, false, false, false);	
 		return nullptr;
 	}	
 }
@@ -177,7 +183,6 @@ Node::Stmt *Parser::stmt(PStruct *psr, std::string name) {
 	auto stmt_it = std::find_if(stmt_lu.begin(), stmt_lu.end(), [psr](auto &p) {
 		return p.first == psr->current(psr).kind;
 	}); 
-
 	return stmt_it != stmt_lu.end() ? stmt_it->second(psr, name) : nullptr;
 }
 

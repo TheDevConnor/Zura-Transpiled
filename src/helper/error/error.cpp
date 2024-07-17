@@ -4,8 +4,9 @@
 
 #include "../../parser/parser.hpp"
 #include "../../lexer/lexer.hpp"
-#include "../color.hpp"
+#include "../../ast/ast.hpp"
 #include "../../common.hpp"
+#include "../color.hpp"
 #include "error.hpp"
 
 Color col;
@@ -59,6 +60,10 @@ std::string ErrorClass::error(int line, int pos, std::string msg, std::string no
 
     if (errors.find(line) == errors.end()) errors[line] = line_error;
     return line_error;
+}
+
+std::string ErrorClass::typeError(std::string name, Node::Type *type, Node::Type *expectedType) { 
+    return ""; // TODO: Implement this function
 }
 
 void ErrorClass::printError() {

@@ -1,17 +1,16 @@
 #include "../ast/types.hpp"
 #include "parser.hpp"
 
-Lexer lex;
-
 template <typename T, typename U>
-T Parser::lookup(const std::vector<std::pair<U, T>> &lu, U key) {
+T Parser::lookup(PStruct *psr, const std::vector<std::pair<U, T>> &lu, U key) {
     auto it = std::find_if(lu.begin(), lu.end(), [key](auto &p) {
         return p.first == key;
     });
 
     if (it == lu.end()) {
-        std::cerr << "No value found for key " << lex.tokenToString(key) << std::endl;
-        throw std::runtime_error("No value found for key");
+        ErrorClass::error(0, 0, 
+                          "No value found for key in Type maps", "", "Parser Error", "main.zu", 
+                          lexer, psr->tks, true, false, false, false); 
     }
 
     return it->second;
@@ -31,9 +30,11 @@ void Parser::createTypeMaps() {
 Node::Type *Parser::type_led(PStruct *psr, Node::Type *left, BindingPower bp) {
     auto op = psr->current(psr);
     try {
-        return lookup(type_led_lu, op.kind)(psr, left, bp);
+        return lookup(psr, type_led_lu, op.kind)(psr, left, bp);
     } catch (std::exception &e) {
-        std::cerr << "Error in type_led: " << e.what() << std::endl;
+        ErrorClass::error(psr->current(psr).line, psr->current(psr).column, 
+                          "Error in type_led: " + std::string(e.what()), "", "Parser Error", "main.zu", 
+                          lexer, psr->tks, true, false, false, false); 
         return nullptr;
     }
     return nullptr;
@@ -42,14 +43,16 @@ Node::Type *Parser::type_led(PStruct *psr, Node::Type *left, BindingPower bp) {
 Node::Type *Parser::type_nud(PStruct *psr) {
     auto op = psr->current(psr);
     try {
-        return Parser::lookup(type_nud_lu, op.kind)(psr);
+        return Parser::lookup(psr, type_nud_lu, op.kind)(psr);
     } catch (std::exception &e) {
-        std::cerr << "Error in type_nud: " << e.what() << std::endl;
+        ErrorClass::error(psr->current(psr).line, psr->current(psr).column, 
+                          "Error in type_nud: " + std::string(e.what()), "", "Parser Error", "main.zu", 
+                          lexer, psr->tks, true, false, false, false); 
         return nullptr;
     }
     return nullptr;
 }
 
-Parser::BindingPower Parser::type_getBP(TokenKind tk) {
-    return lookup(type_bp_lu, tk);
+Parser::BindingPower Parser::type_getBP(PStruct *psr, TokenKind tk) {
+    return lookup(psr, type_bp_lu, tk);
 }

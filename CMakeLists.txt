@@ -24,6 +24,9 @@ set(ZURA_HEADER_FILES
     # Parser Files
     src/parser/parser.hpp
 
+    # Type Checker Files
+    src/typeChecker/type.hpp
+
     inc/update.hpp
     src/common.hpp
 )
@@ -40,9 +43,17 @@ set(ZURA_SOURCE_FILES
     src/parser/type.cpp
     src/parser/tmaps.cpp
     src/parser/map.cpp 
+
+    # Type Checker Files
+    src/typeChecker/symbolTable.cpp
+    src/typeChecker/visitor.cpp
+    src/typeChecker/type.cpp
+    src/typeChecker/map.cpp
     
     src/main.cpp
 )
 
 # Create executable
+set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 add_executable(zura ${ZURA_HEADER_FILES} ${ZURA_SOURCE_FILES})
+add_link_options(-lstdc++)

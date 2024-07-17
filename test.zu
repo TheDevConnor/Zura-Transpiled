@@ -1,41 +1,8 @@
-const Person := struct {
-    name: string;
-    age: int
-
-    const error := enum {
-        NAME,
-        AGE
-    };
-
-    const init = fn(n: string, a: int) Person {
-        have p: Person;
-
-        if (n == "" {
-            error = NAME;
-            return p;
-        }
-
-        if (a < 0) {
-            error = AGE;
-            return p;
-        }
-
-        p.name = n;
-        p.age = a;
-
-        return p;
-    };
-
-    const print := fn() void { 
-        print("Name: " + name + ", Age: " + age + "\n");
-    };
+const add := fn(a: int, b: int) int {
+    return a + b;
 };
 
-const main = fn() int {
-    have p: Person;
-
-    p.init("John", 25);
-    p.print(a, b);
-
-    return 0;
+const main := fn() int {
+    have x: int = add("", 2);
+    return x;
 };

@@ -2,6 +2,7 @@
 #include <fstream>
 #include <iostream>
 
+#include "../typeChecker/type.hpp"
 #include "../parser/parser.hpp"
 #include "../lexer/lexer.hpp"
 #include "../common.hpp"
@@ -40,8 +41,9 @@ void Flags::runFile(const char *path, std::string outName, bool save) {
   const char *source = readFile(path);
   
   auto result = Parser::parse(source);
-  result->debug();
-  std::cout << std::endl;
+  // result->debug();
+
+  TypeChecker::check(result);
 
   delete[] source;
   delete result;

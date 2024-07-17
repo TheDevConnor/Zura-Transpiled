@@ -25,7 +25,9 @@ Node::Expr *Parser::primary(PStruct* psr) {
         return new StringExpr(psr->advance(psr).value);
     }
     default:
-        std::cout << "Could not parse primary expression" << std::endl;
+        ErrorClass::error(psr->current(psr).line, psr->current(psr).column, 
+                          "Could not parse primary expression!", "", "Parser Error", "main.zu", 
+                          lexer, psr->tks, true, false, false, false); 
         return nullptr;
     }
 }

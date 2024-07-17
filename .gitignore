@@ -17,3 +17,5 @@ zura
 
 # Ignore log files
 *.log
+
+.cache
