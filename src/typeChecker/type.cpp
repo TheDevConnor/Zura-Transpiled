@@ -1,10 +1,17 @@
 #include "type.hpp"
 #include "../ast/stmt.hpp"
+#include "../helper/error/error.hpp"
 
 void TypeChecker::check(Node::Stmt *stmt) {
   symbol_table table;
   callables_table ctable;
   visitStmt(ctable, table, stmt);
+}
+
+void TypeChecker::handlerError(std::string msg) {
+  Lexer lexer; // dummy lexer
+  ErrorClass::error(0, 0, msg, "", "Type Error", "main.zu", lexer, {}, false,
+                    false, true, false, true);
 }
 
 std::string TypeChecker::type_to_string(Node::Type *type) {

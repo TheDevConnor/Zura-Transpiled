@@ -6,6 +6,7 @@
 #include "../parser/parser.hpp"
 #include "../lexer/lexer.hpp"
 #include "../common.hpp"
+#include "error/error.hpp"
 #include "flags.hpp"
 
 using namespace std;
@@ -41,9 +42,10 @@ void Flags::runFile(const char *path, std::string outName, bool save) {
   const char *source = readFile(path);
   
   auto result = Parser::parse(source);
-  // result->debug();
+  ErrorClass::printError();
 
   TypeChecker::check(result);
+  ErrorClass::printError();
 
   delete[] source;
   delete result;

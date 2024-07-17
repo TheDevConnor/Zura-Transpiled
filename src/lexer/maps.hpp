@@ -1,89 +1,71 @@
-#include <unordered_map>
 #include <functional>
 #include <string>
+#include <unordered_map>
 
 #include "lexer.hpp"
 
-using WhiteSpaceFunction = std::function<void(Lexer&)>;
+using WhiteSpaceFunction = std::function<void(Lexer &)>;
 const std::unordered_map<char, WhiteSpaceFunction> whiteSpaceMap = {
-    {' ',  [](Lexer &lexer) { lexer.advance(); }},
+    {' ', [](Lexer &lexer) { lexer.advance(); }},
     {'\r', [](Lexer &lexer) { lexer.advance(); }},
     {'\t', [](Lexer &lexer) { lexer.advance(); }},
-    {'\n', [](Lexer &lexer) {
-      lexer.scanner.line++;
-      lexer.scanner.column = 0;
-      lexer.advance();
-    }},
-    {'#', [](Lexer &lexer) {
-      while (lexer.peek() != '\n' && !lexer.isAtEnd()) lexer.advance();
-    }},
+    {'\n',
+     [](Lexer &lexer) {
+       lexer.scanner.line++;
+       lexer.scanner.column = 0;
+       lexer.advance();
+     }},
+    {'#',
+     [](Lexer &lexer) {
+       while (lexer.peek() != '\n' && !lexer.isAtEnd())
+         lexer.advance();
+     }},
 };
 
 const std::unordered_map<std::string, TokenKind> keywords = {
-      {"and", TokenKind::AND},
-      {"else", TokenKind::ELSE},
-      {"false", TokenKind::FAL},
-      {"fn", TokenKind::FUN},
-      {"loop", TokenKind::LOOP},
-      {"if", TokenKind::IF},
-      {"nil", TokenKind::NIL},
-      {"or", TokenKind::OR},
-      {"dis", TokenKind::PRINT},
-      {"return", TokenKind::RETURN},
-      {"exit", TokenKind::EXIT},
-      {"super", TokenKind::SUPER},
-      {"true", TokenKind::TR},
-      {"have", TokenKind::VAR},
-      {"pkg", TokenKind::PKG},
-      {"in", TokenKind::IN},
-      {"type", TokenKind::TYPE},
-      {"struct", TokenKind::STRUCT},
-      {"enum", TokenKind::ENUM},
-      {"union", TokenKind::UNION},
-      {"const", TokenKind::_CONST},
+    {"and", TokenKind::AND},      {"else", TokenKind::ELSE},
+    {"false", TokenKind::FAL},    {"fn", TokenKind::FUN},
+    {"loop", TokenKind::LOOP},    {"if", TokenKind::IF},
+    {"nil", TokenKind::NIL},      {"or", TokenKind::OR},
+    {"dis", TokenKind::PRINT},    {"return", TokenKind::RETURN},
+    {"exit", TokenKind::EXIT},    {"super", TokenKind::SUPER},
+    {"true", TokenKind::TR},      {"have", TokenKind::VAR},
+    {"pkg", TokenKind::PKG},      {"in", TokenKind::IN},
+    {"type", TokenKind::TYPE},    {"struct", TokenKind::STRUCT},
+    {"enum", TokenKind::ENUM},    {"union", TokenKind::UNION},
+    {"const", TokenKind::_CONST},
 };
 
 const std::unordered_map<char, TokenKind> scMap = {
-    {'(', TokenKind::LEFT_PAREN},
-    {')', TokenKind::RIGHT_PAREN},
-    {'{', TokenKind::LEFT_BRACE},
-    {'}', TokenKind::RIGHT_BRACE},
-    {';', TokenKind::SEMICOLON},
-    {',', TokenKind::COMMA},
-    {'.', TokenKind::DOT},
-    {'-', TokenKind::MINUS},
-    {'+', TokenKind::PLUS},
-    {'/', TokenKind::SLASH},
-    {'*', TokenKind::STAR},
-    {'%', TokenKind::MODULO},
-    {'^', TokenKind::CARET},
-    {'[', TokenKind::LEFT_BRACKET},
-    {']', TokenKind::RIGHT_BRACKET},
-    {'?', TokenKind::QUESTION},
-    {':', TokenKind::COLON},
-    {'=', TokenKind::EQUAL},
-    {'!', TokenKind::BANG},
-    {'<', TokenKind::LESS},
-    {'>', TokenKind::GREATER},
-    {'&', TokenKind::LAND},
+    {'(', TokenKind::LEFT_PAREN},    {')', TokenKind::RIGHT_PAREN},
+    {'{', TokenKind::LEFT_BRACE},    {'}', TokenKind::RIGHT_BRACE},
+    {';', TokenKind::SEMICOLON},     {',', TokenKind::COMMA},
+    {'.', TokenKind::DOT},           {'-', TokenKind::MINUS},
+    {'+', TokenKind::PLUS},          {'/', TokenKind::SLASH},
+    {'*', TokenKind::STAR},          {'%', TokenKind::MODULO},
+    {'^', TokenKind::CARET},         {'[', TokenKind::LEFT_BRACKET},
+    {']', TokenKind::RIGHT_BRACKET}, {'?', TokenKind::QUESTION},
+    {':', TokenKind::COLON},         {'=', TokenKind::EQUAL},
+    {'!', TokenKind::BANG},          {'<', TokenKind::LESS},
+    {'>', TokenKind::GREATER},       {'&', TokenKind::LAND},
     {'|', TokenKind::LOR},
 };
 
 const std::unordered_map<std::string, TokenKind> dcMap = {
-      {"!=", TokenKind::BANG_EQUAL},
-      {"==", TokenKind::EQUAL_EQUAL},
-      {">=", TokenKind::GREATER_EQUAL},
-      {"<=", TokenKind::LESS_EQUAL},
-      {":=", TokenKind::WALRUS},
-      {"++", TokenKind::PLUS_PLUS},
-      {"--", TokenKind::MINUS_MINUS},
-      {"+=", TokenKind::PLUS_EQUAL},
-      {"-=", TokenKind::MINUS_EQUAL},
-      {"*=", TokenKind::STAR_EQUAL},
-      {"/=", TokenKind::SLASH_EQUAL},
-      {"&&", TokenKind::AND},
-      {"||", TokenKind::OR},
-      {"..", TokenKind::RANGE},
+    {"!=", TokenKind::BANG_EQUAL},
+    {"==", TokenKind::EQUAL_EQUAL},
+    {">=", TokenKind::GREATER_EQUAL},
+    {"<=", TokenKind::LESS_EQUAL},
+    {":=", TokenKind::WALRUS},
+    {"++", TokenKind::PLUS_PLUS},
+    {"--", TokenKind::MINUS_MINUS},
+    {"+=", TokenKind::PLUS_EQUAL},
+    {"-=", TokenKind::MINUS_EQUAL},
+    {"*=", TokenKind::STAR_EQUAL},
+    {"/=", TokenKind::SLASH_EQUAL},
+    {"&&", TokenKind::AND},
+    {"||", TokenKind::OR},
+    {"..", TokenKind::RANGE},
 };
 
 const std::unordered_map<TokenKind, const char *> tokenMap = {

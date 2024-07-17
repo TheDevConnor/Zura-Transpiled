@@ -21,8 +21,8 @@ enum TokenKind {
   CARET,
   COLON,
   QUESTION,
-  LAND, 
-  LOR, 
+  LAND,
+  LOR,
 
   // One or two character tokens.
   BANG,

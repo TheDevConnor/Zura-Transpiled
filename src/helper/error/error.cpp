@@ -39,7 +39,7 @@ std::string ErrorClass::currentLine(int line, int pos, Lexer &lexer, bool isPars
 
 std::string ErrorClass::error(int line, int pos, std::string msg, std::string note, std::string errorType, 
                        std::string filename, Lexer &lexer, std::vector<Lexer::Token> tokens,
-                       bool isParser, bool isWarning, bool isFatal, bool isMain) {
+                       bool isParser, bool isWarning, bool isFatal, bool isMain, bool isTypeError) {
     std::string line_error = "[" + std::to_string(line) + "::" + std::to_string(pos) + "] (";
     line_error += (isWarning) ? col.color("Warning", Color::YELLOW, false, true) : 
                     (isFatal) ? col.color("Fatal", Color::RED, false, true) : 
@@ -53,6 +53,13 @@ std::string ErrorClass::error(int line, int pos, std::string msg, std::string no
         return line_error;
     }
 
+    if (isTypeError) {
+        if (errorType == "Type Error") {
+            typeErros.push_back(line_error);
+            return line_error;
+        } 
+    }
+
     if (note != "") line_error += " ↳ " + note + "\n";
 
     line_error += currentLine(line, pos, lexer, isParser, tokens);
@@ -62,16 +69,24 @@ std::string ErrorClass::error(int line, int pos, std::string msg, std::string no
     return line_error;
 }
 
-std::string ErrorClass::typeError(std::string name, Node::Type *type, Node::Type *expectedType) { 
-    return ""; // TODO: Implement this function
-}
-
 void ErrorClass::printError() {
-    if (errors.size() > 0) {
-      std::cout << "Total number of Errors: " << col.color(std::to_string(errors.size()), Color::RED, true, false) << std::endl;
-      for (const auto& [line, errMsg] : errors) {
-         std::cout << errMsg << std::endl;
-      }
-      Exit(ExitValue::_ERROR);
-   }
+    if (errors.size() > 0 || typeErros.size() > 0) {
+        if (!errors.empty()) {
+            std::cout << "Total number of Errors: "
+                      << col.color(std::to_string(errors.size()), Color::RED,
+                                   true, false)
+                      << std::endl;
+            for (const auto &[line, error] : errors)
+                std::cout << error << std::endl;
+        }
+        if (!typeErros.empty()) {
+            std::cout << "Total number of Type Errors: "
+                      << col.color(std::to_string(typeErros.size()), Color::RED,
+                                   true, false)
+                      << std::endl;
+            for (const auto &error : typeErros)
+                std::cout << error << std::endl;
+        }
+        Exit(ExitValue::_ERROR);
+    }
 }

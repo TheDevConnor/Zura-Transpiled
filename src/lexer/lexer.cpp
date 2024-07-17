@@ -1,9 +1,10 @@
-#include <unordered_map>
 #include <string>
+#include <unordered_map>
 
+#include "../ast/ast.hpp"
 #include "../helper/error/error.hpp"
-#include "maps.hpp"
 #include "lexer.hpp"
+#include "maps.hpp"
 
 void Lexer::initLexer(const char *source) {
   scanner.current = source;
@@ -34,7 +35,8 @@ const char *Lexer::lineStart(int line) {
   int cLine = 1;
 
   while (cLine != line) {
-    if (*start == '\n') cLine++;
+    if (*start == '\n')
+      cLine++;
     start++;
   }
 
@@ -54,7 +56,8 @@ bool Lexer::match(char expected) {
 
 Lexer::Token Lexer::errorToken(std::string message) {
   std::vector<Lexer::Token> tokens = {};
-  ErrorClass::error(token.line, token.column, message, "", "Lexer Error", "main.zu", *this, tokens, false, false, true, false);
+  ErrorClass::error(token.line, token.column, message, "", "Lexer Error",
+                    "main.zu", *this, tokens, false, false, true, false, false);
   return makeToken(TokenKind::ERROR_);
 }
 
@@ -73,7 +76,8 @@ Lexer::Token Lexer::number() {
 
   if (peek() == '.' && isdigit(peekNext())) {
     advance();
-    while (isdigit(peek())) advance();
+    while (isdigit(peek()))
+      advance();
   }
 
   return makeToken(TokenKind::NUMBER);
@@ -112,7 +116,8 @@ void Lexer::skipWhitespace() {
     auto it = whiteSpaceMap.find(c);
     if (it != whiteSpaceMap.end()) {
       it->second(*this);
-    } else break;
+    } else
+      break;
   }
 }
 
@@ -133,16 +138,19 @@ Lexer::Token Lexer::scanToken() {
 
   char c = Lexer::advance();
 
-  if (isalpha(c)) return identifier();
-  if (isdigit(c)) return number();
-  if (c == '"') return String();
+  if (isalpha(c))
+    return identifier();
+  if (isdigit(c))
+    return number();
+  if (c == '"')
+    return String();
 
   auto it2 = dcMap.find(std::string(1, c) + std::string(1, peek()));
   if (it2 != dcMap.end()) {
     advance();
     return makeToken(it2->second);
   }
-  
+
   auto it = scMap.find(c);
   if (it != scMap.end())
     return makeToken(it->second);

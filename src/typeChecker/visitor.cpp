@@ -41,10 +41,11 @@ void TypeChecker::visitFn(callables_table &ctable, symbol_table &table,
 
   // Now we need to check the return type of the function
   if (type_to_string(return_type) != type_to_string(fn_stmt->returnType)) {
-    std::string msg = "Function " + fn_stmt->name + " has a return type of " +
-                      type_to_string(return_type) + " but expected " +
-                      type_to_string(fn_stmt->returnType);
-    std::cout << msg << std::endl;
+    std::string msg = "Function '" + fn_stmt->name +
+                      "' has a return type of '" + type_to_string(return_type) +
+                      "' but expected '" + type_to_string(fn_stmt->returnType) +
+                      "'";
+    handlerError(msg);
   }
 
   // add the function param and types to the callables table
@@ -80,7 +81,7 @@ void TypeChecker::visitVar(callables_table &ctable, symbol_table &table,
       std::string msg = "Variable " + var_stmt->name + " has a type of " +
                         type_to_string(return_type) + " but expected " +
                         type_to_string(var_stmt->type);
-      std::cout << msg << std::endl;
+      handlerError(msg);
     }
   }
 }
