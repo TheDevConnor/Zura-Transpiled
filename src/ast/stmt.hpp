@@ -1,10 +1,10 @@
 #pragma once
 
+#include "ast.hpp"
+
 #include <iostream>
 #include <string>
 #include <vector>
-
-#include "ast.hpp"
 
 class ProgramStmt : public Node::Stmt {
 public:
@@ -31,9 +31,13 @@ public:
 
 class ExprStmt : public Node::Stmt {
 public:
+  int line, pos;
   Node::Expr *expr;
 
-  ExprStmt(Node::Expr *expr) : expr(expr) { kind = NodeKind::ND_EXPR_STMT; }
+  ExprStmt(int line, int pos, Node::Expr *expr)
+      : line(line), pos(pos), expr(expr) {
+    kind = NodeKind::ND_EXPR_STMT;
+  }
 
   void debug(int ident = 0) const override {
     Node::printIndent(ident);
@@ -46,10 +50,12 @@ public:
 
 class ConstStmt : public Node::Stmt {
 public:
+  int line, pos;
   std::string name;
   Node::Stmt *value;
 
-  ConstStmt(std::string name, Node::Stmt *value) : name(name), value(value) {
+  ConstStmt(int line, int pos, std::string name, Node::Stmt *value)
+      : line(line), pos(pos), name(name), value(value) {
     kind = NodeKind::ND_CONST_STMT;
   }
 
@@ -68,9 +74,11 @@ public:
 
 class BlockStmt : public Node::Stmt {
 public:
+  int line, pos;
   std::vector<Node::Stmt *> stmts;
 
-  BlockStmt(std::vector<Node::Stmt *> stmts) : stmts(stmts) {
+  BlockStmt(int line, int pos, std::vector<Node::Stmt *> stmts)
+      : line(line), pos(pos), stmts(stmts) {
     kind = NodeKind::ND_BLOCK_STMT;
   }
 
@@ -93,13 +101,16 @@ public:
 
 class VarStmt : public Node::Stmt {
 public:
+  int line, pos;
   bool isConst;
   std::string name;
   Node::Type *type;
   ExprStmt *expr;
 
-  VarStmt(bool isConst, std::string name, Node::Type *type, ExprStmt *expr)
-      : isConst(isConst), name(name), type(type), expr(expr) {
+  VarStmt(int line, int pos, bool isConst, std::string name, Node::Type *type,
+          ExprStmt *expr)
+      : line(line), pos(pos), isConst(isConst), name(name), type(type),
+        expr(expr) {
     kind = NodeKind::ND_VAR_STMT;
   }
 
@@ -129,9 +140,11 @@ public:
 
 class PrintStmt : public Node::Stmt {
 public:
+  int line, pos;
   std::vector<Node::Expr *> args;
 
-  PrintStmt(std::vector<Node::Expr *> args) : args(args) {
+  PrintStmt(int line, int pos, std::vector<Node::Expr *> args)
+      : line(line), pos(pos), args(args) {
     kind = NodeKind::ND_PRINT_STMT;
   }
 
@@ -152,15 +165,17 @@ public:
 
 class fnStmt : public Node::Stmt {
 public:
+  int line, pos;
   std::string name;
   std::vector<std::pair<std::string, Node::Type *>> params;
   Node::Type *returnType;
   Node::Stmt *block;
 
-  fnStmt(std::string name,
+  fnStmt(int line, int pos, std::string name,
          std::vector<std::pair<std::string, Node::Type *>> params,
          Node::Type *returnType, Node::Stmt *block)
-      : name(name), params(params), returnType(returnType), block(block) {
+      : line(line), pos(pos), name(name), params(params),
+        returnType(returnType), block(block) {
     kind = NodeKind::ND_FN_STMT;
   }
 
@@ -195,9 +210,13 @@ public:
 
 class ReturnStmt : public Node::Stmt {
 public:
+  int line, pos;
   Node::Expr *expr;
 
-  ReturnStmt(Node::Expr *expr) : expr(expr) { kind = NodeKind::ND_RETURN_STMT; }
+  ReturnStmt(int line, int pos, Node::Expr *expr)
+      : line(line), pos(pos), expr(expr) {
+    kind = NodeKind::ND_RETURN_STMT;
+  }
 
   void debug(int ident = 0) const override {
     Node::printIndent(ident);
@@ -212,12 +231,15 @@ public:
 
 class IfStmt : public Node::Stmt {
 public:
+  int line, pos;
   Node::Expr *condition;
   Node::Stmt *thenStmt;
   Node::Stmt *elseStmt;
 
-  IfStmt(Node::Expr *condition, Node::Stmt *thenStmt, Node::Stmt *elseStmt)
-      : condition(condition), thenStmt(thenStmt), elseStmt(elseStmt) {
+  IfStmt(int line, int pos, Node::Expr *condition, Node::Stmt *thenStmt,
+         Node::Stmt *elseStmt)
+      : line(line), pos(pos), condition(condition), thenStmt(thenStmt),
+        elseStmt(elseStmt) {
     kind = NodeKind::ND_IF_STMT;
   }
 
@@ -246,14 +268,15 @@ public:
 
 class StructStmt : public Node::Stmt {
 public:
+  int line, pos;
   std::string name;
   std::vector<std::pair<std::string, Node::Type *>> fields;
   std::vector<Node::Stmt *> stmts;
 
-  StructStmt(std::string name,
+  StructStmt(int line, int pos, std::string name,
              std::vector<std::pair<std::string, Node::Type *>> fields,
              std::vector<Node::Stmt *> stmts)
-      : name(name), fields(fields), stmts(stmts) {
+      : line(line), pos(pos), name(name), fields(fields), stmts(stmts) {
     kind = NodeKind::ND_STRUCT_STMT;
   }
 
@@ -291,12 +314,15 @@ public:
 
 class WhileStmt : public Node::Stmt {
 public:
+  int line, pos;
   Node::Expr *condition;
   Node::Expr *optional;
   Node::Stmt *block;
 
-  WhileStmt(Node::Expr *condition, Node::Expr *optional, Node::Stmt *block)
-      : condition(condition), block(block), optional(optional) {
+  WhileStmt(int line, int pos, Node::Expr *condition, Node::Expr *optional,
+            Node::Stmt *block)
+      : line(line), pos(pos), condition(condition), block(block),
+        optional(optional) {
     kind = NodeKind::ND_WHILE_STMT;
   }
 
@@ -325,14 +351,16 @@ public:
 
 class ForStmt : public Node::Stmt {
 public:
+  int line, pos;
   std::string varName;
   Node::Expr *forLoop;
   Node::Expr *optional;
   Node::Stmt *block;
 
-  ForStmt(std::string varName, Node::Expr *forLoop, Node::Expr *optional,
-          Node::Stmt *block)
-      : varName(varName), forLoop(forLoop), optional(optional), block(block) {
+  ForStmt(int line, int pos, std::string varName, Node::Expr *forLoop,
+          Node::Expr *optional, Node::Stmt *block)
+      : line(line), pos(pos), varName(varName), forLoop(forLoop),
+        optional(optional), block(block) {
     kind = NodeKind::ND_FOR_STMT;
   }
 
@@ -363,11 +391,12 @@ public:
 
 class EnumStmt : public Node::Stmt {
 public:
+  int line, pos;
   std::string name;
   std::vector<std::string> fields;
 
-  EnumStmt(std::string name, std::vector<std::string> fields)
-      : name(name), fields(fields) {
+  EnumStmt(int line, int pos, std::string name, std::vector<std::string> fields)
+      : line(line), pos(pos), name(name), fields(fields) {
     kind = NodeKind::ND_ENUM_STMT;
   }
 

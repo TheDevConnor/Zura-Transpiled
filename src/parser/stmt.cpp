@@ -12,13 +12,19 @@ Node::Stmt *Parser::parseStmt(PStruct *psr, std::string name) {
 }
 
 Node::Stmt *Parser::exprStmt(PStruct *psr) {
+  auto line = psr->tks[psr->pos].line;
+  auto column = psr->tks[psr->pos].column;
+
   auto *expr = parseExpr(psr, BindingPower::defaultValue);
   psr->expect(psr, TokenKind::SEMICOLON,
               "Expected a SEMICOLON at the end of a expr stmt!");
-  return new ExprStmt(expr);
+  return new ExprStmt(line, column, expr);
 }
 
 Node::Stmt *Parser::blockStmt(PStruct *psr, std::string name) {
+  auto line = psr->tks[psr->pos].line;
+  auto column = psr->tks[psr->pos].column;
+
   psr->expect(psr, TokenKind::LEFT_BRACE,
               "Expected a L_BRACE to start a block stmt");
   std::vector<Node::Stmt *> stmts;
@@ -29,10 +35,13 @@ Node::Stmt *Parser::blockStmt(PStruct *psr, std::string name) {
 
   psr->expect(psr, TokenKind::RIGHT_BRACE,
               "Expected a R_BRACE to end a block stmt");
-  return new BlockStmt(stmts);
+  return new BlockStmt(line, column, stmts);
 }
 
 Node::Stmt *Parser::varStmt(PStruct *psr, std::string name) {
+  auto line = psr->tks[psr->pos].line;
+  auto column = psr->tks[psr->pos].column;
+
   auto isConst = psr->current(psr).kind == TokenKind::_CONST;
   psr->expect(psr, TokenKind::VAR,
               "Expected a VAR or CONST keyword to start a var stmt");
@@ -49,7 +58,7 @@ Node::Stmt *Parser::varStmt(PStruct *psr, std::string name) {
   if (psr->current(psr).kind == TokenKind::SEMICOLON) {
     psr->expect(psr, TokenKind::SEMICOLON,
                 "Expected a SEMICOLON at the end of a var stmt");
-    return new VarStmt(isConst, name, varType, nullptr);
+    return new VarStmt(line, column, isConst, name, varType, nullptr);
   }
 
   psr->expect(psr, TokenKind::EQUAL,
@@ -58,11 +67,15 @@ Node::Stmt *Parser::varStmt(PStruct *psr, std::string name) {
   psr->expect(psr, TokenKind::SEMICOLON,
               "Expected a SEMICOLON at the end of a var stmt");
 
-  return new VarStmt(isConst, name, varType, new ExprStmt(assignedValue));
+  return new VarStmt(line, column, isConst, name, varType,
+                     new ExprStmt(line, column, assignedValue));
 }
 
 // dis("print %d", .{1});
 Node::Stmt *Parser::printStmt(PStruct *psr, std::string name) {
+  auto line = psr->tks[psr->pos].line;
+  auto column = psr->tks[psr->pos].column;
+
   psr->expect(psr, TokenKind::PRINT,
               "Expected a PRINT keyword to start a print stmt");
   psr->expect(psr, TokenKind::LEFT_PAREN,
@@ -79,10 +92,13 @@ Node::Stmt *Parser::printStmt(PStruct *psr, std::string name) {
   psr->expect(psr, TokenKind::SEMICOLON,
               "Expected a SEMICOLON at the end of a print stmt");
 
-  return new PrintStmt(args);
+  return new PrintStmt(line, column, args);
 }
 
 Node::Stmt *Parser::constStmt(PStruct *psr, std::string name) {
+  auto line = psr->tks[psr->pos].line;
+  auto column = psr->tks[psr->pos].column;
+
   psr->expect(psr, TokenKind::_CONST,
               "Expected a CONST keyword to start a const stmt");
   name = psr->expect(psr, TokenKind::IDENTIFIER,
@@ -94,10 +110,13 @@ Node::Stmt *Parser::constStmt(PStruct *psr, std::string name) {
 
   auto value = parseStmt(psr, name);
 
-  return new ConstStmt(name, value);
+  return new ConstStmt(line, column, name, value);
 }
 
 Node::Stmt *Parser::funStmt(PStruct *psr, std::string name) {
+  auto line = psr->tks[psr->pos].line;
+  auto column = psr->tks[psr->pos].column;
+
   if (name == "main")
     psr->isMain = true; // Set the main flag to true if the function is main
   psr->expect(psr, TokenKind::FUN,
@@ -130,19 +149,25 @@ Node::Stmt *Parser::funStmt(PStruct *psr, std::string name) {
   psr->expect(psr, TokenKind::SEMICOLON,
               "Expected a SEMICOLON at the end of a function stmt");
 
-  return new fnStmt(name, params, returnType, body);
+  return new fnStmt(line, column, name, params, returnType, body);
 }
 
 Node::Stmt *Parser::returnStmt(PStruct *psr, std::string name) {
+  auto line = psr->tks[psr->pos].line;
+  auto column = psr->tks[psr->pos].column;
+
   psr->expect(psr, TokenKind::RETURN,
               "Expected a RETURN keyword to start a return stmt");
   auto expr = parseExpr(psr, BindingPower::defaultValue);
   psr->expect(psr, TokenKind::SEMICOLON,
               "Expected a SEMICOLON at the end of a return stmt");
-  return new ReturnStmt(expr);
+  return new ReturnStmt(line, column, expr);
 }
 
 Node::Stmt *Parser::ifStmt(PStruct *psr, std::string name) {
+  auto line = psr->tks[psr->pos].line;
+  auto column = psr->tks[psr->pos].column;
+
   psr->expect(psr, TokenKind::IF, "Expected an IF keyword to start an if stmt");
   psr->expect(psr, TokenKind::LEFT_PAREN,
               "Expected a L_PAREN to start an if stmt");
@@ -159,10 +184,13 @@ Node::Stmt *Parser::ifStmt(PStruct *psr, std::string name) {
     elseStmt = parseStmt(psr, name);
   }
 
-  return new IfStmt(condition, thenStmt, elseStmt);
+  return new IfStmt(line, column, condition, thenStmt, elseStmt);
 }
 
 Node::Stmt *Parser::structStmt(PStruct *psr, std::string name) {
+  auto line = psr->tks[psr->pos].line;
+  auto column = psr->tks[psr->pos].column;
+
   psr->expect(psr, TokenKind::STRUCT,
               "Expected a STRUCT keyword to start a struct stmt");
 
@@ -207,11 +235,14 @@ Node::Stmt *Parser::structStmt(PStruct *psr, std::string name) {
               "Expected a SEMICOLON at the end of a struct stmt");
 
   if (stmts.size() > 0)
-    return new StructStmt(name, fields, stmts);
-  return new StructStmt(name, fields, {});
+    return new StructStmt(line, column, name, fields, stmts);
+  return new StructStmt(line, column, name, fields, {});
 }
 
 Node::Stmt *Parser::loopStmt(PStruct *psr, std::string name) {
+  auto line = psr->tks[psr->pos].line;
+  auto column = psr->tks[psr->pos].column;
+
   psr->expect(psr, TokenKind::LOOP,
               "Expected a LOOP keyword to start a loop stmt");
 
@@ -260,15 +291,18 @@ Node::Stmt *Parser::loopStmt(PStruct *psr, std::string name) {
 
   if (isOptional) {
     if (isForLoop)
-      return new ForStmt(varName, forLoop, opCondition, body);
-    return new WhileStmt(whileLoop, opCondition, body);
+      return new ForStmt(line, column, varName, forLoop, opCondition, body);
+    return new WhileStmt(line, column, whileLoop, opCondition, body);
   }
   if (isForLoop)
-    return new ForStmt(varName, forLoop, nullptr, body);
-  return new WhileStmt(whileLoop, nullptr, body);
+    return new ForStmt(line, column, varName, forLoop, nullptr, body);
+  return new WhileStmt(line, column, whileLoop, nullptr, body);
 }
 
 Node::Stmt *Parser::enumStmt(PStruct *psr, std::string name) {
+  auto line = psr->tks[psr->pos].line;
+  auto column = psr->tks[psr->pos].column;
+
   psr->expect(psr, TokenKind::ENUM,
               "Expected an ENUM keyword to start an enum stmt");
   psr->expect(psr, TokenKind::LEFT_BRACE,
@@ -289,5 +323,5 @@ Node::Stmt *Parser::enumStmt(PStruct *psr, std::string name) {
   psr->expect(psr, TokenKind::SEMICOLON,
               "Expected a SEMICOLON at the end of an enum stmt");
 
-  return new EnumStmt(name, fields);
+  return new EnumStmt(line, column, name, fields);
 }

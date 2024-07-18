@@ -22,7 +22,7 @@ T Parser::lookup(PStruct *psr, const std::vector<std::pair<U, T>> &lu, U key) {
   if (it == lu.end()) {
     ErrorClass::error(0, 0, "No value found for key Expr Maps!", "",
                       "Parser Error", "main.zu", lexer, psr->tks, true, false,
-                      false, false);
+                      false, false, false);
     return nullptr;
   }
 
@@ -144,7 +144,7 @@ Node::Expr *Parser::nud(PStruct *psr) {
   } catch (std::runtime_error &e) {
     ErrorClass::error(psr->current(psr).line, psr->current(psr).column,
                       "Could not parse expression in NUD!", "", "Parser Error",
-                      "main.zu", lexer, psr->tks, true, false, false, false);
+                      "main.zu", lexer, psr->tks, true, false, false, false, false);
     return nullptr;
   }
 }
@@ -161,7 +161,7 @@ Node::Expr *Parser::led(PStruct *psr, Node::Expr *left, BindingPower bp) {
   } catch (std::runtime_error &e) {
     ErrorClass::error(psr->current(psr).line, psr->current(psr).column,
                       "Could not parse expression in LED!", "", "Parser Error",
-                      "main.zu", lexer, psr->tks, true, false, false, false);
+                      "main.zu", lexer, psr->tks, true, false, false, false, false);
     return nullptr;
   }
 }

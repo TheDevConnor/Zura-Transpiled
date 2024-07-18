@@ -39,7 +39,10 @@ Node::Stmt *Parser::parse(const char *source) {
                       "Try the following syntax for a main function: \n\tconst "
                       "main := fn() int { // Your code }",
                       "Parser Error", "main.zu", lexer, vect_tk->tks, true,
-                      false, true, true);
+                      false, true, true, false);
+
+  // Copy the tokens to the ast node
+  node.tks = vect_tk->tks;
 
   delete vect_tk;
   return new ProgramStmt(stmts);

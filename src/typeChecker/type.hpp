@@ -15,7 +15,8 @@ namespace TypeChecker {
 inline Node::Type *return_type = nullptr;
 using symbol_table = std::unordered_map<std::string, Node::Type *>;
 void declare(symbol_table &table, std::string name, Node::Type *type);
-Node::Type *table_lookup(symbol_table &table, std::string name);
+Node::Type *table_lookup(symbol_table &table, std::string name, int line,
+                         int pos);
 
 using callables_table =
     std::unordered_map<std::string,
@@ -23,13 +24,13 @@ using callables_table =
 void declare(callables_table &table, std::string name,
              std::vector<std::pair<std::string, Node::Type *>> params);
 std::vector<std::pair<std::string, Node::Type *>>
-table_lookup(callables_table &table, std::string name);
+table_lookup(callables_table &table, std::string name, int line, int pos);
 
 void check(Node::Stmt *stmt);
 
 /// This converts the type to a string
 std::string type_to_string(Node::Type *type);
-void handlerError(std::string msg);
+void handlerError(int line, int pos, std::string msg);
 
 // !Ast Visitor functions
 void visitStmt(callables_table &ctable, symbol_table &table, Node::Stmt *stmt);

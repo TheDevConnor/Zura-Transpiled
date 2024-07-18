@@ -12,7 +12,7 @@ void TypeChecker::declare(symbol_table &table, std::string name,
   table[name] = type;
 }
 
-Node::Type *TypeChecker::table_lookup(symbol_table &table, std::string name) {
+Node::Type *TypeChecker::table_lookup(symbol_table &table, std::string name, int line, int pos) {
   Lexer lexer; // dummy lexer
   for (auto &pair : table) {
     if (pair.first == name) {
@@ -20,7 +20,7 @@ Node::Type *TypeChecker::table_lookup(symbol_table &table, std::string name) {
     }
   }
   std::string msg = "Undeclared variable '" + name + "'";
-  handlerError(msg);
+  handlerError(line, pos, msg);
   return nullptr;
 }
 
@@ -31,13 +31,13 @@ void TypeChecker::declare(
 }
 
 std::vector<std::pair<std::string, Node::Type *>>
-TypeChecker::table_lookup(callables_table &table, std::string name) {
+TypeChecker::table_lookup(callables_table &table, std::string name, int line, int pos) {
   for (auto &pair : table) {
     if (pair.first == name) {
       return pair.second;
     }
   }
   std::string msg = "Undeclared function '" + name + "'";
-  handlerError(msg);
+  handlerError(line, pos, msg);
   return {};
 }

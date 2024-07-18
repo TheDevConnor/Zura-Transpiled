@@ -45,7 +45,7 @@ void TypeChecker::visitFn(callables_table &ctable, symbol_table &table,
                       "' has a return type of '" + type_to_string(return_type) +
                       "' but expected '" + type_to_string(fn_stmt->returnType) +
                       "'";
-    handlerError(msg);
+    handlerError(fn_stmt->line, fn_stmt->pos, msg);
   }
 
   // add the function param and types to the callables table
@@ -66,6 +66,7 @@ void TypeChecker::visitBlock(callables_table &ctable, symbol_table &table,
 void TypeChecker::visitConst(callables_table &ctable, symbol_table &table,
                              Node::Stmt *stmt) {
   auto const_stmt = static_cast<ConstStmt *>(stmt);
+
   visitStmt(ctable, table, const_stmt->value);
 }
 
@@ -81,7 +82,7 @@ void TypeChecker::visitVar(callables_table &ctable, symbol_table &table,
       std::string msg = "Variable " + var_stmt->name + " has a type of " +
                         type_to_string(return_type) + " but expected " +
                         type_to_string(var_stmt->type);
-      handlerError(msg);
+      handlerError(var_stmt->line, var_stmt->pos, msg);
     }
   }
 }

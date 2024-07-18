@@ -3,6 +3,6 @@ const main := fn () int {
         return a + "";
     };
 
-    have res: int = add("", 2);
+    have res: str = add("", 2);
     return res;
 };

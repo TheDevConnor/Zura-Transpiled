@@ -8,10 +8,10 @@ void TypeChecker::check(Node::Stmt *stmt) {
   visitStmt(ctable, table, stmt);
 }
 
-void TypeChecker::handlerError(std::string msg) {
+void TypeChecker::handlerError(int line, int pos, std::string msg) {
   Lexer lexer; // dummy lexer
-  ErrorClass::error(0, 0, msg, "", "Type Error", "main.zu", lexer, {}, false,
-                    false, true, false, true);
+  ErrorClass::error(line, pos, msg, "", "Type Error", "main.zu", lexer,
+                    node.tks, false, false, true, false, true);
 }
 
 std::string TypeChecker::type_to_string(Node::Type *type) {

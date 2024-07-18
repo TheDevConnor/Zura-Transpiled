@@ -7,9 +7,13 @@
 
 class NumberExpr : public Node::Expr {
 public:
+  int line, pos;
   double value;
 
-  NumberExpr(double value) : value(value) { kind = NodeKind::ND_NUMBER; }
+  NumberExpr(int line, int pos, double value)
+      : line(line), pos(pos), value(value) {
+    kind = NodeKind::ND_NUMBER;
+  }
 
   void debug(int ident = 0) const override {
     Node::printIndent(ident);
@@ -19,9 +23,13 @@ public:
 
 class IdentExpr : public Node::Expr {
 public:
+  int line, pos;
   std::string name;
 
-  IdentExpr(std::string name) : name(name) { kind = NodeKind::ND_IDENT; }
+  IdentExpr(int line, int pos, std::string name)
+      : line(line), pos(pos), name(name) {
+    kind = NodeKind::ND_IDENT;
+  }
 
   void debug(int ident = 0) const override {
     Node::printIndent(ident);
@@ -31,9 +39,13 @@ public:
 
 class StringExpr : public Node::Expr {
 public:
+  int line, pos;
   std::string value;
 
-  StringExpr(std::string value) : value(value) { kind = NodeKind::ND_STRING; }
+  StringExpr(int line, int pos, std::string value)
+      : line(line), pos(pos), value(value) {
+    kind = NodeKind::ND_STRING;
+  }
 
   void debug(int ident = 0) const override {
     Node::printIndent(ident);
@@ -43,12 +55,14 @@ public:
 
 class BinaryExpr : public Node::Expr {
 public:
+  int line, pos;
   Node::Expr *lhs;
   Node::Expr *rhs;
   std::string op;
 
-  BinaryExpr(Node::Expr *lhs, Node::Expr *rhs, std::string op)
-      : lhs(lhs), rhs(rhs), op(op) {
+  BinaryExpr(int line, int pos, Node::Expr *lhs, Node::Expr *rhs,
+             std::string op)
+      : line(line), pos(pos), lhs(lhs), rhs(rhs), op(op) {
     kind = NodeKind::ND_BINARY;
   }
 
@@ -69,10 +83,12 @@ public:
 
 class UnaryExpr : public Node::Expr {
 public:
+  int line, pos;
   Node::Expr *expr;
   std::string op;
 
-  UnaryExpr(Node::Expr *expr, std::string op) : expr(expr), op(op) {
+  UnaryExpr(int line, int pos, Node::Expr *expr, std::string op)
+      : line(line), pos(pos), expr(expr), op(op) {
     kind = NodeKind::ND_UNARY;
   }
 
@@ -89,10 +105,12 @@ public:
 
 class PrefixExpr : public Node::Expr {
 public:
+  int line, pos;
   Node::Expr *expr;
   std::string op;
 
-  PrefixExpr(Node::Expr *expr, std::string op) : expr(expr), op(op) {
+  PrefixExpr(int line, int pos, Node::Expr *expr, std::string op)
+      : line(line), pos(pos), expr(expr), op(op) {
     kind = NodeKind::ND_PREFIX;
   }
 
@@ -109,9 +127,13 @@ public:
 
 class GroupExpr : public Node::Expr {
 public:
+  int line, pos;
   Node::Expr *expr;
 
-  GroupExpr(Node::Expr *expr) : expr(expr) { kind = NodeKind::ND_GROUP; }
+  GroupExpr(int line, int pos, Node::Expr *expr)
+      : line(line), pos(pos), expr(expr) {
+    kind = NodeKind::ND_GROUP;
+  }
 
   void debug(int ident = 0) const override {
     Node::printIndent(ident);
@@ -124,12 +146,13 @@ public:
 
 class AssignmentExpr : public Node::Expr {
 public:
+  int line, pos;
   Expr *assignee;
   std::string op;
   Expr *rhs;
 
-  AssignmentExpr(Expr *assignee, std::string op, Expr *rhs)
-      : assignee(assignee), op(op), rhs(rhs) {
+  AssignmentExpr(int line, int pos, Expr *assignee, std::string op, Expr *rhs)
+      : line(line), pos(pos), assignee(assignee), op(op), rhs(rhs) {
     kind = NodeKind::ND_ASSIGN;
   }
 
@@ -154,11 +177,13 @@ public:
 
 class CallExpr : public Node::Expr {
 public:
+  int line, pos;
   Node::Expr *callee;
   std::vector<Node::Expr *> args;
 
-  CallExpr(Node::Expr *callee, std::vector<Node::Expr *> args)
-      : callee(callee), args(args) {
+  CallExpr(int line, int pos, Node::Expr *callee,
+           std::vector<Node::Expr *> args)
+      : line(line), pos(pos), callee(callee), args(args) {
     kind = NodeKind::ND_CALL;
   }
 
@@ -185,12 +210,14 @@ public:
 
 class TernaryExpr : public Node::Expr {
 public:
+  int line, pos;
   Node::Expr *condition;
   Node::Expr *lhs;
   Node::Expr *rhs;
 
-  TernaryExpr(Node::Expr *condition, Node::Expr *lhs, Node::Expr *rhs)
-      : condition(condition), lhs(lhs), rhs(rhs) {
+  TernaryExpr(int line, int pos, Node::Expr *condition, Node::Expr *lhs,
+              Node::Expr *rhs)
+      : line(line), pos(pos), condition(condition), lhs(lhs), rhs(rhs) {
     kind = NodeKind::ND_TERNARY;
   }
 
@@ -217,10 +244,12 @@ public:
 
 class MemberExpr : public Node::Expr {
 public:
+  int line, pos;
   Node::Expr *lhs;
   Node::Expr *rhs;
 
-  MemberExpr(Node::Expr *lhs, Node::Expr *rhs) : lhs(lhs), rhs(rhs) {
+  MemberExpr(int line, int pos, Node::Expr *lhs, Node::Expr *rhs)
+      : line(line), pos(pos), lhs(lhs), rhs(rhs) {
     kind = NodeKind::ND_MEMBER;
   }
 

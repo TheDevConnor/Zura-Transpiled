@@ -57,7 +57,8 @@ std::vector<std::pair<NodeKind, TypeChecker::ExprNodeHandler>>
         {NodeKind::ND_IDENT,
          [](callables_table &ctables, symbol_table &table, Node::Expr *expr) {
            auto identifier = static_cast<IdentExpr *>(expr);
-           return_type = table_lookup(table, identifier->name);
+           return_type = table_lookup(table, identifier->name, identifier->line,
+                                      identifier->pos);
          }},
         {NodeKind::ND_BINARY,
          [](callables_table &ctables, symbol_table &table, Node::Expr *expr) {
@@ -72,14 +73,15 @@ std::vector<std::pair<NodeKind, TypeChecker::ExprNodeHandler>>
            visitExpr(ctables, table, call->callee);
 
            auto params = table_lookup(
-               ctables, static_cast<IdentExpr *>(call->callee)->name);
+               ctables, static_cast<IdentExpr *>(call->callee)->name,
+               call->line, call->pos);
 
            if (params.size() != call->args.size()) {
              std::string msg =
                  "Function '" + static_cast<IdentExpr *>(call->callee)->name +
                  "' expects " + std::to_string(params.size()) +
                  " arguments but got " + std::to_string(call->args.size());
-             handlerError(msg);
+             handlerError(call->line, call->pos, msg);
            }
 
            for (int i = 0; i < params.size(); i++) {
@@ -91,11 +93,12 @@ std::vector<std::pair<NodeKind, TypeChecker::ExprNodeHandler>>
                    "' expects argument " + std::to_string(i) +
                    " to be of type " + type_to_string(params[i].second) +
                    " but got " + type_to_string(return_type);
-               handlerError(msg);
+               handlerError(call->line, call->pos, msg);
              }
            }
 
-           return_type = table_lookup(
-               table, static_cast<IdentExpr *>(call->callee)->name);
+           return_type =
+               table_lookup(table, static_cast<IdentExpr *>(call->callee)->name,
+                            call->line, call->pos);
          }},
 };
