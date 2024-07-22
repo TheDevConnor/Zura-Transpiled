@@ -67,6 +67,27 @@ Node::Expr *Parser::_prefix(PStruct *psr) {
   return new PrefixExpr(line, column, right, op.value);
 }
 
+Node::Expr *Parser::array(PStruct *psr) {
+  auto line = psr->tks[psr->pos].line;
+  auto column = psr->tks[psr->pos].column;
+
+  psr->expect(psr, TokenKind::LEFT_BRACKET,
+              "Expected a L_Bracket to start an array expr!");
+  std::vector<Node::Expr *> elements;
+
+  while (psr->current(psr).kind != TokenKind::RIGHT_BRACKET) {
+    elements.push_back(parseExpr(psr, defaultValue));
+    if (psr->current(psr).kind == TokenKind::COMMA)
+      psr->expect(psr, TokenKind::COMMA,
+                  "Expected a COMMA after an element in an array expr!");
+  }
+
+  psr->expect(psr, TokenKind::RIGHT_BRACKET,
+              "Expected a R_Bracket to end an array expr!");
+
+  return new ArrayExpr(line, column, elements);
+}
+
 Node::Expr *Parser::binary(PStruct *psr, Node::Expr *left, BindingPower bp) {
   auto line = psr->tks[psr->pos].line;
   auto column = psr->tks[psr->pos].column;

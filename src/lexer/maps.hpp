@@ -15,10 +15,12 @@ const std::unordered_map<char, WhiteSpaceFunction> whiteSpaceMap = {
        lexer.scanner.column = 0;
        lexer.advance();
      }},
-    {'#',
+    {'/',
      [](Lexer &lexer) {
-       while (lexer.peek() != '\n' && !lexer.isAtEnd())
-         lexer.advance();
+       if (lexer.peek() == '/') {
+         while (lexer.peek() != '\n' && !lexer.isAtEnd())
+           lexer.advance();
+       }
      }},
 };
 
@@ -33,7 +35,8 @@ const std::unordered_map<std::string, TokenKind> keywords = {
     {"pkg", TokenKind::PKG},      {"in", TokenKind::IN},
     {"type", TokenKind::TYPE},    {"struct", TokenKind::STRUCT},
     {"enum", TokenKind::ENUM},    {"union", TokenKind::UNION},
-    {"const", TokenKind::_CONST},
+    {"const", TokenKind::_CONST}, {"import", TokenKind::IMPORT},
+    {"pub", TokenKind::PUB}, {"priv", TokenKind::PRIV}
 };
 
 const std::unordered_map<char, TokenKind> scMap = {

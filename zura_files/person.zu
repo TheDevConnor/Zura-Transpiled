@@ -1,0 +1,13 @@
+const Error := enum {
+   None,
+   Invalid_Age,
+   Invalid_Name,
+};
+
+// This would be a tagged union instead of a struct
+// with how we are accessing it
+const Person := struct {
+   err: Error;
+   name: str;
+   age: int;
+}; 

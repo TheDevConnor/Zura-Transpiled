@@ -30,7 +30,7 @@ void check(Node::Stmt *stmt);
 
 /// This converts the type to a string
 std::string type_to_string(Node::Type *type);
-void handlerError(int line, int pos, std::string msg);
+void handlerError(int line, int pos, std::string msg, std::string note);
 
 // !Ast Visitor functions
 void visitStmt(callables_table &ctable, symbol_table &table, Node::Stmt *stmt);
@@ -45,6 +45,14 @@ void visitBlock(callables_table &ctable, symbol_table &table, Node::Stmt *stmt);
 void visitVar(callables_table &ctable, symbol_table &table, Node::Stmt *stmt);
 void visitFn(callables_table &ctable, symbol_table &table, Node::Stmt *stmt);
 
+void visitNumber(callables_table &ctable, symbol_table &table, Node::Expr *expr);
+void visitString(callables_table &ctable, symbol_table &table, Node::Expr *expr);
+void visitIdent(callables_table &ctable, symbol_table &table, Node::Expr *expr);
+void visitCall(callables_table &ctable, symbol_table &table, Node::Expr *expr);
+void visitBinary(callables_table &ctable, symbol_table &table, Node::Expr *expr);
+void visitUnary(callables_table &ctable, symbol_table &table, Node::Expr *expr);
+void visitGrouping(callables_table &ctable, symbol_table &table, Node::Expr *expr);
+
 // !TypeChecker functions
 using StmtNodeHandler =
     std::function<void(callables_table &ctables, symbol_table &, Node::Stmt *)>;
@@ -53,6 +61,7 @@ using ExprNodeHandler =
 extern std::vector<std::pair<NodeKind, StmtNodeHandler>> stmts;
 extern std::vector<std::pair<NodeKind, ExprNodeHandler>> exprs;
 
+void check_for_main(callables_table &ctables, symbol_table &table, Node::Stmt *stmt);
 void lookup(callables_table &ctables, symbol_table &table, Node::Stmt *stmt);
 void lookup(callables_table &ctables, symbol_table &table, Node::Expr *expr);
 } // namespace TypeChecker

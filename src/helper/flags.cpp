@@ -41,11 +41,14 @@ char *Flags::readFile(const char *path) {
 void Flags::runFile(const char *path, std::string outName, bool save) {
   const char *source = readFile(path);
   
-  auto result = Parser::parse(source);
+  auto result = Parser::parse(source, path);
   ErrorClass::printError();
+
+  result->debug();
 
   TypeChecker::check(result);
   ErrorClass::printError();
+  std::cout << "Passed Type Checking" << std::endl;
 
   delete[] source;
   delete result;

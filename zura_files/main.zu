@@ -1,0 +1,9 @@
+import "zura_files/person.zu";
+
+const main := fn () int {
+   have p: Person;
+
+   p.init(p, "Zu", 20);
+   
+   return 0;
+};

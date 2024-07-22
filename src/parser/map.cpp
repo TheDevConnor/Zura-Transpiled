@@ -21,7 +21,7 @@ T Parser::lookup(PStruct *psr, const std::vector<std::pair<U, T>> &lu, U key) {
 
   if (it == lu.end()) {
     ErrorClass::error(0, 0, "No value found for key Expr Maps!", "",
-                      "Parser Error", "main.zu", lexer, psr->tks, true, false,
+                      "Parser Error", psr->current_file, lexer, psr->tks, true, false,
                       false, false, false);
     return nullptr;
   }
@@ -36,12 +36,13 @@ void Parser::createMaps() {
       {TokenKind::RETURN, returnStmt},    {TokenKind::IF, ifStmt},
       {TokenKind::STRUCT, structStmt},    {TokenKind::ENUM, enumStmt},
       {TokenKind::LOOP, loopStmt},        {TokenKind::PRINT, printStmt},
+      {TokenKind::IMPORT, importStmt},
   };
   nud_lu = {
       {TokenKind::NUMBER, primary},      {TokenKind::IDENTIFIER, primary},
       {TokenKind::STRING, primary},      {TokenKind::LEFT_PAREN, group},
       {TokenKind::MINUS, unary},         {TokenKind::PLUS_PLUS, _prefix},
-      {TokenKind::MINUS_MINUS, _prefix},
+      {TokenKind::MINUS_MINUS, _prefix}, {TokenKind::LEFT_BRACKET, array},
   };
   led_lu = {
       {TokenKind::PLUS, binary},

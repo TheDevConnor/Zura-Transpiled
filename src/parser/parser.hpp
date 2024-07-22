@@ -37,7 +37,7 @@ inline Lexer lexer;
 
 struct Parser::PStruct {
   std::vector<Lexer::Token> tks;
-  bool isMain = false;
+  std::string current_file;
   int pos = 0;
 
   Lexer::Token current(PStruct *psr) { return psr->tks[psr->pos]; }
@@ -60,7 +60,7 @@ struct Parser::PStruct {
 
     if (!res) {
       ErrorClass::error(current(psr).line, current(psr).column, msg, "",
-                        "Parser Error", "main.zu", lexer, psr->tks, true, false,
+                        "Parser Error", psr->current_file, lexer, psr->tks, true, false,
                         false, false, false);
       return current(psr);
     }
@@ -73,7 +73,7 @@ namespace Parser {
 template <typename T, typename U>
 T lookup(PStruct *psr, const std::vector<std::pair<U, T>> &lu, U key);
 
-Node::Stmt *parse(const char *source);
+Node::Stmt *parse(const char *source, std::string file);
 
 // Maps for the Pratt Parser
 using StmtHandler = std::function<Node::Stmt *(PStruct *, std::string)>;
@@ -115,7 +115,7 @@ Node::Type *parseType(PStruct *psr, BindingPower bp);
 Node::Type *pointer_type(PStruct *psr);
 
 // Pratt parser functions.
-PStruct *setupParser(PStruct *psr, Lexer *lex, Lexer::Token tk);
+PStruct *setupParser(PStruct *psr, Lexer *lex, Lexer::Token tk, std::string current_file);
 Node::Expr *parseExpr(PStruct *psr, BindingPower bp);
 
 // Expr Functions
@@ -123,6 +123,7 @@ Node::Expr *primary(PStruct *psr);
 Node::Expr *unary(PStruct *psr);
 Node::Expr *_prefix(PStruct *psr);
 Node::Expr *group(PStruct *psr);
+Node::Expr *array(PStruct *psr);
 Node::Expr *binary(PStruct *psr, Node::Expr *left, BindingPower bp);
 Node::Expr *assign(PStruct *psr, Node::Expr *left, BindingPower bp);
 Node::Expr *parse_call(PStruct *psr, Node::Expr *left, BindingPower bp);
@@ -132,6 +133,7 @@ Node::Expr *_member(PStruct *psr, Node::Expr *left, BindingPower bp);
 // Stmt Functions
 Node::Stmt *returnStmt(PStruct *psr, std::string name);
 Node::Stmt *structStmt(PStruct *psr, std::string name);
+Node::Stmt *importStmt(PStruct *psr, std::string name);
 Node::Stmt *parseStmt(PStruct *psr, std::string name);
 Node::Stmt *blockStmt(PStruct *psr, std::string name);
 Node::Stmt *constStmt(PStruct *psr, std::string name);

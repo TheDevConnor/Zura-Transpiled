@@ -46,7 +46,8 @@ set(ZURA_SOURCE_FILES
 
     # Type Checker Files
     src/typeChecker/symbolTable.cpp
-    src/typeChecker/visitor.cpp
+    src/typeChecker/expr.cpp
+    src/typeChecker/stmt.cpp
     src/typeChecker/type.cpp
     src/typeChecker/map.cpp
     

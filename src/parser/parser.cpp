@@ -3,27 +3,29 @@
 #include "../ast/stmt.hpp"
 #include "../lexer/lexer.hpp"
 
+#include <string>
 #include <vector>
 
 Lexer lexer;
 
 Parser::PStruct *Parser::setupParser(PStruct *psr, Lexer *lex,
-                                     Lexer::Token tk) {
+                                     Lexer::Token tk, std::string current_file) {
   while (tk.kind != TokenKind::END_OF_FILE) {
     psr->tks.push_back(tk);
     tk = lex->scanToken();
   }
 
   std::unordered_map<std::string, std::string> errors = {};
-  return new PStruct{psr->tks, false, psr->pos};
+  psr->current_file = current_file;
+  return new PStruct{psr->tks, psr->current_file, psr->pos}; 
 }
 
-Node::Stmt *Parser::parse(const char *source) {
+Node::Stmt *Parser::parse(const char *source, std::string file) {
   PStruct psr;
 
   // Initialize the lexer and store the tokens
   lexer.initLexer(source);
-  auto vect_tk = setupParser(&psr, &lexer, lexer.scanToken());
+  auto vect_tk = setupParser(&psr, &lexer, lexer.scanToken(), file);
 
   ErrorClass::printError();
 
@@ -33,13 +35,6 @@ Node::Stmt *Parser::parse(const char *source) {
 
   while (vect_tk->hadTokens(vect_tk))
     stmts.push_back(parseStmt(vect_tk, ""));
-
-  if (!vect_tk->isMain)
-    ErrorClass::error(0, 0, "No main function found!",
-                      "Try the following syntax for a main function: \n\tconst "
-                      "main := fn() int { // Your code }",
-                      "Parser Error", "main.zu", lexer, vect_tk->tks, true,
-                      false, true, true, false);
 
   // Copy the tokens to the ast node
   node.tks = vect_tk->tks;

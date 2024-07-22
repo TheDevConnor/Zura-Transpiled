@@ -80,6 +80,12 @@ std::string ErrorClass::error(int line, int pos, const std::string &msg,
   }
 
   if (isTypeError) {
+    if (!note.empty()) {
+      line_error += " ↳ " + col.color("NOTE", Color::BLUE) + ": "+ note + "\n";
+      typeErros.push_back(line_error);
+      return line_error;
+    }
+
     line_error += (line > 1) ? currentLine(line - 1, 0, lexer, isParser,
                                            isTypeError, tokens)
                              : "";

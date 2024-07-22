@@ -170,12 +170,13 @@ public:
   std::vector<std::pair<std::string, Node::Type *>> params;
   Node::Type *returnType;
   Node::Stmt *block;
+  bool isMain = false;
 
   fnStmt(int line, int pos, std::string name,
          std::vector<std::pair<std::string, Node::Type *>> params,
-         Node::Type *returnType, Node::Stmt *block)
+         Node::Type *returnType, Node::Stmt *block, bool isMain = false)
       : line(line), pos(pos), name(name), params(params),
-        returnType(returnType), block(block) {
+        returnType(returnType), block(block), isMain(isMain) {
     kind = NodeKind::ND_FN_STMT;
   }
 
@@ -411,5 +412,28 @@ public:
       Node::printIndent(ident + 2);
       std::cout << f << "\n";
     }
+  }
+};
+
+class ImportStmt : public Node::Stmt {
+public:
+  int line, pos;
+  std::string name;
+  Node::Stmt *stmt;
+
+  ImportStmt(int line, int pos, std::string name, Node::Stmt *stmt) : line(line), pos(pos), name(name), stmt(stmt) {
+    kind = NodeKind::ND_IMPORT_STMT;
+  }
+
+  void debug(int ident = 0) const override {
+    Node::printIndent(ident);
+    std::cout << "ImportStmt: \n";
+    Node::printIndent(ident + 1);
+    std::cout << "Name: " << name << "\n";
+    stmt->debug(ident + 1);
+  }
+
+  ~ImportStmt() {
+    delete stmt;
   }
 };

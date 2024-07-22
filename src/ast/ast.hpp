@@ -15,6 +15,7 @@ enum NodeKind {
   ND_UNARY,
   ND_PREFIX,
   ND_GROUP,
+  ND_ARRAY,
   ND_CALL,
   ND_ASSIGN,
   ND_TERNARY,
@@ -34,6 +35,7 @@ enum NodeKind {
   ND_FOR_STMT,
   ND_PRINT_STMT,
   ND_ENUM_STMT,
+  ND_IMPORT_STMT,
 
   // Types
   ND_SYMBOL_TYPE,

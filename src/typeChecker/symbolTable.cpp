@@ -20,7 +20,7 @@ Node::Type *TypeChecker::table_lookup(symbol_table &table, std::string name, int
     }
   }
   std::string msg = "Undeclared variable '" + name + "'";
-  handlerError(line, pos, msg);
+  handlerError(line, pos, msg, "");
   return nullptr;
 }
 
@@ -38,6 +38,6 @@ TypeChecker::table_lookup(callables_table &table, std::string name, int line, in
     }
   }
   std::string msg = "Undeclared function '" + name + "'";
-  handlerError(line, pos, msg);
+  handlerError(line, pos, msg, "");
   return {};
 }

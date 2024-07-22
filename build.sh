@@ -35,7 +35,7 @@ run() {
   fi
   read -p "Run the program? (y/n): " run || die
   if [ "$run" = "y" ]; then
-    "$executable" test.zu -o main || die
+    "$executable" zura_files/main.zu -o main || die
   else
     echo "Program not run." || die
   fi

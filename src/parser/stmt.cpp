@@ -1,5 +1,6 @@
 #include "../ast/stmt.hpp"
 #include "../ast/ast.hpp"
+#include "../helper/flags.hpp"
 #include "parser.hpp"
 
 Node::Stmt *Parser::parseStmt(PStruct *psr, std::string name) {
@@ -71,6 +72,7 @@ Node::Stmt *Parser::varStmt(PStruct *psr, std::string name) {
                      new ExprStmt(line, column, assignedValue));
 }
 
+// TODO: Implement the print stmt
 // dis("print %d", .{1});
 Node::Stmt *Parser::printStmt(PStruct *psr, std::string name) {
   auto line = psr->tks[psr->pos].line;
@@ -85,6 +87,9 @@ Node::Stmt *Parser::printStmt(PStruct *psr, std::string name) {
 
   while (psr->current(psr).kind != TokenKind::RIGHT_PAREN) {
     args.push_back(parseExpr(psr, BindingPower::defaultValue));
+    if (psr->current(psr).kind == TokenKind::COMMA)
+      psr->expect(psr, TokenKind::COMMA,
+                  "Expected a COMMA after an arguement in a print stmt");
   }
 
   psr->expect(psr, TokenKind::RIGHT_PAREN,
@@ -117,8 +122,6 @@ Node::Stmt *Parser::funStmt(PStruct *psr, std::string name) {
   auto line = psr->tks[psr->pos].line;
   auto column = psr->tks[psr->pos].column;
 
-  if (name == "main")
-    psr->isMain = true; // Set the main flag to true if the function is main
   psr->expect(psr, TokenKind::FUN,
               "Expected a FUN keyword to start a function stmt");
 
@@ -149,7 +152,9 @@ Node::Stmt *Parser::funStmt(PStruct *psr, std::string name) {
   psr->expect(psr, TokenKind::SEMICOLON,
               "Expected a SEMICOLON at the end of a function stmt");
 
-  return new fnStmt(line, column, name, params, returnType, body);
+  if (name == "main")
+    return new fnStmt(line, column, name, params, returnType, body, true);
+  return new fnStmt(line, column, name, params, returnType, body, false);
 }
 
 Node::Stmt *Parser::returnStmt(PStruct *psr, std::string name) {
@@ -314,9 +319,8 @@ Node::Stmt *Parser::enumStmt(PStruct *psr, std::string name) {
         psr->expect(psr, TokenKind::IDENTIFIER,
                     "Expected an IDENTIFIER as a field name in an enum stmt")
             .value);
-    if (psr->current(psr).kind == TokenKind::COMMA)
-      psr->expect(psr, TokenKind::COMMA,
-                  "Expected a COMMA after a field in an enum stmt");
+    psr->expect(psr, TokenKind::COMMA,
+                "Expected a COMMA after a field in an enum stmt");
   }
   psr->expect(psr, TokenKind::RIGHT_BRACE,
               "Expected a R_BRACE to end an enum stmt");
@@ -324,4 +328,29 @@ Node::Stmt *Parser::enumStmt(PStruct *psr, std::string name) {
               "Expected a SEMICOLON at the end of an enum stmt");
 
   return new EnumStmt(line, column, name, fields);
+}
+
+Node::Stmt *Parser::importStmt(PStruct *psr, std::string name) {
+  auto line = psr->tks[psr->pos].line;
+  auto column = psr->tks[psr->pos].column;
+
+  psr->expect(psr, TokenKind::IMPORT,
+              "Expected an IMPORT keyword to start an import stmt");
+
+  auto path = psr->expect(psr, TokenKind::STRING,
+                          "Expected a STRING as a path in an import stmt")
+                  .value;
+  path = path.substr(1, path.size() - 2); // removes "" from the path
+  auto result = parse(Flags::readFile(path.c_str()), path);
+  if (result == nullptr) {
+    ErrorClass::error(line, column, "Could not parse the file '" + path + "'",
+                      "", "Parser Error", path.c_str(), lexer, psr->tks, true,
+                      false, false, false, false);
+    return nullptr;
+  }
+
+  psr->expect(psr, TokenKind::SEMICOLON,
+              "Expected a SEMICOLON at the end of an import stmt");
+
+  return new ImportStmt(line, column, path, result);
 }

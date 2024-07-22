@@ -69,6 +69,8 @@ enum TokenKind {
   STRUCT,
   ENUM,
   UNION,
+  IMPORT,
+  PUB, PRIV,
 
   // Error
   ERROR_,

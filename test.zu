@@ -1,8 +1,0 @@
-const main := fn () int {
-    const add := fn (a: int, b: int ) int {
-        return a + "";
-    };
-
-    have res: str = add("", 2);
-    return res;
-};

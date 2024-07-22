@@ -144,6 +144,31 @@ public:
   ~GroupExpr() { delete expr; }
 };
 
+class ArrayExpr : public Node::Expr {
+public:
+  int line, pos;
+  std::vector<Node::Expr *> elements;
+
+  ArrayExpr(int line, int pos, std::vector<Node::Expr *> elements)
+      : line(line), pos(pos), elements(elements) {
+    kind = NodeKind::ND_ARRAY;
+  }
+
+  void debug(int ident = 0) const override {
+    Node::printIndent(ident);
+    std::cout << "ArrayExpr: \n";
+    for (auto elem : elements) {
+      elem->debug(ident + 1);
+    }
+  }
+
+  ~ArrayExpr() {
+    for (auto elem : elements) {
+      delete elem;
+    }
+  }
+};
+
 class AssignmentExpr : public Node::Expr {
 public:
   int line, pos;

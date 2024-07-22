@@ -96,7 +96,7 @@ Lexer::Token Lexer::String() {
 }
 
 Lexer::Token Lexer::identifier() {
-  while (isalpha(peek()) || isdigit(peek()))
+  while (isalpha(peek()) || isdigit(peek()) || peek() == '_')
     advance();
   return makeToken(identifierType());
 }
