@@ -11,6 +11,8 @@
 #include <vector>
 
 namespace TypeChecker {
+inline bool foundMain = false;
+
 // !Symbol Table functions
 inline Node::Type *return_type = nullptr;
 using symbol_table = std::unordered_map<std::string, Node::Type *>;
@@ -61,7 +63,6 @@ using ExprNodeHandler =
 extern std::vector<std::pair<NodeKind, StmtNodeHandler>> stmts;
 extern std::vector<std::pair<NodeKind, ExprNodeHandler>> exprs;
 
-void check_for_main(callables_table &ctables, symbol_table &table, Node::Stmt *stmt);
 void lookup(callables_table &ctables, symbol_table &table, Node::Stmt *stmt);
 void lookup(callables_table &ctables, symbol_table &table, Node::Expr *expr);
 } // namespace TypeChecker

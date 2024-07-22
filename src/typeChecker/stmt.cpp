@@ -5,7 +5,6 @@
 
 void TypeChecker::visitStmt(callables_table &ctable, symbol_table &table,
                             Node::Stmt *stmt) { 
-  check_for_main(ctable, table, stmt);
   lookup(ctable, table, stmt);
 }
 
@@ -32,6 +31,13 @@ void TypeChecker::visitFn(callables_table &ctable, symbol_table &table,
                           Node::Stmt *stmt) {
   auto fn_stmt = static_cast<fnStmt *>(stmt);
 
+  if (fn_stmt->name == "main") {
+    foundMain = true;
+    if(type_to_string(fn_stmt->returnType) != "int") {
+      std::string msg = "Main function must return an int";
+      handlerError(fn_stmt->line, fn_stmt->pos, msg, "");
+    }
+  }
   declare(table, fn_stmt->name, fn_stmt->returnType);
 
   for (auto &param : fn_stmt->params) {

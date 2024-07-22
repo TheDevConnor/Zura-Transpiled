@@ -9,7 +9,7 @@ void TypeChecker::visitNumber(callables_table &ctable, symbol_table &table,
 void TypeChecker::visitString(callables_table &ctable, symbol_table &table,
                               Node::Expr *expr) {
   auto string = static_cast<StringExpr *>(expr);
-  return_type = new SymbolType("string");
+  return_type = new SymbolType("str");
 }
 
 void TypeChecker::visitIdent(callables_table &ctable, symbol_table &table,
