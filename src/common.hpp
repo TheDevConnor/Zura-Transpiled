@@ -8,11 +8,6 @@
 
 class FlagConfig {
 public:
-  using FlagsFunction = void (*)(int, char**);
-  using FlagsMapType = std::unordered_map<std::string, FlagsFunction>;
-  FlagsMapType FlagsMap; 
-  void createFlagsMap(int argc, char **argv); 
-
   static void print(int argc, char **argv);
   static void runBuild(int argc, char **argv);
 };

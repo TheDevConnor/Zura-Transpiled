@@ -6,8 +6,6 @@
 #include "common.hpp"
 #include "helper/flags.hpp"
 
-using namespace std;
-
 void FlagConfig::print(int argc, char **argv) {
   using condition = bool (*)(const char *);
   condition conditions[] = {
@@ -33,7 +31,7 @@ void FlagConfig::print(int argc, char **argv) {
         promptUpdate();
         Exit(ExitValue::UPDATED);
       }
-      cout << messages[i] << endl;
+      std::cout << messages[i] << std::endl;
       Exit(ExitValue::FLAGS_PRINTED);
     }
   }
@@ -41,7 +39,7 @@ void FlagConfig::print(int argc, char **argv) {
 
 void FlagConfig::runBuild(int argc, char **argv) {
   if (argc == 2) {
-    cout << "No file specified" << endl;
+    std::cout << "No file specified" << std::endl;
     Exit(ExitValue::INVALID_FILE);
   }
   if (argc == 3 && strcmp(argv[1], "build") == 0) {
@@ -49,21 +47,8 @@ void FlagConfig::runBuild(int argc, char **argv) {
   }
 }
 
-void FlagConfig::createFlagsMap(int argc, char **argv) {
-  FlagsMap = {
-      {"--version", print}, {"--help", print},   {"--license", print},
-      {"--update", print},  {"build", runBuild},
-  };
-}
-
 int main(int argc, char **argv) {
-  flagConfig.createFlagsMap(argc, argv);
-
-  for (auto &flag : flagConfig.FlagsMap) {
-    if (strcmp(argv[1], flag.first.c_str()) == 0) {
-      flag.second(argc, argv);
-    } 
-  }
-
+  FlagConfig::print(argc, argv);
+  FlagConfig::runBuild(argc, argv);
   return 0;
 }
