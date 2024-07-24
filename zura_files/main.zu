@@ -2,6 +2,6 @@ const add := fn (a: int, b: int) int {
    return a + b;
 };
 
-const main := fn () str {
-   return "Hello, World!";
+const main := fn () int {
+   return add(1, 2);
 };

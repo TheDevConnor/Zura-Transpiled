@@ -8,66 +8,61 @@
 
 using namespace std;
 
+void FlagConfig::print(int argc, char **argv) {
+  using condition = bool (*)(const char *);
+  condition conditions[] = {
+      [](const char *arg) { return strcmp(arg, "--version") == 0; },
+      [](const char *arg) { return strcmp(arg, "--license") == 0; },
+      [](const char *arg) { return strcmp(arg, "--help") == 0; },
+      [](const char *arg) { return strcmp(arg, "--update") == 0; },
+  };
+  const char *messages[] = {
+      "Zura Lang " ZuraVersion,
+      "Zura uses a license under GPL-3.0\nYou can find the license "
+      "here:\nhttps://www.gnu.org/licenses/gpl-3.0.en.html",
+      "Zura Lang " ZuraVersion
+      "\nUsage: zura [options] [file]\nOptions:\n  --version    Print the "
+      "version of Zura\n  --help       Print this help message\n  --license    "
+      "Print the license of Zura\n  --update     Update Zura to the latest "
+      "version" "\n Compiler Flags:\n  build [file]  Build a Zura file",
+  };
+
+  for (int i = 0; i < 4; i++) {
+    if (conditions[i](argv[1])) {
+      if (i == 3) {
+        promptUpdate();
+        Exit(ExitValue::UPDATED);
+      }
+      cout << messages[i] << endl;
+      Exit(ExitValue::FLAGS_PRINTED);
+    }
+  }
+}
+
+void FlagConfig::runBuild(int argc, char **argv) {
+  if (argc == 2) {
+    cout << "No file specified" << endl;
+    Exit(ExitValue::INVALID_FILE);
+  }
+  if (argc == 3 && strcmp(argv[1], "build") == 0) {
+    Flags::runFile(argv[2], "a.out", false);
+  }
+}
+
+void FlagConfig::createFlagsMap(int argc, char **argv) {
+  FlagsMap = {
+      {"--version", print}, {"--help", print},   {"--license", print},
+      {"--update", print},  {"build", runBuild},
+  };
+}
+
 int main(int argc, char **argv) {
-  if ((argc == 2 && strcmp(argv[1], "--help") == 0) || argc == 1) {
-    cout << "Usage: " << argv[0] << " [options]" << endl;
-    cout << "Options:" << endl;
-    cout << "  --help\t\t\tPrints this help message" << endl;
-    cout << "  --version\t\t\tPrints the version of the compiler" << endl;
-    cout << "  --license\t\t\tPrints the license of the Zura Lang" << endl;
-    cout << "  --update\t\t\tUpdates the Zura compiler" << endl;
-    cout << "Compiler:" << endl;
-    cout << termcolor::red << "   -s" << termcolor::reset
-         << ", \t\tSave the generated asm file and the out.o file" << endl;
-    cout << termcolor::red << "   -sa" << termcolor::reset
-         << ", \tOutput just the asm file" << endl;
-    cout << termcolor::red << "   -o" << termcolor::reset
-         << ", \t\tOutput the transpiled file to <file>" << endl;
-    cout << termcolor::red << "   -r" << termcolor::reset
-         << ", \t\tRun the exacutable file. (Not yet implemented)" << endl;
-    cout << termcolor::red << "   -c" << termcolor::reset
-         << ", \t\tDelete the exacutable file and c file if it is there."
-         << endl;
-    Exit(ExitValue::FLAGS_PRINTED);
-  }
+  flagConfig.createFlagsMap(argc, argv);
 
-  // version
-  if (argc == 2 && strcmp(argv[1], "--version") == 0) {
-    cout << "Zura Lang " << ZuraVersion << endl;
-    Exit(ExitValue::FLAGS_PRINTED);
-  }
-
-  // update
-  if (argc == 2 && strcmp(argv[1], "--update") == 0) {
-    installer();
-    Exit(ExitValue::UPDATED);
-  }
-
-  // license
-  if (argc == 2 && strcmp(argv[1], "--license") == 0) {
-    cout << "Zura uses a license under GPL-3.0" << endl;
-    cout << "You can find the license here:" << endl;
-    cout << termcolor::blue << "https://www.gnu.org/licenses/gpl-3.0.en.html"
-         << termcolor::reset << endl;
-    Exit(ExitValue::FLAGS_PRINTED);
-  }
-
-  // (delete)
-  if (argc == 3 && strcmp(argv[1], "-c") == 0)
-    Flags::compilerDelete(argv);
-  // (output the asm)
-  if (argc == 3 && strcmp(argv[1], "-sa") == 0) {
-    Flags::outputFile(argv[2]);
-  }
-  // (transpile)
-  if (argc == 4 && strcmp(argv[2], "-o") == 0) {
-    char *outName = argv[3];
-    Flags::runFile(argv[1], outName, false);
-  }
-  // (transpile and save)
-  if (argc == 5 && strcmp(argv[2], "-o") == 0 && strcmp(argv[4], "-s") == 0) {
-    char *outName = argv[3];
-    Flags::runFile(argv[1], outName, true);
+  for (auto &flag : flagConfig.FlagsMap) {
+    if (strcmp(argv[1], flag.first.c_str()) == 0) {
+      flag.second(argc, argv);
+    } 
   }
 
   return 0;

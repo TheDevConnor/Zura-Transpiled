@@ -33,12 +33,7 @@ run() {
     echo "Executable not found in $BUILD_TYPE build." || die
     return 1
   fi
-  read -p "Run the program? (y/n): " run || die
-  if [ "$run" = "y" ]; then
-    "$executable" zura_files/main.zu -o main || die
-  else
-    echo "Program not run." || die
-  fi
+  "$executable" build zura_files/main.zu || die
 }
 
 # make the commands be able to be sequenced
@@ -48,7 +43,7 @@ for cmd in "$@"; do
       build "$cmd" || die
       ;;
     val)
-      valgrind --leak-check=full --show-leak-kinds=all --track-origins=yes --log-file=valgrind-out.txt ./"$BUILD_TYPE"/zura test.zu -o main || die
+      valgrind --leak-check=full --show-leak-kinds=all --track-origins=yes --log-file=valgrind-out.txt ./"$BUILD_TYPE"/zura build zura_files/main.zu || die
       ;;
     clean)
       clean
