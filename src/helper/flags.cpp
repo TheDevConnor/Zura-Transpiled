@@ -46,7 +46,7 @@ void Flags::runFile(const char *path, std::string outName, bool save) {
 
   result->debug();
 
-  TypeChecker::check(result);
+  TypeChecker::performCheck(result);
   ErrorClass::printError();
   std::cout << "Passed Type Checking" << std::endl;
 

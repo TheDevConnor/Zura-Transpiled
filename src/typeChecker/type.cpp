@@ -2,23 +2,23 @@
 #include "../ast/stmt.hpp"
 #include "../helper/error/error.hpp"
 
-void TypeChecker::check(Node::Stmt *stmt) {
-  symbol_table table;
-  callables_table ctable;
-  visitStmt(ctable, table, stmt);
+void TypeChecker::performCheck(Node::Stmt *stmt) {
+  global_symbol_table global_table;
+  local_symbol_table local_table;
+  visitStmt(global_table, local_table, stmt);
 
   if (!foundMain) {
-    handlerError(0, 0, "No main function found", "Try adding this function: \n\tconst main := fn() int { \n\t    return 0\n\t}");
+    handlerError(0, 0, "No main function found", "Try adding this function: \n\tconst main := fn() int { \n\t    return 0\n\t}", "Type Error");
   }
 }
 
-void TypeChecker::handlerError(int line, int pos, std::string msg, std::string note) {
+void TypeChecker::handlerError(int line, int pos, std::string msg, std::string note, std::string typeOfError) {
   Lexer lexer; // dummy lexer
   if (note != "")
-    ErrorClass::error(line, pos, msg, note, "Type Error", node.current_file, lexer,
+    ErrorClass::error(line, pos, msg, note, typeOfError, node.current_file, lexer,
                     node.tks, 
                     false, false, false, false, true);
-  ErrorClass::error(line, pos, msg, "", "Type Error", node.current_file, lexer,
+  ErrorClass::error(line, pos, msg, "", typeOfError, node.current_file, lexer,
                     node.tks, 
                     false, false, false, false, true);
 }

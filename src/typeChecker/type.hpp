@@ -8,63 +8,86 @@
 #include <functional>
 #include <string>
 #include <unordered_map>
+#include <utility>
 #include <vector>
 
 namespace TypeChecker {
 inline bool foundMain = false;
 
-// !Symbol Table functions
-inline Node::Type *return_type = nullptr;
-using symbol_table = std::unordered_map<std::string, Node::Type *>;
-void declare(symbol_table &table, std::string name, Node::Type *type, int line,
-             int pos);
-Node::Type *table_lookup(symbol_table &table, std::string name, int line,
-                         int pos);
-
-using callables_table =
-    std::unordered_map<std::string,
-                       std::vector<std::pair<std::string, Node::Type *>>>;
-void declare(callables_table &table, std::string name,
-             std::vector<std::pair<std::string, Node::Type *>> params);
-std::vector<std::pair<std::string, Node::Type *>>
-table_lookup(callables_table &table, std::string name, int line, int pos);
-
-void check(Node::Stmt *stmt);
-
 /// This converts the type to a string
 std::string type_to_string(Node::Type *type);
-void handlerError(int line, int pos, std::string msg, std::string note);
+void handlerError(int line, int pos, std::string msg, std::string note,
+                  std::string typeOfError);
 
-// !Ast Visitor functions
-void visitStmt(callables_table &ctable, symbol_table &table, Node::Stmt *stmt);
-void visitExpr(callables_table &ctable, symbol_table &table, Node::Expr *expr);
+// !Symbol Table functions
+inline Node::Type *return_type = nullptr;
 
-void visitProgram(callables_table &ctable, symbol_table &table,
-                  Node::Stmt *stmt);
-void visitReturn(callables_table &ctable, symbol_table &table,
-                 Node::Stmt *stmt);
-void visitConst(callables_table &ctable, symbol_table &table, Node::Stmt *stmt);
-void visitBlock(callables_table &ctable, symbol_table &table, Node::Stmt *stmt);
-void visitVar(callables_table &ctable, symbol_table &table, Node::Stmt *stmt);
-void visitFn(callables_table &ctable, symbol_table &table, Node::Stmt *stmt);
-void visitImport(callables_table &ctable, symbol_table &table, Node::Stmt *stmt);
+using NameTypePair = std::pair<std::string, Node::Type *>;
+using global_symbol_table = std::vector<NameTypePair>;
+using local_symbol_table = std::vector<NameTypePair>;
+using function_table =
+    std::unordered_map<NameTypePair, std::vector<Node::Type *>>;
 
-void visitNumber(callables_table &ctable, symbol_table &table, Node::Expr *expr);
-void visitString(callables_table &ctable, symbol_table &table, Node::Expr *expr);
-void visitIdent(callables_table &ctable, symbol_table &table, Node::Expr *expr);
-void visitCall(callables_table &ctable, symbol_table &table, Node::Expr *expr);
-void visitBinary(callables_table &ctable, symbol_table &table, Node::Expr *expr);
-void visitUnary(callables_table &ctable, symbol_table &table, Node::Expr *expr);
-void visitGrouping(callables_table &ctable, symbol_table &table, Node::Expr *expr);
+template <typename T, typename U>
+T table_lookup(std::unordered_map<T, U> &tables, std::string name, int line,
+               int pos) {
+  for (auto &pair : tables) {
+    if (pair.first == name) {
+      return pair.second;
+    }
+  }
+
+  std::string msg = "'" + name + "' is not defined";
+  handlerError(line, pos, msg, "", "Symbol Table Error");
+  return new SymbolType("unknown");
+}
+
+template <typename T, typename U>
+void declare(std::vector<T> &tables, std::string name, U value, int line,
+             int pos) {
+  for (auto &pair : tables) {
+    if (pair.first == name) {
+      std::string msg = "'" + name + "' is already defined";
+      handlerError(line, pos, msg, "", "Symbol Table Error");
+    }
+  }
+  tables.push_back({name, value});
+}
+
+void performCheck(Node::Stmt *stmt);
 
 // !TypeChecker functions
-using StmtNodeHandler =
-    std::function<void(callables_table &ctables, symbol_table &, Node::Stmt *)>;
-using ExprNodeHandler =
-    std::function<void(callables_table &ctables, symbol_table &, Node::Expr *)>;
+using StmtNodeHandler = std::function<void(
+    global_symbol_table &gTable, local_symbol_table &lTable, Node::Stmt *)>;
+using ExprNodeHandler = std::function<void(
+    global_symbol_table &gTable, local_symbol_table &lTable, Node::Expr *)>;
 extern std::vector<std::pair<NodeKind, StmtNodeHandler>> stmts;
 extern std::vector<std::pair<NodeKind, ExprNodeHandler>> exprs;
 
-void lookup(callables_table &ctables, symbol_table &table, Node::Stmt *stmt);
-void lookup(callables_table &ctables, symbol_table &table, Node::Expr *expr);
-} // namespace TypeChecker
+Node::Stmt *StmtAstLookup(Node::Stmt *node, global_symbol_table gTable,
+                          local_symbol_table lTable);
+Node::Expr *ExprAstLookup(Node::Expr *node, global_symbol_table gTable,
+                          local_symbol_table lTable);
+
+// !Stmt functions
+void visitStmt(global_symbol_table &gTable, local_symbol_table &lTable,
+               Node::Stmt *stmt);
+void visitProgram(global_symbol_table &gTable, local_symbol_table &lTable,
+                  Node::Stmt *stmt);
+void visitFn(global_symbol_table &gTable, local_symbol_table &lTable,
+             Node::Stmt *stmt);
+void visitConst(global_symbol_table &gTable, local_symbol_table &lTable,
+                Node::Stmt *stmt);
+void visitBlock(global_symbol_table &gTable, local_symbol_table &lTable,
+                Node::Stmt *stmt);
+void visitReturn(global_symbol_table &gTable, local_symbol_table &lTable,
+                 Node::Stmt *stmt);
+
+// !Expr functions
+void visitExpr(global_symbol_table &gTable, local_symbol_table &lTable,
+               Node::Expr *expr);
+void visitNumber(global_symbol_table &gTable, local_symbol_table &lTable,
+                 Node::Expr *expr);
+void visitString(global_symbol_table &gTable, local_symbol_table &lTable,
+                 Node::Expr *expr);
+}
