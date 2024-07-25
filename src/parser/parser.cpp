@@ -38,6 +38,7 @@ Node::Stmt *Parser::parse(const char *source, std::string file) {
 
   // Copy the tokens to the ast node
   node.tks = vect_tk->tks;
+  node.current_file = vect_tk->current_file;
 
   delete vect_tk;
   return new ProgramStmt(stmts);

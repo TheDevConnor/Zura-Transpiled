@@ -1,0 +1,3 @@
+const add:= fn (a: int, b: int) int {
+    return "" + b;
+};

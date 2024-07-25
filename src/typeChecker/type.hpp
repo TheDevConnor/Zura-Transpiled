@@ -16,7 +16,8 @@ inline bool foundMain = false;
 // !Symbol Table functions
 inline Node::Type *return_type = nullptr;
 using symbol_table = std::unordered_map<std::string, Node::Type *>;
-void declare(symbol_table &table, std::string name, Node::Type *type);
+void declare(symbol_table &table, std::string name, Node::Type *type, int line,
+             int pos);
 Node::Type *table_lookup(symbol_table &table, std::string name, int line,
                          int pos);
 
@@ -46,6 +47,7 @@ void visitConst(callables_table &ctable, symbol_table &table, Node::Stmt *stmt);
 void visitBlock(callables_table &ctable, symbol_table &table, Node::Stmt *stmt);
 void visitVar(callables_table &ctable, symbol_table &table, Node::Stmt *stmt);
 void visitFn(callables_table &ctable, symbol_table &table, Node::Stmt *stmt);
+void visitImport(callables_table &ctable, symbol_table &table, Node::Stmt *stmt);
 
 void visitNumber(callables_table &ctable, symbol_table &table, Node::Expr *expr);
 void visitString(callables_table &ctable, symbol_table &table, Node::Expr *expr);

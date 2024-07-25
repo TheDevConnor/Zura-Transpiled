@@ -15,12 +15,12 @@ void TypeChecker::check(Node::Stmt *stmt) {
 void TypeChecker::handlerError(int line, int pos, std::string msg, std::string note) {
   Lexer lexer; // dummy lexer
   if (note != "")
-    ErrorClass::error(line, pos, msg, note, "Type Error", "main.zu", lexer,
+    ErrorClass::error(line, pos, msg, note, "Type Error", node.current_file, lexer,
                     node.tks, 
-                    false, false, true, false, true);
-  ErrorClass::error(line, pos, msg, "", "Type Error", "main.zu", lexer,
+                    false, false, false, false, true);
+  ErrorClass::error(line, pos, msg, "", "Type Error", node.current_file, lexer,
                     node.tks, 
-                    false, false, true, false, true);
+                    false, false, false, false, true);
 }
 
 std::string TypeChecker::type_to_string(Node::Type *type) {

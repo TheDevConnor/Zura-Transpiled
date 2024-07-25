@@ -1,7 +1,6 @@
-const add := fn (a: int, b: int) int {
-   return a + b;
-};
+import "zura_files/person.zu";
 
 const main := fn () int {
-   return add(1, 2);
+   have u: int = (3 + 5)^add(1, 5);
+   return x;
 };

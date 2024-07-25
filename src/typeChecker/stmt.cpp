@@ -38,10 +38,10 @@ void TypeChecker::visitFn(callables_table &ctable, symbol_table &table,
       handlerError(fn_stmt->line, fn_stmt->pos, msg, "");
     }
   }
-  declare(table, fn_stmt->name, fn_stmt->returnType);
+  declare(table, fn_stmt->name, fn_stmt->returnType, fn_stmt->line, fn_stmt->pos);
 
   for (auto &param : fn_stmt->params) {
-    declare(table, param.first, param.second);
+    declare(table, param.first, param.second, fn_stmt->line, fn_stmt->pos);
   }
 
   visitStmt(ctable, table, fn_stmt->block);
@@ -81,15 +81,29 @@ void TypeChecker::visitVar(callables_table &ctable, symbol_table &table,
                            Node::Stmt *stmt) {
   auto var_stmt = static_cast<VarStmt *>(stmt);
 
-  declare(table, var_stmt->name, var_stmt->type);
+  declare(table, var_stmt->name, var_stmt->type, var_stmt->line, var_stmt->pos);
 
   if (var_stmt->expr != nullptr) {
     visitStmt(ctable, table, var_stmt->expr);
     if (type_to_string(return_type) != type_to_string(var_stmt->type)) {
-      std::string msg = "Variable " + var_stmt->name + " has a type of " +
-                        type_to_string(return_type) + " but expected " +
-                        type_to_string(var_stmt->type);
+      std::string msg = "Variable '" + var_stmt->name + "' has a type of '" +
+                        type_to_string(return_type) + "' but expected '" +
+                        type_to_string(var_stmt->type) + "'";
       handlerError(var_stmt->line, var_stmt->pos, msg, "");
     }
   }
+}
+
+void TypeChecker::visitImport(callables_table &ctable, symbol_table &table,
+                              Node::Stmt *stmt) {
+  // NOTE: This works but for some reason when we build the line for the error
+  // it doesn't show the correct line it shows the line from the main file
+  auto import_stmt = static_cast<ImportStmt *>(stmt);
+  
+  auto current_file = node.current_file;
+  node.current_file = import_stmt->name;
+
+  visitStmt(ctable, table, import_stmt->stmt);
+
+  node.current_file = current_file;
 }

@@ -35,6 +35,7 @@ std::vector<std::pair<NodeKind, TypeChecker::StmtNodeHandler>>
         {NodeKind::ND_BLOCK_STMT, visitBlock},
         {NodeKind::ND_VAR_STMT, visitVar},
         {NodeKind::ND_RETURN_STMT, visitReturn},
+        {NodeKind::ND_IMPORT_STMT, visitImport},
         {NodeKind::ND_EXPR_STMT,
          [](callables_table &ctables, symbol_table &table, Node::Stmt *stmt) {
            auto expr_stmt = static_cast<ExprStmt *>(stmt);

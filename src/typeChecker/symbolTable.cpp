@@ -8,7 +8,12 @@
 
 /// Symbol Table function to push a variable into the symbol table
 void TypeChecker::declare(symbol_table &table, std::string name,
-                          Node::Type *type) {
+                          Node::Type *type, int line, int pos) {
+  // validate if the variable is already declared
+  if (table.find(name) != table.end()) {
+    std::string msg = "'" + name + "' is already declared";
+    handlerError(line, pos, msg, "");
+  }
   table[name] = type;
 }
 
@@ -19,9 +24,9 @@ Node::Type *TypeChecker::table_lookup(symbol_table &table, std::string name, int
       return pair.second;
     }
   }
-  std::string msg = "Undeclared variable '" + name + "'";
+  std::string msg = "'" + name + "' is not defined";
   handlerError(line, pos, msg, "");
-  return nullptr;
+  return new SymbolType("error");
 }
 
 void TypeChecker::declare(
@@ -37,7 +42,5 @@ TypeChecker::table_lookup(callables_table &table, std::string name, int line, in
       return pair.second;
     }
   }
-  std::string msg = "Undeclared function '" + name + "'";
-  handlerError(line, pos, msg, "");
   return {};
 }

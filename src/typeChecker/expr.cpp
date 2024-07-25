@@ -23,7 +23,17 @@ void TypeChecker::visitBinary(callables_table &ctable, symbol_table &table,
                               Node::Expr *expr) {
   auto binary = static_cast<BinaryExpr *>(expr);
   visitExpr(ctable, table, binary->lhs);
+  auto lhs_type = return_type;
+
   visitExpr(ctable, table, binary->rhs);
+  auto rhs_type = return_type;
+
+  if (type_to_string(lhs_type) != type_to_string(rhs_type)) {
+    std::string msg = "Binary operation expects both sides to be of the same "
+                      "type but got " + type_to_string(lhs_type) + " and " +
+                      type_to_string(rhs_type);
+    handlerError(binary->line, binary->pos, msg, "");
+  }
 }
 
 void TypeChecker::visitCall(callables_table &ctable, symbol_table &table,
@@ -65,10 +75,17 @@ void TypeChecker::visitUnary(callables_table &ctable, symbol_table &table,
                              Node::Expr *expr) {
   auto unary = static_cast<UnaryExpr *>(expr);
   visitExpr(ctable, table, unary->expr);
+
+  if (type_to_string(return_type) != "int") {
+    std::string msg = "Unary operation expects an 'int' but got '" +
+                      type_to_string(return_type) + "'";
+    handlerError(unary->line, unary->pos, msg, "");
+  }
 }
 
 void TypeChecker::visitGrouping(callables_table &ctable, symbol_table &table,
                                 Node::Expr *expr) {
   auto grouping = static_cast<GroupExpr *>(expr);
   visitExpr(ctable, table, grouping->expr);
+  return_type = return_type;
 }

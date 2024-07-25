@@ -51,6 +51,8 @@ public:
   // so that we can generate the line from the line and
   // pos stored on the ast nodes; for error reporting
   std::vector<Lexer::Token> tks;
+  // Store the current file name
+  std::string current_file;
 
   struct Expr {
     NodeKind kind;
