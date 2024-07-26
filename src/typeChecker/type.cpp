@@ -3,24 +3,24 @@
 #include "../helper/error/error.hpp"
 
 void TypeChecker::performCheck(Node::Stmt *stmt) {
-  global_symbol_table global_table;
-  local_symbol_table local_table;
-  visitStmt(global_table, local_table, stmt);
+  visitStmt(global_table, local_table, fn_table, stmt);
 
   if (!foundMain) {
-    handlerError(0, 0, "No main function found", "Try adding this function: \n\tconst main := fn() int { \n\t    return 0\n\t}", "Type Error");
+    handlerError(0, 0, "No main function found",
+                 "Try adding this function: \n\tconst main := fn() int { \n\t  "
+                 "  return 0\n\t}",
+                 "Type Error");
   }
 }
 
-void TypeChecker::handlerError(int line, int pos, std::string msg, std::string note, std::string typeOfError) {
+void TypeChecker::handlerError(int line, int pos, std::string msg,
+                               std::string note, std::string typeOfError) {
   Lexer lexer; // dummy lexer
   if (note != "")
-    ErrorClass::error(line, pos, msg, note, typeOfError, node.current_file, lexer,
-                    node.tks, 
-                    false, false, false, false, true);
+    ErrorClass::error(line, pos, msg, note, typeOfError, node.current_file,
+                      lexer, node.tks, false, false, false, false, true);
   ErrorClass::error(line, pos, msg, "", typeOfError, node.current_file, lexer,
-                    node.tks, 
-                    false, false, false, false, true);
+                    node.tks, false, false, false, false, true);
 }
 
 std::string TypeChecker::type_to_string(Node::Type *type) {
