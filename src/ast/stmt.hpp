@@ -171,12 +171,14 @@ public:
   Node::Type *returnType;
   Node::Stmt *block;
   bool isMain = false;
+  bool isEntry = false;
 
   fnStmt(int line, int pos, std::string name,
          std::vector<std::pair<std::string, Node::Type *>> params,
-         Node::Type *returnType, Node::Stmt *block, bool isMain = false)
+         Node::Type *returnType, Node::Stmt *block, bool isMain = false,
+         bool isEntry = false)
       : line(line), pos(pos), name(name), params(params),
-        returnType(returnType), block(block), isMain(isMain) {
+        returnType(returnType), block(block), isMain(isMain), isEntry(isEntry) {
     kind = NodeKind::ND_FN_STMT;
   }
 
@@ -421,7 +423,8 @@ public:
   std::string name;
   Node::Stmt *stmt;
 
-  ImportStmt(int line, int pos, std::string name, Node::Stmt *stmt) : line(line), pos(pos), name(name), stmt(stmt) {
+  ImportStmt(int line, int pos, std::string name, Node::Stmt *stmt)
+      : line(line), pos(pos), name(name), stmt(stmt) {
     kind = NodeKind::ND_IMPORT_STMT;
   }
 
@@ -433,7 +436,5 @@ public:
     stmt->debug(ident + 1);
   }
 
-  ~ImportStmt() {
-    delete stmt;
-  }
+  ~ImportStmt() { delete stmt; }
 };

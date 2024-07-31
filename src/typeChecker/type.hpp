@@ -23,8 +23,8 @@ void handlerError(int line, int pos, std::string msg, std::string note,
 inline Node::Type *return_type = nullptr;
 
 using NameTypePair = std::pair<std::string, Node::Type *>;
-using global_symbol_table = std::vector<NameTypePair>;
-using local_symbol_table = std::vector<NameTypePair>;
+using global_symbol_table = std::unordered_map<std::string, Node::Type*>;
+using local_symbol_table = std::unordered_map<std::string, Node::Type*>;
 using function_table = std::vector<
     std::pair<NameTypePair, std::vector<std::pair<std::string, Node::Type *>>>>;
 // fn_name (fn_name, fn_return type) ->  { param name, param type }
@@ -48,15 +48,16 @@ T table_lookup(std::unordered_map<T, U> &tables, std::string name, int line,
 }
 
 template <typename T, typename U>
-void declare(std::vector<T> &tables, std::string name, U value, int line,
+void declare(std::unordered_map<T, U> &tables, std::string name, U value, int line,
              int pos) {
   for (auto &pair : tables) {
     if (pair.first == name) {
       std::string msg = "'" + name + "' is already defined";
       handlerError(line, pos, msg, "", "Symbol Table Error");
+      return;
     }
   }
-  tables.push_back({name, value});
+  tables[name] = value; 
 }
 
 void declare_fn(function_table &fn_table, std::string name,
@@ -101,4 +102,8 @@ void visitNumber(global_symbol_table &gTable, local_symbol_table &lTable,
                  Node::Expr *expr);
 void visitString(global_symbol_table &gTable, local_symbol_table &lTable,
                  Node::Expr *expr);
-} // namespace TypeChecker
+void visitIdent(global_symbol_table &gTable, local_symbol_table &lTable,
+                 Node::Expr *expr);
+void visitBinary(global_symbol_table &gTable, local_symbol_table &lTable,
+                  Node::Expr *expr);
+}
