@@ -1,7 +1,10 @@
 const add := fn (x: int, y: int) int {
-   return x + y;
+   return x + "y";
 };
 
+have x: int = add(1, "2");
 const main := fn () int {
-   return add(1, 2);
+   have x: str = "Hello, World!";
+   dis("%s\n", msg);
+   return x;
 };

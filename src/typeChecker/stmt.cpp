@@ -3,33 +3,29 @@
 #include "../ast/types.hpp"
 #include "type.hpp"
 
-void TypeChecker::visitStmt(Maps::global_symbol_table &gTable,
-                            Maps::local_symbol_table &lTable,
-                            Maps::function_table &fn_table, Node::Stmt *stmt) {
-  StmtAstLookup(stmt, gTable, lTable, fn_table);
+void TypeChecker::visitStmt(Maps *map, Node::Stmt *stmt) {
+  StmtAstLookup(stmt, map);
 }
 
-void TypeChecker::visitProgram(Maps::global_symbol_table &gTable,
-                               Maps::local_symbol_table &lTable,
-                               Maps::function_table &fn_table,
-                               Node::Stmt *stmt) {
+void TypeChecker::visitExprStmt(Maps *map, Node::Stmt *stmt) {
+  auto expr_stmt = static_cast<ExprStmt *>(stmt);
+  visitExpr(map, expr_stmt->expr);
+}
+
+void TypeChecker::visitProgram(Maps *map, Node::Stmt *stmt) {
   auto program_stmt = static_cast<ProgramStmt *>(stmt);
   for (auto &stmt : program_stmt->stmt) {
-    visitStmt(gTable, lTable, fn_table, stmt);
+    visitStmt(map, stmt);
   }
 }
 
-void TypeChecker::visitConst(Maps::global_symbol_table &gTable,
-                             Maps::local_symbol_table &lTable,
-                             Maps::function_table &fn_table, Node::Stmt *stmt) {
+void TypeChecker::visitConst(Maps *map, Node::Stmt *stmt) {
   auto const_stmt = static_cast<ConstStmt *>(stmt);
-  visitStmt(gTable, lTable, fn_table, const_stmt->value);
+  visitStmt(map, const_stmt->value);
 }
 
 // TODO: add a lookup for duplicate function names
-void TypeChecker::visitFn(Maps::global_symbol_table &gTable,
-                          Maps::local_symbol_table &lTable,
-                          Maps::function_table &fn_table, Node::Stmt *stmt) {
+void TypeChecker::visitFn(Maps *map, Node::Stmt *stmt) {
   auto fn_stmt = static_cast<fnStmt *>(stmt);
 
   if (fn_stmt->name == "main") {
@@ -41,14 +37,14 @@ void TypeChecker::visitFn(Maps::global_symbol_table &gTable,
   }
 
   // add the function name and params the to the local table
-  Maps::declare(lTable, fn_stmt->name, fn_stmt->returnType, fn_stmt->line,
-                fn_stmt->pos);
+  map->declare(map->local_symbol_table, fn_stmt->name, fn_stmt->returnType,
+               fn_stmt->line, fn_stmt->pos);
   for (auto &param : fn_stmt->params) {
-    Maps::declare(lTable, param.first, param.second, fn_stmt->line,
-                  fn_stmt->pos);
+    map->declare(map->local_symbol_table, param.first, param.second,
+                 fn_stmt->line, fn_stmt->pos);
   }
 
-  visitStmt(gTable, lTable, fn_table, fn_stmt->block);
+  visitStmt(map, fn_stmt->block);
 
   if (return_type != nullptr) {
     if (type_to_string(return_type) != type_to_string(fn_stmt->returnType)) {
@@ -60,39 +56,35 @@ void TypeChecker::visitFn(Maps::global_symbol_table &gTable,
   }
 
   // also add the function name to the global table and function table
-  Maps::declare(gTable, fn_stmt->name, fn_stmt->returnType, fn_stmt->line,
-                fn_stmt->pos);
-  Maps::declare_fn(fn_table, fn_stmt->name,
-                   {fn_stmt->name, fn_stmt->returnType}, fn_stmt->params,
-                   fn_stmt->line, fn_stmt->pos);
-
-  
-  // print the Tables
-  Maps::printTables(gTable, lTable, fn_table);
-
+  map->declare(map->global_symbol_table, fn_stmt->name, fn_stmt->returnType,
+               fn_stmt->line, fn_stmt->pos);
+  map->declare_fn(map, fn_stmt->name, {fn_stmt->name, fn_stmt->returnType},
+                  fn_stmt->params, fn_stmt->line, fn_stmt->pos);
 
   return_type = nullptr;
-  lTable.clear(); // clear the local table for the next function
+  map->local_symbol_table
+      .clear(); // clear the local table for the next function
 }
 
-void TypeChecker::visitBlock(Maps::global_symbol_table &gTable,
-                             Maps::local_symbol_table &lTable,
-                             Maps::function_table &fn_table, Node::Stmt *stmt) {
+void TypeChecker::visitBlock(Maps *map, Node::Stmt *stmt) {
   auto block_stmt = static_cast<BlockStmt *>(stmt);
   for (auto &stmt : block_stmt->stmts) {
-    visitStmt(gTable, lTable, fn_table, stmt);
+    visitStmt(map, stmt);
   }
 }
 
-void TypeChecker::visitVar(Maps::global_symbol_table &gTable,
-                           Maps::local_symbol_table &lTable,
-                           Maps::function_table &fn_table, Node::Stmt *stmt) {
+void TypeChecker::visitVar(Maps *map, Node::Stmt *stmt) {
   auto var_stmt = static_cast<VarStmt *>(stmt);
 
-  Maps::declare(lTable, var_stmt->name, var_stmt->type, var_stmt->line,
-                var_stmt->pos);
+  if (map->local_symbol_table.empty()) {
+    map->declare(map->global_symbol_table, var_stmt->name, var_stmt->type,
+                 var_stmt->line, var_stmt->pos);
+  }
 
-  visitStmt(gTable, lTable, fn_table, var_stmt->expr);
+  map->declare(map->local_symbol_table, var_stmt->name, var_stmt->type,
+               var_stmt->line, var_stmt->pos);
+
+  visitStmt(map, var_stmt->expr);
 
   if (return_type != nullptr) {
     if (type_to_string(return_type) != type_to_string(var_stmt->type)) {
@@ -106,10 +98,14 @@ void TypeChecker::visitVar(Maps::global_symbol_table &gTable,
   return_type = nullptr;
 }
 
-void TypeChecker::visitReturn(Maps::global_symbol_table &gTable,
-                              Maps::local_symbol_table &lTable,
-                              Maps::function_table &fn_table,
-                              Node::Stmt *stmt) {
+void TypeChecker::visitPrint(Maps *map, Node::Stmt *stmt) {
+  auto print_stmt = static_cast<PrintStmt *>(stmt);
+  for (auto &expr : print_stmt->args) {
+    visitExpr(map, expr);
+  }
+}
+
+void TypeChecker::visitReturn(Maps *map, Node::Stmt *stmt) {
   auto return_stmt = static_cast<ReturnStmt *>(stmt);
-  visitExpr(gTable, lTable, fn_table, return_stmt->expr);
+  visitExpr(map, return_stmt->expr);
 }

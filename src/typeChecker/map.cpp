@@ -18,12 +18,8 @@ std::vector<std::pair<NodeKind, TypeChecker::StmtNodeHandler>>
         {NodeKind::ND_BLOCK_STMT, visitBlock},
         {NodeKind::ND_RETURN_STMT, visitReturn},
         {NodeKind::ND_VAR_STMT, visitVar},
-        {NodeKind::ND_EXPR_STMT,
-         [](Maps::global_symbol_table &gTable, Maps::local_symbol_table &lTable,
-            Maps::function_table &fn_table, Node::Stmt *stmt) {
-           auto expr_stmt = static_cast<ExprStmt *>(stmt);
-           visitExpr(gTable, lTable, fn_table, expr_stmt->expr);
-         }},
+        {NodeKind::ND_EXPR_STMT, visitExprStmt},
+        {NodeKind::ND_PRINT_STMT, visitPrint},
 };
 
 std::vector<std::pair<NodeKind, TypeChecker::ExprNodeHandler>>
@@ -33,58 +29,49 @@ std::vector<std::pair<NodeKind, TypeChecker::ExprNodeHandler>>
         {NodeKind::ND_CALL, visitCall},
 };
 
-Node::Stmt *TypeChecker::StmtAstLookup(Node::Stmt *node,
-                                       Maps::global_symbol_table gTable,
-                                       Maps::local_symbol_table lTable,
-                                       Maps::function_table fn_table) {
+Node::Stmt *TypeChecker::StmtAstLookup(Node::Stmt *node, Maps *maps) {
   auto res = std::find_if(stmts.begin(), stmts.end(), [&](auto &stmtHandler) {
     return node->kind == stmtHandler.first;
   });
   if (res != stmts.end())
-    res->second(gTable, lTable, fn_table, node);
+    res->second(maps, node);
   return node;
 }
 
-Node::Expr *TypeChecker::ExprAstLookup(Node::Expr *node,
-                                       Maps::global_symbol_table gTable,
-                                       Maps::local_symbol_table lTable,
-                                       Maps::function_table fn_table) {
+Node::Expr *TypeChecker::ExprAstLookup(Node::Expr *node, Maps *maps) {
   auto res = std::find_if(exprs.begin(), exprs.end(), [&](auto &exprHandler) {
     return node->kind == exprHandler.first;
   });
   if (res != exprs.end())
-    res->second(gTable, lTable, fn_table, node);
+    res->second(maps, node);
   return node;
 }
 
 void TypeChecker::Maps::declare_fn(
-    Maps::function_table &fn_table, std::string name,
-    const Maps::NameTypePair &pair,
+    Maps *map, std::string name, const Maps::NameTypePair &pair,
     std::vector<std::pair<std::string, Node::Type *>> paramTypes, int line,
     int pos) {
   auto res = std::find_if(
-      fn_table.begin(), fn_table.end(),
+      map->function_table.begin(), map->function_table.end(),
       [&name](const std::pair<NameTypePair,
                               std::vector<std::pair<std::string, Node::Type *>>>
                   &pair) { return pair.first.first == name; });
-  if (res != fn_table.end()) {
-    std::string msg = "'" + name + "' is already defined";
+  if (res != map->function_table.end()) {
+    std::string msg = "'" + name + "' is already defined in the function table";
     handlerError(line, pos, msg, "", "Function Table Error");
-    return;
   }
-  fn_table.push_back({pair, paramTypes});
+  map->function_table.push_back({pair, paramTypes});
 }
 
 std::pair<TypeChecker::Maps::NameTypePair,
           std::vector<std::pair<std::string, Node::Type *>>>
-TypeChecker::Maps::lookup_fn(Maps::function_table &fn_table, std::string name,
-                             int line, int pos) {
+TypeChecker::Maps::lookup_fn(Maps *map, std::string name, int line, int pos) {
   auto res = std::find_if(
-      fn_table.begin(), fn_table.end(),
+      map->function_table.begin(), map->function_table.end(),
       [&name](const std::pair<NameTypePair,
                               std::vector<std::pair<std::string, Node::Type *>>>
                   &pair) { return pair.first.first == name; });
-  if (res != fn_table.end())
+  if (res != map->function_table.end())
     return *res;
 
   std::string msg = "'" + name + "' is not defined in the function table";
@@ -92,23 +79,21 @@ TypeChecker::Maps::lookup_fn(Maps::function_table &fn_table, std::string name,
   return {{name, new SymbolType("unknown")}, {}};
 }
 
-void TypeChecker::Maps::printTables(Maps::global_symbol_table &gTable,
-                                    Maps::local_symbol_table &lTable,
-                                    Maps::function_table &fn_table) {
+void TypeChecker::printTables(Maps *map) {
   std::cout << "Global Table" << std::endl;
-  for (auto &pair : gTable) {
+  for (auto &pair : map->global_symbol_table) {
     std::cout << "\t" << pair.first << " : " << type_to_string(pair.second)
               << std::endl;
   }
 
   std::cout << "Local Table" << std::endl;
-  for (auto &pair : lTable) {
+  for (auto &pair : map->local_symbol_table) {
     std::cout << "\t" << pair.first << " : " << type_to_string(pair.second)
               << std::endl;
   }
 
   std::cout << "Function Table" << std::endl;
-  for (auto &pair : fn_table) {
+  for (auto &pair : map->function_table) {
     std::cout << "\t" << pair.first.first << " : "
               << type_to_string(pair.first.second) << std::endl;
     for (auto &param : pair.second) {
