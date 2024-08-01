@@ -3,6 +3,13 @@
 #include "../helper/error/error.hpp"
 
 void TypeChecker::performCheck(Node::Stmt *stmt) {
+  Maps::global_symbol_table global_table;
+  Maps::local_symbol_table local_table;
+  Maps::function_table fn_table;
+
+  // ERROR: None of the information that is being pushed to the maps 
+  // is being stored out side of is function call. No clue how to fix this
+
   visitStmt(global_table, local_table, fn_table, stmt);
 
   if (!foundMain) {

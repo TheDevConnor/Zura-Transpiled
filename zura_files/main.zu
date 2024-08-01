@@ -1,7 +1,7 @@
-const add := fn (a: int, b: int) int {
-   return "" + b;
+const add := fn (x: int, y: int) int {
+   return x + y;
 };
 
 const main := fn () int {
-   return a;
+   return add(1, 2);
 };
