@@ -3,8 +3,6 @@ const add := fn (x: int, y: int) int {
 };
 
 have x: int = add(1, "2");
-const main := fn () int {
-   have x: str = "Hello, World!";
-   dis("%s\n", msg);
+const main := fn (argv: int, argc: str) str {
    return x;
 };

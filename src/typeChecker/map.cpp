@@ -60,6 +60,21 @@ void TypeChecker::Maps::declare_fn(
     std::string msg = "'" + name + "' is already defined in the function table";
     handlerError(line, pos, msg, "", "Function Table Error");
   }
+
+  if (name == "main") {
+    foundMain = true;
+    if (type_to_string(pair.second) != "int") {
+      std::string msg = "Main function must return an int";
+      handlerError(line, pos, msg, "", "Function Table Error");
+    }
+    if (paramTypes.size() != 0) {
+      std::string msg = "Main function must not have any parameters";
+      handlerError(line, pos, msg, "", "Function Table Error");
+    }
+    map->function_table.push_back({pair, paramTypes});
+    return;
+  }
+
   map->function_table.push_back({pair, paramTypes});
 }
 

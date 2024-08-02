@@ -24,17 +24,8 @@ void TypeChecker::visitConst(Maps *map, Node::Stmt *stmt) {
   visitStmt(map, const_stmt->value);
 }
 
-// TODO: add a lookup for duplicate function names
 void TypeChecker::visitFn(Maps *map, Node::Stmt *stmt) {
   auto fn_stmt = static_cast<fnStmt *>(stmt);
-
-  if (fn_stmt->name == "main") {
-    foundMain = true;
-    if (type_to_string(fn_stmt->returnType) != "int") {
-      handlerError(fn_stmt->line, fn_stmt->pos,
-                   "Main function must return an int", "", "Type Error");
-    }
-  }
 
   // add the function name and params the to the local table
   map->declare(map->local_symbol_table, fn_stmt->name, fn_stmt->returnType,
