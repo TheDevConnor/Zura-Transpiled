@@ -24,7 +24,7 @@ Node::Stmt *Parser::parse(const char *source, std::string file) {
   PStruct psr;
 
   // Initialize the lexer and store the tokens
-  lexer.initLexer(source);
+  lexer.initLexer(source, file);
   auto vect_tk = setupParser(&psr, &lexer, lexer.scanToken(), file);
 
   ErrorClass::printError();

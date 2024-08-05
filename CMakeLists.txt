@@ -13,7 +13,6 @@ set(ZURA_HEADER_FILES
 
     # Lexer Files
     src/lexer/lexer.hpp
-    src/lexer/maps.hpp
 
     # Ast Files
     src/ast/ast.hpp
@@ -35,6 +34,7 @@ set(ZURA_SOURCE_FILES
     src/helper/error/error.cpp
     src/helper/flags.cpp
     src/lexer/lexer.cpp
+    src/lexer/maps.cpp
 
     # Parser Files
     src/parser/parser.cpp
