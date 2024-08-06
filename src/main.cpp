@@ -1,7 +1,6 @@
 #include <cstring>
 #include <iostream>
 
-#include "../inc/colorize.hpp"
 #include "../inc/update.hpp"
 #include "common.hpp"
 #include "helper/flags.hpp"

@@ -294,3 +294,20 @@ public:
     delete rhs;
   }
 };
+
+class BoolExpr : public Node::Expr {
+public:
+  int line, pos;
+  bool value;
+
+  BoolExpr(int line, int pos, bool value) : line(line), pos(pos), value(value) {
+    kind = NodeKind::ND_BOOL;
+  }
+
+  void debug(int ident = 0) const override {
+    Node::printIndent(ident);
+    std::cout << "BoolStmt: \n";
+    Node::printIndent(ident + 1);
+    std::cout << "Value: " << value << "\n";
+  }
+};

@@ -153,3 +153,12 @@ Node::Expr *Parser::_member(PStruct *psr, Node::Expr *left, BindingPower bp) {
 
   return new MemberExpr(line, column, left, right);
 }
+
+Node::Expr *Parser::bool_expr(PStruct *psr) {
+  auto line = psr->tks[psr->pos].line;
+  auto column = psr->tks[psr->pos].column;
+
+  auto res = (psr->advance(psr).value == "true") ? true : false;
+
+  return new BoolExpr(line, column, res);
+}

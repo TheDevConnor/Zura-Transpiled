@@ -83,9 +83,12 @@ void visitExprStmt(Maps *map, Node::Stmt *stmt);
 void visitProgram(Maps *map, Node::Stmt *stmt);
 void visitFn(Maps *map, Node::Stmt *stmt);
 void visitConst(Maps *map, Node::Stmt *stmt);
+void visitStruct(Maps *map, Node::Stmt *stmt);
+void visitEnum(Maps *map, Node::Stmt *stmt);
 void visitBlock(Maps *map, Node::Stmt *stmt);
 void visitVar(Maps *map, Node::Stmt *stmt);
 void visitPrint(Maps *map, Node::Stmt *stmt);
+void visitIf(Maps *map, Node::Stmt *stmt);
 void visitReturn(Maps *map, Node::Stmt *stmt);
 
 // !Expr functions
@@ -94,5 +97,9 @@ void visitNumber(Maps *map, Node::Expr *expr);
 void visitString(Maps *map, Node::Expr *expr);
 void visitIdent(Maps *map, Node::Expr *expr);
 void visitBinary(Maps *map, Node::Expr *expr);
+void visitUnary(Maps *map, Node::Expr *expr);
+void visitBool(Maps *map, Node::Expr *expr);
+void visitGrouping(Maps *map, Node::Expr *expr);
 void visitCall(Maps *map, Node::Expr *expr);
+void visitTernary(Maps *map, Node::Expr *expr);
 } // namespace TypeChecker

@@ -8,7 +8,6 @@ set(CMAKE_CXX_STANDARD 20)
 set(ZURA_HEADER_FILES
     src/helper/error/error.hpp
     src/helper/flags.hpp
-    inc/colorize.hpp
     src/helper/color.hpp
 
     # Lexer Files

@@ -124,6 +124,7 @@ Node::Expr *unary(PStruct *psr);
 Node::Expr *_prefix(PStruct *psr);
 Node::Expr *group(PStruct *psr);
 Node::Expr *array(PStruct *psr);
+Node::Expr *bool_expr(PStruct *psr);
 Node::Expr *binary(PStruct *psr, Node::Expr *left, BindingPower bp);
 Node::Expr *assign(PStruct *psr, Node::Expr *left, BindingPower bp);
 Node::Expr *parse_call(PStruct *psr, Node::Expr *left, BindingPower bp);

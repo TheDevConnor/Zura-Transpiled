@@ -29,18 +29,65 @@ void TypeChecker::visitBinary(Maps *map, Node::Expr *expr) {
   visitExpr(map, binary->rhs);
   auto rhs = return_type;
 
+  // validate the types of the lhs and rhs
   if (lhs == nullptr || rhs == nullptr) {
     return_type = new SymbolType("unknown");
     return;
   }
 
-  if (type_to_string(lhs) != type_to_string(rhs)) {
-    std::string msg = "Binary operation '" + binary->op +
-                      "' requires both sides to be the same type";
-    handlerError(binary->line, binary->pos, msg, "", "Type Error");
+  // check if the op is of type bool aka +, -, *, /
+  std::vector<std::string> math_ops = {"+", "-", "*", "/", "%", "^"};
+  if (std::find(math_ops.begin(), math_ops.end(), binary->op) !=
+      math_ops.end()) {
+    if (type_to_string(lhs) != type_to_string(rhs)) {
+      std::string msg = "Binary operation '" + binary->op +
+                        "' requires both sides to be the same type";
+      handlerError(binary->line, binary->pos, msg, "", "Type Error");
+    }
+    return_type = lhs;
+    return;
   }
 
-  return_type = lhs;
+  // check if the op is of type bool aka >, <, >=, <=, ==, !=
+  std::vector<std::string> bool_ops = {">", "<", ">=", "<=", "==", "!="};
+  if (std::find(bool_ops.begin(), bool_ops.end(), binary->op) !=
+      bool_ops.end()) {
+    if (type_to_string(lhs) != type_to_string(rhs)) {
+      std::string msg = "Binary operation '" + binary->op +
+                        "' requires both sides to be of type '" +
+                        type_to_string(lhs) + "' but got '" +
+                        type_to_string(rhs) + "'";
+      handlerError(binary->line, binary->pos, msg, "", "Type Error");
+    }
+    return_type = new SymbolType("bool");
+    return;
+  }
+}
+
+void TypeChecker::visitUnary(Maps *map, Node::Expr *expr) {
+  auto unary = static_cast<UnaryExpr *>(expr);
+  visitExpr(map, unary->expr);
+
+  if (return_type == nullptr) {
+    return_type = new SymbolType("unknown");
+    return;
+  }
+
+  if (unary->op == "-" && type_to_string(return_type) != "int") {
+    std::string msg = "Unary operation '" + unary->op +
+                      "' requires the type to be an 'int' but got '" +
+                      type_to_string(return_type) + "'";
+    handlerError(unary->line, unary->pos, msg, "", "Type Error");
+  }
+
+  if (unary->op == "!" && type_to_string(return_type) != "bool") {
+    std::string msg = "Unary operation '" + unary->op +
+                      "' requires the type to be a 'bool' but got '" +
+                      type_to_string(return_type) + "'";
+    handlerError(unary->line, unary->pos, msg, "", "Type Error");
+  }
+
+  return_type = return_type;
 }
 
 void TypeChecker::visitCall(Maps *map, Node::Expr *expr) {
@@ -54,7 +101,7 @@ void TypeChecker::visitCall(Maps *map, Node::Expr *expr) {
                       std::to_string(fn.second.size()) + " arguments but got " +
                       std::to_string(call->args.size());
     handlerError(call->line, call->pos, msg, "", "Type Error");
-  } 
+  }
 
   for (int i = 0; i < call->args.size(); i++) {
     visitExpr(map, call->args[i]);
@@ -68,4 +115,43 @@ void TypeChecker::visitCall(Maps *map, Node::Expr *expr) {
   }
 
   return_type = fn.first.second;
+}
+
+void TypeChecker::visitGrouping(Maps *map, Node::Expr *expr) {
+  auto grouping = static_cast<GroupExpr *>(expr);
+  visitExpr(map, grouping->expr);
+  return_type = return_type;
+}
+
+void TypeChecker::visitBool(Maps *map, Node::Expr *expr) {
+  auto boolean = static_cast<BoolExpr *>(expr);
+  return_type = new SymbolType("bool");
+}
+
+void TypeChecker::visitTernary(Maps *map, Node::Expr *expr) {
+  auto ternary = static_cast<TernaryExpr *>(expr);
+  visitExpr(map, ternary->condition);
+  if (type_to_string(return_type) != "bool") {
+    std::string msg = "Ternary condition must be a 'bool' but got '" +
+                      type_to_string(return_type) + "'";
+    handlerError(ternary->line, ternary->pos, msg, "", "Type Error");
+  }
+
+  visitExpr(map, ternary->lhs);
+  auto lhs = return_type;
+  visitExpr(map, ternary->rhs);
+  auto rhs = return_type;
+
+  if (lhs == nullptr || rhs == nullptr) {
+    return_type = new SymbolType("unknown");
+    return;
+  }
+
+  if (type_to_string(lhs) != type_to_string(rhs)) {
+    std::string msg =
+        "Ternary operation requires both sides to be the same type";
+    handlerError(ternary->line, ternary->pos, msg, "", "Type Error");
+  }
+
+  return_type = lhs;
 }

@@ -16,8 +16,10 @@ std::vector<std::pair<NodeKind, TypeChecker::StmtNodeHandler>>
         {NodeKind::ND_CONST_STMT, visitConst},
         {NodeKind::ND_FN_STMT, visitFn},
         {NodeKind::ND_BLOCK_STMT, visitBlock},
+        {NodeKind::ND_STRUCT_STMT, visitStruct},
         {NodeKind::ND_RETURN_STMT, visitReturn},
         {NodeKind::ND_VAR_STMT, visitVar},
+        {NodeKind::ND_IF_STMT, visitIf},
         {NodeKind::ND_EXPR_STMT, visitExprStmt},
         {NodeKind::ND_PRINT_STMT, visitPrint},
 };
@@ -26,7 +28,9 @@ std::vector<std::pair<NodeKind, TypeChecker::ExprNodeHandler>>
     TypeChecker::exprs = {
         {NodeKind::ND_NUMBER, visitNumber}, {NodeKind::ND_IDENT, visitIdent},
         {NodeKind::ND_STRING, visitString}, {NodeKind::ND_BINARY, visitBinary},
-        {NodeKind::ND_CALL, visitCall},
+        {NodeKind::ND_CALL, visitCall}, {NodeKind::ND_TERNARY, visitTernary},
+        {NodeKind::ND_GROUP, visitGrouping}, {NodeKind::ND_UNARY, visitUnary},
+        {NodeKind::ND_BOOL, visitBool},
 };
 
 Node::Stmt *TypeChecker::StmtAstLookup(Node::Stmt *node, Maps *maps) {

@@ -20,6 +20,7 @@ enum NodeKind {
   ND_ASSIGN,
   ND_TERNARY,
   ND_MEMBER,
+  ND_BOOL,
 
   // Statements
   ND_EXPR_STMT,

@@ -64,6 +64,28 @@ void TypeChecker::visitBlock(Maps *map, Node::Stmt *stmt) {
   }
 }
 
+void TypeChecker::visitStruct(Maps *map, Node::Stmt *stmt) {
+  std::cout << "Not implemented yet" << std::endl;
+}
+
+void TypeChecker::visitEnum(Maps *map, Node::Stmt *stmt) {
+  std::cout << "Not implemented yet" << std::endl;
+}
+
+void TypeChecker::visitIf(Maps *map, Node::Stmt *stmt) {
+  auto if_stmt = static_cast<IfStmt *>(stmt);
+  visitExpr(map, if_stmt->condition);
+  if (type_to_string(return_type) != "bool") {
+    std::string msg = "If condition must be a 'bool' but got '" +
+                      type_to_string(return_type) + "'";
+    handlerError(if_stmt->line, if_stmt->pos, msg, "", "Type Error");
+  }
+  visitStmt(map, if_stmt->thenStmt);
+  if (if_stmt->elseStmt != nullptr) {
+    visitStmt(map, if_stmt->elseStmt);
+  }
+}
+
 void TypeChecker::visitVar(Maps *map, Node::Stmt *stmt) {
   auto var_stmt = static_cast<VarStmt *>(stmt);
 
@@ -75,6 +97,10 @@ void TypeChecker::visitVar(Maps *map, Node::Stmt *stmt) {
   map->declare(map->local_symbol_table, var_stmt->name, var_stmt->type,
                var_stmt->line, var_stmt->pos);
 
+  // check if the variable is initialized
+  if (var_stmt->expr == nullptr) {
+    return;
+  }
   visitStmt(map, var_stmt->expr);
 
   if (return_type != nullptr) {

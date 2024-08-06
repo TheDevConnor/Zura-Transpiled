@@ -21,8 +21,8 @@ T Parser::lookup(PStruct *psr, const std::vector<std::pair<U, T>> &lu, U key) {
 
   if (it == lu.end()) {
     ErrorClass::error(0, 0, "No value found for key Expr Maps!", "",
-                      "Parser Error", psr->current_file, lexer, psr->tks, true, false,
-                      false, false, false);
+                      "Parser Error", psr->current_file, lexer, psr->tks, true,
+                      false, false, false, false);
     return nullptr;
   }
 
@@ -39,10 +39,12 @@ void Parser::createMaps() {
       {TokenKind::IMPORT, importStmt},
   };
   nud_lu = {
-      {TokenKind::NUMBER, primary},      {TokenKind::IDENTIFIER, primary},
-      {TokenKind::STRING, primary},      {TokenKind::LEFT_PAREN, group},
-      {TokenKind::MINUS, unary},         {TokenKind::PLUS_PLUS, _prefix},
-      {TokenKind::MINUS_MINUS, _prefix}, {TokenKind::LEFT_BRACKET, array},
+      {TokenKind::NUMBER, primary},     {TokenKind::IDENTIFIER, primary},
+      {TokenKind::STRING, primary},     {TokenKind::LEFT_PAREN, group},
+      {TokenKind::MINUS, unary},        {TokenKind::PLUS_PLUS, _prefix},
+      {TokenKind::BANG, unary},         {TokenKind::MINUS_MINUS, _prefix},
+      {TokenKind::LEFT_BRACKET, array}, {TokenKind::TR, bool_expr},
+      {TokenKind::FAL, bool_expr},
   };
   led_lu = {
       {TokenKind::PLUS, binary},
@@ -85,6 +87,7 @@ void Parser::createMaps() {
       {TokenKind::OR, BindingPower::logicalOr},
       {TokenKind::AND, BindingPower::logicalAnd},
 
+      {TokenKind::BANG, BindingPower::prefix},
       {TokenKind::EQUAL_EQUAL, BindingPower::comparison},
       {TokenKind::BANG_EQUAL, BindingPower::comparison},
       {TokenKind::GREATER, BindingPower::comparison},
@@ -145,7 +148,8 @@ Node::Expr *Parser::nud(PStruct *psr) {
   } catch (std::runtime_error &e) {
     ErrorClass::error(psr->current(psr).line, psr->current(psr).column,
                       "Could not parse expression in NUD!", "", "Parser Error",
-                      "main.zu", lexer, psr->tks, true, false, false, false, false);
+                      "main.zu", lexer, psr->tks, true, false, false, false,
+                      false);
     return nullptr;
   }
 }
@@ -162,7 +166,8 @@ Node::Expr *Parser::led(PStruct *psr, Node::Expr *left, BindingPower bp) {
   } catch (std::runtime_error &e) {
     ErrorClass::error(psr->current(psr).line, psr->current(psr).column,
                       "Could not parse expression in LED!", "", "Parser Error",
-                      "main.zu", lexer, psr->tks, true, false, false, false, false);
+                      "main.zu", lexer, psr->tks, true, false, false, false,
+                      false);
     return nullptr;
   }
 }
