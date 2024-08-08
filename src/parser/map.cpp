@@ -10,6 +10,20 @@
 
 using namespace Parser;
 
+/**
+ * @brief Looks up a value in a map based on a key.
+ * 
+ * This function searches for a key-value pair in the given map and returns the corresponding value.
+ * If the key is found, the function returns the associated value.
+ * If the key is not found, the function returns nullptr and generates an error message.
+ * 
+ * @tparam T The type of the value in the map.
+ * @tparam U The type of the key in the map.
+ * @param psr A pointer to the PStruct object.
+ * @param lu The map containing key-value pairs.
+ * @param key The key to search for in the map.
+ * @return The value associated with the key, or nullptr if the key is not found.
+ */
 template <typename T, typename U>
 T Parser::lookup(PStruct *psr, const std::vector<std::pair<U, T>> &lu, U key) {
   auto it = std::find_if(lu.begin(), lu.end(),
@@ -29,6 +43,13 @@ T Parser::lookup(PStruct *psr, const std::vector<std::pair<U, T>> &lu, U key) {
   return it->second;
 }
 
+/**
+ * @brief Creates the maps used by the Parser class.
+ * 
+ * This function initializes the lookup tables used by the Parser class for parsing tokens.
+ * It sets up the stmt_lu, nud_lu, led_lu, bp_lu, and ignore_tokens maps with their respective values.
+ * These maps are used during the parsing process to determine the behavior of different tokens.
+ */
 void Parser::createMaps() {
   stmt_lu = {
       {TokenKind::_CONST, constStmt},     {TokenKind::VAR, varStmt},
@@ -135,11 +156,32 @@ void Parser::createMaps() {
   };
 }
 
+/**
+ * Checks if a given token is an ignore token.
+ *
+ * @param tk The token kind to check.
+ * @return True if the token is an ignore token, false otherwise.
+ */
 bool Parser::isIgnoreToken(TokenKind tk) {
   return std::find(ignore_tokens.begin(), ignore_tokens.end(), tk) !=
          ignore_tokens.end();
 }
 
+/**
+ * @brief Parses a null denotation expression.
+ * 
+ * This function is responsible for parsing a null denotation expression in the parser.
+ * It retrieves the current operator from the parser's PStruct and looks up the appropriate
+ * parsing function based on the operator's kind. If a parsing function is found, it is called
+ * with the parser as an argument and the result is returned. If no parsing function is found,
+ * the parser advances to the next token and returns nullptr.
+ * 
+ * If an exception of type std::runtime_error is caught during the parsing process, an error
+ * message is generated using the ErrorClass::error() function and nullptr is returned.
+ * 
+ * @param psr A pointer to the parser's PStruct.
+ * @return A pointer to the parsed expression, or nullptr if parsing fails.
+ */
 Node::Expr *Parser::nud(PStruct *psr) {
   auto op = psr->current(psr);
   try {
@@ -158,6 +200,14 @@ Node::Expr *Parser::nud(PStruct *psr) {
   }
 }
 
+/**
+ * Parses the left expression with the given binding power using the led (left denotation) rule.
+ *
+ * @param psr The parser object.
+ * @param left The left expression to be parsed.
+ * @param bp The binding power of the operator.
+ * @return The parsed expression.
+ */
 Node::Expr *Parser::led(PStruct *psr, Node::Expr *left, BindingPower bp) {
   auto op = psr->current(psr);
   try {
@@ -176,6 +226,17 @@ Node::Expr *Parser::led(PStruct *psr, Node::Expr *left, BindingPower bp) {
   }
 }
 
+/**
+ * @brief Parses a statement based on the provided PStruct and name.
+ * 
+ * This function searches for a statement in the stmt_lu map that matches the kind of the current PStruct.
+ * If a matching statement is found, it calls the corresponding function and passes the PStruct and name as arguments.
+ * If no matching statement is found, it returns nullptr.
+ * 
+ * @param psr The PStruct object used for parsing.
+ * @param name The name of the statement.
+ * @return A pointer to the parsed statement, or nullptr if no matching statement is found.
+ */
 Node::Stmt *Parser::stmt(PStruct *psr, std::string name) {
   auto stmt_it = std::find_if(stmt_lu.begin(), stmt_lu.end(), [psr](auto &p) {
     return p.first == psr->current(psr).kind;

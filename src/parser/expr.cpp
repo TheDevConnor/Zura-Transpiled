@@ -3,6 +3,15 @@
 
 #include <iostream>
 
+/**
+ * Parses an expression from the given parser and returns the resulting expression node.
+ * This is the bread and butter of the Pratt Parser. It uses the nud and led functions to parse 
+ * the expression based on the binding power of the current token.
+ * 
+ * @param psr The parser object.
+ * @param bp The binding power to use for parsing.
+ * @return The parsed expression node.
+ */
 Node::Expr *Parser::parseExpr(PStruct *psr, BindingPower bp) {
   auto *left = nud(psr);
 

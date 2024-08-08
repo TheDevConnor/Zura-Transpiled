@@ -4,6 +4,12 @@
 
 #include "lexer.hpp"
 
+/**
+ * Initializes the lexer with the given source code and file path.
+ * 
+ * @param source The source code to be lexed.
+ * @param file The file path of the source code.
+ */
 void Lexer::initLexer(const char *source, std::string file) {
   scanner.current = source;
   scanner.source = source;
@@ -15,6 +21,15 @@ void Lexer::initLexer(const char *source, std::string file) {
   initMap(); // Create the maps when the lexer is initialized
 }
 
+/**
+ * Initializes the map for the Lexer class.
+ * This map contains mappings for whitespace characters, keywords, special characters, and token kinds.
+ * The whitespace map is used to handle whitespace characters and advance the lexer accordingly.
+ * The keywords map is used to map keywords to their corresponding token kinds.
+ * The scMap (special character map) is used to map special characters to their corresponding token kinds.
+ * The dcMap (double character map) is used to map double characters (e.g., "==", "!=") to their corresponding token kinds.
+ * The tokenToStringMap is used to map token kinds to their string representations.
+ */
 void Lexer::initMap() {
   whiteSpaceMap = {
       {' ', [](Lexer &lexer) { lexer.advance(); }},
