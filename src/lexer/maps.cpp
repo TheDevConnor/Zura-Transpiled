@@ -80,6 +80,7 @@ void Lexer::initMap() {
       {"&&", TokenKind::AND},
       {"||", TokenKind::OR},
       {"..", TokenKind::RANGE},
+      {"::", TokenKind::RESOLUTION},
   };
 
   tokenToStringMap = {

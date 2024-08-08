@@ -20,6 +20,7 @@ enum NodeKind {
   ND_ASSIGN,
   ND_TERNARY,
   ND_MEMBER,
+  ND_RESOLUTION, // ::
   ND_BOOL,
 
   // Statements

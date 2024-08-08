@@ -1,6 +1,10 @@
+const fib := fn(n: int) int {
+   have res: int = (n <= 1) ? n 
+                            : fib(n - 1) + fib(n - 2);
+   return res;
+};
+
 const main := fn() int {
-   have t: bool = true;
-   have x: int = (!t) ? 10 
-                      : 20;
-   return x;
+   have n: int = 10;
+   return fib(n);
 };

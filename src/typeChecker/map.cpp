@@ -17,6 +17,7 @@ std::vector<std::pair<NodeKind, TypeChecker::StmtNodeHandler>>
         {NodeKind::ND_FN_STMT, visitFn},
         {NodeKind::ND_BLOCK_STMT, visitBlock},
         {NodeKind::ND_STRUCT_STMT, visitStruct},
+        {NodeKind::ND_ENUM_STMT, visitEnum},
         {NodeKind::ND_RETURN_STMT, visitReturn},
         {NodeKind::ND_VAR_STMT, visitVar},
         {NodeKind::ND_IF_STMT, visitIf},
@@ -26,10 +27,16 @@ std::vector<std::pair<NodeKind, TypeChecker::StmtNodeHandler>>
 
 std::vector<std::pair<NodeKind, TypeChecker::ExprNodeHandler>>
     TypeChecker::exprs = {
-        {NodeKind::ND_NUMBER, visitNumber}, {NodeKind::ND_IDENT, visitIdent},
-        {NodeKind::ND_STRING, visitString}, {NodeKind::ND_BINARY, visitBinary},
-        {NodeKind::ND_CALL, visitCall}, {NodeKind::ND_TERNARY, visitTernary},
-        {NodeKind::ND_GROUP, visitGrouping}, {NodeKind::ND_UNARY, visitUnary},
+        {NodeKind::ND_NUMBER, visitNumber},
+        {NodeKind::ND_IDENT, visitIdent},
+        {NodeKind::ND_STRING, visitString},
+        {NodeKind::ND_BINARY, visitBinary},
+        {NodeKind::ND_CALL, visitCall},
+        {NodeKind::ND_TERNARY, visitTernary},
+        {NodeKind::ND_GROUP, visitGrouping},
+        {NodeKind::ND_UNARY, visitUnary},
+        {NodeKind::ND_MEMBER, visitMember},
+        {NodeKind::ND_ASSIGN, visitAssign},
         {NodeKind::ND_BOOL, visitBool},
 };
 

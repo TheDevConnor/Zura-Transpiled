@@ -35,6 +35,9 @@ void TypeChecker::visitFn(Maps *map, Node::Stmt *stmt) {
                  fn_stmt->line, fn_stmt->pos);
   }
 
+  map->declare_fn(map, fn_stmt->name, {fn_stmt->name, fn_stmt->returnType},
+                  fn_stmt->params, fn_stmt->line, fn_stmt->pos);
+
   visitStmt(map, fn_stmt->block);
 
   if (return_type != nullptr) {
@@ -49,8 +52,8 @@ void TypeChecker::visitFn(Maps *map, Node::Stmt *stmt) {
   // also add the function name to the global table and function table
   map->declare(map->global_symbol_table, fn_stmt->name, fn_stmt->returnType,
                fn_stmt->line, fn_stmt->pos);
-  map->declare_fn(map, fn_stmt->name, {fn_stmt->name, fn_stmt->returnType},
-                  fn_stmt->params, fn_stmt->line, fn_stmt->pos);
+
+  printTables(map);
 
   return_type = nullptr;
   map->local_symbol_table
@@ -65,7 +68,27 @@ void TypeChecker::visitBlock(Maps *map, Node::Stmt *stmt) {
 }
 
 void TypeChecker::visitStruct(Maps *map, Node::Stmt *stmt) {
-  std::cout << "Not implemented yet" << std::endl;
+  auto struct_stmt = static_cast<StructStmt *>(stmt);
+
+  // Declare the struct name as a type and add it to the global table
+  Node::Type *struct_type = new SymbolType(struct_stmt->name);
+
+  // Add the struct fields to the local table of the struct
+  for (auto &field : struct_stmt->fields) {
+    map->declare(map->local_symbol_table, field.first, field.second,
+                 struct_stmt->line, struct_stmt->pos);
+  }
+
+  // Add the struct to the global table
+  map->declare(map->global_symbol_table, struct_stmt->name, struct_type,
+               struct_stmt->line, struct_stmt->pos);
+
+  // Add the struct to the function table
+  map->declare_fn(map, struct_stmt->name, {struct_stmt->name, struct_type},
+                  struct_stmt->fields, struct_stmt->line, struct_stmt->pos);
+
+  return_type = nullptr;
+  map->local_symbol_table.clear();
 }
 
 void TypeChecker::visitEnum(Maps *map, Node::Stmt *stmt) {

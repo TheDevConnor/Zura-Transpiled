@@ -1,7 +1,7 @@
 #pragma once
 
-#include <string>
 #include <functional>
+#include <string>
 #include <unordered_map>
 
 enum TokenKind {
@@ -43,6 +43,7 @@ enum TokenKind {
   STAR_EQUAL,
   SLASH_EQUAL,
   RANGE,
+  RESOLUTION,
 
   // Literals.
   IDENTIFIER,
@@ -72,7 +73,8 @@ enum TokenKind {
   ENUM,
   UNION,
   IMPORT,
-  PUB, PRIV,
+  PUB,
+  PRIV,
 
   // Error
   ERROR_,

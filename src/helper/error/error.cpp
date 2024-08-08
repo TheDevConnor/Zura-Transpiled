@@ -85,7 +85,6 @@ std::string ErrorClass::error(int line, int pos, const std::string &msg,
       typeErros.push_back(line_error);
       return line_error;
     }
-
     line_error += (line > 1) ? currentLine(line - 1, 0, lexer, isParser,
                                            isTypeError, tokens)
                              : "";

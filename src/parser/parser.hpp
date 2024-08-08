@@ -130,6 +130,7 @@ Node::Expr *assign(PStruct *psr, Node::Expr *left, BindingPower bp);
 Node::Expr *parse_call(PStruct *psr, Node::Expr *left, BindingPower bp);
 Node::Expr *_ternary(PStruct *psr, Node::Expr *left, BindingPower bp);
 Node::Expr *_member(PStruct *psr, Node::Expr *left, BindingPower bp);
+Node::Expr *resolution(PStruct *psr, Node::Expr *left, BindingPower bp);
 
 // Stmt Functions
 Node::Stmt *returnStmt(PStruct *psr, std::string name);

@@ -295,6 +295,34 @@ public:
   }
 };
 
+class ResolutionExpr : public Node::Expr {
+public:
+  int line, pos;
+  Node::Expr *lhs;
+  Node::Expr *rhs;
+
+  ResolutionExpr(int line, int pos, Node::Expr *lhs, Node::Expr *rhs)
+      : line(line), pos(pos), lhs(lhs), rhs(rhs) {
+    kind = NodeKind::ND_RESOLUTION;
+  }
+
+  void debug(int ident = 0) const override {
+    Node::printIndent(ident);
+    std::cout << "ResolutionExpr: \n";
+    Node::printIndent(ident + 1);
+    std::cout << "LHS: \n";
+    lhs->debug(ident + 2);
+    Node::printIndent(ident + 1);
+    std::cout << "RHS: \n";
+    rhs->debug(ident + 2);
+  }
+
+  ~ResolutionExpr() {
+    delete lhs;
+    delete rhs;
+  }
+};
+
 class BoolExpr : public Node::Expr {
 public:
   int line, pos;

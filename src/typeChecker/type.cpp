@@ -13,7 +13,7 @@ void TypeChecker::performCheck(Node::Stmt *stmt) {
                  "Type Error");
   }
 
-  printTables(maps);
+  // printTables(maps);
   delete maps;
 }
 

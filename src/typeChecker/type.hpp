@@ -102,4 +102,6 @@ void visitBool(Maps *map, Node::Expr *expr);
 void visitGrouping(Maps *map, Node::Expr *expr);
 void visitCall(Maps *map, Node::Expr *expr);
 void visitTernary(Maps *map, Node::Expr *expr);
+void visitMember(Maps *map, Node::Expr *expr);
+void visitAssign(Maps *map, Node::Expr *expr);
 } // namespace TypeChecker

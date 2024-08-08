@@ -74,6 +74,7 @@ void Parser::createMaps() {
       {TokenKind::LEFT_PAREN, parse_call},
 
       {TokenKind::DOT, _member},
+      {TokenKind::RESOLUTION, resolution},
 
       {TokenKind::RANGE, binary},
 
@@ -124,10 +125,13 @@ void Parser::createMaps() {
       {TokenKind::RANGE, BindingPower::range},
 
       {TokenKind::DOT, BindingPower::member},
+      {TokenKind::RESOLUTION, BindingPower::member},
   };
   ignore_tokens = {
-      TokenKind::SEMICOLON, TokenKind::COMMA,  TokenKind::RIGHT_PAREN,
-      TokenKind::COLON,     TokenKind::WALRUS,
+      TokenKind::SEMICOLON,
+      TokenKind::COMMA,
+      TokenKind::COLON,
+      TokenKind::WALRUS,
   };
 }
 

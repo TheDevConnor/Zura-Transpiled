@@ -30,7 +30,8 @@ Node::Expr *Parser::primary(PStruct *psr) {
   default:
     ErrorClass::error(psr->current(psr).line, psr->current(psr).column,
                       "Could not parse primary expression!", "", "Parser Error",
-                      "main.zu", lexer, psr->tks, true, false, false, false, false);
+                      "main.zu", lexer, psr->tks, true, false, false, false,
+                      false);
     return nullptr;
   }
 }
@@ -110,8 +111,8 @@ Node::Expr *Parser::assign(PStruct *psr, Node::Expr *left, BindingPower bp) {
 
 Node::Expr *Parser::parse_call(PStruct *psr, Node::Expr *left,
                                BindingPower bp) {
-                                auto line = psr->tks[psr->pos].line;
-                                auto column = psr->tks[psr->pos].column;
+  auto line = psr->tks[psr->pos].line;
+  auto column = psr->tks[psr->pos].column;
 
   psr->expect(psr, TokenKind::LEFT_PAREN,
               "Expected a L_Paran to start a call expr!");
@@ -148,10 +149,20 @@ Node::Expr *Parser::_member(PStruct *psr, Node::Expr *left, BindingPower bp) {
   auto line = psr->tks[psr->pos].line;
   auto column = psr->tks[psr->pos].column;
 
-  auto op = psr->advance(psr);
-  auto *right = parseExpr(psr, defaultValue);
-
+  auto op = psr->advance(psr); // This should be a DOT
+  auto *right = parseExpr(psr, member);
   return new MemberExpr(line, column, left, right);
+}
+
+Node::Expr *Parser::resolution(PStruct *psr, Node::Expr *left,
+                               BindingPower bp) {
+  auto line = psr->tks[psr->pos].line;
+  auto column = psr->tks[psr->pos].column;
+
+  auto op = psr->advance(psr);
+  auto *right = parseExpr(psr, member);
+
+  return new ResolutionExpr(line, column, left, right);
 }
 
 Node::Expr *Parser::bool_expr(PStruct *psr) {
