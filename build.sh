@@ -16,8 +16,8 @@ build() {
   type="$1"
   BUILD_TYPE="$type"
   mkdir -p "$type" || die
-  cmake -S . -B "$type" -DCMAKE_BUILD_TYPE="$type" -DCMAKE_EXPORT_COMPILE_COMMANDS=1 || die 
-  cmake --build "$type" || die
+  cmake -G Ninja -DCMAKE_BUILD_TYPE="$type" -DCMAKE_EXPORT_COMPILE_COMMANDS=1 -B "$type" -S . || die
+  ninja -C "$type" || die
 }
 
 # Clean function
@@ -33,7 +33,7 @@ run() {
     echo "Executable not found in $BUILD_TYPE build." || die
     return 1
   fi
-  "$executable" build zura_files/main.zu || die
+  "$executable" build zura_files/main.zu -name main -save|| die
 }
 
 # make the commands be able to be sequenced

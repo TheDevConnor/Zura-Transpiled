@@ -53,8 +53,6 @@ void TypeChecker::visitFn(Maps *map, Node::Stmt *stmt) {
   map->declare(map->global_symbol_table, fn_stmt->name, fn_stmt->returnType,
                fn_stmt->line, fn_stmt->pos);
 
-  printTables(map);
-
   return_type = nullptr;
   map->local_symbol_table
       .clear(); // clear the local table for the next function

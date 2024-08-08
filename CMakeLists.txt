@@ -25,6 +25,9 @@ set(ZURA_HEADER_FILES
     # Type Checker Files
     src/typeChecker/type.hpp
 
+    # Code Gen Files
+    src/codegen/gen.hpp
+
     inc/update.hpp
     src/common.hpp
 )
@@ -48,6 +51,10 @@ set(ZURA_SOURCE_FILES
     src/typeChecker/stmt.cpp
     src/typeChecker/type.cpp
     src/typeChecker/map.cpp
+
+    # Code Gen Files
+    src/codegen/genmap.cpp
+    src/codegen/gen.cpp
     
     src/main.cpp
 )

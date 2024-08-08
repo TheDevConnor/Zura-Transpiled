@@ -1,10 +1,11 @@
-const fib := fn(n: int) int {
-   have res: int = (n <= 1) ? n 
-                            : fib(n - 1) + fib(n - 2);
-   return res;
-};
+// const fib := fn(n: int) int {
+//    have res: int = (n <= 1) ? n 
+//                             : fib(n - 1) + fib(n - 2);
+//    return res;
+// };
 
 const main := fn() int {
-   have n: int = 10;
-   return fib(n);
+   // have n: int = 10;
+   // have s: str = "Hello, World!";
+   return 0;
 };
