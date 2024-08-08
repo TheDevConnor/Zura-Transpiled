@@ -1,4 +1,6 @@
 #include <cstring>
+#include <chrono>
+#include <thread>
 #include <iostream>
 #include <sys/stat.h>
 
@@ -87,8 +89,36 @@ void FlagConfig::runBuild(int argc, char **argv) {
   }
 }
 
-int main(int argc, char **argv) {
-  FlagConfig::print(argc, argv);
-  FlagConfig::runBuild(argc, argv);
-  return ExitValue::BUILT;
+void updateProgressBar(double progress) {
+    const int barWidth = 50;
+    std::cout << "[";
+    int pos = barWidth * progress;
+    for (int i = 0; i < barWidth; ++i) {
+        if (i < pos) std::cout << "=";
+        else if (i == pos) std::cout << ">";
+        else std::cout << " ";
+    }
+    std::cout << "] " << int(progress * 100.0) << " %\r";
+    std::cout.flush();
 }
+
+int main(int argc, char **argv) {
+    auto startTime = std::chrono::high_resolution_clock::now();
+
+    FlagConfig::print(argc, argv);
+    auto midTime = std::chrono::high_resolution_clock::now();
+
+    updateProgressBar(0.5);
+
+    FlagConfig::runBuild(argc, argv);
+    auto endTime = std::chrono::high_resolution_clock::now();
+
+    updateProgressBar(1.0);
+    std::cout << std::endl;
+
+    auto totalDurationMS = std::chrono::duration_cast<std::chrono::milliseconds>(endTime - startTime).count();
+    auto totalDurationUS = std::chrono::duration_cast<std::chrono::microseconds>(endTime - startTime).count();
+    std::cout << "Total time: " << totalDurationMS << "ms (" << totalDurationUS << "us)" << std::endl; 
+
+    return ExitValue::BUILT;
+} 
