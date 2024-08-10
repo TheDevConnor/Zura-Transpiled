@@ -3,6 +3,8 @@
 #include "../ast/types.hpp"
 #include "type.hpp"
 
+#include <memory>
+
 void TypeChecker::visitStmt(Maps *map, Node::Stmt *stmt) {
   StmtAstLookup(stmt, map);
 }
@@ -41,10 +43,10 @@ void TypeChecker::visitFn(Maps *map, Node::Stmt *stmt) {
   visitStmt(map, fn_stmt->block);
 
   if (return_type != nullptr) {
-    if (type_to_string(return_type) != type_to_string(fn_stmt->returnType)) {
+    if (type_to_string(return_type.get()) != type_to_string(fn_stmt->returnType)) {
       std::string msg = "Function '" + fn_stmt->name + "' must return a '" +
                         type_to_string(fn_stmt->returnType) + "' but got '" +
-                        type_to_string(return_type) + "'";
+                        type_to_string(return_type.get()) + "'";
       handlerError(fn_stmt->line, fn_stmt->pos, msg, "", "Type Error");
     }
   }
@@ -96,9 +98,9 @@ void TypeChecker::visitEnum(Maps *map, Node::Stmt *stmt) {
 void TypeChecker::visitIf(Maps *map, Node::Stmt *stmt) {
   auto if_stmt = static_cast<IfStmt *>(stmt);
   visitExpr(map, if_stmt->condition);
-  if (type_to_string(return_type) != "bool") {
+  if (type_to_string(return_type.get()) != "bool") {
     std::string msg = "If condition must be a 'bool' but got '" +
-                      type_to_string(return_type) + "'";
+                      type_to_string(return_type.get()) + "'";
     handlerError(if_stmt->line, if_stmt->pos, msg, "", "Type Error");
   }
   visitStmt(map, if_stmt->thenStmt);
@@ -125,10 +127,10 @@ void TypeChecker::visitVar(Maps *map, Node::Stmt *stmt) {
   visitStmt(map, var_stmt->expr);
 
   if (return_type != nullptr) {
-    if (type_to_string(return_type) != type_to_string(var_stmt->type)) {
+    if (type_to_string(return_type.get()) != type_to_string(var_stmt->type)) {
       std::string msg = "Variable '" + var_stmt->name + "' must be a '" +
                         type_to_string(var_stmt->type) + "' but got '" +
-                        type_to_string(return_type) + "'";
+                        type_to_string(return_type.get()) + "'";
       handlerError(var_stmt->line, var_stmt->pos, msg, "", "Type Error");
     }
   }

@@ -1,10 +1,11 @@
 #include "type.hpp"
 #include "../ast/stmt.hpp"
 #include "../helper/error/error.hpp"
+#include <memory>
 
 void TypeChecker::performCheck(Node::Stmt *stmt) {
-  Maps *maps = new Maps();
-  visitStmt(maps, stmt); // Pass the instance of Maps to visitStmt
+  std::unique_ptr<Maps> map = std::make_unique<Maps>(); 
+  visitStmt(map.get(), stmt); // Pass the instance of Maps to visitStmt
 
   if (!foundMain) {
     handlerError(0, 0, "No main function found",
@@ -14,7 +15,6 @@ void TypeChecker::performCheck(Node::Stmt *stmt) {
   }
 
   // printTables(maps);
-  delete maps;
 }
 
 void TypeChecker::handlerError(int line, int pos, std::string msg,

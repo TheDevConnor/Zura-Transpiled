@@ -6,6 +6,7 @@
 #include "../ast/types.hpp"
 
 #include <functional>
+#include <memory>
 #include <string>
 #include <unordered_map>
 #include <utility>
@@ -14,7 +15,7 @@
 namespace TypeChecker {
 inline bool foundMain = false;
 std::string type_to_string(Node::Type *type);
-inline Node::Type *return_type = nullptr;
+inline std::shared_ptr<Node::Type> return_type = nullptr; 
 void handlerError(int line, int pos, std::string msg, std::string note,
                   std::string typeOfError);
 

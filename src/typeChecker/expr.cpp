@@ -1,4 +1,5 @@
 #include "type.hpp"
+#include <memory>
 
 void TypeChecker::visitExpr(Maps *map, Node::Expr *expr) {
   ExprAstLookup(expr, map);
@@ -8,18 +9,19 @@ void TypeChecker::visitNumber(Maps *map, Node::Expr *expr) {
   auto number = static_cast<NumberExpr *>(expr);
   // TODO: check if the number is within the range a specific intege and if it
   // is a float
-  return_type = new SymbolType("int");
+  return_type = std::make_shared<SymbolType>("int");
 }
 
 void TypeChecker::visitString(Maps *map, Node::Expr *expr) {
   auto string = static_cast<StringExpr *>(expr);
-  return_type = new SymbolType("str");
+  return_type = std::make_shared<SymbolType>("str");
 }
 
 void TypeChecker::visitIdent(Maps *map, Node::Expr *expr) {
   auto ident = static_cast<IdentExpr *>(expr);
-  return_type = Maps::lookup(map->local_symbol_table, ident->name, ident->line,
-                             ident->pos, "local symbol table");
+  auto res = Maps::lookup(map->local_symbol_table, ident->name, ident->line,
+                          ident->pos, "local symbol table");
+  return_type = std::make_shared<SymbolType>(type_to_string(res));
 }
 
 void TypeChecker::visitBinary(Maps *map, Node::Expr *expr) {
@@ -31,7 +33,7 @@ void TypeChecker::visitBinary(Maps *map, Node::Expr *expr) {
 
   // validate the types of the lhs and rhs
   if (lhs == nullptr || rhs == nullptr) {
-    return_type = new SymbolType("unknown");
+    return_type = std::make_shared<SymbolType>("unknown");
     return;
   }
 
@@ -39,7 +41,7 @@ void TypeChecker::visitBinary(Maps *map, Node::Expr *expr) {
   std::vector<std::string> math_ops = {"+", "-", "*", "/", "%", "^"};
   if (std::find(math_ops.begin(), math_ops.end(), binary->op) !=
       math_ops.end()) {
-    if (type_to_string(lhs) != type_to_string(rhs)) {
+    if (type_to_string(lhs.get()) != type_to_string(rhs.get())) {
       std::string msg = "Binary operation '" + binary->op +
                         "' requires both sides to be the same type";
       handlerError(binary->line, binary->pos, msg, "", "Type Error");
@@ -52,14 +54,14 @@ void TypeChecker::visitBinary(Maps *map, Node::Expr *expr) {
   std::vector<std::string> bool_ops = {">", "<", ">=", "<=", "==", "!="};
   if (std::find(bool_ops.begin(), bool_ops.end(), binary->op) !=
       bool_ops.end()) {
-    if (type_to_string(lhs) != type_to_string(rhs)) {
+    if (type_to_string(lhs.get()) != type_to_string(rhs.get())) {
       std::string msg = "Binary operation '" + binary->op +
                         "' requires both sides to be of type '" +
-                        type_to_string(lhs) + "' but got '" +
-                        type_to_string(rhs) + "'";
+                        type_to_string(lhs.get()) + "' but got '" +
+                        type_to_string(rhs.get()) + "'";
       handlerError(binary->line, binary->pos, msg, "", "Type Error");
     }
-    return_type = new SymbolType("bool");
+    return_type = std::make_shared<SymbolType>("bool");
     return;
   }
 }
@@ -69,21 +71,21 @@ void TypeChecker::visitUnary(Maps *map, Node::Expr *expr) {
   visitExpr(map, unary->expr);
 
   if (return_type == nullptr) {
-    return_type = new SymbolType("unknown");
+    return_type = std::make_shared<SymbolType>("unknown");
     return;
   }
 
-  if (unary->op == "-" && type_to_string(return_type) != "int") {
+  if (unary->op == "-" && type_to_string(return_type.get()) != "int") {
     std::string msg = "Unary operation '" + unary->op +
                       "' requires the type to be an 'int' but got '" +
-                      type_to_string(return_type) + "'";
+                      type_to_string(return_type.get()) + "'";
     handlerError(unary->line, unary->pos, msg, "", "Type Error");
   }
 
-  if (unary->op == "!" && type_to_string(return_type) != "bool") {
+  if (unary->op == "!" && type_to_string(return_type.get()) != "bool") {
     std::string msg = "Unary operation '" + unary->op +
                       "' requires the type to be a 'bool' but got '" +
-                      type_to_string(return_type) + "'";
+                      type_to_string(return_type.get()) + "'";
     handlerError(unary->line, unary->pos, msg, "", "Type Error");
   }
 
@@ -98,15 +100,15 @@ void TypeChecker::visitGrouping(Maps *map, Node::Expr *expr) {
 
 void TypeChecker::visitBool(Maps *map, Node::Expr *expr) {
   auto boolean = static_cast<BoolExpr *>(expr);
-  return_type = new SymbolType("bool");
+  return_type = std::make_shared<SymbolType>("bool");
 }
 
 void TypeChecker::visitTernary(Maps *map, Node::Expr *expr) {
   auto ternary = static_cast<TernaryExpr *>(expr);
   visitExpr(map, ternary->condition);
-  if (type_to_string(return_type) != "bool") {
+  if (type_to_string(return_type.get()) != "bool") {
     std::string msg = "Ternary condition must be a 'bool' but got '" +
-                      type_to_string(return_type) + "'";
+                      type_to_string(return_type.get()) + "'";
     handlerError(ternary->line, ternary->pos, msg, "", "Type Error");
   }
 
@@ -116,11 +118,11 @@ void TypeChecker::visitTernary(Maps *map, Node::Expr *expr) {
   auto rhs = return_type;
 
   if (lhs == nullptr || rhs == nullptr) {
-    return_type = new SymbolType("unknown");
+    return_type = std::make_shared<SymbolType>("unknown");
     return;
   }
 
-  if (type_to_string(lhs) != type_to_string(rhs)) {
+  if (type_to_string(lhs.get()) != type_to_string(rhs.get())) {
     std::string msg =
         "Ternary operation requires both sides to be the same type";
     handlerError(ternary->line, ternary->pos, msg, "", "Type Error");
@@ -137,11 +139,11 @@ void TypeChecker::visitAssign(Maps *map, Node::Expr *expr) {
   auto rhs = return_type;
 
   if (lhs == nullptr || rhs == nullptr) {
-    return_type = new SymbolType("unknown");
+    return_type = std::make_shared<SymbolType>("unknown");
     return;
   }
 
-  if (type_to_string(lhs) != type_to_string(rhs)) {
+  if (type_to_string(lhs.get()) != type_to_string(rhs.get())) {
     std::string msg = "Assignment requires both sides to be the same type";
     handlerError(assign->line, assign->pos, msg, "", "Type Error");
   }
@@ -164,16 +166,17 @@ void TypeChecker::visitCall(Maps *map, Node::Expr *expr) {
 
   for (int i = 0; i < call->args.size(); i++) {
     visitExpr(map, call->args[i]);
-    if (type_to_string(return_type) != type_to_string(fn.second[i].second)) {
+    if (type_to_string(return_type.get()) !=
+        type_to_string(fn.second[i].second)) {
       std::string msg = "Function '" + name->name + "' expects argument '" +
                         fn.second[i].first + "' to be of type '" +
                         type_to_string(fn.second[i].second) + "' but got '" +
-                        type_to_string(return_type) + "'";
+                        type_to_string(return_type.get()) + "'";
       handlerError(call->line, call->pos, msg, "", "Type Error");
     }
   }
 
-  return_type = fn.first.second;
+  return_type = std::make_shared<SymbolType>(type_to_string(fn.first.second));
 }
 
 void TypeChecker::visitMember(Maps *map, Node::Expr *expr) {
