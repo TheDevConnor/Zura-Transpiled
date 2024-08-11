@@ -53,6 +53,9 @@ set(ZURA_SOURCE_FILES
     src/typeChecker/map.cpp
 
     # Code Gen Files
+    src/codegen/gen_expr.cpp
+    src/codegen/gen_stmt.cpp
+    src/codegen/gen_type.cpp
     src/codegen/genmap.cpp
     src/codegen/gen.cpp
     

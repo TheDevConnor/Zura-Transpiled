@@ -1,5 +1,5 @@
 const fib := fn(n: int) int {
-   have res: int = (n == 1) ? n : fib(n - 1) + fib(n - 2);
+   have res: int = (n <= 1) ? n : fib(n - 1) + fib(n - 2);
    return res;
 };
 

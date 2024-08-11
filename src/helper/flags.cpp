@@ -44,7 +44,7 @@ void Flags::runFile(const char *path, std::string outName, bool save) {
   ErrorClass::printError();
   // std::cout << "Passed Type Checking" << std::endl;
 
-  codegen::gen(save, outName);
+  codegen::gen(result, save, outName);
 
   delete[] source;
   delete result;
