@@ -7,9 +7,9 @@ void codegen::initMaps() {
       {ND_POINTER_TYPE, pointerType},
   };
   stmtHandlers = {
-      {ND_PROGRAM, program},  {ND_CONST_STMT, constDecl},
-      {ND_FN_STMT, funcDecl}, {ND_VAR_STMT, varDecl},
-      {ND_BLOCK_STMT, block}, {ND_RETURN_STMT, retrun},
+      {ND_PROGRAM, program},    {ND_CONST_STMT, constDecl},
+      {ND_FN_STMT, funcDecl},   {ND_BLOCK_STMT, block},
+      {ND_RETURN_STMT, retrun},
   };
   exprHandlers = {
       {ND_BINARY, binary},   {ND_UNARY, unary},    {ND_CALL, call},
