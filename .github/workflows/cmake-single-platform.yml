@@ -34,7 +34,7 @@ jobs:
           path: |
             ./release/zura
 
-  get-version: # version number stored in a version.txt file and it is v0.1.0
+  get-version:
     name: "Get Version"
     runs-on: ubuntu-latest
     needs: [pre-release]
@@ -48,7 +48,7 @@ jobs:
       - name: "Get version"
         id: get-version
         run: |
-          echo "::set-output name=artifact_path::$(cat ./linux-artifacts/version.txt)"
+          echo "::set-output name=artifact_path::$(cat version.txt)"
 
       - name: "Print version"
         run: |
