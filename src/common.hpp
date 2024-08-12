@@ -1,6 +1,16 @@
 #pragma once
+#include "helper/flags.hpp"
 #include <stdlib.h>
-#define ZuraVersion "v0.0.7"
+#include <unordered_map>
+#include <string>
+
+#define ZuraVersion "v0.1.0"
+
+class FlagConfig {
+public:
+  static void print(int argc, char **argv);
+  static void runBuild(int argc, char **argv);
+};
 
 enum ExitValue {
   FLAGS_PRINTED = 0,
@@ -13,6 +23,9 @@ enum ExitValue {
   UPDATED = 7,
   INVALID_TYPE = 8,
   TYPE_ERROR = 9,
+  BUILD_ERROR = 10,
+  BUILT = 11,
 };
 
 inline void Exit(ExitValue exitValue) { exit(ExitValue(exitValue)); }
+inline FlagConfig flagConfig;

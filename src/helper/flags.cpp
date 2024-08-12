@@ -1,21 +1,17 @@
-#include <string>
+
+#include "flags.hpp"
+#include "../common.hpp"
+#include "../lexer/lexer.hpp"
+#include "../parser/parser.hpp"
+#include "../typeChecker/type.hpp"
+#include "../codegen/gen.hpp"
+#include "error/error.hpp"
+
 #include <fstream>
 #include <iostream>
-
-#include "../parser/parser.hpp"
-#include "../lexer/lexer.hpp"
-#include "../common.hpp"
-#include "flags.hpp"
+#include <string>
 
 using namespace std;
-
-void Flags::compilerDelete(char **argv) {
-  Exit(ExitValue::FLAGS_PRINTED);
-}
-
-void Flags::compile(std::string name) {}
-
-void Flags::outputFile(const char *path) {}
 
 char *Flags::readFile(const char *path) {
   ifstream file(path, ios::binary);
@@ -38,10 +34,17 @@ char *Flags::readFile(const char *path) {
 
 void Flags::runFile(const char *path, std::string outName, bool save) {
   const char *source = readFile(path);
-  
-  auto result = Parser::parse(source);
-  result->debug();
-  std::cout << std::endl;
+
+  auto result = Parser::parse(source, path);
+  ErrorClass::printError();
+
+  // result->debug();
+
+  TypeChecker::performCheck(result);
+  ErrorClass::printError();
+  // std::cout << "Passed Type Checking" << std::endl;
+
+  codegen::gen(result, save, outName);
 
   delete[] source;
   delete result;

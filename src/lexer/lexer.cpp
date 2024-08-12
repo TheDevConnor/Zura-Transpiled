@@ -1,17 +1,10 @@
-#include <unordered_map>
+#include <cctype>
 #include <string>
+#include <unordered_map>
 
+#include "../ast/ast.hpp"
 #include "../helper/error/error.hpp"
-#include "maps.hpp"
 #include "lexer.hpp"
-
-void Lexer::initLexer(const char *source) {
-  scanner.current = source;
-  scanner.source = source;
-  scanner.start = source;
-  scanner.column = 1;
-  scanner.line = 1;
-}
 
 void Lexer::reset() {
   scanner.current = scanner.start;
@@ -19,7 +12,6 @@ void Lexer::reset() {
   scanner.line = 1;
 }
 
-char Lexer::peekNext() { return scanner.current[1]; }
 char Lexer::advance() {
   scanner.current++;
   scanner.column++;
@@ -34,7 +26,8 @@ const char *Lexer::lineStart(int line) {
   int cLine = 1;
 
   while (cLine != line) {
-    if (*start == '\n') cLine++;
+    if (*start == '\n')
+      cLine++;
     start++;
   }
 
@@ -53,7 +46,10 @@ bool Lexer::match(char expected) {
 }
 
 Lexer::Token Lexer::errorToken(std::string message) {
-  ErrorClass::error(token.line, token.column, message, "Lexer Error", "main.zu", *this);
+  std::vector<Lexer::Token> tokens = {};
+  ErrorClass::error(token.line, token.column, message, "", "Lexer Error",
+                    scanner.file, *this, tokens, false, false, true, false,
+                    false);
   return makeToken(TokenKind::ERROR_);
 }
 
@@ -70,9 +66,10 @@ Lexer::Token Lexer::number() {
   while (isdigit(peek()))
     advance();
 
-  if (peek() == '.' && isdigit(peekNext())) {
+  if (peek() == '.' && isdigit(peek() + 1)) {
     advance();
-    while (isdigit(peek())) advance();
+    while (isdigit(peek()))
+      advance();
   }
 
   return makeToken(TokenKind::NUMBER);
@@ -91,35 +88,21 @@ Lexer::Token Lexer::String() {
 }
 
 Lexer::Token Lexer::identifier() {
-  while (isalpha(peek()) || isdigit(peek()))
+  while (isalpha(peek()) || isdigit(peek()) || peek() == '_')
     advance();
-  return makeToken(identifierType());
-}
-
-TokenKind Lexer::identifierType() {
-  std::string keyword(scanner.start, scanner.current);
-  auto it = keywords.find(keyword);
-  if (it != keywords.end())
-    return it->second;
-  return TokenKind::IDENTIFIER;
+  std::string identifier(scanner.start, scanner.current);
+  return makeToken(checkIdentMap(identifier));
 }
 
 void Lexer::skipWhitespace() {
   for (;;) {
     char c = peek();
-
     auto it = whiteSpaceMap.find(c);
     if (it != whiteSpaceMap.end()) {
       it->second(*this);
-    } else break;
+    } else
+      break;
   }
-}
-
-const char *Lexer::tokenToString(TokenKind kind) {
-  auto it = tokenMap.find(kind);
-  if (it != tokenMap.end())
-    return it->second;
-  return "Unknown";
 }
 
 Lexer::Token Lexer::scanToken() {
@@ -132,19 +115,15 @@ Lexer::Token Lexer::scanToken() {
 
   char c = Lexer::advance();
 
-  if (isalpha(c)) return identifier();
-  if (isdigit(c)) return number();
-  if (c == '"') return String();
+  auto res = isalpha(c)   ? makeToken(identifier().kind)
+             : isdigit(c) ? makeToken(number().kind)
+             : c == '"'   ? makeToken(String().kind)
+                          : makeToken(sc_dc_lookup(c));
 
-  auto it2 = dcMap.find(std::string(1, c) + std::string(1, peek()));
-  if (it2 != dcMap.end()) {
-    advance();
-    return makeToken(it2->second);
+  if (res.kind == TokenKind::UNKNOWN) {
+    std::string msg = "Unexpected character: " + std::string(1, c);
+    return errorToken(msg);
   }
-  
-  auto it = scMap.find(c);
-  if (it != scMap.end())
-    return makeToken(it->second);
 
-  return errorToken("Unexpected character.");
+  return res;
 }

@@ -1,6 +1,8 @@
 #pragma once
 
+#include <functional>
 #include <string>
+#include <unordered_map>
 
 enum TokenKind {
   // Single-character tokens.
@@ -21,9 +23,8 @@ enum TokenKind {
   CARET,
   COLON,
   QUESTION,
-  STRUCT,
-  LAND, 
-  LOR, 
+  LAND,
+  LOR,
 
   // One or two character tokens.
   BANG,
@@ -42,6 +43,7 @@ enum TokenKind {
   STAR_EQUAL,
   SLASH_EQUAL,
   RANGE,
+  RESOLUTION,
 
   // Literals.
   IDENTIFIER,
@@ -62,11 +64,17 @@ enum TokenKind {
   SUPER,
   TR,
   VAR,
-  CONST,
+  _CONST,
   PKG,
   TYPE,
   EXIT,
   IN,
+  STRUCT,
+  ENUM,
+  UNION,
+  IMPORT,
+  PUB,
+  PRIV,
 
   // Error
   ERROR_,
@@ -92,17 +100,13 @@ public:
     const char *current;
     const char *source;
     const char *start;
+    std::string file;
     int column;
     int line;
   };
   Scanner scanner;
 
-  struct Keyword {
-    std::string name;
-    TokenKind kind;
-  };
-
-  void initLexer(const char *source);
+  void initLexer(const char *source, std::string file);
 
   Token scanToken();
   Token errorToken(std::string message);
@@ -116,9 +120,16 @@ public:
   bool isAtEnd();
   char peek();
 
-private:
-  char peekNext();
+  using WhiteSpaceFunction = std::function<void(Lexer &)>;
+  std::unordered_map<TokenKind, const char *> tokenToStringMap;
+  std::unordered_map<char, WhiteSpaceFunction> whiteSpaceMap;
+  std::unordered_map<std::string, TokenKind> keywords;
+  std::unordered_map<std::string, TokenKind> dcMap;
+  std::unordered_map<char, TokenKind> scMap;
 
+  void initMap();
+
+private:
   bool match(char expected);
 
   Token makeToken(TokenKind kind);
@@ -126,7 +137,8 @@ private:
   Token number();
   Token String();
 
-  TokenKind identifierType();
+  TokenKind checkIdentMap(std::string identifier);
+  TokenKind sc_dc_lookup(char c);
 
   void skipWhitespace();
 };

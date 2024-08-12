@@ -1,74 +1,124 @@
 #include <cstring>
+#include <chrono>
+#include <thread>
 #include <iostream>
+#include <sys/stat.h>
 
-#include "../inc/colorize.hpp"
 #include "../inc/update.hpp"
 #include "common.hpp"
 #include "helper/flags.hpp"
 
-using namespace std;
+void FlagConfig::print(int argc, char **argv) {
+  using condition = bool (*)(const char *);
+  condition conditions[] = {
+      [](const char *arg) { return strcmp(arg, "--version") == 0; },
+      [](const char *arg) { return strcmp(arg, "--license") == 0; },
+      [](const char *arg) { return strcmp(arg, "--help") == 0; },
+      [](const char *arg) { return strcmp(arg, "--update") == 0; },
+  };
+  const char *messages[] = {
+      "Zura Lang " ZuraVersion,
+      "Zura uses a license under GPL-3.0\nYou can find the license "
+      "here:\nhttps://www.gnu.org/licenses/gpl-3.0.en.html",
+      "Zura Lang " ZuraVersion
+      "\nUsage: zura [options] [file]\nOptions:\n  --version    Print the "
+      "version of Zura\n  --help       Print this help message\n  --license    "
+      "Print the license of Zura\n  --update     Update Zura to the latest "
+      "version"
+      "\n Compiler Flags:\n  build [file]  Build a Zura file"
+      "\n  -name [name]  Set the name of the output file"
+      "\n  -save [path]  Save the output file to a specific path",
+  };
+
+  for (int i = 0; i < 4; i++) {
+    if (conditions[i](argv[1])) {
+      if (i == 3) {
+        promptUpdate();
+        Exit(ExitValue::UPDATED);
+      }
+      std::cout << messages[i] << std::endl;
+      Exit(ExitValue::FLAGS_PRINTED);
+    }
+  }
+}
+
+void FlagConfig::runBuild(int argc, char **argv) {
+  using conditions = bool (*)(const char *);
+  conditions buildConditions[] = {
+      [](const char *arg) { return strcmp(arg, "build") == 0; },
+      [](const char *arg) { return strcmp(arg, "-name") == 0; },
+      [](const char *arg) { return strcmp(arg, "-save") == 0; },
+  };
+
+  if (argc < 2) {
+    std::cout << "No arguments provided" << std::endl;
+    Exit(ExitValue::INVALID_FILE);
+  }
+
+  for (int i = 0; i < 3; ++i) {
+    if (buildConditions[i](argv[1])) {
+      if (i == 0) { // build
+        if (argc < 3) {
+          std::cout << "No file specified" << std::endl;
+          Exit(ExitValue::BUILD_ERROR);
+        }
+
+        const char *fileName = argv[2];
+        const char *outputName = "a.out";
+        bool saveFlag = false;
+
+        // Check for additional flags after 'build'
+        for (int j = 3; j < argc; ++j) {
+          if (strcmp(argv[j], "-name") == 0) {
+            if (j + 1 < argc) {
+              outputName = argv[j + 1];
+              ++j; // Skip the output name argument
+            } else {
+              std::cout << "No output name specified" << std::endl;
+              Exit(ExitValue::INVALID_FILE);
+            }
+          } else if (strcmp(argv[j], "-save") == 0) {
+            saveFlag = true;
+          }
+        }
+
+        Flags::runFile(fileName, outputName, saveFlag);
+        return; // Exit after handling the 'build' command
+      }
+    }
+  }
+}
+
+void updateProgressBar(double progress) {
+    const int barWidth = 50;
+    std::cout << "[";
+    int pos = barWidth * progress;
+    for (int i = 0; i < barWidth; ++i) {
+        if (i < pos) std::cout << "=";
+        else if (i == pos) std::cout << ">";
+        else std::cout << " ";
+    }
+    std::cout << "] " << int(progress * 100.0) << " %\r";
+    std::cout.flush();
+}
 
 int main(int argc, char **argv) {
-  if ((argc == 2 && strcmp(argv[1], "--help") == 0) || argc == 1) {
-    cout << "Usage: " << argv[0] << " [options]" << endl;
-    cout << "Options:" << endl;
-    cout << "  --help\t\t\tPrints this help message" << endl;
-    cout << "  --version\t\t\tPrints the version of the compiler" << endl;
-    cout << "  --license\t\t\tPrints the license of the Zura Lang" << endl;
-    cout << "  --update\t\t\tUpdates the Zura compiler" << endl;
-    cout << "Compiler:" << endl;
-    cout << termcolor::red << "   -s" << termcolor::reset
-         << ", \t\tSave the generated asm file and the out.o file" << endl;
-    cout << termcolor::red << "   -sa" << termcolor::reset
-         << ", \tOutput just the asm file" << endl;
-    cout << termcolor::red << "   -o" << termcolor::reset
-         << ", \t\tOutput the transpiled file to <file>" << endl;
-    cout << termcolor::red << "   -r" << termcolor::reset
-         << ", \t\tRun the exacutable file. (Not yet implemented)" << endl;
-    cout << termcolor::red << "   -c" << termcolor::reset
-         << ", \t\tDelete the exacutable file and c file if it is there."
-         << endl;
-    Exit(ExitValue::FLAGS_PRINTED);
-  }
+    auto startTime = std::chrono::high_resolution_clock::now();
 
-  // version
-  if (argc == 2 && strcmp(argv[1], "--version") == 0) {
-    cout << "Zura Lang " << ZuraVersion << endl;
-    Exit(ExitValue::FLAGS_PRINTED);
-  }
+    FlagConfig::print(argc, argv);
+    auto midTime = std::chrono::high_resolution_clock::now();
 
-  // update
-  if (argc == 2 && strcmp(argv[1], "--update") == 0) {
-    installer();
-    Exit(ExitValue::UPDATED);
-  }
+    updateProgressBar(0.5);
 
-  // license
-  if (argc == 2 && strcmp(argv[1], "--license") == 0) {
-    cout << "Zura uses a license under GPL-3.0" << endl;
-    cout << "You can find the license here:" << endl;
-    cout << termcolor::blue << "https://www.gnu.org/licenses/gpl-3.0.en.html"
-         << termcolor::reset << endl;
-    Exit(ExitValue::FLAGS_PRINTED);
-  }
+    FlagConfig::runBuild(argc, argv);
+    auto endTime = std::chrono::high_resolution_clock::now();
 
-  // (delete)
-  if (argc == 3 && strcmp(argv[1], "-c") == 0)
-    Flags::compilerDelete(argv);
-  // (output the asm)
-  if (argc == 3 && strcmp(argv[1], "-sa") == 0) {
-    Flags::outputFile(argv[2]);
-  }
-  // (transpile)
-  if (argc == 4 && strcmp(argv[2], "-o") == 0) {
-    char *outName = argv[3];
-    Flags::runFile(argv[1], outName, false);
-  }
-  // (transpile and save)
-  if (argc == 5 && strcmp(argv[2], "-o") == 0 && strcmp(argv[4], "-s") == 0) {
-    char *outName = argv[3];
-    Flags::runFile(argv[1], outName, true);
-  }
+    updateProgressBar(1.0);
+    std::cout << std::endl;
 
-  return 0;
-}
+    auto totalDurationMS = std::chrono::duration_cast<std::chrono::milliseconds>(endTime - startTime).count();
+    auto totalDurationUS = std::chrono::duration_cast<std::chrono::microseconds>(endTime - startTime).count();
+    std::cout << "Total time: " << totalDurationMS << "ms (" << totalDurationUS << "us)" << std::endl; 
+
+    return ExitValue::BUILT;
+} 
