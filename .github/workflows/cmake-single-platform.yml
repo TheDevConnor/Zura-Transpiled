@@ -5,8 +5,8 @@ on:
     branches: [ "main" ]
 
 jobs:
-  release:
-    name: "release (Linux)"
+  pre-release:
+    name: "Pre-release (Linux)"
     runs-on: ubuntu-latest
 
     steps:
@@ -37,7 +37,7 @@ jobs:
   combine-artifacts:
     name: "Combine Artifacts"
     runs-on: ubuntu-latest
-    needs: [release]
+    needs: [pre-release]
 
     steps:
       - name: "Download Linux artifacts"
@@ -46,6 +46,10 @@ jobs:
           name: linux-artifacts
           path: ./linux-artifacts
 
+      - name: "List downloaded artifacts"
+        run: |
+          ls -R ./linux-artifacts  # Add this step to verify the artifacts
+
       - name: "Upload combined artifacts"
         uses: marvinpinto/action-automatic-releases@latest
         with:
@@ -53,4 +57,4 @@ jobs:
           automatic_release_tag: "pre-release"
           prerelease: true
           files: |
-            combined-artifacts/*
+            linux-artifacts/*  # Adjust this path if necessary
