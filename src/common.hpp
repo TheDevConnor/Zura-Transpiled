@@ -4,7 +4,7 @@
 #include <unordered_map>
 #include <string>
 
-#define ZuraVersion "v0.0.7"
+#define ZuraVersion "v0.1.0"
 
 class FlagConfig {
 public:
