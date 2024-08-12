@@ -57,4 +57,4 @@ jobs:
           automatic_release_tag: "pre-release"
           prerelease: true
           files: |
-            linux-artifacts/*  # Adjust this path if necessary
+            ./linux-artifacts/zura
