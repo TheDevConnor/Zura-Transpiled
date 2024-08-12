@@ -7,6 +7,11 @@ void codegen::visitStmt(Node::Stmt *stmt) {
   }
 }
 
+void codegen::expr(Node::Stmt *stmt) {
+  auto expr = static_cast<ExprStmt *>(stmt);
+  visitExpr(expr->expr);
+}
+
 void codegen::program(Node::Stmt *stmt) {
   auto program = static_cast<ProgramStmt *>(stmt);
 
@@ -24,7 +29,7 @@ void codegen::funcDecl(Node::Stmt *stmt) {
   auto funcDecl = static_cast<fnStmt *>(stmt);
 
   if (funcDecl->name == "main") {
-    push("global _start", true);
+    isEntryPoint = true;
     push("_start:", true);
   } else {
     push("_" + funcDecl->name + ":", true);
@@ -34,10 +39,16 @@ void codegen::funcDecl(Node::Stmt *stmt) {
   // Todo: Handle Function return type
 
   visitStmt(funcDecl->block);
+  stackSize++;
 }
 
 void codegen::varDecl(Node::Stmt *stmt) {
-  // Handle variable declaration if necessary
+  auto varDecl = static_cast<VarStmt *>(stmt);
+
+  visitStmt(varDecl->expr);
+
+  // add variable to the stack
+  stackTable.insert({varDecl->name, stackSize});
 }
 
 void codegen::block(Node::Stmt *stmt) {
@@ -50,11 +61,26 @@ void codegen::block(Node::Stmt *stmt) {
 void codegen::retrun(Node::Stmt *stmt) {
   auto returnStmt = static_cast<ReturnStmt *>(stmt);
 
-  push("; return statement", true);
-  push("mov rax, 60", true);
+  if (isEntryPoint) {
+    visitExpr(returnStmt->expr);
 
+    // check if the return value is a single number on the node
+    if (returnStmt->expr->kind == ND_NUMBER) {
+      push("\tpop rdi", true);
+      stackSize--;
+    }
+
+    if (returnStmt->expr->kind == ND_IDENT) {
+      push("\tpop rdi", true);
+      stackSize--;
+    }
+
+    push("\tmov rax, 60", true);
+    push("\tsyscall", true);
+    return;
+  }
   visitExpr(returnStmt->expr);
-
-  push("pop rdi", true);
-  push("syscall", true);
+  push("\tpop rdi", true);
+  stackSize--;
+  push("\tret", true);
 }
