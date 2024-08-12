@@ -34,31 +34,6 @@ jobs:
           path: |
             ./release/zura
 
-  get-version:
-    name: "Get Version"
-    runs-on: ubuntu-latest
-    needs: [pre-release]
-
-    steps:
-      - name: "Download Linux artifacts"
-        uses: actions/download-artifact@v2
-        with:
-          name: linux-artifacts
-
-      - name: "Get version"
-        id: get-version
-        run: |
-          echo "::set-output name=artifact_path::$(cat version.txt)"
-
-      - name: "Print version"
-        run: |
-          echo "Version: ${{ steps.get-version.outputs.artifact_path }}"
-
-      - name: "Upload version"
-        uses: actions/upload-artifact@v2
-        with:
-          name: version
-
   combine-artifacts:
     name: "Combine Artifacts"
     runs-on: ubuntu-latest
@@ -73,13 +48,20 @@ jobs:
 
       - name: "List downloaded artifacts"
         run: |
-          ls -R ./linux-artifacts  # Add this step to verify the artifacts
+          ls -R ./linux-artifacts  # Verify the downloaded artifacts
+
+      - name: "Read version from file"
+        id: get_version
+        run: |
+          VERSION=$(cat version.txt)
+          echo "VERSION=${VERSION}" >> $GITHUB_ENV
 
       - name: "Upload combined artifacts"
         uses: marvinpinto/action-automatic-releases@latest
         with:
           repo_token: ${{ secrets.GITHUB_TOKEN }}
-          automatic_release_tag: "release ${{ steps.get-version.outputs.artifact_path }}"
-          prerelease: false
+          automatic_release_tag: "v${{ env.VERSION }}"
+          prerelease:
+          title: "Release v${{ env.VERSION }}"
           files: |
-            ./linux-artifacts/zura
+            linux-artifacts/zura
