@@ -1,6 +1,7 @@
+#include "../common.hpp"
+
 #include "gen.hpp"
 #include <cstdlib>
-#include <format>
 #include <fstream>
 #include <iostream>
 #include <string>
@@ -40,8 +41,14 @@ void codegen::gen(Node::Stmt *stmt, bool isSaved, std::string output) {
   output_code.clear();
 
   output = output.substr(0, output.find_last_of("."));
-  system(std::format("nasm -f elf64 {0}.asm -o {0}.o;ld {0}.o -o {0}", output)
-             .c_str());
+
+  std::string assembler = "nasm -f elf64 " + output + ".asm -o " + output + ".o";
+  const char *assembler_cstr = assembler.c_str();
+  system(assembler_cstr);
+
+  std::string linker = "ld " + output + ".o -o " + output;
+  const char *linker_cstr = linker.c_str();
+  system(linker_cstr);
 
   if (!isSaved) {
     std::string remove = "rm " + output + ".asm " + output + ".o";
