@@ -27,7 +27,8 @@ void FlagConfig::print(int argc, char **argv) {
       "version"
       "\n Compiler Flags:\n  build [file]  Build a Zura file"
       "\n  -name [name]  Set the name of the output file"
-      "\n  -save [path]  Save the output file to a specific path",
+      "\n  -save [path]  Save the output file to a specific path"
+      "\n  -clean        Clean the build files [*.asm, *.o]",
   };
 
   for (int i = 0; i < 4; i++) {
@@ -48,6 +49,7 @@ void FlagConfig::runBuild(int argc, char **argv) {
       [](const char *arg) { return strcmp(arg, "build") == 0; },
       [](const char *arg) { return strcmp(arg, "-name") == 0; },
       [](const char *arg) { return strcmp(arg, "-save") == 0; },
+      [](const char *arg) { return strcmp(arg, "-clean") == 0; },
   };
 
   if (argc < 2) {
@@ -55,8 +57,13 @@ void FlagConfig::runBuild(int argc, char **argv) {
     Exit(ExitValue::INVALID_FILE);
   }
 
-  for (int i = 0; i < 3; ++i) {
+  for (int i = 0; i < 4; i++) {
     if (buildConditions[i](argv[1])) {
+      if (i == 3) { // clean
+        std::string remove = "rm *.asm *.o";
+        system(remove.c_str());
+        return;
+      }
       if (i == 0) { // build
         if (argc < 3) {
           std::cout << "No file specified" << std::endl;

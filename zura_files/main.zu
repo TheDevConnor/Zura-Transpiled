@@ -3,5 +3,5 @@ const main := fn() int {
    have y: int = 4;
    have z: int = 5;
    have a: int = 6;
-   return z;
+   return x + y + z + a;
 };
