@@ -1,6 +1,8 @@
 # Ignore executable and object files
 *.exe
 *.c
+*.asm
+*.o
 
 # Ignore Visual Studio Code files
 .vscode
@@ -12,6 +14,7 @@ zura
 # Ignore CMake generated directories
 /build*
 /release*
+/debug*
 
 # Ignore log files
 *.log

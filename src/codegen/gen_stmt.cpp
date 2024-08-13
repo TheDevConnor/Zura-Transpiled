@@ -1,4 +1,5 @@
 #include "gen.hpp"
+#include "optimize.hpp"
 
 void codegen::visitStmt(Node::Stmt *stmt) {
   auto handler = lookup(stmtHandlers, stmt->kind);
@@ -30,9 +31,9 @@ void codegen::funcDecl(Node::Stmt *stmt) {
 
   if (funcDecl->name == "main") {
     isEntryPoint = true;
-    push("_start:", true);
+    push(Optimezer::Instr { .var = Label { .name = "_start" }, .type = InstrType::Label }, true);
   } else {
-    push("_" + funcDecl->name + ":", true);
+    push(Optimezer::Instr { .var = Label { .name = funcDecl->name }, .type = InstrType::Label }, true);
   }
 
   // Todo: Handle function arguments
@@ -44,7 +45,8 @@ void codegen::funcDecl(Node::Stmt *stmt) {
 
 void codegen::varDecl(Node::Stmt *stmt) {
   auto varDecl = static_cast<VarStmt *>(stmt);
-
+  // it builds without the error?
+  push(Optimezer::Instr { .var = Comment { .comment = "define variable '" + varDecl->name + "'" }, .type = InstrType::Comment }, true);
   visitStmt(varDecl->expr);
 
   // add variable to the stack
@@ -64,23 +66,16 @@ void codegen::retrun(Node::Stmt *stmt) {
   if (isEntryPoint) {
     visitExpr(returnStmt->expr);
 
-    // check if the return value is a single number on the node
-    if (returnStmt->expr->kind == ND_NUMBER) {
-      push("\tpop rdi", true);
-      stackSize--;
-    }
-
-    if (returnStmt->expr->kind == ND_IDENT) {
-      push("\tpop rdi", true);
-      stackSize--;
-    }
-
-    push("\tmov rax, 60", true);
-    push("\tsyscall", true);
+    // pop the expression we just visited
+    push(Optimezer::Instr { .var = PopInstr { .where = "rdi" }, .type = InstrType::Pop }, true);
+    stackSize--;
+    
+    push(Optimezer::Instr { .var = MovInstr { .dest = "rax", .src = "60" }, .type = InstrType::Mov }, true);
+    push(Optimezer::Instr { .var = Syscall { .name = "SYS_EXIT" }, .type = InstrType::Syscall }, true);
     return;
   }
   visitExpr(returnStmt->expr);
-  push("\tpop rdi", true);
+  push(Optimezer::Instr { .var = PopInstr { .where = "rdi" }, .type = InstrType::Pop }, true);
   stackSize--;
-  push("\tret", true);
+  push(Optimezer::Instr { .var = Ret {}, .type = InstrType::Ret }, true);
 }

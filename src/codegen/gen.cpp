@@ -1,57 +1,60 @@
 #include "../common.hpp"
 
 #include "gen.hpp"
+#include "optimize.hpp"
+#include "stringify.hpp"
 #include <cstdlib>
 #include <fstream>
 #include <iostream>
 #include <string>
 
-void codegen::push(std::string str, bool isSectionText) {
+void codegen::push(Optimezer::Instr instr, bool isSectionText) {
   if (isSectionText) {
-    output_code += str + "\n";
-    section_text.push_back(str);
+    text_section.push_back(instr);
   } else {
-    output_code += str + "\n";
-    section_data.push_back(str);
+    head_section.push_back(instr);
   }
 }
 
-void codegen::gen(Node::Stmt *stmt, bool isSaved, std::string output) {
+// made "output" less ambiguous
+void codegen::gen(Node::Stmt *stmt, bool isSaved, std::string output_filename) {
   initMaps();
 
-  section_data.clear();
-  section_text.clear();
-  output_code.clear();
+  text_section.clear();
+  head_section.clear();
+  // output_code.clear();
 
-  stmt->debug();
+  // stmt->debug();
 
   visitStmt(stmt);
 
-  std::ofstream file(output + ".asm");
+  text_section = Optimezer::optimizeInstrs(text_section); 
+  head_section = Optimezer::optimizeInstrs(head_section);
+
+  std::ofstream file(output_filename + ".asm");
   if (file.is_open()) {
     file << "section .text\n";
     file << "global _start\n";
-    for (const auto &line : section_text) {
-      file << line << "\n";
-    }
+    file << Stringifier::stringifyInstrs(text_section);
+    file << "\n; user-defined and Zura-native functions\n";
+    file << Stringifier::stringifyInstrs(head_section);
     file.close();
   } else {
     std::cerr << "Unable to open file" << std::endl;
   }
-  output_code.clear();
 
-  output = output.substr(0, output.find_last_of("."));
+  output_filename = output_filename.substr(0, output_filename.find_last_of("."));
 
-  std::string assembler = "nasm -f elf64 " + output + ".asm -o " + output + ".o";
+  std::string assembler = "nasm -f elf64 " + output_filename + ".asm -o " + output_filename + ".o";
   const char *assembler_cstr = assembler.c_str();
   system(assembler_cstr);
 
-  std::string linker = "ld " + output + ".o -o " + output;
+  std::string linker = "ld " + output_filename + ".o -o " + output_filename;
   const char *linker_cstr = linker.c_str();
   system(linker_cstr);
 
   if (!isSaved) {
-    std::string remove = "rm " + output + ".asm " + output + ".o";
+    std::string remove = "rm " + output_filename + ".asm " + output_filename + ".o";
     system(remove.c_str());
   }
 }

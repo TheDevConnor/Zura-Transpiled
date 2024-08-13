@@ -3,6 +3,7 @@
 #include "../ast/expr.hpp"
 #include "../ast/stmt.hpp"
 #include "../ast/types.hpp"
+#include "optimize.hpp"
 
 #include <string>
 #include <unordered_map>
@@ -32,8 +33,6 @@ void initMaps();
 
 inline std::unordered_map<std::string, size_t> stackTable = {};
 inline size_t stackSize;
-inline std::vector<std::string> section_data = {}; 
-inline std::vector<std::string> section_text = {};
 
 void visitStmt(Node::Stmt *stmt);
 void visitExpr(Node::Expr *expr);
@@ -51,15 +50,17 @@ void expr(Node::Stmt *stmt);
 void retrun(Node::Stmt *stmt);
 
 void binary(Node::Expr *expr);
+void grouping(Node::Expr *expr);
 void unary(Node::Expr *expr);
 void call(Node::Expr *expr);
 void ternary(Node::Expr *expr);
 void primary(Node::Expr *expr);
 
-inline std::string output_code;
+inline std::vector<Optimezer::Instr> text_section = {};
+inline std::vector<Optimezer::Instr> head_section = {};
 inline bool isEntryPoint = false;
 
-void push(std::string str, bool isSectionText = false);
+void push(Optimezer::Instr instr, bool isSectionText = false);
 
 void gen(Node::Stmt *stmt, bool isSaved, std::string output);
 } // namespace codegen

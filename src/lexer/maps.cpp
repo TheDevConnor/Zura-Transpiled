@@ -41,12 +41,10 @@ void Lexer::initMap() {
          lexer.scanner.column = 0;
          lexer.advance();
        }},
-      {'/',
+      {'#',
        [](Lexer &lexer) {
-         if (lexer.peek() == '/') {
            while (lexer.peek() != '\n' && !lexer.isAtEnd())
              lexer.advance();
-         }
        }},
   };
 
