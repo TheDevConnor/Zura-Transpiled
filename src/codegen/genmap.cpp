@@ -10,7 +10,7 @@ void codegen::initMaps() {
       {ND_PROGRAM, program},  {ND_CONST_STMT, constDecl},
       {ND_VAR_STMT, varDecl}, {ND_FN_STMT, funcDecl},
       {ND_BLOCK_STMT, block}, {ND_RETURN_STMT, retrun},
-      {ND_EXPR_STMT, expr},
+      {ND_IF_STMT, ifStmt},   {ND_EXPR_STMT, expr},
   };
   exprHandlers = {
       {ND_BINARY, binary},   {ND_UNARY, unary},    {ND_CALL, call},

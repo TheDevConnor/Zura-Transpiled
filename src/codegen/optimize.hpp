@@ -45,6 +45,16 @@ struct Label {
   std::string name;
 };
 
+struct CmpInstr {
+  std::string lhs;
+  std::string rhs;
+};
+
+struct SetInstr {
+  std::string what;
+  std::string where;
+};
+
 struct Syscall {
   std::string name;
 };
@@ -63,6 +73,8 @@ enum class InstrType {
   Sub,
   Mul,
   Div,
+  Cmp,
+  Set,
 
   // system (no opposites)
   Label,
@@ -75,7 +87,8 @@ enum class InstrType {
 
 struct Instr {
   std::variant<MovInstr, PushInstr, PopInstr, XorInstr, AddInstr, SubInstr,
-               MulInstr, DivInstr, Label, Syscall, Ret, Comment>
+               MulInstr, DivInstr, CmpInstr, SetInstr, Label, Syscall, Ret,
+               Comment>
       var;
   InstrType type;
 };
@@ -91,6 +104,9 @@ inline std::unordered_map<InstrType, InstrType> opposites = {
 
     {InstrType::Mul, InstrType::Div},
     {InstrType::Div, InstrType::Mul},
+
+    {InstrType::Cmp, InstrType::Cmp},
+    {InstrType::Set, InstrType::Set},
 
     // system (no opposites)
     {InstrType::Label, InstrType::NONE},

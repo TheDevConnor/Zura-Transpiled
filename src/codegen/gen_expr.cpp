@@ -41,6 +41,24 @@ void codegen::binary(Node::Expr *expr) {
           push(Instr { .var = XorInstr { .lhs = "rdx", .rhs = "rdx"}, .type = InstrType::Xor }, true);
           push(Instr { .var = DivInstr { .from = registerRhs }, .type = InstrType::Div }, true);
           break;
+        case '%':
+          // push(Optimezer::Instr { .var = Comment { .comment = "Modulus" }, .type = InstrType::Comment });
+          push(Instr { .var = XorInstr { .lhs = "rdx", .rhs = "rdx"}, .type = InstrType::Xor }, true);
+          push(Instr { .var = DivInstr { .from = registerRhs }, .type = InstrType::Div }, true);
+          push(Instr { .var = MovInstr { .dest = registerLhs, .src = "rdx" }, .type = InstrType::Mov }, true);
+          break;
+        case '>':
+          // push(Optimezer::Instr { .var = Comment { .comment = "Greater Than" }, .type = InstrType::Comment });
+          push(Instr { .var = CmpInstr { .lhs = registerLhs, .rhs = registerRhs }, .type = InstrType::Cmp }, true);
+          push(Instr { .var = SetInstr { .what = "g", .where = "al" }, .type = InstrType::Set }, true);
+          push(Instr { .var = MovInstr { .dest = registerLhs, .src = "rax" }, .type = InstrType::Mov }, true);
+          break;
+        case '<':
+          // push(Optimezer::Instr { .var = Comment { .comment = "Less Than" }, .type = InstrType::Comment });
+          push(Instr { .var = CmpInstr { .lhs = registerLhs, .rhs = registerRhs }, .type = InstrType::Cmp }, true);
+          push(Instr { .var = SetInstr { .what = "l", .where = "al" }, .type = InstrType::Set }, true);
+          push(Instr { .var = MovInstr { .dest = registerLhs, .src = "rax" }, .type = InstrType::Mov }, true);
+          break;
         default:
             break;
     }

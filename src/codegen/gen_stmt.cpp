@@ -114,6 +114,10 @@ void codegen::block(Node::Stmt *stmt) {
   }
 }
 
+void codegen::ifStmt(Node::Stmt *stmt) {
+  auto ifstmt = static_cast<IfStmt *>(stmt);
+}
+
 void codegen::retrun(Node::Stmt *stmt) {
   auto returnStmt = static_cast<ReturnStmt *>(stmt);
 

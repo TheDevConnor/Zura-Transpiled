@@ -46,6 +46,7 @@ void constDecl(Node::Stmt *stmt);
 void funcDecl(Node::Stmt *stmt);
 void varDecl(Node::Stmt *stmt);
 void block(Node::Stmt *stmt);
+void ifStmt(Node::Stmt *stmt);
 void expr(Node::Stmt *stmt);
 void retrun(Node::Stmt *stmt);
 
