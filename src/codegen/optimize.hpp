@@ -1,9 +1,9 @@
 #pragma once
 
 #include <string>
+#include <unordered_map>
 #include <variant>
 #include <vector>
-#include <unordered_map>
 
 struct MovInstr {
   std::string dest;
@@ -63,7 +63,7 @@ enum class InstrType {
   Sub,
   Mul,
   Div,
-  
+
   // system (no opposites)
   Label,
   Mov,
@@ -73,18 +73,25 @@ enum class InstrType {
   NONE
 };
 
+struct Instr {
+  std::variant<MovInstr, PushInstr, PopInstr, XorInstr, AddInstr, SubInstr,
+               MulInstr, DivInstr, Label, Syscall, Ret, Comment>
+      var;
+  InstrType type;
+};
+
 inline std::unordered_map<InstrType, InstrType> opposites = {
-    { InstrType::Push, InstrType::Pop },
-    { InstrType::Pop, InstrType::Push },
+    {InstrType::Push, InstrType::Pop},
+    {InstrType::Pop, InstrType::Push},
 
     {InstrType::Xor, InstrType::Xor},
-    
+
     {InstrType::Add, InstrType::Sub},
     {InstrType::Sub, InstrType::Add},
 
     {InstrType::Mul, InstrType::Div},
     {InstrType::Div, InstrType::Mul},
-    
+
     // system (no opposites)
     {InstrType::Label, InstrType::NONE},
     {InstrType::Mov, InstrType::NONE},
@@ -94,46 +101,42 @@ inline std::unordered_map<InstrType, InstrType> opposites = {
     {InstrType::NONE, InstrType::NONE}
 
 };
-class Optimezer {
+class Optimizer {
 public:
-  struct Instr {
-    std::variant<MovInstr, PushInstr, PopInstr, XorInstr, AddInstr, SubInstr,
-                 MulInstr, DivInstr, Label, Syscall, Ret, Comment>
-        var;
-    InstrType type;
-  };
-
-
   static std::vector<Instr> optimizeInstrs(std::vector<Instr> &input) {
     std::vector<Instr> output{};
-    
-    Instr prev = { .type = InstrType::NONE };
+
+    Instr prev = {.type = InstrType::NONE};
 
     for (Instr &instr : input) {
       if (prev.type == opposites.at(instr.type)) {
         if (instr.type == InstrType::Pop) {
-            // previous was push, so we could simplify to mov
-            output.pop_back();
+          // previous was push, so we could simplify to mov
+          output.pop_back();
 
-            PushInstr prevAsPush = std::get<PushInstr>(prev.var);
-            PopInstr currAsPop = std::get<PopInstr>(instr.var);
+          PushInstr prevAsPush = std::get<PushInstr>(prev.var);
+          PopInstr currAsPop = std::get<PopInstr>(instr.var);
 
-            if (prevAsPush.what == currAsPop.where)
-                continue; // No 🫴
-            
-            if (prevAsPush.what == "0") {
-                // simplify further to XOR
-                Instr newInstr = { .var = XorInstr { .lhs = currAsPop.where, .rhs = currAsPop.where }, .type = InstrType::Xor };
-                prev = newInstr;
-                output.push_back(newInstr);
-                continue;
-            }
+          if (prevAsPush.what == currAsPop.where)
+            continue; // No 🫴
 
-            // simplify to mov
-            Instr newInstr = { .var = MovInstr { .dest = currAsPop.where, .src = prevAsPush.what }, .type = InstrType::Mov };
+          if (prevAsPush.what == "0") {
+            // simplify further to XOR
+            Instr newInstr = {
+                .var = XorInstr{.lhs = currAsPop.where, .rhs = currAsPop.where},
+                .type = InstrType::Xor};
             prev = newInstr;
             output.push_back(newInstr);
             continue;
+          }
+
+          // simplify to mov
+          Instr newInstr = {
+              .var = MovInstr{.dest = currAsPop.where, .src = prevAsPush.what},
+              .type = InstrType::Mov};
+          prev = newInstr;
+          output.push_back(newInstr);
+          continue;
         }
       }
       output.push_back(instr);

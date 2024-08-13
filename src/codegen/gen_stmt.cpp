@@ -31,9 +31,9 @@ void codegen::funcDecl(Node::Stmt *stmt) {
 
   if (funcDecl->name == "main") {
     isEntryPoint = true;
-    push(Optimezer::Instr { .var = Label { .name = "_start" }, .type = InstrType::Label }, true);
+    push(Instr { .var = Label { .name = "_start" }, .type = InstrType::Label }, true);
   } else {
-    push(Optimezer::Instr { .var = Label { .name = funcDecl->name }, .type = InstrType::Label }, true);
+    push(Instr { .var = Label { .name = funcDecl->name }, .type = InstrType::Label }, true);
   }
 
   // Todo: Handle function arguments
@@ -45,8 +45,62 @@ void codegen::funcDecl(Node::Stmt *stmt) {
 
 void codegen::varDecl(Node::Stmt *stmt) {
   auto varDecl = static_cast<VarStmt *>(stmt);
-  // it builds without the error?
-  push(Optimezer::Instr { .var = Comment { .comment = "define variable '" + varDecl->name + "'" }, .type = InstrType::Comment }, true);
+  /*
+  ---- ex 1
+  user_add:
+    ; Before function was called,
+    ; we pushed our values.
+    ; (lets assume 2)
+    ; define these as variables
+    ; it would look more like:
+    push qword [rsp + 8] ; a (further down the stack)
+    push qword [rsp]     ; b
+
+    pop rbx ; 'b'
+    pop rax ; 'a' (was pushed first)
+    add rax, rbx ; ret juts escapes the function, we store result in rax
+    ; its SO much easier after vardecl's are implemented because you have the 'infrastructure'
+    ret - rax is not ENFORCED as the return type (stack works too, especially as a function call expr), but it is standard and pretty helpful sometimes.
+
+    _start:
+      push 8 ; 'a'
+      ; do not define variables here!! do it in the function block!!!
+      push 85 ; 'b'
+      call user_add
+      ; for this example
+      ; becuase like every expr,
+      ; we would push the return
+      push rax
+      ; then for rdi it would be
+      pop rdi
+      ; which would be optimized into
+      ; this
+      mov rdi, rax
+      mov rax, 60 ; now we exit
+      syscall ; and hope it didnt crash :)
+
+      ----
+      add (a, b) {}
+
+      main () {
+        let x = add(1, 2);
+        return x;
+      }
+      a func table is smart for when you parse, but when you compile you know all the type-checking passed and you dont need to wrory about a function table
+      ----
+      _start:
+        push 1 ; param 1
+        push 2 ; param 2
+        call user_add
+        ---- whatever shit happens there
+  push(Instr { .var = Ret {}, .type = InstrType::Ret }, true);
+        refer to x:
+        push qword [rsp + (stackSize - x.loc)]
+        ; its the same algorithm, the expr for the vardecl is just "push rax" after call
+  */
+  
+  // shut up error
+  push(Instr { .var = Comment { .comment = "define variable '" + varDecl->name + "'" }, .type = InstrType::Comment }, true);
   visitStmt(varDecl->expr);
 
   // add variable to the stack
@@ -67,15 +121,15 @@ void codegen::retrun(Node::Stmt *stmt) {
     visitExpr(returnStmt->expr);
 
     // pop the expression we just visited
-    push(Optimezer::Instr { .var = PopInstr { .where = "rdi" }, .type = InstrType::Pop }, true);
+    push(Instr { .var = PopInstr { .where = "rdi" }, .type = InstrType::Pop }, true);
     stackSize--;
     
-    push(Optimezer::Instr { .var = MovInstr { .dest = "rax", .src = "60" }, .type = InstrType::Mov }, true);
-    push(Optimezer::Instr { .var = Syscall { .name = "SYS_EXIT" }, .type = InstrType::Syscall }, true);
+    push(Instr { .var = MovInstr { .dest = "rax", .src = "60" }, .type = InstrType::Mov }, true);
+    push(Instr { .var = Syscall { .name = "SYS_EXIT" }, .type = InstrType::Syscall }, true);
     return;
   }
   visitExpr(returnStmt->expr);
-  push(Optimezer::Instr { .var = PopInstr { .where = "rdi" }, .type = InstrType::Pop }, true);
+  push(Instr { .var = PopInstr { .where = "rdi" }, .type = InstrType::Pop }, true);
   stackSize--;
-  push(Optimezer::Instr { .var = Ret {}, .type = InstrType::Ret }, true);
+  push(Instr { .var = Ret {}, .type = InstrType::Ret }, true);
 }

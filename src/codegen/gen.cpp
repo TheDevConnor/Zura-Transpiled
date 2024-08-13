@@ -8,7 +8,7 @@
 #include <iostream>
 #include <string>
 
-void codegen::push(Optimezer::Instr instr, bool isSectionText) {
+void codegen::push(Instr instr, bool isSectionText) {
   if (isSectionText) {
     text_section.push_back(instr);
   } else {
@@ -28,8 +28,8 @@ void codegen::gen(Node::Stmt *stmt, bool isSaved, std::string output_filename) {
 
   visitStmt(stmt);
 
-  text_section = Optimezer::optimizeInstrs(text_section); 
-  head_section = Optimezer::optimizeInstrs(head_section);
+  text_section = Optimizer::optimizeInstrs(text_section); 
+  head_section = Optimizer::optimizeInstrs(head_section);
 
   std::ofstream file(output_filename + ".asm");
   if (file.is_open()) {

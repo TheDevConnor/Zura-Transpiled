@@ -56,11 +56,11 @@ void call(Node::Expr *expr);
 void ternary(Node::Expr *expr);
 void primary(Node::Expr *expr);
 
-inline std::vector<Optimezer::Instr> text_section = {};
-inline std::vector<Optimezer::Instr> head_section = {};
+inline std::vector<Instr> text_section = {};
+inline std::vector<Instr> head_section = {};
 inline bool isEntryPoint = false;
 
-void push(Optimezer::Instr instr, bool isSectionText = false);
+void push(Instr instr, bool isSectionText = false);
 
 void gen(Node::Stmt *stmt, bool isSaved, std::string output);
 } // namespace codegen
