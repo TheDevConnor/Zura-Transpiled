@@ -47,6 +47,49 @@ public:
       std::string operator()(CmpInstr instr) const {
         return "cmp " + instr.lhs + ", " + instr.rhs + "\n\t";
       }
+      std::string operator()(JumpInstr instr) const {
+        std::string keyword = {};
+        switch (instr.op) {
+          case JumpCondition::Zero:
+            keyword = "jz";
+            break;
+          case JumpCondition::NotZero:
+            keyword = "jnz";
+            break;
+          case JumpCondition::Greater:
+            keyword = "jg";
+            break;
+          case JumpCondition::GreaterEqual:
+            keyword = "jge";
+            break;
+          case JumpCondition::NotGreater:
+            keyword = "jng";
+            break;
+          case JumpCondition::Less:
+            keyword = "jl";
+            break;
+          case JumpCondition::LessEqual:
+            keyword = "jle";
+            break;
+          case JumpCondition::NotLess:
+            keyword = "jnl";
+            break;
+          case JumpCondition::Equal:
+            keyword = "je";
+            break;
+          case JumpCondition::NotEqual:
+            keyword = "jne";
+            break;
+          
+          case JumpCondition::Unconditioned:
+            keyword = "jmp";
+            break;
+          default:
+            keyword = "UNIMPLEMENTED";
+            break;
+        }
+        return keyword + " " + instr.label + "\n\t";
+      }
       std::string operator()(SetInstr instr) const {
         return "set" + instr.what + " " + instr.where + "\n\t";
       }

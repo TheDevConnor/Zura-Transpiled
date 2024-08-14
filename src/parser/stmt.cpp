@@ -103,7 +103,7 @@ Node::Stmt *Parser::printStmt(PStruct *psr, std::string name) {
 Node::Stmt *Parser::constStmt(PStruct *psr, std::string name) {
   auto line = psr->tks[psr->pos].line;
   auto column = psr->tks[psr->pos].column;
-
+  
   psr->expect(psr, TokenKind::_CONST,
               "Expected a CONST keyword to start a const stmt");
   name = psr->expect(psr, TokenKind::IDENTIFIER,

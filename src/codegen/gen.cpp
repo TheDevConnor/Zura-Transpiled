@@ -16,7 +16,6 @@ void codegen::push(Instr instr, bool isSectionText) {
   }
 }
 
-// made "output" less ambiguous
 void codegen::gen(Node::Stmt *stmt, bool isSaved, std::string output_filename) {
   initMaps();
 
@@ -33,6 +32,12 @@ void codegen::gen(Node::Stmt *stmt, bool isSaved, std::string output_filename) {
 
   std::ofstream file(output_filename + ".asm");
   if (file.is_open()) {
+    file << "; ---------------------------------\n"; 
+    file << "; -   Zura lang by TheDevConnor   -\n";
+    file << "; - asm helped by Soviet Pancakes -\n";
+    file << "; ---------------------------------\n";
+    file << "; What's new: If Statements and Variable Redeclarations\n\n";
+    file << "BITS 64\n";
     file << "section .text\n";
     file << "global _start\n";
     file << Stringifier::stringifyInstrs(text_section);

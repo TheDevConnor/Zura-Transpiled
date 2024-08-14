@@ -55,11 +55,15 @@ void grouping(Node::Expr *expr);
 void unary(Node::Expr *expr);
 void call(Node::Expr *expr);
 void ternary(Node::Expr *expr);
+void assign(Node::Expr *expr);
 void primary(Node::Expr *expr);
 
+// assembly
 inline std::vector<Instr> text_section = {};
 inline std::vector<Instr> head_section = {};
 inline bool isEntryPoint = false;
+inline size_t conditionalCount = 0;
+inline size_t loopCount = 0;
 
 void push(Instr instr, bool isSectionText = false);
 

@@ -5,6 +5,8 @@
 #include <variant>
 #include <vector>
 
+enum class JumpCondition;
+
 struct MovInstr {
   std::string dest;
   std::string src;
@@ -50,6 +52,11 @@ struct CmpInstr {
   std::string rhs;
 };
 
+struct JumpInstr {
+  JumpCondition op;
+  std::string label;
+};
+
 struct SetInstr {
   std::string what;
   std::string where;
@@ -73,6 +80,7 @@ enum class InstrType {
   Sub,
   Mul,
   Div,
+  Jmp,
   Cmp,
   Set,
 
@@ -85,12 +93,32 @@ enum class InstrType {
   NONE
 };
 
+enum class JumpCondition {
+  // just a "jump" label
+  Unconditioned,
+
+  Equal,
+  NotEqual,
+  
+  Zero,
+  NotZero,
+
+  Greater,
+  GreaterEqual,
+  NotGreater, // Literally just LessEqual, but somehow it is different keyword in ASM
+  
+  Less,
+  LessEqual,
+  NotLess, // just GreaterEqual, but different keyword
+};
+
 struct Instr {
   std::variant<MovInstr, PushInstr, PopInstr, XorInstr, AddInstr, SubInstr,
                MulInstr, DivInstr, CmpInstr, SetInstr, Label, Syscall, Ret,
-               Comment>
+               JumpInstr, Comment>
       var;
   InstrType type;
+  bool optimize = true;
 };
 
 inline std::unordered_map<InstrType, InstrType> opposites = {
@@ -104,11 +132,12 @@ inline std::unordered_map<InstrType, InstrType> opposites = {
 
     {InstrType::Mul, InstrType::Div},
     {InstrType::Div, InstrType::Mul},
-
+    
     {InstrType::Cmp, InstrType::Cmp},
     {InstrType::Set, InstrType::Set},
 
     // system (no opposites)
+    {InstrType::Jmp, InstrType::NONE}, // if you jumped, you can't "unjump"
     {InstrType::Label, InstrType::NONE},
     {InstrType::Mov, InstrType::NONE},
     {InstrType::Syscall, InstrType::NONE},
@@ -135,8 +164,9 @@ public:
 
           if (prevAsPush.what == currAsPop.where)
             continue; // No 🫴
-
-          if (prevAsPush.what == "0") {
+        
+        
+          if (prevAsPush.what == "0" && (currAsPop.where.find('[') == std::string::npos)) {
             // simplify further to XOR
             Instr newInstr = {
                 .var = XorInstr{.lhs = currAsPop.where, .rhs = currAsPop.where},

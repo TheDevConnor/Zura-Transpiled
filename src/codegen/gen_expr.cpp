@@ -1,5 +1,6 @@
 #include "gen.hpp"
 #include "optimize.hpp"
+#include <cstddef>
 
 void codegen::visitExpr(Node::Expr *expr) {
   auto handler = lookup(exprHandlers, expr->kind);
@@ -26,10 +27,14 @@ void codegen::binary(Node::Expr *expr) {
         case '+':
           // push(Optimezer::Instr { .var = Comment { .comment = "Addition" }, .type = InstrType::Comment });
           push(Instr { .var = AddInstr { .lhs = registerLhs, .rhs = registerRhs }, .type = InstrType::Add }, true);
+          push(Instr { .var = PushInstr { .what = registerLhs }, .type = InstrType::Push }, true);
+          stackSize++;
           break;
         case '-':
           // push(Optimezer::Instr { .var = Comment { .comment = "Subtraction" }, .type = InstrType::Comment });
           push(Instr { .var = SubInstr { .lhs = registerLhs, .rhs = registerRhs }, .type = InstrType::Sub }, true);
+          push(Instr { .var = PushInstr { .what = registerLhs }, .type = InstrType::Push }, true);
+          stackSize++;
           break;
         case '*':
           // push(Optimezer::Instr { .var = Comment { .comment = "Multiplication" }, .type = InstrType::Comment }, true);
@@ -40,32 +45,56 @@ void codegen::binary(Node::Expr *expr) {
           // rdx is the upper-64 bits of the first param, so make sure we don't divide by something stupid
           push(Instr { .var = XorInstr { .lhs = "rdx", .rhs = "rdx"}, .type = InstrType::Xor }, true);
           push(Instr { .var = DivInstr { .from = registerRhs }, .type = InstrType::Div }, true);
+          push(Instr { .var = PushInstr { .what = registerLhs }, .type = InstrType::Push }, true);
+          stackSize++;
           break;
         case '%':
           // push(Optimezer::Instr { .var = Comment { .comment = "Modulus" }, .type = InstrType::Comment });
           push(Instr { .var = XorInstr { .lhs = "rdx", .rhs = "rdx"}, .type = InstrType::Xor }, true);
           push(Instr { .var = DivInstr { .from = registerRhs }, .type = InstrType::Div }, true);
           push(Instr { .var = MovInstr { .dest = registerLhs, .src = "rdx" }, .type = InstrType::Mov }, true);
+          push(Instr { .var = PushInstr { .what = registerLhs }, .type = InstrType::Push }, true);
+          stackSize++;
           break;
+        // Comparisons
         case '>':
           // push(Optimezer::Instr { .var = Comment { .comment = "Greater Than" }, .type = InstrType::Comment });
           push(Instr { .var = CmpInstr { .lhs = registerLhs, .rhs = registerRhs }, .type = InstrType::Cmp }, true);
-          push(Instr { .var = SetInstr { .what = "g", .where = "al" }, .type = InstrType::Set }, true);
-          push(Instr { .var = MovInstr { .dest = registerLhs, .src = "rax" }, .type = InstrType::Mov }, true);
+          if (binary->op[1] == '=') {
+            push(Instr { .var = JumpInstr { .op = JumpCondition::GreaterEqual, .label = "conditional" + std::to_string(conditionalCount++) }, .type = InstrType::Jmp }, true);
+            break;
+          }
+          push(Instr { .var = JumpInstr { .op = JumpCondition::Greater, .label = "conditional" + std::to_string(conditionalCount++) }, .type = InstrType::Jmp }, true);
           break;
         case '<':
           // push(Optimezer::Instr { .var = Comment { .comment = "Less Than" }, .type = InstrType::Comment });
           push(Instr { .var = CmpInstr { .lhs = registerLhs, .rhs = registerRhs }, .type = InstrType::Cmp }, true);
-          push(Instr { .var = SetInstr { .what = "l", .where = "al" }, .type = InstrType::Set }, true);
-          push(Instr { .var = MovInstr { .dest = registerLhs, .src = "rax" }, .type = InstrType::Mov }, true);
+          if (binary->op[1] == '=') {
+            push(Instr { .var = JumpInstr { .op = JumpCondition::LessEqual, .label = "conditional" + std::to_string(conditionalCount++) }, .type = InstrType::Jmp}, true);
+            break;
+          }
+          push(Instr { .var = JumpInstr { .op = JumpCondition::Less, .label = "conditional" + std::to_string(conditionalCount++) }, .type = InstrType::Jmp}, true);
+          break;
+        case '=':
+          push(Instr { .var = CmpInstr { .lhs = registerLhs, .rhs = registerRhs }, .type = InstrType::Cmp }, true);
+          if (binary->op[1] == '=') {
+            push (Instr { .var = JumpInstr { .op = JumpCondition::Equal, .label = "conditional" + std::to_string(conditionalCount++) }, .type = InstrType::Jmp }, true);
+            break;
+          }
+          // idk, sounds like a redecl thing but too late to impl rn
+          break;
+        case '!':
+          // push(Optimezer::Instr { .var = Comment { .comment = "Not Equal" }, .type = InstrType::Comment });
+          push(Instr { .var = CmpInstr { .lhs = registerLhs, .rhs = registerRhs }, .type = InstrType::Cmp }, true);
+          if (binary->op[1] == '=') {
+            push (Instr { .var = JumpInstr { .op = JumpCondition::NotEqual, .label = "conditional" + std::to_string(conditionalCount++) }, .type = InstrType::Jmp }, true);
+            break;
+          }
+          // unary NOT operation (visited elsewhere)
           break;
         default:
             break;
     }
-
-    // Push result back onto stack (result typically in `rax` or `rbx`/`rcx`)
-    push(Instr { .var = PushInstr { .what = registerLhs }, .type = InstrType::Push }, true);
-    stackSize++;
 }
 
 void codegen::grouping(Node::Expr *expr) {
@@ -74,7 +103,29 @@ void codegen::grouping(Node::Expr *expr) {
   visitExpr(grouping->expr);
 }
 
-void codegen::unary(Node::Expr *expr) {}
+void codegen::unary(Node::Expr *expr) {
+  auto unary = static_cast<UnaryExpr *>(expr);
+
+  visitExpr(unary->expr);
+  switch (unary->op[0]) {
+    case '-': // TODO: use x86 NEG instr
+      push(Instr { .var = PopInstr { .where = "rbx" }, .type = InstrType::Pop }, true);
+      stackSize--;
+      push(Instr { .var = XorInstr { .lhs = "rax", .rhs = "rax" }, .type = InstrType::Xor }, true);
+      push(Instr { .var = SubInstr { .lhs = "rax", .rhs = "rbx" }, .type = InstrType::Sub }, true);
+      break;
+    case '!':
+      // TODO: use proper x86 NOT instr
+      push(Instr { .var = PopInstr { .where = "rax" }, .type = InstrType::Pop }, true);
+      stackSize--;
+      push(Instr { .var = XorInstr { .lhs = "rax", .rhs = "rax" }, .type = InstrType::Xor }, true);
+      push(Instr { .var = SetInstr { .where = "al" }, .type = InstrType::Set }, true);
+      push(Instr { .var = MovInstr { .dest = "rax", .src = "0" }, .type = InstrType::Mov }, true);
+      break;
+    default:
+      break;
+  }
+}
 
 void codegen::call(Node::Expr *expr) {}
 
@@ -121,4 +172,27 @@ void codegen::primary(Node::Expr *expr) {
   default:
     break;
   }
+}
+
+void codegen::assign(Node::Expr *expr) {
+  auto assignExpr = static_cast<AssignmentExpr *>(expr);
+  
+  auto assignee = static_cast<IdentExpr *>(assignExpr->assignee);
+
+  if (stackTable.empty()) {
+    // how do you handle errors?
+    std::cerr << "Variable '" + assignee->name + "' not predefined, cannot reassign" << std::endl;
+    exit(EXIT_FAILURE); // c macro moment  
+  }
+  visitExpr(assignExpr->rhs);
+  int offset = (stackSize - stackTable.at(assignee->name)) - 1;
+
+  if (offset == 0) {
+    // dont bother doing [ + 0]
+    push(Instr { .var = PopInstr { .where = "qword [rsp]" }, .type = InstrType::Pop }, true);
+    stackSize--;
+    return;
+  }
+  push(Instr { .var = PopInstr { .where = "qword [rsp + " + std::to_string(offset * 8) + "]" }, .type = InstrType::Pop }, true);
+  stackSize--;
 }
