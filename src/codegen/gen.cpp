@@ -36,7 +36,7 @@ void codegen::gen(Node::Stmt *stmt, bool isSaved, std::string output_filename) {
     file << "; -   Zura lang by TheDevConnor   -\n";
     file << "; - asm helped by Soviet Pancakes -\n";
     file << "; ---------------------------------\n";
-    file << "; What's new: If Statements and Variable Redeclarations\n\n";
+    file << "; What's new: If Statements and Variable Redeclarations Return If Stmt\n\n";
     file << "BITS 64\n";
     file << "section .text\n";
     file << "global _start\n";

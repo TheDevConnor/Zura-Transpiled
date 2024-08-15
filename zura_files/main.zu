@@ -1,8 +1,10 @@
 const main := fn () int {
    have x: int = 1;
-   return if (x == 0) { 
+   return if (x == 0) {
+      dis("x is 0");
       0; 
-   } else { 
+   } else {
+      dis("x is not 0");
       1; 
    };
 };
