@@ -54,7 +54,7 @@ jobs:
       - name: "Read version from file"
         id: get_version
         run: |
-          VERSION=$(cat version.txt)
+          VERSION=$(cat ./linux-artifacts/version.txt)
           echo "VERSION=${VERSION}" >> $GITHUB_ENV
 
       - name: "Upload combined artifacts"
