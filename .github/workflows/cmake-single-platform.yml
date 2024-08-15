@@ -33,6 +33,7 @@ jobs:
           name: linux-artifacts
           path: |
             ./release/zura
+            version.txt
 
   combine-artifacts:
     name: "Combine Artifacts"
