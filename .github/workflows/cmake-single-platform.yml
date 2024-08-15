@@ -61,8 +61,8 @@ jobs:
         uses: marvinpinto/action-automatic-releases@latest
         with:
           repo_token: ${{ secrets.GITHUB_TOKEN }}
-          automatic_release_tag: "v${{ env.VERSION }}"
-          prerelease:
-          title: "Release v${{ env.VERSION }}"
+          automatic_release_tag: "release"
+          prerelease: false
+          title: "Release ${{ env.VERSION }}"
           files: |
             linux-artifacts/zura
