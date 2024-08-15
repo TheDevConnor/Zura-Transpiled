@@ -215,9 +215,10 @@ class ReturnStmt : public Node::Stmt {
 public:
   int line, pos;
   Node::Expr *expr;
+  Node::Stmt *stmt;
 
-  ReturnStmt(int line, int pos, Node::Expr *expr)
-      : line(line), pos(pos), expr(expr) {
+  ReturnStmt(int line, int pos, Node::Expr *expr, Node::Stmt *stmt = nullptr)
+      : line(line), pos(pos), expr(expr), stmt(stmt) {
     kind = NodeKind::ND_RETURN_STMT;
   }
 
@@ -225,11 +226,20 @@ public:
     Node::printIndent(ident);
     std::cout << "ReturnStmt: \n";
     Node::printIndent(ident + 1);
-    std::cout << "Expr: \n";
-    expr->debug(ident + 2);
+    if (stmt) {
+      std::cout << "Stmt: \n";
+      stmt->debug(ident + 2);
+    }
+    if (expr) {
+      std::cout << "Expr: \n";
+      expr->debug(ident + 2);
+    }
   }
 
-  ~ReturnStmt() { delete expr; }
+  ~ReturnStmt() { 
+    delete expr; 
+    delete stmt;
+  }
 };
 
 class IfStmt : public Node::Stmt {

@@ -4,7 +4,8 @@
 #include <unordered_map>
 #include <string>
 
-#define ZuraVersion "v0.1.0"
+inline std::string ZuraVersion = "";
+inline std::string get_version(const char *path);
 
 class FlagConfig {
 public:

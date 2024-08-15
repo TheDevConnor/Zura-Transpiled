@@ -1,7 +1,10 @@
-const main := fn() int {
+const main := fn () int {
    have x: int = 1;
-   have y: int = 4;
-   have z: int = 5;
-   have a: int = 6;
-   return x + y + z + a;
+   return if (x == 0) {
+      dis("x is 0");
+      0; 
+   } else {
+      dis("x is not 0");
+      1; 
+   };
 };
