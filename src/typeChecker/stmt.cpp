@@ -147,5 +147,11 @@ void TypeChecker::visitPrint(Maps *map, Node::Stmt *stmt) {
 
 void TypeChecker::visitReturn(Maps *map, Node::Stmt *stmt) {
   auto return_stmt = static_cast<ReturnStmt *>(stmt);
+
+  if (return_stmt->stmt != nullptr) { // if the return statement is a statement
+    visitStmt(map, return_stmt->stmt);
+    return;
+  }
+
   visitExpr(map, return_stmt->expr);
 }

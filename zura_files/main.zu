@@ -1,17 +1,8 @@
-const print := fn () int {
-   dis("Hello, World! || ");
-   return 0;
-};
-
 const main := fn () int {
-   print();
-
-   have x: int = 0;
-   if (x == 0) {
-      dis("x is 0 || ");
-   } else {
-      dis("x is not 0 || ");
-   }
-
-   return 0;
+   have x: int = 1;
+   return if (x == 0) { 
+      0; 
+   } else { 
+      1; 
+   };
 };

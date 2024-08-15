@@ -163,6 +163,15 @@ Node::Stmt *Parser::returnStmt(PStruct *psr, std::string name) {
 
   psr->expect(psr, TokenKind::RETURN,
               "Expected a RETURN keyword to start a return stmt");
+
+  // if return 
+  if (psr->current(psr).kind == TokenKind::IF) {
+    auto if_return = ifStmt(psr, name);
+    psr->expect(psr, TokenKind::SEMICOLON,
+                "Expected a SEMICOLON at the end of a return stmt");
+    return new ReturnStmt(line, column, nullptr, if_return);
+  }
+
   auto expr = parseExpr(psr, BindingPower::defaultValue);
   psr->expect(psr, TokenKind::SEMICOLON,
               "Expected a SEMICOLON at the end of a return stmt");
