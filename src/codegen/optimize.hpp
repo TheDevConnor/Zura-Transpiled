@@ -52,6 +52,14 @@ struct CmpInstr {
   std::string rhs;
 };
 
+struct NegInstr {
+  std::string what;
+};
+
+struct NotInstr {
+  std::string what;
+};
+
 struct JumpInstr {
   JumpCondition op;
   std::string label;
@@ -60,6 +68,14 @@ struct JumpInstr {
 struct SetInstr {
   std::string what;
   std::string where;
+};
+
+struct DBInstr {
+  std::string what;
+};
+
+struct CallInstr {
+  std::string name;
 };
 
 struct Syscall {
@@ -83,9 +99,15 @@ enum class InstrType {
   Jmp,
   Cmp,
   Set,
+  Neg,
+  Not,
+
+  // Types
+  DB,
 
   // system (no opposites)
   Label,
+  Call,
   Mov,
   Syscall,
   Ret,
@@ -99,14 +121,15 @@ enum class JumpCondition {
 
   Equal,
   NotEqual,
-  
+
   Zero,
   NotZero,
 
   Greater,
   GreaterEqual,
-  NotGreater, // Literally just LessEqual, but somehow it is different keyword in ASM
-  
+  NotGreater, // Literally just LessEqual, but somehow it is different keyword
+              // in ASM
+
   Less,
   LessEqual,
   NotLess, // just GreaterEqual, but different keyword
@@ -114,8 +137,8 @@ enum class JumpCondition {
 
 struct Instr {
   std::variant<MovInstr, PushInstr, PopInstr, XorInstr, AddInstr, SubInstr,
-               MulInstr, DivInstr, CmpInstr, SetInstr, Label, Syscall, Ret,
-               JumpInstr, Comment>
+               MulInstr, DivInstr, CmpInstr, SetInstr, Label, Syscall, Ret, 
+               NegInstr, NotInstr, JumpInstr, Comment, DBInstr, CallInstr>
       var;
   InstrType type;
   bool optimize = true;
@@ -132,9 +155,14 @@ inline std::unordered_map<InstrType, InstrType> opposites = {
 
     {InstrType::Mul, InstrType::Div},
     {InstrType::Div, InstrType::Mul},
-    
+
     {InstrType::Cmp, InstrType::Cmp},
     {InstrType::Set, InstrType::Set},
+
+    {InstrType::Neg, InstrType::Neg},
+    {InstrType::Not, InstrType::Not},
+
+    {InstrType::DB, InstrType::DB},
 
     // system (no opposites)
     {InstrType::Jmp, InstrType::NONE}, // if you jumped, you can't "unjump"
@@ -143,6 +171,7 @@ inline std::unordered_map<InstrType, InstrType> opposites = {
     {InstrType::Syscall, InstrType::NONE},
     {InstrType::Ret, InstrType::NONE},
     {InstrType::Comment, InstrType::NONE},
+    {InstrType::Call, InstrType::NONE},
     {InstrType::NONE, InstrType::NONE}
 
 };
@@ -164,9 +193,9 @@ public:
 
           if (prevAsPush.what == currAsPop.where)
             continue; // No 🫴
-        
-        
-          if (prevAsPush.what == "0" && (currAsPop.where.find('[') == std::string::npos)) {
+
+          if (prevAsPush.what == "0" &&
+              (currAsPop.where.find('[') == std::string::npos)) {
             // simplify further to XOR
             Instr newInstr = {
                 .var = XorInstr{.lhs = currAsPop.where, .rhs = currAsPop.where},

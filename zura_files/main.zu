@@ -1,5 +1,17 @@
-const main := fn() int {
-   have x: int = 1;
-   if (x == 1) x = 0;
-   return x; 
+const print := fn () int {
+   dis("Hello, World! || ");
+   return 0;
+};
+
+const main := fn () int {
+   print();
+
+   have x: int = 0;
+   if (x == 0) {
+      dis("x is 0 || ");
+   } else {
+      dis("x is not 0 || ");
+   }
+
+   return 0;
 };

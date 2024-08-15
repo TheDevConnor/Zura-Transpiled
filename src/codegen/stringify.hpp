@@ -93,8 +93,20 @@ public:
       std::string operator()(SetInstr instr) const {
         return "set" + instr.what + " " + instr.where + "\n\t";
       }
+      std::string operator()(CallInstr instr) const {
+        return "call " + instr.name + "\n\t";
+      }
       std::string operator()(Syscall instr) const {
         return "syscall ; " + instr.name + "\n\t";
+      }
+      std::string operator()(NegInstr instr) const {
+        return "neg " + instr.what + "\n\t";
+      }
+      std::string operator()(NotInstr instr) const {
+        return "not " + instr.what + "\n\t";
+      }
+      std::string operator()(DBInstr instr) const {
+        return "db " + instr.what + "\n\t";
       }
       std::string operator()(Ret instr) const { return "ret\n\t"; }
       std::string operator()(Comment instr) const {

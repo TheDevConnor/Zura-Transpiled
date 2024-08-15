@@ -47,6 +47,7 @@ void funcDecl(Node::Stmt *stmt);
 void varDecl(Node::Stmt *stmt);
 void block(Node::Stmt *stmt);
 void ifStmt(Node::Stmt *stmt);
+void print(Node::Stmt *stmt);
 void expr(Node::Stmt *stmt);
 void retrun(Node::Stmt *stmt);
 
@@ -63,6 +64,7 @@ inline std::vector<Instr> text_section = {};
 inline std::vector<Instr> head_section = {};
 inline bool isEntryPoint = false;
 inline size_t conditionalCount = 0;
+inline size_t stringCount = 0;
 inline size_t loopCount = 0;
 
 void push(Instr instr, bool isSectionText = false);

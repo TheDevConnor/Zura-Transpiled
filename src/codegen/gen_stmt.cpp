@@ -124,6 +124,30 @@ void codegen::block(Node::Stmt *stmt) {
   }
 }
 
+void codegen::print(Node::Stmt *stmt) {
+  auto print = static_cast<PrintStmt *>(stmt);
+
+  push(Instr {.var = Comment { .comment = "print stmt"}}, true);
+
+  for (auto &arg: print->args) {
+    visitExpr(arg);
+
+    push(Instr {.var = PopInstr({.where = "rsi"}), .type = InstrType::Pop}, true);
+    stackSize--;
+
+    // set rdi to 1
+    push(Instr {.var = MovInstr({.dest = "rdi", .src = "1"}), .type = InstrType::Mov}, true);
+    
+    // set rdx to the length of the string
+    auto str = static_cast<StringExpr *>(arg);
+    push(Instr {.var = MovInstr({.dest = "rdx", .src =  std::to_string(str->value.size())}), .type = InstrType::Mov}, true);
+
+    // syscall to write
+    push(Instr {.var = MovInstr({.dest = "rax", .src = "1"}), .type = InstrType::Mov}, true);
+    push(Instr {.var = Syscall({.name = "SYS_WRITE"}), .type = InstrType::Syscall}, true);
+  }
+}
+
 void codegen::ifStmt(Node::Stmt *stmt) {
   auto ifstmt = static_cast<IfStmt *>(stmt);
   push(Instr {.var = Comment { .comment = "if statment" },
