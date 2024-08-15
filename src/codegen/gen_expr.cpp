@@ -90,16 +90,17 @@ void codegen::binary(Node::Expr *expr) {
     if (binary->op[1] == '=') {
       push(Instr{.var = JumpInstr{.op = JumpCondition::GreaterEqual,
                                   .label = "conditional" +
-                                           std::to_string(conditionalCount++)},
+                                           std::to_string(++conditionalCount)},
                  .type = InstrType::Jmp},
            true);
-      break;
+    } else {
+      push(Instr{.var = JumpInstr{.op = JumpCondition::Greater,
+                                  .label = "conditional" +
+                                          std::to_string(++conditionalCount)},
+                .type = InstrType::Jmp},
+          true);
     }
-    push(Instr{.var = JumpInstr{.op = JumpCondition::Greater,
-                                .label = "conditional" +
-                                         std::to_string(conditionalCount++)},
-               .type = InstrType::Jmp},
-         true);
+    pushCompAsExpr();
     break;
   case '<':
     // push(Optimezer::Instr { .var = Comment { .comment = "Less Than" }, .type
@@ -110,50 +111,75 @@ void codegen::binary(Node::Expr *expr) {
     if (binary->op[1] == '=') {
       push(Instr{.var = JumpInstr{.op = JumpCondition::LessEqual,
                                   .label = "conditional" +
-                                           std::to_string(conditionalCount++)},
+                                           std::to_string(++conditionalCount)},
                  .type = InstrType::Jmp},
            true);
+      pushCompAsExpr();
       break;
     }
     push(Instr{.var = JumpInstr{.op = JumpCondition::Less,
                                 .label = "conditional" +
-                                         std::to_string(conditionalCount++)},
+                                         std::to_string(++conditionalCount)},
                .type = InstrType::Jmp},
          true);
+    pushCompAsExpr();
     break;
   case '=':
-    push(Instr{.var = CmpInstr{.lhs = registerLhs, .rhs = registerRhs},
-               .type = InstrType::Cmp},
-         true);
     if (binary->op[1] == '=') {
+      push(Instr{.var = CmpInstr{.lhs = registerLhs, .rhs = registerRhs},
+                .type = InstrType::Cmp},
+          true);
       push(Instr{.var = JumpInstr{.op = JumpCondition::Equal,
                                   .label = "conditional" +
-                                           std::to_string(conditionalCount++)},
+                                           std::to_string(++conditionalCount)},
                  .type = InstrType::Jmp},
            true);
+      pushCompAsExpr();
       break;
     }
-    // idk, sounds like a redecl thing but too late to impl rn
+
+    // if its just one equal sign, then it is a assign expr
     break;
   case '!':
-    // push(Optimezer::Instr { .var = Comment { .comment = "Not Equal" }, .type
-    // = InstrType::Comment });
-    push(Instr{.var = CmpInstr{.lhs = registerLhs, .rhs = registerRhs},
-               .type = InstrType::Cmp},
-         true);
     if (binary->op[1] == '=') {
+      // push(Optimezer::Instr { .var = Comment { .comment = "Not Equal" }, .type
+      // = InstrType::Comment });
+      push(Instr{.var = CmpInstr{.lhs = registerLhs, .rhs = registerRhs},
+                .type = InstrType::Cmp},
+          true);
       push(Instr{.var = JumpInstr{.op = JumpCondition::NotEqual,
                                   .label = "conditional" +
-                                           std::to_string(conditionalCount++)},
+                                           std::to_string(++conditionalCount)},
                  .type = InstrType::Jmp},
            true);
+      pushCompAsExpr();
       break;
     }
+    
     // unary NOT operation (visited elsewhere)
     break;
   default:
     break;
   }
+}
+
+void codegen::pushCompAsExpr() {
+
+    std::string preConditionalCount = std::to_string(conditionalCount);
+
+    // assume condition failed (we would have jumped past here if we didn't)
+    push(Instr{.var = PushInstr { .what = "0x0" }, .type = InstrType::Push }, true);
+    push(Instr{.var = JumpInstr { .op = JumpCondition::Unconditioned, .label = "main" + preConditionalCount }, .type = InstrType::Jmp }, true);
+    
+    push(Instr {.var = Label { .name = "conditional" + std::to_string(conditionalCount) }, .type = InstrType::Label}, true);
+    
+    push(Instr{.var = PushInstr { .what = "0x1" }, .type = InstrType::Push }, true);
+    push(Instr{.var = JumpInstr { .op = JumpCondition::Unconditioned, .label = "main" + preConditionalCount }, .type = InstrType::Jmp }, true);
+    
+    push(Instr{.var = Label { .name = "main" + preConditionalCount }, .type = InstrType::Label }, true);
+    stackSize += 2;
+    conditionalCount++;
+    return;
 }
 
 void codegen::grouping(Node::Expr *expr) {

@@ -14,7 +14,7 @@ public:
 };
 
 enum ExitValue {
-  FLAGS_PRINTED = 0,
+  BUILT = 0,
   INVALID_FILE_EXTENSION = 1,
   INVALID_FILE = 2,
   LEXER_ERROR = 3,
@@ -25,7 +25,7 @@ enum ExitValue {
   INVALID_TYPE = 8,
   TYPE_ERROR = 9,
   BUILD_ERROR = 10,
-  BUILT = 11,
+  FLAGS_PRINTED = 11,
 };
 
 inline void Exit(ExitValue exitValue) { exit(ExitValue(exitValue)); }
