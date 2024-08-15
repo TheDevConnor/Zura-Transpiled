@@ -31,8 +31,13 @@ jobs:
         uses: actions/upload-artifact@v2
         with:
           name: linux-artifacts
-          path: |
-            ./release/zura
+          path: ./release/zura
+        
+      - name: "Upload version file"
+        uses: actions/upload-artifact@v2
+        with:
+          name: version
+          path: version.txt
 
   combine-artifacts:
     name: "Combine Artifacts"
@@ -46,22 +51,23 @@ jobs:
           name: linux-artifacts
           path: ./linux-artifacts
 
-      - name: "List downloaded artifacts"
-        run: |
-          ls -R ./linux-artifacts  # Verify the downloaded artifacts
+      - name: "Download version file"
+        uses: actions/download-artifact@v2
+        with:
+          name: version
+          path: ./version
 
-      - name: "Read version from file"
-        id: get_version
-        run: |
-          VERSION=$(cat version.txt)
-          echo "VERSION=${VERSION}" >> $GITHUB_ENV
+      - name: "Set Version Variable"
+        id: set_version
+        run: echo "VERSION=$(cat ./version/version.txt)" >> $GITHUB_ENV
 
-      - name: "Upload combined artifacts"
+      - name: "Create GitHub Release"
         uses: marvinpinto/action-automatic-releases@latest
         with:
           repo_token: ${{ secrets.GITHUB_TOKEN }}
-          automatic_release_tag: "v${{ env.VERSION }}"
-          prerelease:
-          title: "Release v${{ env.VERSION }}"
+          automatic_release_tag: ${{ env.VERSION }}-${{ github.run_number }}
+          prerelease: false
+          title: "Release ${{ env.VERSION }}"
           files: |
-            linux-artifacts/zura
+            ./linux-artifacts/zura
+            ./version/version.txt
