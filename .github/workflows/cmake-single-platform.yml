@@ -56,17 +56,6 @@ jobs:
         with:
           name: version
           path: ./version
-
-      - name: "List downloaded artifacts"
-        run: |
-          ls -R ./version  # Verify the downloaded artifacts
-          ls -R ./linux-artifacts  # Verify the downloaded artifacts
-
-          - name: "Read version from file"
-          id: get_version
-          run: |
-            VERSION=$(cat ./version/version.txt)
-            echo "VERSION=${VERSION}" >> $GITHUB_ENV
   
       - name: "Create GitHub Release"
         uses: marvinpinto/action-automatic-releases@latest
