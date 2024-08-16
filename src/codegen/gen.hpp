@@ -69,5 +69,7 @@ inline size_t loopCount = 0;
 
 void push(Instr instr, bool isSectionText = false);
 
+void pushCompAsExpr(); // assuming compexpr's will already do the "cmp" and "jmp", we will push 0x0 or 0x1 depending on the result
+
 void gen(Node::Stmt *stmt, bool isSaved, std::string output);
 } // namespace codegen
