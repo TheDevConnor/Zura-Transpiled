@@ -163,30 +163,35 @@ void codegen::ifStmt(Node::Stmt *stmt) {
              .type = InstrType::Comment},
        true);
 
-  std::string labelName = std::to_string(conditionalCount++);
-  size_t preConditionalCount = conditionalCount;
+  std::string preConditionalCount = std::to_string(++conditionalCount);
 
+  // visit the expr, jump if not zero
   visitExpr(ifstmt->condition);
+
+  // pop value somewhere relatively unused, that is unlikely to be overriden somewhere else
+  push(Instr{.var = PopInstr { .where = "rcx" }, .type = InstrType::Pop}, true);
+  push(Instr{.var = CmpInstr { .lhs = "rcx", .rhs = "0" }, .type = InstrType::Cmp}, true);
+  push(Instr{.var = JumpInstr { .op = JumpCondition::NotEqual, .label = ("conditional" + preConditionalCount) }, .type = InstrType::Jmp}, true);
+
   if (ifstmt->elseStmt != nullptr) {
     visitStmt(ifstmt->elseStmt);
   }
   push(Instr{.var = JumpInstr{.op = JumpCondition::Unconditioned,
-                              .label = "main" + labelName},
+                              .label = "main" + preConditionalCount},
              .type = InstrType::Jmp},
        true);
 
-  push(Instr{.var = Label{.name = "conditional" +
-                                  std::to_string(preConditionalCount)},
+  push(Instr{.var = Label{.name = "conditional" + preConditionalCount},
              .type = InstrType::Label},
        true);
   visitStmt(ifstmt->thenStmt);
   push(Instr{.var = JumpInstr{.op = JumpCondition::Unconditioned,
-                              .label = "main" + labelName},
+                              .label = "main" + preConditionalCount},
              .type = InstrType::Jmp},
        true);
 
   push(
-      Instr{.var = Label{.name = "main" + labelName}, .type = InstrType::Label},
+      Instr{.var = Label{.name = "main" + preConditionalCount}, .type = InstrType::Label},
       true);
 }
 
