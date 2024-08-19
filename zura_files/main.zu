@@ -1,10 +1,10 @@
 const main := fn () int {
-   have y: int = 0;
-   have x: bool = y == 0;
-   if (x) {
-      dis("hello, world!");
-      return 1;
-   }
-   dis("goodbye, world!");
-   return 0;
+   have res: bool = (1 > 0) ? true 
+                            : false;
+
+   return if (res == true) { 
+      1; 
+   } else { 
+      0; 
+   };
 };

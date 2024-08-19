@@ -168,10 +168,15 @@ void codegen::ifStmt(Node::Stmt *stmt) {
   // visit the expr, jump if not zero
   visitExpr(ifstmt->condition);
 
-  // pop value somewhere relatively unused, that is unlikely to be overriden somewhere else
-  push(Instr{.var = PopInstr { .where = "rcx" }, .type = InstrType::Pop}, true);
-  push(Instr{.var = CmpInstr { .lhs = "rcx", .rhs = "0" }, .type = InstrType::Cmp}, true);
-  push(Instr{.var = JumpInstr { .op = JumpCondition::NotEqual, .label = ("conditional" + preConditionalCount) }, .type = InstrType::Jmp}, true);
+  // pop value somewhere relatively unused, that is unlikely to be overriden
+  // somewhere else
+  push(Instr{.var = PopInstr{.where = "rcx"}, .type = InstrType::Pop}, true);
+  push(Instr{.var = CmpInstr{.lhs = "rcx", .rhs = "0"}, .type = InstrType::Cmp},
+       true);
+  push(Instr{.var = JumpInstr{.op = JumpCondition::NotEqual,
+                              .label = ("conditional" + preConditionalCount)},
+             .type = InstrType::Jmp},
+       true);
 
   if (ifstmt->elseStmt != nullptr) {
     visitStmt(ifstmt->elseStmt);
@@ -190,9 +195,9 @@ void codegen::ifStmt(Node::Stmt *stmt) {
              .type = InstrType::Jmp},
        true);
 
-  push(
-      Instr{.var = Label{.name = "main" + preConditionalCount}, .type = InstrType::Label},
-      true);
+  push(Instr{.var = Label{.name = "main" + preConditionalCount},
+             .type = InstrType::Label},
+       true);
 }
 
 void codegen::retrun(Node::Stmt *stmt) {
