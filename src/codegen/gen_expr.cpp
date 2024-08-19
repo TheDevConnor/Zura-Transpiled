@@ -233,7 +233,7 @@ void codegen::call(Node::Expr *expr) {
   push(Instr{.var = Comment{.comment = "Call function '" + callee + "'"},
              .type = InstrType::Comment},
        true);
-  push(Instr{.var = CallInstr{.name = callee}, .type = InstrType::Call}, true);
+  push(Instr{.var = CallInstr{.name = "user_" + callee}, .type = InstrType::Call}, true);
   stackSize -= call->args.size();
   push(Instr{.var = PushInstr{.what = "rax"}, .type = InstrType::Push}, true);
   stackSize++;

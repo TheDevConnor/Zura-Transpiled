@@ -1,10 +1,9 @@
-const main := fn () int {
-   have res: bool = (1 > 0) ? true 
-                            : false;
+const add := fn (x: int, y: int) int {
+   return x + y;
+};
 
-   return if (res == true) { 
-      1; 
-   } else { 
-      0; 
-   };
+
+const main := fn () int {
+   have x: int = add(1, 2);
+   return x; 
 };

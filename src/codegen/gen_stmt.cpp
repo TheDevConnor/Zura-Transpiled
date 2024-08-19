@@ -1,5 +1,6 @@
 #include "gen.hpp"
 #include "optimize.hpp"
+#include <sys/cdefs.h>
 
 void codegen::visitStmt(Node::Stmt *stmt) {
   auto handler = lookup(stmtHandlers, stmt->kind);
@@ -33,70 +34,17 @@ void codegen::funcDecl(Node::Stmt *stmt) {
     isEntryPoint = true;
     push(Instr{.var = Label{.name = "_start"}, .type = InstrType::Label}, true);
   } else {
-    push(Instr{.var = Label{.name = funcDecl->name}, .type = InstrType::Label},
+    push(Instr{.var = Label{.name = "user_" + funcDecl->name}, .type = InstrType::Label},
          true);
   }
 
   // Todo: Handle function arguments
+  // push arguments to the stack
+  for (auto &args : funcDecl->params) {
+    stackTable.insert({args.first, stackSize});
+    stackSize++;
+  }
   // Todo: Handle Function return type
-
-  /*
-  ---- ex 1
-  user_add:
-    ; Before function was called,
-    ; we pushed our values.
-    ; (lets assume 2)
-    ; define these as variables
-    ; it would look more like:
-    push qword [rsp + 8] ; a (further down the stack)
-    push qword [rsp]     ; b
-
-    pop rbx ; 'b'
-    pop rax ; 'a' (was pushed first)
-    add rax, rbx ; ret juts escapes the function, we store result in rax
-    ; its SO much easier after vardecl's are implemented because you have the
-  'infrastructure' ret - rax is not ENFORCED as the return type (stack works
-  too, especially as a function call expr), but it is standard and pretty
-  helpful sometimes.
-
-    _start:
-      push 8 ; 'a'
-      ; do not define variables here!! do it in the function block!!!
-      push 85 ; 'b'
-      call user_add
-      ; for this example
-      ; becuase like every expr,
-      ; we would push the return
-      push rax
-      ; then for rdi it would be
-      pop rdi
-      ; which would be optimized into
-      ; this
-      mov rdi, rax
-      mov rax, 60 ; now we exit
-      syscall ; and hope it didnt crash :)
-
-      ----
-      add (a, b) {}
-
-      main () {
-        let x = add(1, 2);
-        return x;
-      }
-      a func table is smart for when you parse, but when you compile you know
-  all the type-checking passed and you dont need to wrory about a function table
-      ----
-      _start:
-        push 1 ; param 1
-        push 2 ; param 2
-        call user_add
-        ---- whatever shit happens there
-  push(Instr { .var = Ret {}, .type = InstrType::Ret }, true);
-        refer to x:
-        push qword [rsp + (stackSize - x.loc)]
-        ; its the same algorithm, the expr for the vardecl is just "push rax"
-  after call
-  */
 
   visitStmt(funcDecl->block);
   stackSize++;
