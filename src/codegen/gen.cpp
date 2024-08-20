@@ -8,11 +8,13 @@
 #include <iostream>
 #include <string>
 
-void codegen::push(Instr instr, bool isSectionText) {
-  if (isSectionText) {
+void codegen::push(Instr instr, Section section) {
+  if (section == Section::Main) {
     text_section.push_back(instr);
-  } else {
+  } else if (section == Section::Head) {
     head_section.push_back(instr);
+  } else if (section == Section::Data) {
+    data_section.push_back(instr);
   }
 }
 
@@ -21,6 +23,7 @@ void codegen::gen(Node::Stmt *stmt, bool isSaved, std::string output_filename) {
 
   text_section.clear();
   head_section.clear();
+  data_section.clear();
   // output_code.clear();
 
   // stmt->debug();
@@ -29,6 +32,7 @@ void codegen::gen(Node::Stmt *stmt, bool isSaved, std::string output_filename) {
 
   text_section = Optimizer::optimizeInstrs(text_section); 
   head_section = Optimizer::optimizeInstrs(head_section);
+  // data section cannot be optimized
 
   std::ofstream file(output_filename + ".asm");
   if (file.is_open()) {
@@ -36,13 +40,31 @@ void codegen::gen(Node::Stmt *stmt, bool isSaved, std::string output_filename) {
     file << "; -   Zura lang by TheDevConnor   -\n";
     file << "; - asm helped by Soviet Pancakes -\n";
     file << "; ---------------------------------\n";
-    file << "; What's new: If Statements and Variable Redeclarations Return If Stmt\n\n";
+    file << "; What's new: Return If Statements, String/Print Fix\n\n";
     file << "BITS 64\n";
     file << "section .text\n";
     file << "global _start\n";
     file << Stringifier::stringifyInstrs(text_section);
-    file << "\n; user-defined and Zura-native functions\n";
+    file << "\n; zura functions\n";
+    if (nativeFunctionsUsed[NativeASMFunc::strlen] == true) {
+      file << "\nnative_strlen:"
+              "\n  push  rbx                 ; save any registers that "
+              "\n  push  rcx                 ; we will trash in here"
+              "\n  mov   rbx, rdi            ; rbx = rdi"
+              "\n  xor   al, al              ; look for NUL term (0x0)"
+              "\n  mov   rcx, 0xffffffff     ; the max string length is 4gb"
+              "\n  repne scasb               ; while [rdi] != al && rcx > 0, rdi++"
+              "\n  sub   rdi, rbx            ; length = end - start"
+              "\n  mov   rax, rdi            ; rax now holds our length"
+              "\n  pop   rcx                 ; restore the saved registers"
+              "\n  pop   rbx"
+              "\n  ret\n";
+    }
+    file << "\n; non-main user functions" << std::endl;
     file << Stringifier::stringifyInstrs(head_section);
+    file << "\n; data section for string and stuff";
+    file << "\nsection .data:\n";
+    file << Stringifier::stringifyInstrs(data_section);
     file.close();
   } else {
     std::cerr << "Unable to open file" << std::endl;
