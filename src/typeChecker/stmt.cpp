@@ -43,7 +43,8 @@ void TypeChecker::visitFn(Maps *map, Node::Stmt *stmt) {
   visitStmt(map, fn_stmt->block);
 
   if (return_type != nullptr) {
-    if (type_to_string(return_type.get()) != type_to_string(fn_stmt->returnType)) {
+    if (type_to_string(return_type.get()) !=
+        type_to_string(fn_stmt->returnType)) {
       std::string msg = "Function '" + fn_stmt->name + "' must return a '" +
                         type_to_string(fn_stmt->returnType) + "' but got '" +
                         type_to_string(return_type.get()) + "'";
@@ -161,11 +162,64 @@ void TypeChecker::visitTemplateStmt(Maps *map, Node::Stmt *stmt) {
 
   // create a new type for the template which is an any type
   auto type = new SymbolType("any");
-  
+
   // add the template to the global table
   for (auto &name : templateStmt->typenames) {
-    map->declare_fn(map, name, {name, type}, {}, templateStmt->line, templateStmt->pos);
+    map->declare_fn(map, name, {name, type}, {}, templateStmt->line,
+                    templateStmt->pos);
   }
+
+  return_type = nullptr;
+}
+
+void TypeChecker::visitFor(Maps *map, Node::Stmt *stmt) {
+  auto for_stmt = static_cast<ForStmt *>(stmt);
+
+  // first we add the varName to the local table
+  // the type of the for loop is the type of the for loop
+  auto type = new SymbolType("int");
+  map->declare(map->local_symbol_table, for_stmt->name,
+               static_cast<Node::Type *>(type), for_stmt->line, for_stmt->pos);
+
+  // now we visit the for loop and assign the type to the return type
+  visitExpr(map, for_stmt->forLoop);
+
+  // now we check the condition of the for loop
+  visitExpr(map, for_stmt->condition);
+
+  if (type_to_string(return_type.get()) != "bool") {
+    std::string msg = "For loop condition must be a 'bool' but got '" +
+                      type_to_string(return_type.get()) + "'";
+    handlerError(for_stmt->line, for_stmt->pos, msg, "", "Type Error");
+  }
+
+  // Now check if we have the increment in an optional parameter
+  if (for_stmt->optional != nullptr) {
+    visitExpr(map, for_stmt->optional);
+  }
+
+  // now we visit the block
+  visitStmt(map, for_stmt->block);
+
+  // clear the local table
+  map->local_symbol_table.clear();
+  return_type = nullptr;
+}
+
+void TypeChecker::visitWhile(Maps *map, Node::Stmt *stmt) {
+  auto while_stmt = static_cast<WhileStmt *>(stmt);
+
+  // check the condition of the while loop
+  visitExpr(map, while_stmt->condition);
+
+  if (type_to_string(return_type.get()) != "bool") {
+    std::string msg = "While loop condition must be a 'bool' but got '" +
+                      type_to_string(return_type.get()) + "'";
+    handlerError(while_stmt->line, while_stmt->pos, msg, "", "Type Error");
+  }
+
+  // now we visit the block
+  visitStmt(map, while_stmt->block);
 
   return_type = nullptr;
 }

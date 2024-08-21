@@ -89,6 +89,16 @@ void TypeChecker::visitUnary(Maps *map, Node::Expr *expr) {
     handlerError(unary->line, unary->pos, msg, "", "Type Error");
   }
 
+  // check for ++ and --
+  if (unary->op == "++" || unary->op == "--") {
+    if (type_to_string(return_type.get()) != "int") {
+      std::string msg = "Unary operation '" + unary->op +
+                        "' requires the type to be an 'int' but got '" +
+                        type_to_string(return_type.get()) + "'";
+      handlerError(unary->line, unary->pos, msg, "", "Type Error");
+    }
+  }
+
   return_type = return_type;
 }
 

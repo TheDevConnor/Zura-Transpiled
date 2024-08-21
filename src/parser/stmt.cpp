@@ -272,6 +272,9 @@ Node::Stmt *Parser::loopStmt(PStruct *psr, std::string name) {
     // loop (i = 0; i < 10) : (++1)
     // Second condition is the while loop condition
     // loop (i < 10) : (++1)
+    
+    // set the current token which is the variable name in the for loop
+    varName = psr->current(psr).value;
 
     // we need to look two tokens ahead to determine if it is a for loop or a while loop
     if (psr->peek(psr, 1).kind == TokenKind::EQUAL) {
@@ -305,11 +308,11 @@ Node::Stmt *Parser::loopStmt(PStruct *psr, std::string name) {
 
     if (isOptional) {
       if (isForLoop)
-        return new ForStmt(line, column, forLoop, condition, opCondition, body);
+        return new ForStmt(line, column, varName, forLoop, condition, opCondition, body);
       return new WhileStmt(line, column, whileLoop, opCondition, body);
     }
     if (isForLoop)
-      return new ForStmt(line, column, forLoop, condition, nullptr, body);
+      return new ForStmt(line, column, varName, forLoop, condition, nullptr, body);
     return new WhileStmt(line, column, whileLoop, nullptr, body);
   }
 

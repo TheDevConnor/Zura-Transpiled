@@ -40,6 +40,7 @@ std::vector<std::pair<NodeKind, TypeChecker::ExprNodeHandler>>
         {NodeKind::ND_UNARY, visitUnary},
         {NodeKind::ND_MEMBER, visitMember},
         {NodeKind::ND_ASSIGN, visitAssign},
+        {NodeKind::ND_PREFIX, visitUnary},
         {NodeKind::ND_BOOL, visitBool},
 };
 

@@ -365,17 +365,18 @@ public:
 class ForStmt : public Node::Stmt {
 public:
   int line, pos;
+  std::string name;
   Node::Expr *forLoop;
   Node::Expr *condition;
   Node::Expr *optional;
   Node::Stmt *block;
 
-  ForStmt(int line, int pos, Node::Expr *forLoop, Node::Expr *condition,
-          Node::Expr *optional, Node::Stmt *block)
-      : line(line), pos(pos), forLoop(forLoop), condition(condition),
-        optional(optional), block(block) {
+  ForStmt(int line, int pos, std::string name, Node::Expr *forLoop,
+          Node::Expr *condition, Node::Expr *optional, Node::Stmt *block)
+      : line(line), pos(pos), name(name), forLoop(forLoop),
+        condition(condition), optional(optional), block(block) {
     kind = NodeKind::ND_FOR_STMT;
-  } 
+  }
 
   void debug(int ident = 0) const override {
     Node::printIndent(ident);
@@ -393,7 +394,7 @@ public:
       Node::printIndent(ident + 1);
     }
     std::cout << "Block: \n";
-    block->debug(ident + 2); 
+    block->debug(ident + 2);
   }
 
   ~ForStmt() {

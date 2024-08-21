@@ -1,7 +1,13 @@
 const main := fn () int {
-   loop(i = 0; i < 10) {
+   # for loops
+   loop(i = 0; i <= 10) : (++i) {
       dis("Hello, World!\n");
-      ++i;
+   }
+
+   # while loops
+   have x: int = 0;
+   loop(x < 10) : (++x) {
+      dis("Goodbye, World!\n");
    }
    return 0; 
 };
