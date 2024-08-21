@@ -142,8 +142,8 @@ void codegen::binary(Node::Expr *expr) {
     break;
   case '!':
     if (binary->op[1] == '=') {
-      // push(Optimezer::Instr { .var = Comment { .comment = "Not Equal" }, .type
-      // = InstrType::Comment });
+      // push(Optimezer::Instr { .var = Comment { .comment = "Not Equal" },
+      // .type = InstrType::Comment });
       push(Instr{.var = CmpInstr{.lhs = registerLhs, .rhs = registerRhs},
                 .type = InstrType::Cmp},
           Section::Main);
@@ -155,7 +155,7 @@ void codegen::binary(Node::Expr *expr) {
       pushCompAsExpr();
       break;
     }
-    
+
     // unary NOT operation (visited elsewhere)
     break;
   default:
@@ -164,7 +164,6 @@ void codegen::binary(Node::Expr *expr) {
 }
 
 void codegen::pushCompAsExpr() {
-
     std::string preConditionalCount = std::to_string(conditionalCount);
 
     // assume condition failed (we would have jumped past here if we didn't)
@@ -228,7 +227,42 @@ void codegen::call(Node::Expr *expr) {
   stackSize++;
 }
 
-void codegen::ternary(Node::Expr *expr) {}
+void codegen::ternary(Node::Expr *expr) {
+  auto ternary = static_cast<TernaryExpr *>(expr);
+  push(Instr{.var = Comment{.comment = "Ternary operation"},
+             .type = InstrType::Comment},
+       true);
+
+  std::string ternayCount = std::to_string(++conditionalCount);
+
+  visitExpr(ternary->condition);
+  push(Instr{.var = PopInstr{.where = "rax"}, .type = InstrType::Pop}, true);
+  stackSize--;
+
+  push(Instr{.var = CmpInstr{.lhs = "rax", .rhs = "0"}, .type = InstrType::Cmp},
+       true);
+  push(Instr{.var = JumpInstr{.op = JumpCondition::Equal,
+                              .label = "ternaryFalse" + ternayCount},
+             .type = InstrType::Jmp},
+       true);
+
+  visitExpr(ternary->lhs);
+  push(Instr{.var = JumpInstr{.op = JumpCondition::Unconditioned,
+                              .label = "ternaryEnd" + ternayCount},
+             .type = InstrType::Jmp},
+       true);
+  push(Instr{.var = Label{.name = "ternaryFalse" + ternayCount},
+             .type = InstrType::Label},
+       true);
+
+  visitExpr(ternary->rhs);
+
+  push(Instr{.var = Label{.name = "ternaryEnd" + ternayCount},
+             .type = InstrType::Label},
+       true);
+
+  stackSize++;
+}
 
 void codegen::primary(Node::Expr *expr) {
   switch (expr->kind) {
