@@ -261,6 +261,7 @@ Node::Stmt *Parser::loopStmt(PStruct *psr, std::string name) {
 
   std::string varName;
   Node::Expr *forLoop;
+  Node::Expr *condition;
   Node::Expr *whileLoop;
   Node::Expr *opCondition;
   bool isForLoop = false;
@@ -268,45 +269,51 @@ Node::Stmt *Parser::loopStmt(PStruct *psr, std::string name) {
 
   while (psr->current(psr).kind != TokenKind::RIGHT_PAREN) {
     // First condition is the for loop condition
+    // loop (i = 0; i < 10) : (++1)
     // Second condition is the while loop condition
-    if (psr->peek(psr, 1).kind == TokenKind::IN) {
+    // loop (i < 10) : (++1)
+
+    // we need to look two tokens ahead to determine if it is a for loop or a while loop
+    if (psr->peek(psr, 1).kind == TokenKind::EQUAL) {
       isForLoop = true;
-      varName =
-          psr->expect(
-                 psr, TokenKind::IDENTIFIER,
-                 "Expected an IDENTIFIER as a variable name in a for loop stmt")
-              .value;
-      psr->expect(psr, TokenKind::IN,
-                  "Expected an IN keyword to start a for loop stmt");
       forLoop = parseExpr(psr, BindingPower::defaultValue);
+      
+      psr->expect(psr, TokenKind::SEMICOLON,
+                  "Expected a SEMICOLON after the for loop condition in a loop stmt");
+
+      condition = parseExpr(psr, BindingPower::defaultValue);
+
     } else {
       whileLoop = parseExpr(psr, BindingPower::defaultValue);
-    }
-  }
-  psr->expect(psr, TokenKind::RIGHT_PAREN,
-              "Expected a R_PAREN to end the condition in a loop stmt");
+    } 
 
-  if (psr->current(psr).kind == TokenKind::COLON) {
-    isOptional = true;
-    psr->expect(psr, TokenKind::COLON,
-                "Expected a COLON to start the body of a loop stmt");
-    psr->expect(psr, TokenKind::LEFT_PAREN,
-                "Expected a L_PAREN to start the condition in a loop stmt");
-    opCondition = parseExpr(psr, BindingPower::defaultValue);
     psr->expect(psr, TokenKind::RIGHT_PAREN,
                 "Expected a R_PAREN to end the condition in a loop stmt");
-  }
 
-  auto body = parseStmt(psr, name);
+    if (psr->current(psr).kind == TokenKind::COLON) {
+      isOptional = true;
+      psr->expect(psr, TokenKind::COLON,
+                  "Expected a COLON to start the body of a loop stmt");
+      psr->expect(psr, TokenKind::LEFT_PAREN,
+                  "Expected a L_PAREN to start the condition in a loop stmt");
+      opCondition = parseExpr(psr, BindingPower::defaultValue);
+      psr->expect(psr, TokenKind::RIGHT_PAREN,
+                  "Expected a R_PAREN to end the condition in a loop stmt");
+    }
 
-  if (isOptional) {
+    auto body = parseStmt(psr, name);
+
+    if (isOptional) {
+      if (isForLoop)
+        return new ForStmt(line, column, forLoop, condition, opCondition, body);
+      return new WhileStmt(line, column, whileLoop, opCondition, body);
+    }
     if (isForLoop)
-      return new ForStmt(line, column, varName, forLoop, opCondition, body);
-    return new WhileStmt(line, column, whileLoop, opCondition, body);
+      return new ForStmt(line, column, forLoop, condition, nullptr, body);
+    return new WhileStmt(line, column, whileLoop, nullptr, body);
   }
-  if (isForLoop)
-    return new ForStmt(line, column, varName, forLoop, nullptr, body);
-  return new WhileStmt(line, column, whileLoop, nullptr, body);
+
+  return nullptr;
 }
 
 Node::Stmt *Parser::enumStmt(PStruct *psr, std::string name) {
@@ -347,14 +354,14 @@ Node::Stmt *Parser::templateStmt(PStruct *psr, std::string name) {
 
   std::vector<std::string> typeParams;
   while (psr->current(psr).kind != TokenKind::GREATER) {
-    psr->expect(psr, TokenKind::TYPEALIAS,
-                "Expected a TYPEALIAS keyword as a type parameter in a template "
-                "stmt");
-    typeParams.push_back(
-        psr->expect(
-               psr, TokenKind::IDENTIFIER,
-               "Expected an IDENTIFIER as a type parameter in a template stmt")
-            .value);
+    psr->expect(
+        psr, TokenKind::TYPEALIAS,
+        "Expected a TYPEALIAS keyword as a type parameter in a template "
+        "stmt");
+    typeParams.push_back(psr->expect(psr, TokenKind::IDENTIFIER,
+                                     "Expected an IDENTIFIER as a type "
+                                     "parameter in a template stmt")
+                             .value);
     if (psr->current(psr).kind == TokenKind::COMMA)
       psr->expect(psr, TokenKind::COMMA,
                   "Expected a COMMA after a type parameter in a template stmt");

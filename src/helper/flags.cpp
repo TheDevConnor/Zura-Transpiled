@@ -39,7 +39,7 @@ void Flags::runFile(const char *path, std::string outName, bool save) {
   ErrorClass::printError();
   // std::cout << "Passed Parsing" << std::endl;
 
-  // result->debug();
+  result->debug();
 
   TypeChecker::performCheck(result);
   ErrorClass::printError();

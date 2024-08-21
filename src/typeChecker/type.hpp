@@ -96,6 +96,8 @@ void visitPrint(Maps *map, Node::Stmt *stmt);
 void visitIf(Maps *map, Node::Stmt *stmt);
 void visitTemplateStmt(Maps *map, Node::Stmt *stmt);
 void visitReturn(Maps *map, Node::Stmt *stmt);
+void visitWhile(Maps *map, Node::Stmt *stmt);
+void visitFor(Maps *map, Node::Stmt *stmt);
 
 // !Expr functions
 void visitExpr(Maps *map, Node::Expr *expr);

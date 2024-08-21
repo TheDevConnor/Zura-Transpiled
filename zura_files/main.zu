@@ -1,9 +1,7 @@
-#template <typealias T>
-#const add := fn (a: T, b: T) T {
-#   return a + b;
-#};
-
 const main := fn () int {
-   dis("Hello World!");
+   loop(i = 0; i < 10) {
+      dis("Hello, World!\n");
+      ++i;
+   }
    return 0; 
 };
