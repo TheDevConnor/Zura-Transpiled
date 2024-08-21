@@ -96,9 +96,9 @@ void codegen::binary(Node::Expr *expr) {
     } else {
       push(Instr{.var = JumpInstr{.op = JumpCondition::Greater,
                                   .label = "conditional" +
-                                          std::to_string(++conditionalCount)},
-                .type = InstrType::Jmp},
-          Section::Main);
+                                           std::to_string(++conditionalCount)},
+                 .type = InstrType::Jmp},
+           Section::Main);
     }
     pushCompAsExpr();
     break;
@@ -127,8 +127,8 @@ void codegen::binary(Node::Expr *expr) {
   case '=':
     if (binary->op[1] == '=') {
       push(Instr{.var = CmpInstr{.lhs = registerLhs, .rhs = registerRhs},
-                .type = InstrType::Cmp},
-          Section::Main);
+                 .type = InstrType::Cmp},
+           Section::Main);
       push(Instr{.var = JumpInstr{.op = JumpCondition::Equal,
                                   .label = "conditional" +
                                            std::to_string(++conditionalCount)},
@@ -145,8 +145,8 @@ void codegen::binary(Node::Expr *expr) {
       // push(Optimezer::Instr { .var = Comment { .comment = "Not Equal" },
       // .type = InstrType::Comment });
       push(Instr{.var = CmpInstr{.lhs = registerLhs, .rhs = registerRhs},
-                .type = InstrType::Cmp},
-          Section::Main);
+                 .type = InstrType::Cmp},
+           Section::Main);
       push(Instr{.var = JumpInstr{.op = JumpCondition::NotEqual,
                                   .label = "conditional" +
                                            std::to_string(++conditionalCount)},
@@ -164,21 +164,34 @@ void codegen::binary(Node::Expr *expr) {
 }
 
 void codegen::pushCompAsExpr() {
-    std::string preConditionalCount = std::to_string(conditionalCount);
+  std::string preConditionalCount = std::to_string(conditionalCount);
 
-    // assume condition failed (we would have jumped past here if we didn't)
-    push(Instr{.var = PushInstr { .what = "0x0" }, .type = InstrType::Push }, Section::Main);
-    push(Instr{.var = JumpInstr { .op = JumpCondition::Unconditioned, .label = "main" + preConditionalCount }, .type = InstrType::Jmp }, Section::Main);
-    
-    push(Instr {.var = Label { .name = "conditional" + std::to_string(conditionalCount) }, .type = InstrType::Label}, Section::Main);
-    
-    push(Instr{.var = PushInstr { .what = "0x1" }, .type = InstrType::Push }, Section::Main);
-    push(Instr{.var = JumpInstr { .op = JumpCondition::Unconditioned, .label = "main" + preConditionalCount }, .type = InstrType::Jmp }, Section::Main);
-    
-    push(Instr{.var = Label { .name = "main" + preConditionalCount }, .type = InstrType::Label }, Section::Main);
-    stackSize += 2;
-    conditionalCount++;
-    return;
+  // assume condition failed (we would have jumped past here if we didn't)
+  push(Instr{.var = PushInstr{.what = "0x0"}, .type = InstrType::Push},
+       Section::Main);
+  push(Instr{.var = JumpInstr{.op = JumpCondition::Unconditioned,
+                              .label = "main" + preConditionalCount},
+             .type = InstrType::Jmp},
+       Section::Main);
+
+  push(Instr{.var = Label{.name =
+                              "conditional" + std::to_string(conditionalCount)},
+             .type = InstrType::Label},
+       Section::Main);
+
+  push(Instr{.var = PushInstr{.what = "0x1"}, .type = InstrType::Push},
+       Section::Main);
+  push(Instr{.var = JumpInstr{.op = JumpCondition::Unconditioned,
+                              .label = "main" + preConditionalCount},
+             .type = InstrType::Jmp},
+       Section::Main);
+
+  push(Instr{.var = Label{.name = "main" + preConditionalCount},
+             .type = InstrType::Label},
+       Section::Main);
+  stackSize += 2;
+  conditionalCount++;
+  return;
 }
 
 void codegen::grouping(Node::Expr *expr) {
@@ -193,20 +206,25 @@ void codegen::unary(Node::Expr *expr) {
   visitExpr(unary->expr);
   switch (unary->op[0]) {
   case '-': // !NOTE: added in negatives but they are not working properly
-    push(Instr{.var = PopInstr{.where = "rax"}, .type = InstrType::Pop}, Section::Main);
+    push(Instr{.var = PopInstr{.where = "rax"}, .type = InstrType::Pop},
+         Section::Main);
     stackSize--;
-    push(Instr{.var = NegInstr{.what = "rax"}, .type = InstrType::Neg}, Section::Main);
+    push(Instr{.var = NegInstr{.what = "rax"}, .type = InstrType::Neg},
+         Section::Main);
     break;
   case '!': // !NOTE: same as above
-    push(Instr{.var = PopInstr{.where = "rax"}, .type = InstrType::Pop}, Section::Main);
+    push(Instr{.var = PopInstr{.where = "rax"}, .type = InstrType::Pop},
+         Section::Main);
     stackSize--;
-    push(Instr{.var = NotInstr{.what = "rax"}, .type = InstrType::Not}, Section::Main);
+    push(Instr{.var = NotInstr{.what = "rax"}, .type = InstrType::Not},
+         Section::Main);
     break;
   default:
     break;
   }
 
-  push(Instr{.var = PushInstr{.what = "rax"}, .type = InstrType::Push}, Section::Main);
+  push(Instr{.var = PushInstr{.what = "rax"}, .type = InstrType::Push},
+       Section::Main);
 }
 
 void codegen::call(Node::Expr *expr) {
@@ -221,9 +239,11 @@ void codegen::call(Node::Expr *expr) {
   push(Instr{.var = Comment{.comment = "Call function '" + callee + "'"},
              .type = InstrType::Comment},
        Section::Main);
-  push(Instr{.var = CallInstr{.name = callee}, .type = InstrType::Call}, Section::Main);
+  push(Instr{.var = CallInstr{.name = callee}, .type = InstrType::Call},
+       Section::Main);
   stackSize -= call->args.size();
-  push(Instr{.var = PushInstr{.what = "rax"}, .type = InstrType::Push}, Section::Main);
+  push(Instr{.var = PushInstr{.what = "rax"}, .type = InstrType::Push},
+       Section::Main);
   stackSize++;
 }
 
@@ -231,35 +251,36 @@ void codegen::ternary(Node::Expr *expr) {
   auto ternary = static_cast<TernaryExpr *>(expr);
   push(Instr{.var = Comment{.comment = "Ternary operation"},
              .type = InstrType::Comment},
-       true);
+       Section::Main);
 
   std::string ternayCount = std::to_string(++conditionalCount);
 
   visitExpr(ternary->condition);
-  push(Instr{.var = PopInstr{.where = "rax"}, .type = InstrType::Pop}, true);
+  push(Instr{.var = PopInstr{.where = "rax"}, .type = InstrType::Pop},
+       Section::Main);
   stackSize--;
 
   push(Instr{.var = CmpInstr{.lhs = "rax", .rhs = "0"}, .type = InstrType::Cmp},
-       true);
+       Section::Main);
   push(Instr{.var = JumpInstr{.op = JumpCondition::Equal,
                               .label = "ternaryFalse" + ternayCount},
              .type = InstrType::Jmp},
-       true);
+       Section::Main);
 
   visitExpr(ternary->lhs);
   push(Instr{.var = JumpInstr{.op = JumpCondition::Unconditioned,
                               .label = "ternaryEnd" + ternayCount},
              .type = InstrType::Jmp},
-       true);
+       Section::Main);
   push(Instr{.var = Label{.name = "ternaryFalse" + ternayCount},
              .type = InstrType::Label},
-       true);
+       Section::Main);
 
   visitExpr(ternary->rhs);
 
   push(Instr{.var = Label{.name = "ternaryEnd" + ternayCount},
              .type = InstrType::Label},
-       true);
+       Section::Main);
 
   stackSize++;
 }
@@ -271,7 +292,8 @@ void codegen::primary(Node::Expr *expr) {
     auto res = (number->value == (int)number->value)
                    ? std::to_string((int)number->value)
                    : std::to_string(number->value);
-    push(Instr{.var = PushInstr{.what = res}, .type = InstrType::Push}, Section::Main);
+    push(Instr{.var = PushInstr{.what = res}, .type = InstrType::Push},
+         Section::Main);
     stackSize++;
     break;
   }
@@ -302,14 +324,17 @@ void codegen::primary(Node::Expr *expr) {
     std::string label = "string" + std::to_string(stringCount++);
 
     // Push the label onto the stack
-    push(Instr{.var = PushInstr{.what = label}, .type = InstrType::Push}, Section::Main);
+    push(Instr{.var = PushInstr{.what = label}, .type = InstrType::Push},
+         Section::Main);
     stackSize++;
 
     // Define the label for the string
-    push(Instr{.var = Label{.name = label}, .type = InstrType::Label}, Section::Data);
+    push(Instr{.var = Label{.name = label}, .type = InstrType::Label},
+         Section::Data);
 
     // Store the processed string
-    push(Instr{.var = DBInstr{.what = string->value + ", 00"}, .type = InstrType::DB}, // add NUL terminator
+    push(Instr{.var = DBInstr{.what = string->value + ", 00"},
+               .type = InstrType::DB}, // add NUL terminator
          Section::Data);
 
     break;
