@@ -9,7 +9,7 @@ void codegen::initMaps() {
   stmtHandlers = {
       {ND_PROGRAM, program},  {ND_CONST_STMT, constDecl},
       {ND_VAR_STMT, varDecl}, {ND_FN_STMT, funcDecl},
-      {ND_BLOCK_STMT, block}, {ND_RETURN_STMT, retrun},
+      {ND_BLOCK_STMT, block}, {ND_RETURN_STMT, _return},
       {ND_IF_STMT, ifStmt},   {ND_EXPR_STMT, expr},
       {ND_PRINT_STMT, print},
   };

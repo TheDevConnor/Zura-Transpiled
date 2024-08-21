@@ -49,7 +49,7 @@ void block(Node::Stmt *stmt);
 void ifStmt(Node::Stmt *stmt);
 void print(Node::Stmt *stmt);
 void expr(Node::Stmt *stmt);
-void retrun(Node::Stmt *stmt);
+void _return(Node::Stmt *stmt);
 
 void binary(Node::Expr *expr);
 void grouping(Node::Expr *expr);
@@ -60,14 +60,30 @@ void assign(Node::Expr *expr);
 void primary(Node::Expr *expr);
 
 // assembly
+enum class Section {
+    // section .text
+    Main, // main function
+    Head, // user functions
+    // section .data
+    Data, // strings, constants
+};
+
+enum class NativeASMFunc {
+    strlen
+};
+
 inline std::vector<Instr> text_section = {};
 inline std::vector<Instr> head_section = {};
+inline std::vector<Instr> data_section = {}; // Technically, this will just be either Label or DBInstr
+
+inline std::unordered_map<NativeASMFunc, bool> nativeFunctionsUsed = {};
+
 inline bool isEntryPoint = false;
 inline size_t conditionalCount = 0;
 inline size_t stringCount = 0;
 inline size_t loopCount = 0;
 
-void push(Instr instr, bool isSectionText = false);
+void push(Instr instr, Section section = Section::Main);
 
 void pushCompAsExpr(); // assuming compexpr's will already do the "cmp" and "jmp", we will push 0x0 or 0x1 depending on the result
 

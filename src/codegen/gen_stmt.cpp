@@ -32,10 +32,10 @@ void codegen::funcDecl(Node::Stmt *stmt) {
 
   if (funcDecl->name == "main") {
     isEntryPoint = true;
-    push(Instr{.var = Label{.name = "_start"}, .type = InstrType::Label}, true);
+    push(Instr{.var = Label{.name = "_start"}, .type = InstrType::Label}, Section::Main);
   } else {
-    push(Instr{.var = Label{.name = "user_" + funcDecl->name}, .type = InstrType::Label},
-         true);
+    push(Instr{.var = Label{.name = funcDecl->name}, .type = InstrType::Label},
+         Section::Main);
   }
 
   // Todo: Handle function arguments
@@ -56,7 +56,7 @@ void codegen::varDecl(Node::Stmt *stmt) {
   push(Instr{.var =
                  Comment{.comment = "define variable '" + varDecl->name + "'"},
              .type = InstrType::Comment},
-       true);
+       Section::Main);
 
   visitExpr(static_cast<ExprStmt *>(varDecl->expr)->expr);
 
@@ -74,34 +74,39 @@ void codegen::block(Node::Stmt *stmt) {
 void codegen::print(Node::Stmt *stmt) {
   auto print = static_cast<PrintStmt *>(stmt);
 
-  push(Instr{.var = Comment{.comment = "print stmt"}}, true);
-
+  push(Instr{.var = Comment{.comment = "print stmt"}}, Section::Main);
+  nativeFunctionsUsed[NativeASMFunc::strlen] = true;
   for (auto &arg : print->args) {
     visitExpr(arg);
-
+    // assume type-checker worked properly and a string is passed in
     push(Instr{.var = PopInstr({.where = "rsi"}), .type = InstrType::Pop},
-         true);
+         Section::Main);
     stackSize--;
 
-    // set rdi to 1
-    push(Instr{.var = MovInstr({.dest = "rdi", .src = "1"}),
-               .type = InstrType::Mov},
-         true);
+    // calculate string length using native function
+    push(Instr{.var = MovInstr{ .dest = "rdi", .src = "rsi" }, .type = InstrType::Mov}, Section::Main);
+    push(Instr{.var = CallInstr{ .name = "native_strlen" }}, Section::Main);
 
-    // set rdx to the length of the string
     auto str = static_cast<StringExpr *>(arg);
     push(Instr{.var = MovInstr(
-                   {.dest = "rdx", .src = std::to_string(str->value.size())}),
+                   {.dest = "rdx", .src = "rax"}),
                .type = InstrType::Mov},
-         true);
+         Section::Main);
 
-    // syscall to write
+    // syscall id for write on x86 is 1
     push(Instr{.var = MovInstr({.dest = "rax", .src = "1"}),
                .type = InstrType::Mov},
-         true);
+         Section::Main);
+
+    // set rdi to 1 (file descriptor for stdout)
+    push(Instr{.var = MovInstr({.dest = "rdi", .src = "1"}),
+               .type = InstrType::Mov},
+         Section::Main);
+
+    // create call
     push(Instr{.var = Syscall({.name = "SYS_WRITE"}),
                .type = InstrType::Syscall},
-         true);
+         Section::Main);
   }
 }
 
@@ -109,22 +114,17 @@ void codegen::ifStmt(Node::Stmt *stmt) {
   auto ifstmt = static_cast<IfStmt *>(stmt);
   push(Instr{.var = Comment{.comment = "if statment"},
              .type = InstrType::Comment},
-       true);
+       Section::Main);
 
   std::string preConditionalCount = std::to_string(++conditionalCount);
 
   // visit the expr, jump if not zero
   visitExpr(ifstmt->condition);
 
-  // pop value somewhere relatively unused, that is unlikely to be overriden
-  // somewhere else
-  push(Instr{.var = PopInstr{.where = "rcx"}, .type = InstrType::Pop}, true);
-  push(Instr{.var = CmpInstr{.lhs = "rcx", .rhs = "0"}, .type = InstrType::Cmp},
-       true);
-  push(Instr{.var = JumpInstr{.op = JumpCondition::NotEqual,
-                              .label = ("conditional" + preConditionalCount)},
-             .type = InstrType::Jmp},
-       true);
+  // pop value somewhere relatively unused, that is unlikely to be overriden somewhere else
+  push(Instr{.var = PopInstr { .where = "rcx" }, .type = InstrType::Pop}, Section::Main);
+  push(Instr{.var = CmpInstr { .lhs = "rcx", .rhs = "0" }, .type = InstrType::Cmp}, Section::Main);
+  push(Instr{.var = JumpInstr { .op = JumpCondition::NotEqual, .label = ("conditional" + preConditionalCount) }, .type = InstrType::Jmp}, Section::Main);
 
   if (ifstmt->elseStmt != nullptr) {
     visitStmt(ifstmt->elseStmt);
@@ -132,23 +132,23 @@ void codegen::ifStmt(Node::Stmt *stmt) {
   push(Instr{.var = JumpInstr{.op = JumpCondition::Unconditioned,
                               .label = "main" + preConditionalCount},
              .type = InstrType::Jmp},
-       true);
+       Section::Main);
 
   push(Instr{.var = Label{.name = "conditional" + preConditionalCount},
              .type = InstrType::Label},
-       true);
+       Section::Main);
   visitStmt(ifstmt->thenStmt);
   push(Instr{.var = JumpInstr{.op = JumpCondition::Unconditioned,
                               .label = "main" + preConditionalCount},
              .type = InstrType::Jmp},
-       true);
+       Section::Main);
 
-  push(Instr{.var = Label{.name = "main" + preConditionalCount},
-             .type = InstrType::Label},
-       true);
+  push(
+      Instr{.var = Label{.name = "main" + preConditionalCount}, .type = InstrType::Label},
+      Section::Main);
 }
 
-void codegen::retrun(Node::Stmt *stmt) {
+void codegen::_return(Node::Stmt *stmt) {
   auto returnStmt = static_cast<ReturnStmt *>(stmt);
 
   if (isEntryPoint) {
@@ -158,29 +158,29 @@ void codegen::retrun(Node::Stmt *stmt) {
 
       // pop the expression we just visited
       push(Instr{.var = PopInstr{.where = "rdi"}, .type = InstrType::Pop},
-           true);
+           Section::Main);
       stackSize--;
 
       push(Instr{.var = MovInstr{.dest = "rax", .src = "60"},
                  .type = InstrType::Mov},
-           true);
+           Section::Main);
       push(
           Instr{.var = Syscall{.name = "SYS_EXIT"}, .type = InstrType::Syscall},
-          true);
+          Section::Main);
       return;
     }
 
     visitExpr(returnStmt->expr);
 
     // pop the expression we just visited
-    push(Instr{.var = PopInstr{.where = "rdi"}, .type = InstrType::Pop}, true);
+    push(Instr{.var = PopInstr{.where = "rdi"}, .type = InstrType::Pop}, Section::Main);
     stackSize--;
 
     push(Instr{.var = MovInstr{.dest = "rax", .src = "60"},
                .type = InstrType::Mov},
-         true);
+         Section::Main);
     push(Instr{.var = Syscall{.name = "SYS_EXIT"}, .type = InstrType::Syscall},
-         true);
+         Section::Main);
     return;
   }
 
@@ -189,14 +189,14 @@ void codegen::retrun(Node::Stmt *stmt) {
     visitStmt(returnStmt->stmt);
 
     // pop the expression we just visited
-    push(Instr{.var = PopInstr{.where = "rdi"}, .type = InstrType::Pop}, true);
+    push(Instr{.var = PopInstr{.where = "rax"}, .type = InstrType::Pop}, Section::Main);
     stackSize--;
-    push(Instr{.var = Ret{}, .type = InstrType::Ret}, true);
+    push(Instr{.var = Ret{}, .type = InstrType::Ret}, Section::Main);
     return;
   }
 
   visitExpr(returnStmt->expr);
-  push(Instr{.var = PopInstr{.where = "rdi"}, .type = InstrType::Pop}, true);
+  push(Instr{.var = PopInstr{.where = "rax"}, .type = InstrType::Pop}, Section::Main);
   stackSize--;
-  push(Instr{.var = Ret{}, .type = InstrType::Ret}, true);
+  push(Instr{.var = Ret{}, .type = InstrType::Ret}, Section::Main);
 }
