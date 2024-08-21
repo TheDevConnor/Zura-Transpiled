@@ -1,6 +1,7 @@
 #include "gen.hpp"
 #include "optimize.hpp"
 #include <cstddef>
+#include <iostream>
 
 void codegen::visitExpr(Node::Expr *expr) {
   auto handler = lookup(exprHandlers, expr->kind);
@@ -219,6 +220,25 @@ void codegen::unary(Node::Expr *expr) {
     push(Instr{.var = NotInstr{.what = "rax"}, .type = InstrType::Not},
          Section::Main);
     break;
+  case '+':
+    if (unary->op[1] == '+') {
+      // Pop the current value into rax
+      push(Instr{.var = PopInstr{.where = "rax"}, .type = InstrType::Pop},
+           Section::Main);
+      stackSize--;
+
+      // Increment rax by 1
+      push(Instr{.var = AddInstr{.lhs = "rax", .rhs = "1"},
+                 .type = InstrType::Add},
+           Section::Main);
+
+      // Push the incremented value back onto the stack
+      push(Instr{.var = PushInstr{.what = "rax"}, .type = InstrType::Push},
+           Section::Main);
+      stackSize++;
+
+      break;
+    }
   default:
     break;
   }

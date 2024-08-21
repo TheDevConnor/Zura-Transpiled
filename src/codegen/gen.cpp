@@ -40,7 +40,7 @@ void codegen::gen(Node::Stmt *stmt, bool isSaved, std::string output_filename) {
     file << "; -   Zura lang by TheDevConnor   -\n";
     file << "; - asm helped by Soviet Pancakes -\n";
     file << "; ---------------------------------\n";
-    file << "; What's new: Return If Statements, String/Print Fix\n\n";
+    file << "; What's new: For and While Loops\n";
     file << "BITS 64\n";
     file << "section .text\n";
     file << "global _start\n";

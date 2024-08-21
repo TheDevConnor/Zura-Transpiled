@@ -32,7 +32,8 @@ void codegen::funcDecl(Node::Stmt *stmt) {
 
   if (funcDecl->name == "main") {
     isEntryPoint = true;
-    push(Instr{.var = Label{.name = "_start"}, .type = InstrType::Label}, Section::Main);
+    push(Instr{.var = Label{.name = "_start"}, .type = InstrType::Label},
+         Section::Main);
   } else {
     push(Instr{.var = Label{.name = funcDecl->name}, .type = InstrType::Label},
          Section::Main);
@@ -84,12 +85,13 @@ void codegen::print(Node::Stmt *stmt) {
     stackSize--;
 
     // calculate string length using native function
-    push(Instr{.var = MovInstr{ .dest = "rdi", .src = "rsi" }, .type = InstrType::Mov}, Section::Main);
-    push(Instr{.var = CallInstr{ .name = "native_strlen" }}, Section::Main);
+    push(Instr{.var = MovInstr{.dest = "rdi", .src = "rsi"},
+               .type = InstrType::Mov},
+         Section::Main);
+    push(Instr{.var = CallInstr{.name = "native_strlen"}}, Section::Main);
 
     auto str = static_cast<StringExpr *>(arg);
-    push(Instr{.var = MovInstr(
-                   {.dest = "rdx", .src = "rax"}),
+    push(Instr{.var = MovInstr({.dest = "rdx", .src = "rax"}),
                .type = InstrType::Mov},
          Section::Main);
 
@@ -121,10 +123,16 @@ void codegen::ifStmt(Node::Stmt *stmt) {
   // visit the expr, jump if not zero
   visitExpr(ifstmt->condition);
 
-  // pop value somewhere relatively unused, that is unlikely to be overriden somewhere else
-  push(Instr{.var = PopInstr { .where = "rcx" }, .type = InstrType::Pop}, Section::Main);
-  push(Instr{.var = CmpInstr { .lhs = "rcx", .rhs = "0" }, .type = InstrType::Cmp}, Section::Main);
-  push(Instr{.var = JumpInstr { .op = JumpCondition::NotEqual, .label = ("conditional" + preConditionalCount) }, .type = InstrType::Jmp}, Section::Main);
+  // pop value somewhere relatively unused, that is unlikely to be overriden
+  // somewhere else
+  push(Instr{.var = PopInstr{.where = "rcx"}, .type = InstrType::Pop},
+       Section::Main);
+  push(Instr{.var = CmpInstr{.lhs = "rcx", .rhs = "0"}, .type = InstrType::Cmp},
+       Section::Main);
+  push(Instr{.var = JumpInstr{.op = JumpCondition::NotEqual,
+                              .label = ("conditional" + preConditionalCount)},
+             .type = InstrType::Jmp},
+       Section::Main);
 
   if (ifstmt->elseStmt != nullptr) {
     visitStmt(ifstmt->elseStmt);
@@ -143,9 +151,9 @@ void codegen::ifStmt(Node::Stmt *stmt) {
              .type = InstrType::Jmp},
        Section::Main);
 
-  push(
-      Instr{.var = Label{.name = "main" + preConditionalCount}, .type = InstrType::Label},
-      Section::Main);
+  push(Instr{.var = Label{.name = "main" + preConditionalCount},
+             .type = InstrType::Label},
+       Section::Main);
 }
 
 void codegen::_return(Node::Stmt *stmt) {
@@ -173,7 +181,8 @@ void codegen::_return(Node::Stmt *stmt) {
     visitExpr(returnStmt->expr);
 
     // pop the expression we just visited
-    push(Instr{.var = PopInstr{.where = "rdi"}, .type = InstrType::Pop}, Section::Main);
+    push(Instr{.var = PopInstr{.where = "rdi"}, .type = InstrType::Pop},
+         Section::Main);
     stackSize--;
 
     push(Instr{.var = MovInstr{.dest = "rax", .src = "60"},
@@ -189,14 +198,66 @@ void codegen::_return(Node::Stmt *stmt) {
     visitStmt(returnStmt->stmt);
 
     // pop the expression we just visited
-    push(Instr{.var = PopInstr{.where = "rax"}, .type = InstrType::Pop}, Section::Main);
+    push(Instr{.var = PopInstr{.where = "rax"}, .type = InstrType::Pop},
+         Section::Main);
     stackSize--;
     push(Instr{.var = Ret{}, .type = InstrType::Ret}, Section::Main);
     return;
   }
 
   visitExpr(returnStmt->expr);
-  push(Instr{.var = PopInstr{.where = "rax"}, .type = InstrType::Pop}, Section::Main);
+  push(Instr{.var = PopInstr{.where = "rax"}, .type = InstrType::Pop},
+       Section::Main);
   stackSize--;
   push(Instr{.var = Ret{}, .type = InstrType::Ret}, Section::Main);
+}
+
+void codegen::whileLoop(Node::Stmt *stmt) {
+  WhileStmt *loop = static_cast<WhileStmt *>(stmt);
+
+  // Generate unique labels for the loop
+  std::string startLabel = "while" + std::to_string(loopCount);
+  std::string endLabel = "endwhile" + std::to_string(loopCount);
+
+  // Create the start label for the loop
+  push(Instr{.var = Label{.name = startLabel}, .type = InstrType::Label},
+       Section::Main);
+
+  // Evaluate the loop condition again after increment
+  visitExpr(loop->condition);
+
+  // Pop the result of the condition into rax
+  push(Instr{.var = PopInstr{.where = "rax"}, .type = InstrType::Pop},
+       Section::Main);
+  stackSize--;
+
+  // Compare rax to 0 (to decide whether to continue or break the loop)
+  push(Instr{.var = CmpInstr{.lhs = "rax", .rhs = "0"}, .type = InstrType::Cmp},
+       Section::Main);
+
+  // Jump to end if the condition is false
+  push(Instr{.var = JumpInstr{.op = JumpCondition::Equal, .label = endLabel},
+             .type = InstrType::Jmp},
+       Section::Main);
+
+  // check if we have an optional condition
+  if (loop->optional != nullptr) {
+    visitExpr(loop->optional);
+  }
+
+  // Visit the loop body
+  visitStmt(loop->block);
+
+  // Unconditionally jump back to the start of the loop
+  push(Instr{.var = JumpInstr{.op = JumpCondition::Unconditioned,
+                              .label = startLabel},
+             .type = InstrType::Jmp},
+       Section::Main);
+
+  // Create the end label for the loop
+  push(Instr{.var = Label{.name = endLabel}, .type = InstrType::Label},
+       Section::Main);
+
+  // Increment the loop count for future loops
+  loopCount++;
 }
