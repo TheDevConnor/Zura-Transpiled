@@ -75,6 +75,8 @@ enum TokenKind {
   IMPORT,
   PUB,
   PRIV,
+  TEMPLATE,
+  TYPEALIAS,
 
   // Error
   ERROR_,

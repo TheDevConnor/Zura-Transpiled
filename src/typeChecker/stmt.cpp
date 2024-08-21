@@ -155,3 +155,17 @@ void TypeChecker::visitReturn(Maps *map, Node::Stmt *stmt) {
 
   visitExpr(map, return_stmt->expr);
 }
+
+void TypeChecker::visitTemplateStmt(Maps *map, Node::Stmt *stmt) {
+  auto templateStmt = static_cast<TemplateStmt *>(stmt);
+
+  // create a new type for the template which is an any type
+  auto type = new SymbolType("any");
+  
+  // add the template to the global table
+  for (auto &name : templateStmt->typenames) {
+    map->declare_fn(map, name, {name, type}, {}, templateStmt->line, templateStmt->pos);
+  }
+
+  return_type = nullptr;
+}

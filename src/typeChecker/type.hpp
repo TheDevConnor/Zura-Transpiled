@@ -5,18 +5,18 @@
 #include "../ast/stmt.hpp"
 #include "../ast/types.hpp"
 
+#include <algorithm>
 #include <functional>
 #include <memory>
 #include <string>
 #include <unordered_map>
 #include <utility>
-#include <algorithm>
 #include <vector>
 
 namespace TypeChecker {
 inline bool foundMain = false;
 std::string type_to_string(Node::Type *type);
-inline std::shared_ptr<Node::Type> return_type = nullptr; 
+inline std::shared_ptr<Node::Type> return_type = nullptr;
 void handlerError(int line, int pos, std::string msg, std::string note,
                   std::string typeOfError);
 
@@ -28,9 +28,12 @@ public:
   std::unordered_map<std::string, Node::Type *> global_symbol_table;
   std::unordered_map<std::string, Node::Type *> local_symbol_table;
   /// fn_name (fn_name, fn_return type) ->  { param name, param type }
-  std::vector<std::pair<
-      NameTypePair, std::vector<std::pair<std::string, Node::Type *>>>>
+  std::vector<std::pair<NameTypePair,
+                        std::vector<std::pair<std::string, Node::Type *>>>>
       function_table;
+
+  // Template Table
+  std::unordered_map<std::string, Node::Type *> template_table;
 
   template <typename T, typename U>
   static void declare(std::unordered_map<T, U> &tables, std::string name,
@@ -91,6 +94,7 @@ void visitBlock(Maps *map, Node::Stmt *stmt);
 void visitVar(Maps *map, Node::Stmt *stmt);
 void visitPrint(Maps *map, Node::Stmt *stmt);
 void visitIf(Maps *map, Node::Stmt *stmt);
+void visitTemplateStmt(Maps *map, Node::Stmt *stmt);
 void visitReturn(Maps *map, Node::Stmt *stmt);
 
 // !Expr functions

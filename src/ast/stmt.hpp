@@ -236,8 +236,8 @@ public:
     }
   }
 
-  ~ReturnStmt() { 
-    delete expr; 
+  ~ReturnStmt() {
+    delete expr;
     delete stmt;
   }
 };
@@ -427,6 +427,30 @@ public:
   }
 };
 
+class TemplateStmt : public Node::Stmt {
+public:
+  std::vector<std::string> typenames;
+  int line, pos;
+
+  TemplateStmt(std::vector<std::string> typenames, int line, int pos)
+      : typenames(typenames), line(line), pos(pos) {
+    kind = NodeKind::ND_TEMPLATE_STMT;
+  }
+
+  void debug(int ident = 0) const override {
+    Node::printIndent(ident);
+    std::cout << "TemplateStmt: \n";
+    Node::printIndent(ident + 1);
+    std::cout << "Typenames: \n";
+    for (auto t : typenames) {
+      Node::printIndent(ident + 2);
+      std::cout << t << "\n";
+    }
+  }
+
+  ~TemplateStmt() {}
+};
+
 class ImportStmt : public Node::Stmt {
 public:
   int line, pos;
@@ -448,4 +472,3 @@ public:
 
   ~ImportStmt() { delete stmt; }
 };
-

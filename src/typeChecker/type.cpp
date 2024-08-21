@@ -4,7 +4,7 @@
 #include <memory>
 
 void TypeChecker::performCheck(Node::Stmt *stmt) {
-  std::unique_ptr<Maps> map = std::make_unique<Maps>(); 
+  std::unique_ptr<Maps> map = std::make_unique<Maps>();
   visitStmt(map.get(), stmt); // Pass the instance of Maps to visitStmt
 
   if (!foundMain) {
@@ -39,3 +39,4 @@ std::string TypeChecker::type_to_string(Node::Type *type) {
     return "Unknown type";
   }
 }
+

@@ -37,6 +37,7 @@ void Flags::runFile(const char *path, std::string outName, bool save) {
 
   auto result = Parser::parse(source, path);
   ErrorClass::printError();
+  // std::cout << "Passed Parsing" << std::endl;
 
   // result->debug();
 
@@ -45,6 +46,8 @@ void Flags::runFile(const char *path, std::string outName, bool save) {
   // std::cout << "Passed Type Checking" << std::endl;
 
   codegen::gen(result, save, outName);
+  ErrorClass::printError();
+  // std::cout << "Passed Code Generation" << std::endl;
 
   delete[] source;
   delete result;

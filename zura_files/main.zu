@@ -1,10 +1,9 @@
-const add := fn (x: int, y: int) int {
-   return x + y;
-};
-
+#template <typealias T>
+#const add := fn (a: T, b: T) T {
+#   return a + b;
+#};
 
 const main := fn () int {
-   have x: int = add(1, 2);
    dis("Hello World!");
-   return x; 
+   return 0; 
 };

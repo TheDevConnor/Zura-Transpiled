@@ -38,6 +38,7 @@ enum NodeKind {
   ND_PRINT_STMT,
   ND_ENUM_STMT,
   ND_IMPORT_STMT,
+  ND_TEMPLATE_STMT,
 
   // Types
   ND_SYMBOL_TYPE,

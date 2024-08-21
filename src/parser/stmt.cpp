@@ -103,7 +103,7 @@ Node::Stmt *Parser::printStmt(PStruct *psr, std::string name) {
 Node::Stmt *Parser::constStmt(PStruct *psr, std::string name) {
   auto line = psr->tks[psr->pos].line;
   auto column = psr->tks[psr->pos].column;
-  
+
   psr->expect(psr, TokenKind::_CONST,
               "Expected a CONST keyword to start a const stmt");
   name = psr->expect(psr, TokenKind::IDENTIFIER,
@@ -164,7 +164,7 @@ Node::Stmt *Parser::returnStmt(PStruct *psr, std::string name) {
   psr->expect(psr, TokenKind::RETURN,
               "Expected a RETURN keyword to start a return stmt");
 
-  // if return 
+  // if return
   if (psr->current(psr).kind == TokenKind::IF) {
     auto if_return = ifStmt(psr, name);
     psr->expect(psr, TokenKind::SEMICOLON,
@@ -333,6 +333,36 @@ Node::Stmt *Parser::enumStmt(PStruct *psr, std::string name) {
               "Expected a SEMICOLON at the end of an enum stmt");
 
   return new EnumStmt(line, column, name, fields);
+}
+
+Node::Stmt *Parser::templateStmt(PStruct *psr, std::string name) {
+  // template <typealias T>
+  auto line = psr->tks[psr->pos].line;
+  auto column = psr->tks[psr->pos].column;
+
+  psr->expect(psr, TokenKind::TEMPLATE,
+              "Expected a TEMPLATE keyword to start a template stmt");
+
+  psr->expect(psr, TokenKind::LESS, "Expected a '<' to start a template stmt");
+
+  std::vector<std::string> typeParams;
+  while (psr->current(psr).kind != TokenKind::GREATER) {
+    psr->expect(psr, TokenKind::TYPEALIAS,
+                "Expected a TYPEALIAS keyword as a type parameter in a template "
+                "stmt");
+    typeParams.push_back(
+        psr->expect(
+               psr, TokenKind::IDENTIFIER,
+               "Expected an IDENTIFIER as a type parameter in a template stmt")
+            .value);
+    if (psr->current(psr).kind == TokenKind::COMMA)
+      psr->expect(psr, TokenKind::COMMA,
+                  "Expected a COMMA after a type parameter in a template stmt");
+  }
+
+  psr->expect(psr, TokenKind::GREATER, "Expected a '>' to end a template stmt");
+
+  return new TemplateStmt(typeParams, line, column);
 }
 
 Node::Stmt *Parser::importStmt(PStruct *psr, std::string name) {

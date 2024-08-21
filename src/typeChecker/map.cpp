@@ -23,6 +23,7 @@ std::vector<std::pair<NodeKind, TypeChecker::StmtNodeHandler>>
         {NodeKind::ND_IF_STMT, visitIf},
         {NodeKind::ND_EXPR_STMT, visitExprStmt},
         {NodeKind::ND_PRINT_STMT, visitPrint},
+        {NodeKind::ND_TEMPLATE_STMT, visitTemplateStmt},
 };
 
 std::vector<std::pair<NodeKind, TypeChecker::ExprNodeHandler>>
@@ -62,6 +63,7 @@ void TypeChecker::Maps::declare_fn(
     Maps *map, std::string name, const Maps::NameTypePair &pair,
     std::vector<std::pair<std::string, Node::Type *>> paramTypes, int line,
     int pos) {
+  // check if the function is already defined      
   auto res = std::find_if(
       map->function_table.begin(), map->function_table.end(),
       [&name](const std::pair<NameTypePair,

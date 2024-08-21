@@ -146,5 +146,6 @@ Node::Stmt *printStmt(PStruct *psr, std::string name);
 Node::Stmt *varStmt(PStruct *psr, std::string name);
 Node::Stmt *funStmt(PStruct *psr, std::string name);
 Node::Stmt *ifStmt(PStruct *psr, std::string name);
+Node::Stmt *templateStmt(PStruct *psr, std::string name);
 Node::Stmt *exprStmt(PStruct *psr);
 } // namespace Parser
