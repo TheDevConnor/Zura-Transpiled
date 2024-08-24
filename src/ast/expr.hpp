@@ -169,6 +169,101 @@ public:
   }
 };
 
+class IndexExpr : public Node::Expr {
+public:
+  int line, pos;
+  Node::Expr *lhs;
+  Node::Expr *rhs;
+
+  IndexExpr(int line, int pos, Node::Expr *lhs, Node::Expr *rhs)
+      : line(line), pos(pos), lhs(lhs), rhs(rhs) {
+    kind = NodeKind::ND_INDEX;
+  }
+
+  void debug(int ident = 0) const override {
+    Node::printIndent(ident);
+    std::cout << "IndexExpr: \n";
+    Node::printIndent(ident + 1);
+    std::cout << "LHS: \n";
+    lhs->debug(ident + 2);
+    Node::printIndent(ident + 1);
+    std::cout << "RHS: \n";
+    rhs->debug(ident + 2);
+  }
+
+  ~IndexExpr() {
+    delete lhs;
+    delete rhs;
+  }
+};
+
+class PopExpr : public Node::Expr {
+public:
+  int line, pos;
+  Node::Expr *lhs;
+  Node::Expr *rhs;
+
+  PopExpr(int line, int pos, Node::Expr *lhs, Node::Expr *rhs)
+      : line(line), pos(pos), lhs(lhs), rhs(rhs) {
+    kind = NodeKind::ND_POP;
+  }
+
+  void debug(int ident = 0) const override {
+    Node::printIndent(ident);
+    std::cout << "PopExpr: \n";
+    Node::printIndent(ident + 1);
+    std::cout << "LHS: \n";
+    lhs->debug(ident + 2);
+    Node::printIndent(ident + 1);
+    if (rhs == nullptr) {
+      std::cout << "Pop the last element\n";
+      return;
+    }
+    std::cout << "RHS: \n";
+    rhs->debug(ident + 2);
+  }
+
+  ~PopExpr() {
+    delete lhs;
+    delete rhs;
+  }
+};
+
+class PushExpr : public Node::Expr {
+public:
+  int line, pos;
+  Node::Expr *lhs;
+  Node::Expr *rhs;
+  Node::Expr *index;
+
+  PushExpr(int line, int pos, Node::Expr *lhs, Node::Expr *rhs,
+           Node::Expr *index)
+      : line(line), pos(pos), lhs(lhs), rhs(rhs), index(index) {
+    kind = NodeKind::ND_PUSH;
+  }
+
+  void debug(int ident = 0) const override {
+    Node::printIndent(ident);
+    std::cout << "PushExpr: \n";
+    Node::printIndent(ident + 1);
+    std::cout << "LHS: \n";
+    lhs->debug(ident + 2);
+    Node::printIndent(ident + 1);
+    std::cout << "RHS: \n";
+    rhs->debug(ident + 2);
+    if (index != nullptr) {
+      Node::printIndent(ident + 1);
+      std::cout << "Index: \n";
+      index->debug(ident + 2);
+    }
+  }
+
+  ~PushExpr() {
+    delete lhs;
+    delete rhs;
+  }
+};
+
 class AssignmentExpr : public Node::Expr {
 public:
   int line, pos;

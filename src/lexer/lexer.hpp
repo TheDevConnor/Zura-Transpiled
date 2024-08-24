@@ -44,6 +44,9 @@ enum TokenKind {
   SLASH_EQUAL,
   RANGE,
   RESOLUTION,
+  RIGHT_ARROW,
+  LEFT_ARROW,
+  AT,
 
   // Literals.
   IDENTIFIER,

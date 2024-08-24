@@ -6,7 +6,7 @@
 
 /**
  * Initializes the lexer with the given source code and file path.
- * 
+ *
  * @param source The source code to be lexed.
  * @param file The file path of the source code.
  */
@@ -23,12 +23,14 @@ void Lexer::initLexer(const char *source, std::string file) {
 
 /**
  * Initializes the map for the Lexer class.
- * This map contains mappings for whitespace characters, keywords, special characters, and token kinds.
- * The whitespace map is used to handle whitespace characters and advance the lexer accordingly.
- * The keywords map is used to map keywords to their corresponding token kinds.
- * The scMap (special character map) is used to map special characters to their corresponding token kinds.
- * The dcMap (double character map) is used to map double characters (e.g., "==", "!=") to their corresponding token kinds.
- * The tokenToStringMap is used to map token kinds to their string representations.
+ * This map contains mappings for whitespace characters, keywords, special
+ * characters, and token kinds. The whitespace map is used to handle whitespace
+ * characters and advance the lexer accordingly. The keywords map is used to map
+ * keywords to their corresponding token kinds. The scMap (special character
+ * map) is used to map special characters to their corresponding token kinds.
+ * The dcMap (double character map) is used to map double characters (e.g.,
+ * "==", "!=") to their corresponding token kinds. The tokenToStringMap is used
+ * to map token kinds to their string representations.
  */
 void Lexer::initMap() {
   whiteSpaceMap = {
@@ -43,24 +45,24 @@ void Lexer::initMap() {
        }},
       {'#',
        [](Lexer &lexer) {
-           while (lexer.peek() != '\n' && !lexer.isAtEnd())
-             lexer.advance();
+         while (lexer.peek() != '\n' && !lexer.isAtEnd())
+           lexer.advance();
        }},
   };
 
   keywords = {
-      {"and", TokenKind::AND},      {"else", TokenKind::ELSE},
-      {"false", TokenKind::FAL},    {"fn", TokenKind::FUN},
-      {"loop", TokenKind::LOOP},    {"if", TokenKind::IF},
-      {"nil", TokenKind::NIL},      {"or", TokenKind::OR},
-      {"dis", TokenKind::PRINT},    {"return", TokenKind::RETURN},
-      {"exit", TokenKind::EXIT},    {"super", TokenKind::SUPER},
-      {"true", TokenKind::TR},      {"have", TokenKind::VAR},
-      {"pkg", TokenKind::PKG},      {"in", TokenKind::IN},
-      {"type", TokenKind::TYPE},    {"struct", TokenKind::STRUCT},
-      {"enum", TokenKind::ENUM},    {"union", TokenKind::UNION},
-      {"const", TokenKind::_CONST}, {"import", TokenKind::IMPORT},
-      {"pub", TokenKind::PUB},      {"priv", TokenKind::PRIV},
+      {"and", TokenKind::AND},           {"else", TokenKind::ELSE},
+      {"false", TokenKind::FAL},         {"fn", TokenKind::FUN},
+      {"loop", TokenKind::LOOP},         {"if", TokenKind::IF},
+      {"nil", TokenKind::NIL},           {"or", TokenKind::OR},
+      {"dis", TokenKind::PRINT},         {"return", TokenKind::RETURN},
+      {"exit", TokenKind::EXIT},         {"super", TokenKind::SUPER},
+      {"true", TokenKind::TR},           {"have", TokenKind::VAR},
+      {"pkg", TokenKind::PKG},           {"in", TokenKind::IN},
+      {"type", TokenKind::TYPE},         {"struct", TokenKind::STRUCT},
+      {"enum", TokenKind::ENUM},         {"union", TokenKind::UNION},
+      {"const", TokenKind::_CONST},      {"import", TokenKind::IMPORT},
+      {"pub", TokenKind::PUB},           {"priv", TokenKind::PRIV},
       {"template", TokenKind::TEMPLATE}, {"typealias", TokenKind::TYPEALIAS},
   };
 
@@ -76,7 +78,7 @@ void Lexer::initMap() {
       {':', TokenKind::COLON},         {'=', TokenKind::EQUAL},
       {'!', TokenKind::BANG},          {'<', TokenKind::LESS},
       {'>', TokenKind::GREATER},       {'&', TokenKind::LAND},
-      {'|', TokenKind::LOR},
+      {'|', TokenKind::LOR},           {'@', TokenKind::AT},
   };
 
   dcMap = {
@@ -95,6 +97,8 @@ void Lexer::initMap() {
       {"||", TokenKind::OR},
       {"..", TokenKind::RANGE},
       {"::", TokenKind::RESOLUTION},
+      {"<-", TokenKind::LEFT_ARROW},
+      {"->", TokenKind::RIGHT_ARROW},
   };
 
   tokenToStringMap = {

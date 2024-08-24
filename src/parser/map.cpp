@@ -99,6 +99,8 @@ void Parser::createMaps() {
 
       {TokenKind::RANGE, binary},
 
+      {TokenKind::LEFT_BRACKET, index},
+
       {TokenKind::AND, binary},
       {TokenKind::OR, binary},
   };
@@ -144,6 +146,8 @@ void Parser::createMaps() {
       {TokenKind::STRING, BindingPower::defaultValue},
 
       {TokenKind::RANGE, BindingPower::range},
+
+      {TokenKind::LEFT_BRACKET, BindingPower::member},
 
       {TokenKind::DOT, BindingPower::member},
       {TokenKind::RESOLUTION, BindingPower::member},

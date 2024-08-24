@@ -4,10 +4,11 @@
 #include <iostream>
 
 /**
- * Parses an expression from the given parser and returns the resulting expression node.
- * This is the bread and butter of the Pratt Parser. It uses the nud and led functions to parse 
- * the expression based on the binding power of the current token.
- * 
+ * Parses an expression from the given parser and returns the resulting
+ * expression node. This is the bread and butter of the Pratt Parser. It uses
+ * the nud and led functions to parse the expression based on the binding power
+ * of the current token.
+ *
  * @param psr The parser object.
  * @param bp The binding power to use for parsing.
  * @return The parsed expression node.
@@ -106,6 +107,80 @@ Node::Expr *Parser::binary(PStruct *psr, Node::Expr *left, BindingPower bp) {
   auto *right = parseExpr(psr, bp);
 
   return new BinaryExpr(line, column, left, right, op.value);
+}
+
+//  # change a variable in the array
+// x[2] = 10; # x = [1, 2, 10, 4, 5]
+//
+// # pop a specific index from the array
+// x[<-2]; # z = 3, x = [1, 2, 4, 5]
+//
+// # push a variable to the array
+// x[->6]; # a = 6, x = [1, 2, 4, 5, 6]
+//
+// # push a variable to the array at a specific index
+// x[->7 @ 2]; # x = [1, 2, 7, 4, 5, 6]
+//
+// # pop the last element from the array
+// x[<-]; # b = 6, x = [1, 2, 7, 4, 5]
+
+Node::Expr *Parser::index(PStruct *psr, Node::Expr *left, BindingPower bp) {
+  auto line = psr->tks[psr->pos].line;
+  auto column = psr->tks[psr->pos].column;
+
+  std::cout << "Parsing an index expression!" << std::endl;
+
+  psr->expect(psr, TokenKind::LEFT_BRACKET,
+              "Expected a L_Bracket to start an index expr!");
+
+  Node::Expr *index = nullptr;
+  switch (psr->current(psr).kind) {
+    // This is a pop operation
+  case TokenKind::LEFT_ARROW: {
+    psr->expect(psr, TokenKind::LEFT_ARROW,
+                "Expected a L_Arrow to pop an index from an array!");
+    
+    // check if the next token is a right bracket to pop the last element
+    if (psr->current(psr).kind == TokenKind::RIGHT_BRACKET) {
+      psr->advance(psr);
+      return new PopExpr(line, column, left, nullptr); 
+    }
+
+    index = parseExpr(psr, defaultValue);
+    
+    psr->expect(psr, TokenKind::RIGHT_BRACKET,
+                "Expected a R_Bracket to end an index expr!");
+    return new PopExpr(line, column, left, index);
+  }
+  case TokenKind::RIGHT_ARROW: {
+    psr->expect(psr, TokenKind::RIGHT_ARROW,
+                "Expected a R_Arrow to push an index to an array!");
+
+    index = parseExpr(psr, defaultValue);
+
+    if (psr->current(psr).kind == TokenKind::AT) {
+      psr->expect(psr, TokenKind::AT,
+                  "Expected an AT to specify an index for a push operation!");
+      auto *push_index = parseExpr(psr, defaultValue);
+      psr->expect(psr, TokenKind::RIGHT_BRACKET,
+                  "Expected a R_Bracket to end an index expr!");
+      return new PushExpr(line, column, left, index, push_index);
+    }
+    
+    psr->expect(psr, TokenKind::RIGHT_BRACKET,
+                "Expected a R_Bracket to end an index expr!");
+    return new PushExpr(line, column, left, index, nullptr); 
+  }
+  default:
+    // This is a normal index
+    index = parseExpr(psr, defaultValue);
+    break;
+  }
+
+  psr->expect(psr, TokenKind::RIGHT_BRACKET,
+              "Expected a R_Bracket to end an index expr!");
+
+  return new IndexExpr(line, column, left, index);
 }
 
 Node::Expr *Parser::assign(PStruct *psr, Node::Expr *left, BindingPower bp) {
