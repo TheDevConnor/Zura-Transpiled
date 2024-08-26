@@ -30,8 +30,11 @@ void codegen::constDecl(Node::Stmt *stmt) {
 void codegen::funcDecl(Node::Stmt *stmt) {
 	auto funcDecl = static_cast<fnStmt *>(stmt);
 	// Declare the type of this function
-	push(Instr{.var = LinkerDirective{.value=".type usr_" + funcDecl->name + ", @function\n"}, .type = InstrType::Linker}, Section::Main);
-	push(Instr{.var = Label{.name = "usr_" + funcDecl->name}, .type = InstrType::Label},
+
+	std::string funcName = "usr_" + funcDecl->name;
+
+	push(Instr{.var = LinkerDirective{.value=".type " + funcName + ", @function\n"}, .type = InstrType::Linker}, Section::Main);
+	push(Instr{.var = Label{.name = funcName}, .type = InstrType::Label},
 				Section::Main);
 
 	// push arguments to the stack
@@ -48,7 +51,7 @@ void codegen::funcDecl(Node::Stmt *stmt) {
 
 	// Yes, AFTER the ret! and in the main function as well!
 	push(Instr{.var = LinkerDirective{.value=".cfi_endproc\n\t"}, .type = InstrType::Linker}, Section::Main);
-	push(Instr{.var = LinkerDirective{.value=".size usr_" + funcDecl->name + ", .-usr_" + funcDecl->name + "\n\t"}, .type = InstrType::Linker}, Section::Main);
+	push(Instr{.var = LinkerDirective{.value=".size " + funcName + ", .-" + funcName + "\n\t"}, .type = InstrType::Linker}, Section::Main);
 	// return in rax
 }
 
@@ -68,14 +71,18 @@ void codegen::varDecl(Node::Stmt *stmt) {
 
 void codegen::block(Node::Stmt *stmt) {
 	auto block = static_cast<BlockStmt *>(stmt);
-	std::unordered_map<std::string, size_t> preStackTable = stackTable;
+	stackSizesForScopes.push_back(stackSize);
+	size_t scopeCount = stackSizesForScopes.size();
 	for (auto &s : block->stmts) {
 		visitStmt(s);
 	}
-	if (preStackTable.size() < stackTable.size()) {
-		push(Instr { .var = AddInstr { .lhs = "%rsp", .rhs = "$" + std::to_string(8 * (stackTable.size() - preStackTable.size())) }, .type = InstrType::Add },
-			Section::Main);
-		stackTable = preStackTable;
+	// If difference is zero, it will skip!
+	if (stackSizesForScopes.size() < scopeCount)
+		return; // A function must have returned, meaning rsp and stuff will already be handled
+	if (int diff = stackSize - stackSizesForScopes.at(stackSizesForScopes.size() - 1)) {
+		push(Instr{ .var = AddInstr { .lhs = "%rsp", .rhs = "$" + std::to_string(8 * diff) }, .type = InstrType::Add }, Section::Main);
+
+		stackSize = stackSizesForScopes.at(stackSizesForScopes.size() - 1);
 	}
 }
 
@@ -176,7 +183,7 @@ void codegen::_return(Node::Stmt *stmt) {
 		push(Instr{.var = PopInstr{.where = "%rax", .whereSize = DataSize::Qword}, .type = InstrType::Pop},
 				 Section::Main);
 		stackSize--;
-
+		stackSizesForScopes.pop_back();
 		push(Instr{.var = MovInstr { .dest = "%rsp", .src = "%rbp", .destSize = DataSize::Qword, .srcSize = DataSize::Qword }, .type = InstrType::Mov}, Section::Main);
 		push(Instr{.var = PopInstr { .where = "%rbp", .whereSize = DataSize::Qword }, .type = InstrType::Pop}, Section::Main);
 		stackSize--;
@@ -188,6 +195,7 @@ void codegen::_return(Node::Stmt *stmt) {
 	push(Instr{.var = PopInstr{.where = "%rax", .whereSize = DataSize::Qword}, .type = InstrType::Pop},
 			 Section::Main);
 	stackSize--;
+	stackSizesForScopes.pop_back();
 	push(Instr{.var = MovInstr { .dest = "%rsp", .src = "%rbp", .destSize = DataSize::Qword, .srcSize = DataSize::Qword }, .type = InstrType::Mov}, Section::Main);
 	push(Instr{.var = PopInstr { .where = "%rbp", .whereSize = DataSize::Qword }, .type = InstrType::Pop}, Section::Main);
 	stackSize--;

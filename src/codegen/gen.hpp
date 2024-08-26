@@ -32,6 +32,7 @@ T lookup(const std::unordered_map<U, T> &map, U key) {
 void initMaps();
 
 inline std::unordered_map<std::string, size_t> stackTable = {};
+inline std::vector<size_t> stackSizesForScopes = {}; // wordy term for "when we start a scope, push its stack size"
 inline size_t stackSize;
 
 void visitStmt(Node::Stmt *stmt);

@@ -3,6 +3,7 @@
 #include "gen.hpp"
 #include "optimize.hpp"
 #include "stringify.hpp"
+#include "../common.hpp"
 #include <cstdlib>
 #include <fstream>
 #include <iostream>
@@ -37,29 +38,31 @@ void codegen::gen(Node::Stmt *stmt, bool isSaved, std::string output_filename) {
 	std::ofstream file(output_filename + ".s");
 	if (file.is_open()) {
 		file << "# ┌-------------------------------┐\n"
-						"# |   Zura lang by TheDevConnor   |\n"
-						"# |  assembly by Soviet Pancakes  |\n"
-						"# └-------------------------------┘\n"
-						"# What's New: GCC/GAS Assembler (AT&T syntax), Functions reworked\n";
+				"# |   Zura lang by TheDevConnor   |\n"
+				"# |  assembly by Soviet Pancakes  |\n"
+				"# └-------------------------------┘\n"
+				"# " << ZuraVersion << "\n"
+				"# What's New: GCC/GAS Assembler (AT&T syntax), Functions reworked\n"
+				"# What's New: Scopes hotfix\n";
 		// Copying gcc and hoping something changes (it won't)
 		// .file directive does not like non-c and non-cpp files but it might be useful for something somewhere later
 		file << "#.file \"" << static_cast<ProgramStmt *>(stmt)->inputPath << "\"\n" <<
-						".text\n" 
-						".globl main\n" 
-						".type main, @function\n" 
-						"main:\n" 
-						"  .cfi_startproc\n" 
-						"  pushq %rbp\n" 
-						"  movq %rsp, %rbp\n" 
-						"  call usr_main\n"
-						"  mov %rax, %rdi\n" 
-						"  movq $60, %rax\n" 
-						"  syscall\n" 
-						"  movq %rbp, %rsp\n" 
-						"  pop %rbp\n" 
-						"  ret\n" 
-						"  .cfi_endproc\n" 
-						".size main, .-main\n";
+				".text\n" 
+				".globl main\n" 
+				".type main, @function\n" 
+				"main:\n" 
+				"  .cfi_startproc\n" 
+				"  pushq %rbp\n" 
+				"  movq %rsp, %rbp\n" 
+				"  call usr_main\n"
+				"  mov %rax, %rdi\n" 
+				"  movq $60, %rax\n" 
+				"  syscall\n" 
+				"  movq %rbp, %rsp\n" 
+				"  pop %rbp\n" 
+				"  ret\n" 
+				"  .cfi_endproc\n" 
+				".size main, .-main\n";
 		file << Stringifier::stringifyInstrs(text_section); 
 		file << "\n# zura functions\n";
 		if (nativeFunctionsUsed[NativeASMFunc::strlen] == true) {

@@ -121,7 +121,7 @@ int main(int argc, char **argv) {
     // TODO: Ensure this file can be stored somewhere actually secure, like system files or in a .zurarc file
     // full path because screw you
 
-    get_version("/home/sovietpancakes/Desktop/Code/zura/version.txt");  // Update ZuraVersion
+    get_version("version.txt");  // Update ZuraVersion
 
     auto startTime = std::chrono::high_resolution_clock::now();
 
