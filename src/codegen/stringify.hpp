@@ -4,8 +4,10 @@
 
 #include <string>
 #include <vector>
+#include <iostream>
+#include <sstream>
 
-class Stringifier {
+class Stringifier { // converts Instr structures into AT&T Syntax strings
 public:
   inline static std::string stringifyInstrs(std::vector<Instr> &input) {
     std::string output{};
@@ -15,10 +17,39 @@ public:
     return output;
   }
 
+  inline static char dsToChar(DataSize in) {
+    /* good to have for a quick look
+    NONE,  0
+    BYTE,  1
+    WORD,  2
+    DWORD, 3
+    QWORD, 4 
+    */
+    switch (in) {
+      case DataSize::Byte:
+        return 'b';
+      case DataSize::Word:
+        return 'w';
+      case DataSize::Dword:
+        return 'l'; // 'long'
+      case DataSize::Qword:
+        return 'q';
+      case DataSize::None:
+      default:
+        return 0; // lets ru
+    }
+  }
+
   inline static std::string stringify(Instr instr) {
     struct InstrVisitor {
       std::string operator()(MovInstr instr) const {
-        return "mov " + instr.dest + ", " + instr.src + "\n\t";
+        if (instr.destSize != instr.srcSize) {
+          // Operands are different sizes...
+          // movzx dest, src
+        }
+        std::stringstream ss; // C++  is trash why did i quit zig
+        ss << "mov" << dsToChar(instr.srcSize) << ' ' << instr.src << ", " << instr.dest << "\n\t";
+        return ss.str();
       }
       std::string operator()(PushInstr instr) const {
         return "push " + instr.what + "\n\t";
@@ -30,10 +61,10 @@ public:
         return "xor " + instr.lhs + ", " + instr.rhs + "\n\t";
       }
       std::string operator()(AddInstr instr) const {
-        return "add " + instr.lhs + ", " + instr.rhs + "\n\t";
+        return "add " + instr.rhs + ", " + instr.lhs + "\n\t";
       }
       std::string operator()(SubInstr instr) const {
-        return "sub " + instr.lhs + ", " + instr.rhs + "\n\t";
+        return "sub " + instr.rhs + ", " + instr.lhs + "\n\t";
       }
       std::string operator()(MulInstr instr) const {
         return "mul " + instr.from + "\n\t";
@@ -97,7 +128,7 @@ public:
         return "call " + instr.name + "\n\t";
       }
       std::string operator()(Syscall instr) const {
-        return "syscall ; " + instr.name + "\n\t";
+        return "syscall # " + instr.name + "\n\t";
       }
       std::string operator()(NegInstr instr) const {
         return "neg " + instr.what + "\n\t";
@@ -110,8 +141,9 @@ public:
       }
       std::string operator()(Ret instr) const { return "ret\n\t"; }
       std::string operator()(Comment instr) const {
-        return "; " + instr.comment + "\n\t";
+        return "# " + instr.comment + "\n\t";
       }
+      std::string operator()(LinkerDirective instr) const { return instr.value; } // It is the responsibility of LinkerDirective to have its own formatting
     };
     return std::visit(InstrVisitor {}, instr.var);
   }

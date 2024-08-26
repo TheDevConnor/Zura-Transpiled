@@ -80,7 +80,7 @@ void FlagConfig::runBuild(int argc, char **argv) {
     for (int i = 0; i < 4; i++) {
         if (buildConditions[i](argv[1])) {
             if (i == 3) { // clean
-                std::string remove = "rm *.asm *.o";
+                std::string remove = "rm *.asm";
                 std::system(remove.c_str());
                 return;
             }
@@ -90,7 +90,7 @@ void FlagConfig::runBuild(int argc, char **argv) {
                     Exit(ExitValue::BUILD_ERROR);
                 }
 
-                const char *fileName = argv[2];
+                const char *fileName = argv[2]; // ! important for linker dir later
                 const char *outputName = "a.out";
                 bool saveFlag = false;
 
@@ -116,38 +116,27 @@ void FlagConfig::runBuild(int argc, char **argv) {
     }
 }
 
-void updateProgressBar(double progress) {
-    const int barWidth = 50;
-    std::cout << "[";
-    int pos = barWidth * progress;
-    for (int i = 0; i < barWidth; ++i) {
-        if (i < pos) std::cout << "=";
-        else if (i == pos) std::cout << ">";
-        else std::cout << " ";
-    }
-    std::cout << "] " << int(progress * 100.0) << " %\r";
-    std::cout.flush();
-}
 
 int main(int argc, char **argv) {
-    get_version("version.txt");  // Update ZuraVersion
+    // TODO: Ensure this file can be stored somewhere actually secure, like system files or in a .zurarc file
+    // full path because screw you
+
+    get_version("/home/sovietpancakes/Desktop/Code/zura/version.txt");  // Update ZuraVersion
 
     auto startTime = std::chrono::high_resolution_clock::now();
 
     FlagConfig::print(argc, argv);
     auto midTime = std::chrono::high_resolution_clock::now();
 
-    updateProgressBar(0.5);
-
     FlagConfig::runBuild(argc, argv);
     auto endTime = std::chrono::high_resolution_clock::now();
 
-    updateProgressBar(1.0);
+    Flags::updateProgressBar(1.0);
     std::cout << std::endl;
 
     auto totalDurationMS = std::chrono::duration_cast<std::chrono::milliseconds>(endTime - startTime).count();
     auto totalDurationUS = std::chrono::duration_cast<std::chrono::microseconds>(endTime - startTime).count();
-    std::cout << "Total time: " << totalDurationMS << "ms (" << totalDurationUS << "us)" << std::endl; 
+    std::cout << "Total time: " << totalDurationMS << "ms (" << totalDurationUS << "µs)" << std::endl;
 
     return ExitValue::BUILT;
 }

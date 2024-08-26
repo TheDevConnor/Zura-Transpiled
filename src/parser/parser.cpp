@@ -41,5 +41,5 @@ Node::Stmt *Parser::parse(const char *source, std::string file) {
   node.current_file = vect_tk->current_file;
 
   delete vect_tk;
-  return new ProgramStmt(stmts);
+  return new ProgramStmt(stmts, file);
 }

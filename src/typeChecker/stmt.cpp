@@ -184,7 +184,6 @@ void TypeChecker::visitFor(Maps *map, Node::Stmt *stmt) {
   // now we visit the for loop and assign the type to the return type
   visitExpr(map, for_stmt->forLoop);
 
-  // now we check the condition of the for loop
   visitExpr(map, for_stmt->condition);
 
   if (type_to_string(return_type.get()) != "bool") {

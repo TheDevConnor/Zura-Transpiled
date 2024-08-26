@@ -7,17 +7,30 @@
 
 enum class JumpCondition;
 
+enum class DataSize {
+  None,   // None/auto type
+  Byte,   // 8 bits
+  Word,   // 16 bits
+  Dword,  // 32 bits
+  Qword,  // 64 bits
+};
+
+
 struct MovInstr {
   std::string dest;
   std::string src;
+  DataSize destSize = DataSize::Qword; // "movq", "movb", etc...
+  DataSize srcSize = DataSize::Qword; // "movq $15, 0(%rsp)"
 };
 
 struct PushInstr {
   std::string what;
+  DataSize whatSize = DataSize::Qword;
 };
 
 struct PopInstr {
   std::string where;
+  DataSize whereSize = DataSize::Qword; // "popq", "popb", etc..
 };
 
 struct XorInstr {
@@ -88,6 +101,10 @@ struct Comment {
   std::string comment;
 };
 
+struct LinkerDirective {
+  std::string value; // This instruction is effectively pushing a string to the file.
+};
+
 enum class InstrType {
   Push,
   Pop,
@@ -103,10 +120,17 @@ enum class InstrType {
   Not,
 
   // Types
-  DB,
+  Ascii,
+  Asciz,
+  
+  Byte,
+  Word,
+  Dword,
+  Qword,
 
   // system (no opposites)
   Label,
+  Linker,
   Call,
   Mov,
   Syscall,
@@ -138,7 +162,8 @@ enum class JumpCondition {
 struct Instr {
   std::variant<MovInstr, PushInstr, PopInstr, XorInstr, AddInstr, SubInstr,
                MulInstr, DivInstr, CmpInstr, SetInstr, Label, Syscall, Ret, 
-               NegInstr, NotInstr, JumpInstr, Comment, DBInstr, CallInstr>
+               NegInstr, NotInstr, JumpInstr, Comment, DBInstr, CallInstr,
+              LinkerDirective>
       var;
   InstrType type;
   bool optimize = true;
@@ -161,8 +186,13 @@ inline std::unordered_map<InstrType, InstrType> opposites = {
 
     {InstrType::Neg, InstrType::Neg},
     {InstrType::Not, InstrType::Not},
-
-    {InstrType::DB, InstrType::DB},
+    // Types
+    {InstrType::Ascii, InstrType::Asciz},
+    {InstrType::Asciz, InstrType::Ascii},
+    {InstrType::Byte, InstrType::Byte},
+    {InstrType::Word, InstrType::Word},
+    {InstrType::Dword, InstrType::Dword},
+    {InstrType::Qword, InstrType::Qword},
 
     // system (no opposites)
     {InstrType::Jmp, InstrType::NONE}, // if you jumped, you can't "unjump"
@@ -172,6 +202,7 @@ inline std::unordered_map<InstrType, InstrType> opposites = {
     {InstrType::Ret, InstrType::NONE},
     {InstrType::Comment, InstrType::NONE},
     {InstrType::Call, InstrType::NONE},
+    {InstrType::Linker, InstrType::Linker},
     {InstrType::NONE, InstrType::NONE}
 
 };
@@ -207,9 +238,10 @@ public:
 
           // simplify to mov
           Instr newInstr = {
-              .var = MovInstr{.dest = currAsPop.where, .src = prevAsPush.what},
+              .var = MovInstr{.dest = currAsPop.where, .src = prevAsPush.what, .destSize = currAsPop.whereSize, .srcSize = prevAsPush.whatSize},
               .type = InstrType::Mov};
-          prev = newInstr;
+            
+          prev = newInstr; // check expr's, "newInstr" is exactly what it should be
           output.push_back(newInstr);
           continue;
         }

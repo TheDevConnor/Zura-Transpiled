@@ -13,6 +13,19 @@
 
 using namespace std;
 
+void Flags::updateProgressBar(double progress) {
+    const int barWidth = 50;
+    std::cout << "[";
+    int pos = barWidth * progress;
+    for (int i = 0; i < barWidth; ++i) {
+        if (i < pos) std::cout << "=";
+        else if (i == pos) std::cout << ">";
+        else std::cout << " ";
+    }
+    std::cout << "] " << int(progress * 100.0) << " %\r";
+    std::cout.flush();
+}
+
 char *Flags::readFile(const char *path) {
   ifstream file(path, ios::binary);
   if (!file) {
@@ -34,21 +47,19 @@ char *Flags::readFile(const char *path) {
 
 void Flags::runFile(const char *path, std::string outName, bool save) {
   const char *source = readFile(path);
-
+  Flags::updateProgressBar(0.25);
   auto result = Parser::parse(source, path);
   ErrorClass::printError();
   // std::cout << "Passed Parsing" << std::endl;
 
-  result->debug();
-
+  Flags::updateProgressBar(0.5);
   TypeChecker::performCheck(result);
   ErrorClass::printError();
   // std::cout << "Passed Type Checking" << std::endl;
-
+  Flags::updateProgressBar(0.75);
   codegen::gen(result, save, outName);
   ErrorClass::printError();
   // std::cout << "Passed Code Generation" << std::endl;
-
   delete[] source;
   delete result;
 }

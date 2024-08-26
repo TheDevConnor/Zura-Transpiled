@@ -8,9 +8,10 @@
 
 class ProgramStmt : public Node::Stmt {
 public:
-  std::vector<Node::Stmt *> stmt;
+  std::vector<Node::Stmt *> stmt; // vector of stmts - the body
+  std::string inputPath; // yes this is actually useful trust me
 
-  ProgramStmt(std::vector<Node::Stmt *> stmt) : stmt(stmt) {
+  ProgramStmt(std::vector<Node::Stmt *> stmt, std::string path) : stmt(stmt), inputPath(path) {
     kind = NodeKind::ND_PROGRAM;
   }
 

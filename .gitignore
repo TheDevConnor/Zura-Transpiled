@@ -3,6 +3,7 @@
 *.c
 *.asm
 *.o
+*.s
 
 # Ignore Visual Studio Code files
 .vscode
