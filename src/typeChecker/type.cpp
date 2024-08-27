@@ -22,9 +22,9 @@ void TypeChecker::handlerError(int line, int pos, std::string msg,
   Lexer lexer; // dummy lexer
   if (note != "")
     ErrorClass::error(line, pos, msg, note, typeOfError, node.current_file,
-                      lexer, node.tks, false, false, false, false, true);
+                      lexer, node.tks, false, false, false, false, true, false);
   ErrorClass::error(line, pos, msg, "", typeOfError, node.current_file, lexer,
-                    node.tks, false, false, false, false, true);
+                    node.tks, false, false, false, false, true, false);
 }
 
 std::string TypeChecker::type_to_string(Node::Type *type) {

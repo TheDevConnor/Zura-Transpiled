@@ -57,7 +57,7 @@ void Flags::runFile(const char *path, std::string outName, bool save) {
   ErrorClass::printError();
   // std::cout << "Passed Type Checking" << std::endl;
   Flags::updateProgressBar(0.75);
-  codegen::gen(result, save, outName);
+  codegen::gen(result, save, outName, path);
   ErrorClass::printError();
   // std::cout << "Passed Code Generation" << std::endl;
   delete[] source;

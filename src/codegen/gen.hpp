@@ -93,5 +93,8 @@ void push(Instr instr, Section section = Section::Main);
 
 void pushCompAsExpr(); // assuming compexpr's will already do the "cmp" and "jmp", we will push 0x0 or 0x1 depending on the result
 
-void gen(Node::Stmt *stmt, bool isSaved, std::string output);
+inline const char* file_name;
+
+bool execute_command(const std::string &command, const std::string &log_file);
+void gen(Node::Stmt *stmt, bool isSaved, std::string output, const char* filename);
 } // namespace codegen

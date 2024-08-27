@@ -62,7 +62,7 @@ struct Parser::PStruct {
     if (!res) {
       ErrorClass::error(current(psr).line, current(psr).column, msg, "",
                         "Parser Error", psr->current_file, lexer, psr->tks, true, false,
-                        false, false, false);
+                        false, false, false, false);
       return current(psr);
     }
 

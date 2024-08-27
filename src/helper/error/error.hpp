@@ -21,7 +21,7 @@ std::string error(int line, int pos, const std::string &msg,
                   const std::string &note, const std::string &errorType,
                   const std::string &filename, Lexer &lexer,
                   const std::vector<Lexer::Token> &tokens, bool isParser,
-                  bool isWarning, bool isFatal, bool isMain, bool isTypeError);
+                  bool isWarning, bool isFatal, bool isMain, bool isTypeError, bool isGeneration);
 
 void printError();
 

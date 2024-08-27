@@ -56,7 +56,7 @@ std::string ErrorClass::error(int line, int pos, const std::string &msg,
                               const std::string &filename, Lexer &lexer,
                               const std::vector<Lexer::Token> &tokens,
                               bool isParser, bool isWarning, bool isFatal,
-                              bool isMain, bool isTypeError) {
+                              bool isMain, bool isTypeError, bool isGeneration) {
   std::string line_error =
       "[" + std::to_string(line) + "::" + std::to_string(pos) + "] (";
   if (isWarning) {
@@ -92,6 +92,12 @@ std::string ErrorClass::error(int line, int pos, const std::string &msg,
     line_error +=
         currentLine(line + 1, 0, lexer, isParser, isTypeError, tokens);
     typeErros.push_back(line_error);
+    return line_error;
+  }
+
+  if (isGeneration) {
+    line_error += " ↳ " + note + "\n";
+    errors[line] = line_error;
     return line_error;
   }
 

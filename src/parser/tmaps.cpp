@@ -3,10 +3,11 @@
 
 /**
  * @brief Looks up a value in a vector of key-value pairs.
- * 
- * This function searches for a key in the given vector of key-value pairs and returns the corresponding value.
- * If the key is not found, an error is generated.
- * 
+ *
+ * This function searches for a key in the given vector of key-value pairs and
+ * returns the corresponding value. If the key is not found, an error is
+ * generated.
+ *
  * @tparam T The type of the value in the key-value pairs.
  * @tparam U The type of the key in the key-value pairs.
  * @param psr A pointer to the PStruct object.
@@ -21,8 +22,8 @@ T Parser::lookup(PStruct *psr, const std::vector<std::pair<U, T>> &lu, U key) {
 
   if (it == lu.end()) {
     ErrorClass::error(0, 0, "No value found for key in Type maps", "",
-                      "Parser Error", psr->current_file, lexer, psr->tks, true, false,
-                      false, false, false);
+                      "Parser Error", psr->current_file, lexer, psr->tks, true,
+                      false, false, false, false, false);
   }
 
   return it->second;
@@ -30,7 +31,7 @@ T Parser::lookup(PStruct *psr, const std::vector<std::pair<U, T>> &lu, U key) {
 
 /**
  * Creates the type maps for the Parser.
- * 
+ *
  * This function initializes the type_nud_lu, type_led_lu, and type_bp_lu maps
  * used by the Parser class for parsing types. The type_nud_lu map associates
  * token kinds with corresponding parsing functions for prefix expressions,
@@ -50,15 +51,17 @@ void Parser::createTypeMaps() {
 }
 
 /**
- * This function is responsible for handling the type-led expressions in the parser.
- * It takes a PStruct pointer, a left Node::Type pointer, and a BindingPower value as parameters.
- * It looks up the appropriate function to handle the type-led expression based on the operator kind.
- * If an exception occurs during the lookup or evaluation, an error message is generated.
- * 
+ * This function is responsible for handling the type-led expressions in the
+ * parser. It takes a PStruct pointer, a left Node::Type pointer, and a
+ * BindingPower value as parameters. It looks up the appropriate function to
+ * handle the type-led expression based on the operator kind. If an exception
+ * occurs during the lookup or evaluation, an error message is generated.
+ *
  * @param psr The PStruct pointer representing the parser.
  * @param left The left Node::Type pointer.
  * @param bp The BindingPower value.
- * @return The resulting Node::Type pointer after evaluating the type-led expression.
+ * @return The resulting Node::Type pointer after evaluating the type-led
+ * expression.
  */
 Node::Type *Parser::type_led(PStruct *psr, Node::Type *left, BindingPower bp) {
   auto op = psr->current(psr);
@@ -67,21 +70,23 @@ Node::Type *Parser::type_led(PStruct *psr, Node::Type *left, BindingPower bp) {
   } catch (std::exception &e) {
     ErrorClass::error(psr->current(psr).line, psr->current(psr).column,
                       "Error in type_led: " + std::string(e.what()), "",
-                      "Parser Error", psr->current_file, lexer, psr->tks, true, false,
-                      false, false, false);
+                      "Parser Error", psr->current_file, lexer, psr->tks, true,
+                      false, false, false, false, false);
     return nullptr;
   }
   return nullptr;
 }
 
 /**
- * This function is responsible for handling the type-nud expressions in the parser.
- * It takes a PStruct pointer as a parameter and looks up the appropriate function to handle
- * the type-nud expression based on the operator kind. If an exception occurs during the lookup
- * or evaluation, an error message is generated.
- * 
+ * This function is responsible for handling the type-nud expressions in the
+ * parser. It takes a PStruct pointer as a parameter and looks up the
+ * appropriate function to handle the type-nud expression based on the operator
+ * kind. If an exception occurs during the lookup or evaluation, an error
+ * message is generated.
+ *
  * @param psr The PStruct pointer representing the parser.
- * @return The resulting Node::Type pointer after evaluating the type-nud expression.
+ * @return The resulting Node::Type pointer after evaluating the type-nud
+ * expression.
  */
 Node::Type *Parser::type_nud(PStruct *psr) {
   auto op = psr->current(psr);
@@ -90,18 +95,18 @@ Node::Type *Parser::type_nud(PStruct *psr) {
   } catch (std::exception &e) {
     ErrorClass::error(psr->current(psr).line, psr->current(psr).column,
                       "Error in type_nud: " + std::string(e.what()), "",
-                      "Parser Error", psr->current_file, lexer, psr->tks, true, false,
-                      false, false, false);
+                      "Parser Error", psr->current_file, lexer, psr->tks, true,
+                      false, false, false, false, false);
     return nullptr;
   }
   return nullptr;
 }
 
 /**
- * This function is responsible for retrieving the binding power of a given token kind.
- * It takes a PStruct pointer and a TokenKind value as parameters and returns the corresponding
- * binding power value from the type_bp_lu map.
- * 
+ * This function is responsible for retrieving the binding power of a given
+ * token kind. It takes a PStruct pointer and a TokenKind value as parameters
+ * and returns the corresponding binding power value from the type_bp_lu map.
+ *
  * @param psr The PStruct pointer representing the parser.
  * @param tk The TokenKind value to retrieve the binding power for.
  * @return The binding power value for the given token kind.

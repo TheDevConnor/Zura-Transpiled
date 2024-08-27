@@ -272,23 +272,25 @@ Node::Stmt *Parser::loopStmt(PStruct *psr, std::string name) {
     // loop (i = 0; i < 10) : (++1)
     // Second condition is the while loop condition
     // loop (i < 10) : (++1)
-    
+
     // set the current token which is the variable name in the for loop
     varName = psr->current(psr).value;
 
-    // we need to look two tokens ahead to determine if it is a for loop or a while loop
+    // we need to look two tokens ahead to determine if it is a for loop or a
+    // while loop
     if (psr->peek(psr, 1).kind == TokenKind::EQUAL) {
       isForLoop = true;
       forLoop = parseExpr(psr, BindingPower::defaultValue);
-      
-      psr->expect(psr, TokenKind::SEMICOLON,
-                  "Expected a SEMICOLON after the for loop condition in a loop stmt");
+
+      psr->expect(
+          psr, TokenKind::SEMICOLON,
+          "Expected a SEMICOLON after the for loop condition in a loop stmt");
 
       condition = parseExpr(psr, BindingPower::defaultValue);
 
     } else {
       whileLoop = parseExpr(psr, BindingPower::defaultValue);
-    } 
+    }
 
     psr->expect(psr, TokenKind::RIGHT_PAREN,
                 "Expected a R_PAREN to end the condition in a loop stmt");
@@ -308,11 +310,13 @@ Node::Stmt *Parser::loopStmt(PStruct *psr, std::string name) {
 
     if (isOptional) {
       if (isForLoop)
-        return new ForStmt(line, column, varName, forLoop, condition, opCondition, body);
+        return new ForStmt(line, column, varName, forLoop, condition,
+                           opCondition, body);
       return new WhileStmt(line, column, whileLoop, opCondition, body);
     }
     if (isForLoop)
-      return new ForStmt(line, column, varName, forLoop, condition, nullptr, body);
+      return new ForStmt(line, column, varName, forLoop, condition, nullptr,
+                         body);
     return new WhileStmt(line, column, whileLoop, nullptr, body);
   }
 
@@ -390,7 +394,7 @@ Node::Stmt *Parser::importStmt(PStruct *psr, std::string name) {
   if (result == nullptr) {
     ErrorClass::error(line, column, "Could not parse the file '" + path + "'",
                       "", "Parser Error", path.c_str(), lexer, psr->tks, true,
-                      false, false, false, false);
+                      false, false, false, false, false);
     return nullptr;
   }
 

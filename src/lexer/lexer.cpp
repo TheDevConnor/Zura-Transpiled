@@ -49,7 +49,7 @@ Lexer::Token Lexer::errorToken(std::string message) {
   std::vector<Lexer::Token> tokens = {};
   ErrorClass::error(token.line, token.column, message, "", "Lexer Error",
                     scanner.file, *this, tokens, false, false, true, false,
-                    false);
+                    false, false);
   return makeToken(TokenKind::ERROR_);
 }
 
