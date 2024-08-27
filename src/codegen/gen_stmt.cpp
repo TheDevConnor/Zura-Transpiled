@@ -29,10 +29,10 @@ void codegen::constDecl(Node::Stmt *stmt) {
 
 void codegen::funcDecl(Node::Stmt *stmt) {
 	auto funcDecl = static_cast<fnStmt *>(stmt);
-	// Declare the type of this function
+	// Declare the type of this function (important)
 
 	std::string funcName = "usr_" + funcDecl->name;
-
+	int preStackSize = stackSize;
 	push(Instr{.var = LinkerDirective{.value=".type " + funcName + ", @function\n"}, .type = InstrType::Linker}, Section::Main);
 	push(Instr{.var = Label{.name = funcName}, .type = InstrType::Label},
 				Section::Main);
@@ -40,7 +40,6 @@ void codegen::funcDecl(Node::Stmt *stmt) {
 	// push arguments to the stack
 	for (auto &args : funcDecl->params) {
 		stackTable.insert({args.first, stackSize});
-		stackSize++;
 	}
 
 	push(Instr{.var = LinkerDirective{.value=".cfi_startproc\n\t"}, .type = InstrType::Linker}, Section::Main);
@@ -48,6 +47,10 @@ void codegen::funcDecl(Node::Stmt *stmt) {
 	stackSize++;
 	push(Instr{.var=MovInstr{ .dest = "%rbp", .src = "%rsp", .destSize = DataSize::Qword, .srcSize = DataSize::Qword }, .type = InstrType::Mov}, Section::Main);
 	visitStmt(funcDecl->block);
+	stackSize = preStackSize;
+
+	// for (auto &arg : funcDecl->params) {
+	// }
 
 	// Yes, AFTER the ret! and in the main function as well!
 	push(Instr{.var = LinkerDirective{.value=".cfi_endproc\n\t"}, .type = InstrType::Linker}, Section::Main);

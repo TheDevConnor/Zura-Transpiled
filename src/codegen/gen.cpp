@@ -42,8 +42,8 @@ void codegen::gen(Node::Stmt *stmt, bool isSaved, std::string output_filename) {
 				"# |  assembly by Soviet Pancakes  |\n"
 				"# └-------------------------------┘\n"
 				"# " << ZuraVersion << "\n"
-				"# What's New: GCC/GAS Assembler (AT&T syntax), Functions reworked\n"
-				"# What's New: Scopes hotfix\n";
+				"# What's New: Arrays!\n"
+				"# Help Needed! Bug with 'arr[0]' and 'arr[1]' where 0 and 1 are returned instead of array elements\n";
 		// Copying gcc and hoping something changes (it won't)
 		// .file directive does not like non-c and non-cpp files but it might be useful for something somewhere later
 		file << "#.file \"" << static_cast<ProgramStmt *>(stmt)->inputPath << "\"\n" <<

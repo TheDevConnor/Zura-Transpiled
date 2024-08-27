@@ -10,7 +10,50 @@ void codegen::visitExpr(Node::Expr *expr) {
 	}
 }
 
-void codegen::binary(Node::Expr *expr) {
+void codegen::_arrayExpr(Node::Expr *expr) {
+	ArrayExpr *arr = static_cast<ArrayExpr *>(expr);
+	
+	int elementCount = arr->elements.size();
+	int elementsAlreadyPushed = 0;
+	for (int i = 0; i < arrayCounts.size(); i ++) {
+		elementsAlreadyPushed += arrayCounts.at(i).second;
+	}
+	if (elementCount > 0) {
+		for (int i = 0; i < elementCount; i++) {
+			// Evaluate the argument
+			visitExpr(arr->elements.at(i));
+			push(Instr { .var = PopInstr { .where = "-" + std::to_string(8 * ((i + 1) + elementsAlreadyPushed)) + "(%rbp)", .whereSize = DataSize::Qword }, .type = InstrType::Pop }, Section::Main);
+			stackSize--;
+		}
+	}
+	arrayCounts.push_back(std::pair<size_t, size_t>(arrayCount++, elementCount));
+	// Array is initialized!
+	// vvv This is important later for when we access the items.
+	push(Instr {.var = PushInstr{.what = "$" + std::to_string(elementsAlreadyPushed), .whatSize = DataSize::Qword}, .type = InstrType::Push}, Section::Main);
+	stackSize++;
+}
+
+// TODO: !!!! SUPER IMPORTANT: MAKE THIS ACTUALLY WORK LMAO!!!!!!!!
+void codegen::arrayElem(Node::Expr *expr) {
+	IndexExpr *realExpr = static_cast<IndexExpr *>(expr);
+	visitExpr(realExpr->lhs);
+	push(Instr { .var = PopInstr { .where = "%rdx", .whereSize = DataSize::Qword }, .type = InstrType::Pop }, Section::Main);
+	stackSize--;
+
+	// Evalute rhs (the index -> arr[idx])
+	visitExpr(realExpr->rhs);
+	push(Instr { .var = PopInstr { .where = "%rax", .whereSize = DataSize::Qword }, .type = InstrType::Pop }, Section::Main);
+	stackSize--;
+	push(Instr { .var = AddInstr { .lhs = "%rdx", .rhs = "%rax" }, .type = InstrType::Add}, Section::Main);
+	push(Instr { .var = AddInstr { .lhs = "%rdx", .rhs = "$1" }, .type = InstrType::Add}, Section::Main);
+	push(Instr { .var = LinkerDirective { .value = "neg %rdx\n\t" }, .type = InstrType::Linker }, Section::Main);
+
+	// Do not account for stack size. It doesn't matter because stackSize is rsp and not rbp.
+	push(Instr { .var = PushInstr { .what = "0(%rbp, %rdx, 8)", .whatSize = DataSize::Qword }, .type = InstrType::Push }, Section::Main);
+	stackSize++;
+}
+
+void codegen::binary(Node::Expr *expr) { // kk
 	auto binary = static_cast<BinaryExpr *>(expr);
 	bool isAdditive = (binary->op[0] == '+' || binary->op[0] == '-');
 

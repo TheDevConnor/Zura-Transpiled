@@ -1,13 +1,4 @@
-const add := fn (a: int, b: int) int {
-   have x: int = a + b;
-   return if (x == 12) {
-      7;
-   } else {
-      0;
-   };
-};
-
-const main := fn () int {
-   have res: int = add(7, 5);
-   return res;
+const fib := fn (n: int) int {
+   have arr: []int = [1,2,3,4,5];
+   return arr[3];
 };

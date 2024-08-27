@@ -37,6 +37,7 @@ void FlagConfig::print(int argc, char **argv) {
     
     // Messages array will be built at runtime
     std::string version_message = "Zura Lang " + ZuraVersion;
+    // TODO: make this colorful and nice to look at
     std::string messages[] = {
         version_message.c_str(),
         "Zura uses a license under GPL-3.0\nYou can find the license "

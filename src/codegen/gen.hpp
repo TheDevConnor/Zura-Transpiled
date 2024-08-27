@@ -53,6 +53,8 @@ void print(Node::Stmt *stmt);
 void expr(Node::Stmt *stmt);
 void _return(Node::Stmt *stmt);
 
+void _arrayExpr(Node::Expr *expr);
+void arrayElem(Node::Expr *expr);
 void binary(Node::Expr *expr);
 void grouping(Node::Expr *expr);
 void unary(Node::Expr *expr);
@@ -84,7 +86,9 @@ inline bool isEntryPoint = false;
 inline size_t conditionalCount = 0;
 inline size_t stringCount = 0;
 inline size_t loopCount = 0;
-
+inline size_t arrayCount = 0;
+//                            idx    # ELEM
+inline std::vector<std::pair<size_t, size_t>> arrayCounts = {};
 void push(Instr instr, Section section = Section::Main);
 
 void pushCompAsExpr(); // assuming compexpr's will already do the "cmp" and "jmp", we will push 0x0 or 0x1 depending on the result
