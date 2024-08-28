@@ -1,4 +1,6 @@
-const main := fn () int {
-   have arr: []int = [1,2,3,4,5];
-   return 0;
+const main := fn () int { # Uh oh, typechecker error! This is a Connor problem lmao - MrEVandG (Soviet Pancakes)
+   have arr: []int = [85, 15, 76, 58, 17];
+   have arr2: []int = [53, 695, 54, 325, 96];
+   have x: int = arr[2] + arr2[1]; # 76 + 695 = 771
+   return x;
 };

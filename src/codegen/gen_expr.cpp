@@ -34,6 +34,8 @@ void codegen::_arrayExpr(Node::Expr *expr) {
            Section::Main);
       stackSize--;
     }
+    // Screw this guy
+    push(Instr{.var = SubInstr{ .lhs = "%rsp", .rhs = "$" + std::to_string(elementCount * 8) }, .type = InstrType::Sub}, Section::Main);
   }
   arrayCounts.push_back(std::pair<size_t, size_t>(arrayCount++, elementCount));
   // Array is initialized!
@@ -49,34 +51,26 @@ void codegen::_arrayExpr(Node::Expr *expr) {
 // TODO: !!!! SUPER IMPORTANT: MAKE THIS ACTUALLY WORK LMAO!!!!!!!!
 void codegen::arrayElem(Node::Expr *expr) {
   IndexExpr *realExpr = static_cast<IndexExpr *>(expr);
+  push(Instr{.var = Comment{.comment="Evaluate computed array expr (index expr)"}, .type = InstrType::Comment}, Section::Main);
+  push(Instr{.var = Comment{.comment="IndexExpr Step 1: Evaluate offset of array"}, .type = InstrType::Comment}, Section::Main);
+
   visitExpr(realExpr->lhs);
   push(Instr{.var = PopInstr{.where = "%rdx", .whereSize = DataSize::Qword},
              .type = InstrType::Pop},
        Section::Main);
   stackSize--;
-
-  // Evalute rhs (the index -> arr[idx])
+  // rdx = elementCount + alredyPushedCount
+  push(Instr{.var = Comment{.comment="IndexExpr Step 2: Evaluate computed expr (the index)"}, .type = InstrType::Comment}, Section::Main);
   visitExpr(realExpr->rhs);
-  push(Instr{.var = PopInstr{.where = "%rax", .whereSize = DataSize::Qword},
+  push(Instr{.var = PopInstr{.where = "%rbx", .whereSize = DataSize::Qword},
              .type = InstrType::Pop},
        Section::Main);
   stackSize--;
-  push(Instr{.var = AddInstr{.lhs = "%rdx", .rhs = "%rax"},
-             .type = InstrType::Add},
-       Section::Main);
-  push(Instr{.var = AddInstr{.lhs = "%rdx", .rhs = "$1"},
-             .type = InstrType::Add},
-       Section::Main);
-  push(Instr{.var = LinkerDirective{.value = "neg %rdx\n\t"},
-             .type = InstrType::Linker},
-       Section::Main);
-
-  // Do not account for stack size. It doesn't matter because stackSize is rsp
-  // and not rbp.
-  push(Instr{.var = PushInstr{.what = "0(%rbp, %rdx, 8)",
-                              .whatSize = DataSize::Qword},
-             .type = InstrType::Push},
-       Section::Main);
+  push(Instr{.var = Comment{.comment="IndexExpr Step 3: Do some nerd stuff for %rbp offset"}, .type = InstrType::Comment}, Section::Main);
+  push(Instr{.var = AddInstr { .lhs = "%rbx", .rhs = "%rdx" }, .type = InstrType::Add}, Section::Main);
+  push(Instr{.var = LinkerDirective{.value="neg %rbx\n\t"}, .type = InstrType::Linker}, Section::Main);
+  push(Instr{.var = Comment{.comment="IndexExpr Step 4: Evaluate offset from %rbp. NOTE: -8 is because arrays start at 0"}, .type = InstrType::Comment}, Section::Main);
+  push(Instr{.var = PushInstr{.what = "-8(%rbp, %rbx, 8)", .whatSize = DataSize::Qword}, .type = InstrType::Push}, Section::Main);
   stackSize++;
 }
 

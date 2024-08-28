@@ -61,9 +61,7 @@ void codegen::gen(Node::Stmt *stmt, bool isSaved, std::string output_filename,
             "# "
          << ZuraVersion
          << "\n"
-            "# What's New: Arrays!\n"
-            "# Help Needed! Bug with 'arr[0]' and 'arr[1]' where 0 and 1 are "
-            "returned instead of array elements\n";
+            "# What's New: Arrays! (They actually work now)\n";
     // Copying gcc and hoping something changes (it won't)
     // .file directive does not like non-c and non-cpp files but it might be
     // useful for something somewhere later
@@ -76,29 +74,32 @@ void codegen::gen(Node::Stmt *stmt, bool isSaved, std::string output_filename,
             "  pushq %rbp\n"
             "  movq %rsp, %rbp\n"
             "  call usr_main\n"
-            "  mov %rax, %rdi\n"
+            "  movq %rax, %rdi\n"
             "  movq $60, %rax\n"
             "  syscall\n"
-            "  movq %rbp, %rsp\n"
-            "  pop %rbp\n"
+            // Technically, `ret` not needed becuase func exits above but we pretend that it is
             "  ret\n"
             "  .cfi_endproc\n"
             ".size main, .-main\n";
     file << Stringifier::stringifyInstrs(text_section);
     file << "\n# zura functions\n";
     if (nativeFunctionsUsed[NativeASMFunc::strlen] == true) {
-      file << "\nnative_strlen:"
-              "\n  push  %rbx             ; save any registers that "
-              "\n  push  %rcx             ; we will trash in here"
-              "\n  mov   %rdi, %rbx       ; rbx = rdi"
+      file << ".type native_strlen, @function"
+              "\nnative_strlen:"
+              "\n  .cfi_startproc\n"
+              "\n  pushq  %rbx             ; save any registers that "
+              "\n  pushq  %rcx             ; we will trash in here"
+              "\n  movq   %rdi, %rbx       ; rbx = rdi"
               "\n  xor   %al, %al         ; look for NUL term (0x0)"
-              "\n  mov   %rcx, 0xffffffff ; the max string length is 4gb"
+              "\n  movq   %rcx, 0xffffffff ; the max string length is 4gb"
               "\n  repne scasb            ; while [rdi] != al && rcx > 0, rdi++"
               "\n  sub   %rdi, %rbx       ; length = end - start"
-              "\n  mov   %rdi, %rax       ; rax now holds our length"
-              "\n  pop   %rcx             ; restore the saved registers"
-              "\n  pop   %rbx"
-              "\n  ret\n";
+              "\n  movq   %rdi, %rax       ; rax now holds our length"
+              "\n  popq   %rcx             ; restore the saved registers"
+              "\n  popq   %rbx"
+              "\n  ret\n"
+              "\n  .cfi_endproc\n"
+              "\n.size native_strlen, .-native_strlen\n"; // haha stinky
     }
     file << "\n# non-main user functions" << std::endl;
     file << Stringifier::stringifyInstrs(head_section);
@@ -143,6 +144,8 @@ void codegen::gen(Node::Stmt *stmt, bool isSaved, std::string output_filename,
   }
 
   // delete the log files
+  // (they are only necessary when something actually goes wrong,
+  // and this code is only reached when we know it doesn't)
   std::string remove_log = "rm " + assembler_log + " " + linker_log;
   system(remove_log.c_str());
 }
