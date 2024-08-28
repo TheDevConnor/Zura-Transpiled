@@ -104,22 +104,21 @@ void codegen::gen(Node::Stmt *stmt, bool isSaved, std::string output_filename,
     file << Stringifier::stringifyInstrs(text_section);
     file << "\n# zura functions\n";
     if (nativeFunctionsUsed[NativeASMFunc::strlen] == true) {
-      file << ".type native_strlen, @function"
-              "\nnative_strlen:"
-              "\n  .cfi_startproc\n"
-              "\n  pushq  %rbx             ; save any registers that "
-              "\n  pushq  %rcx             ; we will trash in here"
-              "\n  movq   %rdi, %rbx       ; rbx = rdi"
-              "\n  xor   %al, %al         ; look for NUL term (0x0)"
-              "\n  movq   %rcx, 0xffffffff ; the max string length is 4gb"
-              "\n  repne scasb            ; while [rdi] != al && rcx > 0, rdi++"
-              "\n  sub   %rdi, %rbx       ; length = end - start"
-              "\n  movq   %rdi, %rax       ; rax now holds our length"
-              "\n  popq   %rcx             ; restore the saved registers"
-              "\n  popq   %rbx"
-              "\n  ret\n"
-              "\n  .cfi_endproc\n"
-              "\n.size native_strlen, .-native_strlen\n"; // haha stinky
+      file << ".type native_strlen, @function\n"
+              "native_strlen:\n"
+              "  pushq %rbp              # save base pointer\n"
+              "  movq %rsp, %rbp         # set base pointer\n"
+              "  movq %rdi, %rcx         # move string to rcx\n"
+              "  xorq %rax, %rax         # clear rax\n"
+              "  strlen_loop:\n"
+              "    cmpb $0, (%rcx, %rax) # compare byte at rcx + rax to 0\n"
+              "    je strlen_end         # if byte is 0, end\n"
+              "    incq %rax             # increment rax\n"
+              "    jmp strlen_loop # loop\n"
+              "  strlen_end:\n"
+              "  popq %rbp               # restore base pointer\n"
+              "  ret # return\n"
+              ".size native_strlen, .-native_strlen\n";
     }
     file << "\n# non-main user functions" << std::endl;
     file << Stringifier::stringifyInstrs(head_section);

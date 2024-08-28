@@ -423,9 +423,7 @@ void codegen::primary(Node::Expr *expr) {
          Section::Data);
 
     // Store the processed string
-    push(Instr{.var = DBInstr{.what = string->value + ", 00"},
-               .type = InstrType::Asciz}, // Asciz should automatically add a 00
-                                          // but we dont talk about that!
+    push(Instr{.var = AscizInstr{ .what = string->value}, .type = InstrType::Asciz},
          Section::Data);
 
     break;

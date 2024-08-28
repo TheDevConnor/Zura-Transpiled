@@ -105,6 +105,10 @@ struct LinkerDirective {
   std::string value; // This instruction is effectively pushing a string to the file.
 };
 
+struct AscizInstr {
+  std::string what;
+};
+
 enum class InstrType {
   Push,
   Pop,
@@ -163,7 +167,7 @@ struct Instr {
   std::variant<MovInstr, PushInstr, PopInstr, XorInstr, AddInstr, SubInstr,
                MulInstr, DivInstr, CmpInstr, SetInstr, Label, Syscall, Ret, 
                NegInstr, NotInstr, JumpInstr, Comment, DBInstr, CallInstr,
-              LinkerDirective>
+              LinkerDirective, AscizInstr>
       var;
   InstrType type;
   bool optimize = true;

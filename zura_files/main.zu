@@ -1,7 +1,4 @@
-const main := fn () int { 
-   have arr: []int = [85, 15, 76, 58, 17];
-   have arr2: []int = [53, 695, 54, 325, 96];
-   have x: int = arr[0]; # 85
-   have y: int = arr2[0]; # 53
-   return x + y; # 138
+const main := fn () int {
+  dis("Hello, World!\n");
+  return 0; 
 };
