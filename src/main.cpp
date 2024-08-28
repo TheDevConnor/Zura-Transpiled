@@ -92,7 +92,7 @@ void FlagConfig::runBuild(int argc, char **argv) {
                 }
 
                 const char *fileName = argv[2]; // ! important for linker dir later
-                const char *outputName = "a.out";
+                const char *outputName = "out";
                 bool saveFlag = false;
 
                 // Check for additional flags after 'build'
