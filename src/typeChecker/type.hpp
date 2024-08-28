@@ -35,6 +35,9 @@ public:
   // Template Table
   std::unordered_map<std::string, Node::Type *> template_table;
 
+  // Array content table
+  std::vector<Node::Type *> array_table;
+
   template <typename T, typename U>
   static void declare(std::unordered_map<T, U> &tables, std::string name,
                       U value, int line, int pos) {
@@ -112,4 +115,6 @@ void visitCall(Maps *map, Node::Expr *expr);
 void visitTernary(Maps *map, Node::Expr *expr);
 void visitMember(Maps *map, Node::Expr *expr);
 void visitAssign(Maps *map, Node::Expr *expr);
+void visitArray(Maps *map, Node::Expr *expr);
+void visitIndex(Maps *map, Node::Expr *expr);
 } // namespace TypeChecker

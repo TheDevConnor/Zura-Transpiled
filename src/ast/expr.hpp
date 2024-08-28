@@ -147,10 +147,12 @@ public:
 class ArrayExpr : public Node::Expr {
 public:
   int line, pos;
+  Node::Type *type;
   std::vector<Node::Expr *> elements;
 
-  ArrayExpr(int line, int pos, std::vector<Node::Expr *> elements)
-      : line(line), pos(pos), elements(elements) {
+  ArrayExpr(int line, int pos, Node::Type *type,
+            std::vector<Node::Expr *> elements)
+      : line(line), pos(pos), type(type), elements(elements) {
     kind = NodeKind::ND_ARRAY;
   }
 

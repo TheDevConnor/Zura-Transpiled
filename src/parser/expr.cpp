@@ -96,7 +96,7 @@ Node::Expr *Parser::array(PStruct *psr) {
   psr->expect(psr, TokenKind::RIGHT_BRACKET,
               "Expected a R_Bracket to end an array expr!");
 
-  return new ArrayExpr(line, column, elements);
+  return new ArrayExpr(line, column, nullptr, elements); 
 }
 
 Node::Expr *Parser::binary(PStruct *psr, Node::Expr *left, BindingPower bp) {
@@ -127,8 +127,6 @@ Node::Expr *Parser::binary(PStruct *psr, Node::Expr *left, BindingPower bp) {
 Node::Expr *Parser::index(PStruct *psr, Node::Expr *left, BindingPower bp) {
   auto line = psr->tks[psr->pos].line;
   auto column = psr->tks[psr->pos].column;
-
-  std::cout << "Parsing an index expression!" << std::endl;
 
   psr->expect(psr, TokenKind::LEFT_BRACKET,
               "Expected a L_Bracket to start an index expr!");

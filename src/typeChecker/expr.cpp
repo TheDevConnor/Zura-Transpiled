@@ -192,3 +192,59 @@ void TypeChecker::visitCall(Maps *map, Node::Expr *expr) {
 void TypeChecker::visitMember(Maps *map, Node::Expr *expr) {
   std::cout << "Not implemented yet" << std::endl;
 }
+
+void TypeChecker::visitArray(Maps *map, Node::Expr *expr) {
+  auto array = static_cast<ArrayExpr *>(expr);
+  for (auto &elem : array->elements) {
+    // push the type of the element into the array table
+    if (elem->kind == NodeKind::ND_NUMBER) {
+      auto number = static_cast<NumberExpr *>(elem);
+      map->array_table.push_back(new SymbolType("int"));
+    } else if (elem->kind == NodeKind::ND_STRING) {
+      map->array_table.push_back(new SymbolType("str"));
+    } else if (elem->kind == NodeKind::ND_BOOL) {
+      map->array_table.push_back(new SymbolType("bool"));
+    }
+
+    // check if the type of the element is the same as the previous element
+    if (map->array_table.size() > 1) {
+      if (type_to_string(map->array_table[0]) !=
+          type_to_string(map->array_table[map->array_table.size() - 1])) {
+        std::string msg =
+            "Array elements must be of the same type but got '" +
+            type_to_string(map->array_table[0]) + "' and '" +
+            type_to_string(map->array_table[map->array_table.size() - 1]) + "'";
+        handlerError(array->line, array->pos, msg, "", "Type Error");
+      }
+    }
+  }
+  return_type =
+      std::make_shared<SymbolType>("[]" + type_to_string(map->array_table[0]));
+  
+  // clear the array table
+  map->array_table.clear();
+}
+
+void TypeChecker::visitIndex(Maps *map, Node::Expr *expr) {
+  auto index = static_cast<IndexExpr *>(expr);
+  visitExpr(map, index->lhs);
+  auto array = return_type;
+  visitExpr(map, index->rhs);
+  auto idx = return_type;
+
+  if (type_to_string(idx.get()) != "int") {
+    std::string msg = "Array index must be of type 'int' but got '" +
+                      type_to_string(idx.get()) + "'";
+    handlerError(index->line, index->pos, msg, "", "Type Error");
+  }
+
+  if (type_to_string(array.get()).find("[]") == std::string::npos) {
+    std::string msg =
+        "Indexing requires the array to be of type '[]' but got '" +
+        type_to_string(array.get()) + "'";
+    handlerError(index->line, index->pos, msg, "", "Type Error");
+  }
+
+  return_type =
+      std::make_shared<SymbolType>(type_to_string(array.get()).substr(2));
+}

@@ -12,11 +12,31 @@
 bool codegen::execute_command(const std::string &command,
                               const std::string &log_file) {
   std::string command_with_error_logging = command + " 2> " + log_file;
-  int result = system(command_with_error_logging.c_str());
+  int result = std::system(command_with_error_logging.c_str());
+  // Read log file 
+  std::ifstream log(log_file);
+  std::string log_contents = "";
+  if (log.is_open()) {
+    std::string line;
+    bool first = true;
+    while (getline(log, line)) {
+      if (first) {
+        log_contents += line;
+        first = false;
+      } else {
+        log_contents += "\n\t" + line;
+      }
+    }
+  }
+  log.close();
+
+  // delete log file
+  std::remove(log_file.c_str());
+
   if (result != 0) {
     Lexer lexer;
     ErrorClass::error(0, 0, "Error executing command: " + command,
-                      "Check the log file: " + log_file, "Codegen Error",
+                      log_contents, "Codegen Error",
                       file_name, lexer, {}, false, false, true, false, false,
                       true);
     return false;
