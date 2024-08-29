@@ -81,7 +81,7 @@ void FlagConfig::runBuild(int argc, char **argv) {
     for (int i = 0; i < 4; i++) {
         if (buildConditions[i](argv[1])) {
             if (i == 3) { // clean
-                std::string remove = "rm *.asm";
+                std::string remove = "rm *.s *.o";
                 std::system(remove.c_str());
                 return;
             }

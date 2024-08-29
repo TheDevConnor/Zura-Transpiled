@@ -78,6 +78,14 @@ Node::Expr *Parser::_prefix(PStruct *psr) {
   return new PrefixExpr(line, column, right, op.value);
 }
 
+Node::Expr *Parser::_postfix(PStruct *psr, Node::Expr *left, BindingPower bp) {
+  auto line = psr->tks[psr->pos].line;
+  auto column = psr->tks[psr->pos].column;
+
+  auto op = psr->advance(psr);
+  return new PostfixExpr(line, column, left, op.value);
+}
+
 Node::Expr *Parser::array(PStruct *psr) {
   auto line = psr->tks[psr->pos].line;
   auto column = psr->tks[psr->pos].column;

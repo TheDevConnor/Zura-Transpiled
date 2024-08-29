@@ -97,6 +97,9 @@ void Parser::createMaps() {
 
       {TokenKind::LEFT_PAREN, parse_call},
 
+      {TokenKind::PLUS_PLUS, _postfix},
+      {TokenKind::MINUS_MINUS, _postfix},
+
       {TokenKind::DOT, _member},
       {TokenKind::RESOLUTION, resolution},
 

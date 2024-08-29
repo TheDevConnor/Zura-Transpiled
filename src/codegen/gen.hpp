@@ -73,7 +73,8 @@ enum class Section {
 };
 
 enum class NativeASMFunc {
-    strlen
+    strlen,
+    print,
 };
 
 inline std::vector<Instr> text_section = {};

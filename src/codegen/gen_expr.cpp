@@ -35,7 +35,10 @@ void codegen::_arrayExpr(Node::Expr *expr) {
       stackSize--;
     }
     // Screw this guy
-    push(Instr{.var = SubInstr{ .lhs = "%rsp", .rhs = "$" + std::to_string(elementCount * 8) }, .type = InstrType::Sub}, Section::Main);
+    push(Instr{.var = SubInstr{.lhs = "%rsp",
+                               .rhs = "$" + std::to_string(elementCount * 8)},
+               .type = InstrType::Sub},
+         Section::Main);
   }
   arrayCounts.push_back(std::pair<size_t, size_t>(arrayCount++, elementCount));
   // Array is initialized!
@@ -51,8 +54,14 @@ void codegen::_arrayExpr(Node::Expr *expr) {
 // TODO: !!!! SUPER IMPORTANT: MAKE THIS ACTUALLY WORK LMAO!!!!!!!!
 void codegen::arrayElem(Node::Expr *expr) {
   IndexExpr *realExpr = static_cast<IndexExpr *>(expr);
-  push(Instr{.var = Comment{.comment="Evaluate computed array expr (index expr)"}, .type = InstrType::Comment}, Section::Main);
-  push(Instr{.var = Comment{.comment="IndexExpr Step 1: Evaluate offset of array"}, .type = InstrType::Comment}, Section::Main);
+  push(Instr{.var = Comment{.comment =
+                                "Evaluate computed array expr (index expr)"},
+             .type = InstrType::Comment},
+       Section::Main);
+  push(Instr{.var = Comment{.comment =
+                                "IndexExpr Step 1: Evaluate offset of array"},
+             .type = InstrType::Comment},
+       Section::Main);
 
   visitExpr(realExpr->lhs);
   push(Instr{.var = PopInstr{.where = "%rdx", .whereSize = DataSize::Qword},
@@ -60,17 +69,40 @@ void codegen::arrayElem(Node::Expr *expr) {
        Section::Main);
   stackSize--;
   // rdx = elementCount + alredyPushedCount
-  push(Instr{.var = Comment{.comment="IndexExpr Step 2: Evaluate computed expr (the index)"}, .type = InstrType::Comment}, Section::Main);
+  push(
+      Instr{.var =
+                Comment{
+                    .comment =
+                        "IndexExpr Step 2: Evaluate computed expr (the index)"},
+            .type = InstrType::Comment},
+      Section::Main);
   visitExpr(realExpr->rhs);
   push(Instr{.var = PopInstr{.where = "%rbx", .whereSize = DataSize::Qword},
              .type = InstrType::Pop},
        Section::Main);
   stackSize--;
-  push(Instr{.var = Comment{.comment="IndexExpr Step 3: Do some nerd stuff for %rbp offset"}, .type = InstrType::Comment}, Section::Main);
-  push(Instr{.var = AddInstr { .lhs = "%rbx", .rhs = "%rdx" }, .type = InstrType::Add}, Section::Main);
-  push(Instr{.var = LinkerDirective{.value="neg %rbx\n\t"}, .type = InstrType::Linker}, Section::Main);
-  push(Instr{.var = Comment{.comment="IndexExpr Step 4: Evaluate offset from %rbp. NOTE: -8 is because arrays start at 0"}, .type = InstrType::Comment}, Section::Main);
-  push(Instr{.var = PushInstr{.what = "-8(%rbp, %rbx, 8)", .whatSize = DataSize::Qword}, .type = InstrType::Push}, Section::Main);
+  push(
+      Instr{.var =
+                Comment{
+                    .comment =
+                        "IndexExpr Step 3: Do some nerd stuff for %rbp offset"},
+            .type = InstrType::Comment},
+      Section::Main);
+  push(Instr{.var = AddInstr{.lhs = "%rbx", .rhs = "%rdx"},
+             .type = InstrType::Add},
+       Section::Main);
+  push(Instr{.var = LinkerDirective{.value = "neg %rbx\n\t"},
+             .type = InstrType::Linker},
+       Section::Main);
+  push(Instr{.var = Comment{.comment =
+                                "IndexExpr Step 4: Evaluate offset from %rbp. "
+                                "NOTE: -8 is because arrays start at 0"},
+             .type = InstrType::Comment},
+       Section::Main);
+  push(Instr{.var = PushInstr{.what = "-8(%rbp, %rbx, 8)",
+                              .whatSize = DataSize::Qword},
+             .type = InstrType::Push},
+       Section::Main);
   stackSize++;
 }
 
@@ -182,16 +214,15 @@ void codegen::binary(Node::Expr *expr) { // kk
                                            std::to_string(++conditionalCount)},
                  .type = InstrType::Jmp},
            Section::Main);
-      pushCompAsExpr();
-      break;
+    } else {
+      push(Instr{.var = JumpInstr{.op = JumpCondition::Less,
+                                  .label = "conditional" +
+                                           std::to_string(++conditionalCount)},
+                 .type = InstrType::Jmp},
+           Section::Main);
     }
-    push(Instr{.var = JumpInstr{.op = JumpCondition::Less,
-                                .label = "conditional" +
-                                         std::to_string(++conditionalCount)},
-               .type = InstrType::Jmp},
-         Section::Main);
     pushCompAsExpr();
-    break;
+    break; 
   case '=':
     if (binary->op[1] == '=') {
       push(Instr{.var = CmpInstr{.lhs = registerLhs, .rhs = registerRhs},
@@ -274,9 +305,23 @@ void codegen::unary(Node::Expr *expr) {
   visitExpr(unary->expr);
   switch (unary->op[0]) {
   case '-': // !NOTE: signed numbers while the rest of math system is unsigned
-    push(Instr{.var = PopInstr{.where = "%rax"}, .type = InstrType::Pop},
-         Section::Main);
-    stackSize--;
+    if (unary->op[1] == '-') {
+      // Pop the current value into rax
+      push(Instr{.var = PopInstr{.where = "%rax"}, .type = InstrType::Pop},
+           Section::Main);
+      stackSize--;
+
+      // Decrement rax by 1
+      push(Instr{.var = SubInstr{.lhs = "%rax", .rhs = "$0x1"},
+                 .type = InstrType::Sub},
+           Section::Main);
+
+      // Push the decremented value back onto the stack
+      push(Instr{.var = PushInstr{.what = "%rax"}, .type = InstrType::Push},
+           Section::Main);
+      stackSize++;
+      break;
+    }
     push(Instr{.var = NegInstr{.what = "%rax"}, .type = InstrType::Neg},
          Section::Main);
     break;
@@ -289,8 +334,7 @@ void codegen::unary(Node::Expr *expr) {
     break;
   case '+':
     if (unary->op[1] == '+') {
-      // TODO: Implement the "inc" instruction for this very purpose
-      // Pop the current value into rax
+      // pop the current value into rax
       push(Instr{.var = PopInstr{.where = "%rax"}, .type = InstrType::Pop},
            Section::Main);
       stackSize--;
@@ -304,8 +348,7 @@ void codegen::unary(Node::Expr *expr) {
       push(Instr{.var = PushInstr{.what = "%rax"}, .type = InstrType::Push},
            Section::Main);
       stackSize++;
-
-      break;
+      break; 
     }
   default:
     break;
@@ -423,14 +466,17 @@ void codegen::primary(Node::Expr *expr) {
          Section::Data);
 
     // Store the processed string
-    push(Instr{.var = AscizInstr{ .what = string->value}, .type = InstrType::Asciz},
+    push(Instr{.var = AscizInstr{.what = string->value},
+               .type = InstrType::Asciz},
          Section::Data);
 
     break;
   }
   case ND_BOOL: {
     auto boolean = static_cast<BoolExpr *>(expr);
-    push(Instr{.var = PushInstr{.what = "$" + std::string(1, boolean->value ? '1' : '0')},
+    push(Instr{.var = PushInstr{.what =
+                                    "$" +
+                                    std::string(1, boolean->value ? '1' : '0')},
                .type = InstrType::Push},
          Section::Main);
     stackSize++;
@@ -447,12 +493,12 @@ void codegen::assign(Node::Expr *expr) {
   auto assignee = static_cast<IdentExpr *>(assignExpr->assignee);
 
   if (stackTable.empty()) {
-	Lexer lexer;
+    Lexer lexer;
     ErrorClass::error(assignee->line, assignee->pos,
                       "Variable '" + assignee->name +
                           "' not predefined, cannot reassign",
-                      "", "Codegen Error", file_name, lexer, {}, false,
-                      false, true, false, false, true);
+                      "", "Codegen Error", file_name, lexer, {}, false, false,
+                      true, false, false, true);
   }
   visitExpr(assignExpr->rhs);
   int offset = (stackSize - stackTable.at(assignee->name)) - 1;

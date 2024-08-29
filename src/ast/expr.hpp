@@ -125,6 +125,28 @@ public:
   ~PrefixExpr() { delete expr; }
 };
 
+class PostfixExpr : public Node::Expr {
+public:
+  int line, pos;
+  Node::Expr *expr;
+  std::string op;
+
+  PostfixExpr(int line, int pos, Node::Expr *expr, std::string op)
+      : line(line), pos(pos), expr(expr), op(op) {
+    kind = NodeKind::ND_POSTFIX;
+  }
+
+  void debug(int ident = 0) const override {
+    Node::printIndent(ident);
+    std::cout << "PostfixExpr: \n";
+    expr->debug(ident + 1);
+    Node::printIndent(ident + 1);
+    std::cout << op << "\n";
+  }
+
+  ~PostfixExpr() { delete expr; }
+};
+
 class GroupExpr : public Node::Expr {
 public:
   int line, pos;

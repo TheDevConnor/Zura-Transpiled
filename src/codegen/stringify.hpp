@@ -96,11 +96,11 @@ public:
           case JumpCondition::NotGreater:
             keyword = "jng";
             break;
-          case JumpCondition::Less:
-            keyword = "jl";
+          case JumpCondition::Less: // TODO: This is a temporary fix, but i am switching the '<' and '<=' keywords becasue the '<' acts like '<=' and vice versa
+            keyword = "jle";
             break;
           case JumpCondition::LessEqual:
-            keyword = "jle";
+            keyword = "jl";
             break;
           case JumpCondition::NotLess:
             keyword = "jnl";

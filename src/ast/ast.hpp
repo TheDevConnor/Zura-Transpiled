@@ -14,6 +14,7 @@ enum NodeKind {
   ND_BINARY,
   ND_UNARY,
   ND_PREFIX,
+  ND_POSTFIX,
   ND_GROUP,
   ND_ARRAY,
   ND_INDEX,

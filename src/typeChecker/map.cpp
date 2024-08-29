@@ -43,6 +43,7 @@ std::vector<std::pair<NodeKind, TypeChecker::ExprNodeHandler>>
         {NodeKind::ND_ARRAY, visitArray},
         {NodeKind::ND_INDEX, visitIndex},
         {NodeKind::ND_PREFIX, visitUnary},
+        {NodeKind::ND_POSTFIX, visitUnary},
         {NodeKind::ND_BOOL, visitBool},
 };
 
