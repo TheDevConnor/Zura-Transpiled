@@ -258,15 +258,6 @@ void codegen::_return(Node::Stmt *stmt) {
   push(Instr{.var = Ret{}, .type = InstrType::Ret}, Section::Main);
 }
 
-/*
-        zura loop syntax
-        loop (condition) : (optional condition) {
-                code
-
-                if no optional condition, continue;
-                iterate at the end of the block
-        }
-*/
 void codegen::whileLoop(Node::Stmt *stmt) {
   auto whileLoop = static_cast<WhileStmt *>(stmt);
 
@@ -292,6 +283,50 @@ void codegen::whileLoop(Node::Stmt *stmt) {
   // Loop body is over, execute optional
   if (whileLoop->optional != nullptr) {
 	visitExpr(whileLoop->optional);
+  }
+  push(Instr{.var = JumpInstr { .op = JumpCondition::Unconditioned, .label = preLoopLabel }, .type = InstrType::Jmp }, Section::Main);
+
+  push(Instr{.var = Label { .name = postLoopLabel }, .type = InstrType::Label }, Section::Main);
+  conditionalCount++;
+}
+
+void codegen::forLoop(Node::Stmt *stmt) {
+  auto forLoop = static_cast<ForStmt *>(stmt);
+
+  std::string preLoopLabel = "pre_loop" + std::to_string(loopCount);
+  std::string postLoopLabel = "post_loop" + std::to_string(loopCount++);
+
+  push(Instr{.var = Comment{.comment = "for loop"},
+			 .type = InstrType::Comment},
+	   Section::Main);
+  
+  // declare the variable
+  auto assign = static_cast<AssignmentExpr *>(forLoop->forLoop);
+  auto assignee = static_cast<IdentExpr *>(assign->assignee);
+  push(Instr{.var = Comment{.comment = "define variable '" + assignee->name + "'"},
+			 .type = InstrType::Comment},
+	   Section::Main);
+  push(Instr{.var = PushInstr{.what = "$0x0"}, .type = InstrType::Push}, Section::Main);
+  stackSize++;
+  stackTable.insert({assignee->name, stackSize});
+  visitExpr(assign);
+
+  // evalute condition once before in main func
+  push(Instr{.var = Label { .name = preLoopLabel }, .type = InstrType::Label}, Section::Main);
+  visitExpr(forLoop->condition);
+  // result in 0x0 or 0x1 on stack
+  push(Instr{.var = PopInstr{.where="%rcx", .whereSize = DataSize::Qword}, .type = InstrType::Pop}, Section::Main);
+  stackSize--;
+  // Result of condition in rcx
+  push(Instr{.var = LinkerDirective{.value="test %rcx, %rcx\n\t"}, .type = InstrType::Linker}, Section::Main);
+  // Condition failed already? That's too sad. Ignore the rest of the loop!
+  push(Instr{.var = JumpInstr { .op = JumpCondition::Zero, .label = postLoopLabel }, .type = InstrType::Jmp }, Section::Main);
+  
+  // Condition passed, start loop body
+  visitStmt(forLoop->block);
+  // Loop body is over, execute optional
+  if (forLoop->optional != nullptr) { 
+  	visitExpr(forLoop->optional);
   }
   push(Instr{.var = JumpInstr { .op = JumpCondition::Unconditioned, .label = preLoopLabel }, .type = InstrType::Jmp }, Section::Main);
 

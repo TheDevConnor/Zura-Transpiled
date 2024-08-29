@@ -30,9 +30,6 @@ bool codegen::execute_command(const std::string &command,
   }
   log.close();
 
-  // delete log file
-  std::remove(log_file.c_str());
-
   if (result != 0) {
     Lexer lexer;
     ErrorClass::error(0, 0, "Error executing command: " + command,

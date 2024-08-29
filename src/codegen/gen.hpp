@@ -48,6 +48,7 @@ void funcDecl(Node::Stmt *stmt);
 void varDecl(Node::Stmt *stmt);
 void block(Node::Stmt *stmt);
 void whileLoop(Node::Stmt *stmt);
+void forLoop(Node::Stmt *stmt);
 void ifStmt(Node::Stmt *stmt);
 void print(Node::Stmt *stmt);
 void expr(Node::Stmt *stmt);

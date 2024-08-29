@@ -1,20 +1,13 @@
 const main := fn () int {
-  have i: int = 0;
-  loop (i <= 1)  {
-    dis("loop 1\n");
-    i = i + 1; # weird bug if we do i++ here we get a infinite loop
-  }
-
-  i = 0;
-  loop (i < 10) : (i = i + 1) { # but in the optional we are fine
-    dis("loop 2\n");
-  }
-
-  i = 0;
-  loop (i < 4) {
-    dis("loop 3\n");
-    i = i + 1;
+  loop (i = 0; i < 10) : (i++) {
+    if (i % 15 == 0) 
+      dis("FizzBuzz\n");
+    if (i % 3 == 0) 
+      dis("Fizz\n");
+    if (i % 5 == 0)
+      dis("Buzz\n");
+    else 
+      dis("i\n");
   } 
-
   return 0; 
 };
