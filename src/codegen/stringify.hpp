@@ -76,7 +76,8 @@ public:
         return "\n" + instr.name + ":\n\t";
       }
       std::string operator()(CmpInstr instr) const {
-        return "cmp " + instr.lhs + ", " + instr.rhs + "\n\t";
+        // For some GODFORSAKEN reason, AT&T syntax switches `cmp` instruction operands, too!
+        return "cmp " + instr.rhs + ", " + instr.lhs + "\n\t";
       }
       std::string operator()(JumpInstr instr) const {
         std::string keyword = {};
@@ -96,10 +97,10 @@ public:
           case JumpCondition::NotGreater:
             keyword = "jng";
             break;
-          case JumpCondition::Less: // TODO: This is a temporary fix, but i am switching the '<' and '<=' keywords becasue the '<' acts like '<=' and vice versa
+          case JumpCondition::LessEqual:
             keyword = "jle";
             break;
-          case JumpCondition::LessEqual:
+          case JumpCondition::Less:
             keyword = "jl";
             break;
           case JumpCondition::NotLess:

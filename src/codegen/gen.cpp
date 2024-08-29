@@ -81,12 +81,15 @@ void codegen::gen(Node::Stmt *stmt, bool isSaved, std::string output_filename,
             "# "
          << ZuraVersion
          << "\n"
-            "# What's New: Arrays! (They actually work now)\n";
+            "# What's New: Loops (While/For)\n";
     // Copying gcc and hoping something changes (it won't)
     // .file directive does not like non-c and non-cpp files but it might be
     // useful for something somewhere later
-    file << "#.file \"" << static_cast<ProgramStmt *>(stmt)->inputPath << "\"\n"
-         << ".text\n"
+    file << "#.file \"" << static_cast<ProgramStmt *>(stmt)->inputPath << "\"\n";
+    file << "\n# data section for string and stuff"
+            "\n.data\n";
+    file << Stringifier::stringifyInstrs(data_section);
+    file << ".text\n"
             ".globl main\n"
             ".type main, @function\n"
             "main:\n"
@@ -122,9 +125,6 @@ void codegen::gen(Node::Stmt *stmt, bool isSaved, std::string output_filename,
     }
     file << "\n# non-main user functions" << std::endl;
     file << Stringifier::stringifyInstrs(head_section);
-    file << "\n# data section for string and stuff"
-            "\n.data\n";
-    file << Stringifier::stringifyInstrs(data_section);
     file.close();
   } else {
     Lexer lexer;

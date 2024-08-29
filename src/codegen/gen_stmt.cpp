@@ -39,12 +39,7 @@ void codegen::funcDecl(Node::Stmt *stmt) {
        Section::Main);
   push(Instr{.var = Label{.name = funcName}, .type = InstrType::Label},
        Section::Main);
-
-  // push arguments to the stack
-  for (auto &args : funcDecl->params) {
-    stackTable.insert({args.first, stackSize});
-  }
-
+  // Pre-body function stuff
   push(Instr{.var = LinkerDirective{.value = ".cfi_startproc\n\t"},
              .type = InstrType::Linker},
        Section::Main);
@@ -58,6 +53,11 @@ void codegen::funcDecl(Node::Stmt *stmt) {
                              .srcSize = DataSize::Qword},
              .type = InstrType::Mov},
        Section::Main);
+  // push arguments to the stack
+  for (auto &args : funcDecl->params) {
+    stackTable.insert({args.first, stackSize});
+  }
+
   visitStmt(funcDecl->block);
   stackSize = preStackSize;
 
@@ -270,62 +270,31 @@ void codegen::_return(Node::Stmt *stmt) {
 void codegen::whileLoop(Node::Stmt *stmt) {
   auto whileLoop = static_cast<WhileStmt *>(stmt);
 
+  std::string preLoopLabel = "pre_loop" + std::to_string(loopCount);
+  std::string postLoopLabel = "post_loop" + std::to_string(loopCount++);
+
   push(Instr{.var = Comment{.comment = "while loop"},
              .type = InstrType::Comment},
        Section::Main);
-
-  std::string preConditionalCount = std::to_string(++conditionalCount);
-  std::string postConditionalCount = std::to_string(++conditionalCount);
-
-  push(Instr{.var = Label{.name = "conditional" + preConditionalCount},
-             .type = InstrType::Label},
-       Section::Main);
-
+  // evalute condition once before in main func
+  push(Instr{.var = Label { .name = preLoopLabel }, .type = InstrType::Label}, Section::Main);
   visitExpr(whileLoop->condition);
-
-  push(Instr{.var = PopInstr{.where = "%rcx"}, .type = InstrType::Pop},
-       Section::Main);
+  // result in 0x0 or 0x1 on stack
+  push(Instr{.var = PopInstr{.where="%rcx", .whereSize = DataSize::Qword}, .type = InstrType::Pop}, Section::Main);
   stackSize--;
-
-  push(Instr{.var = LinkerDirective{.value = "test %rcx, %rcx\n\t"},
-             .type = InstrType::Cmp},
-       Section::Main);
-  push(Instr{.var = JumpInstr{.op = JumpCondition::NotZero,
-                              .label = "conditional" + postConditionalCount},
-             .type = InstrType::Jmp},
-       Section::Main);
-
-  // Evaluate the block
+  // Result of condition in rcx
+  push(Instr{.var = LinkerDirective{.value="test %rcx, %rcx\n\t"}, .type = InstrType::Linker}, Section::Main);
+  // Condition failed already? That's too sad. Ignore the rest of the loop!
+  push(Instr{.var = JumpInstr { .op = JumpCondition::Zero, .label = postLoopLabel }, .type = InstrType::Jmp }, Section::Main);
+  
+  // Condition passed, start loop body
   visitStmt(whileLoop->block);
-
-  // check if we have an optional condition
+  // Loop body is over, execute optional
   if (whileLoop->optional != nullptr) {
-    visitExpr(whileLoop->optional);
-    push(Instr{.var = PopInstr{.where = "%rcx"}, .type = InstrType::Pop},
-         Section::Main);
-    stackSize--;
-
-    push(Instr{.var = LinkerDirective{.value = "test %rcx, %rcx\n\t"},
-               .type = InstrType::Cmp},
-         Section::Main);
-    push(Instr{.var = JumpInstr{.op = JumpCondition::Zero,
-                                .label = "conditional" + postConditionalCount},
-               .type = InstrType::Jmp},
-         Section::Main);
+	visitExpr(whileLoop->optional);
   }
+  push(Instr{.var = JumpInstr { .op = JumpCondition::Unconditioned, .label = preLoopLabel }, .type = InstrType::Jmp }, Section::Main);
 
-  push(Instr{.var = LinkerDirective{.value = "jmp conditional" +
-											 preConditionalCount + "\n\t"},
-			 .type = InstrType::Linker},
-	   Section::Main);
-  push(Instr{.var = JumpInstr{.op = JumpCondition::Unconditioned,
-                              .label = "conditional" + preConditionalCount},
-             .type = InstrType::Jmp},
-       Section::Main);
-
-  push(Instr{.var = Label{.name = "conditional" + postConditionalCount},
-             .type = InstrType::Label},
-       Section::Main);
-
-  conditionalCount++; 
+  push(Instr{.var = Label { .name = postLoopLabel }, .type = InstrType::Label }, Section::Main);
+  conditionalCount++;
 }
