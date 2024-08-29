@@ -510,7 +510,7 @@ void codegen::assign(Node::Expr *expr) {
     stackSize--;
     return;
   }
-  push(Instr{.var = PopInstr{.where = std::to_string(offset * 8) + "(rsp)"},
+  push(Instr{.var = PopInstr{.where = std::to_string(offset * 8) + "(%rsp)"},
              .type = InstrType::Pop},
        Section::Main);
   stackSize--;

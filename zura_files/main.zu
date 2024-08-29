@@ -6,19 +6,15 @@ const main := fn () int {
   }
 
   i = 0;
-  loop (i < 1) : (i = i + 1) { # but in the optional we are fine
+  loop (i < 10) : (i = i + 1) { # but in the optional we are fine
     dis("loop 2\n");
   }
 
-  # if we try and do 
-  # i = 0;
-  # here we will get a codegen error
-  # [0::0] (Fatal) (zura_files/main.zu)
-  # ↳ Codegen Error: Error executing command: gcc -c main.s -o main.o
-  # ↳ main.s: Assembler messages:
-  #       main.s:106: Error: junk `(rsp)' after expression
-  #       main.s:106: Error: junk `(rsp)' after expression
-  # I have no idea why this happens
+  i = 0;
+  loop (i < 4) {
+    dis("loop 3\n");
+    i = i + 1;
+  } 
 
   return 0; 
 };
