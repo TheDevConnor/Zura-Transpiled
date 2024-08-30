@@ -1,13 +1,5 @@
 const main := fn () int {
-  loop (i = 0; i < 10) : (i++) {
-    if (i % 15 == 0) 
-      dis("FizzBuzz\n");
-    if (i % 3 == 0) 
-      dis("Fizz\n");
-    if (i % 5 == 0)
-      dis("Buzz\n");
-    else 
-      dis("i\n");
-  } 
-  return 0; 
+  have a: []int = [42, 43, 44, 45];
+  have b: []int = [32, 34, 57, 23];
+  return a[3] + b[2]; # 45 + 57 = 102
 };

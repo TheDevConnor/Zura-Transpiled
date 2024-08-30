@@ -97,6 +97,8 @@ void codegen::block(Node::Stmt *stmt) {
     visitStmt(s);
   }
   // If difference is zero, it will skip!
+  if (howBadIsRbp > 0)
+    push(Instr{.var=AddInstr{.lhs="%rbp",.rhs="$"+std::to_string(howBadIsRbp)},.type=InstrType::Add},Section::Main);
   if (stackSizesForScopes.size() < scopeCount)
     return; // A function must have returned, meaning rsp and stuff will already
             // be handled
@@ -108,6 +110,7 @@ void codegen::block(Node::Stmt *stmt) {
          Section::Main);
 
     stackSize = stackSizesForScopes.at(stackSizesForScopes.size() - 1);
+    stackSizesForScopes.pop_back(); // we dont need it anymore
   }
 }
 
@@ -224,7 +227,10 @@ void codegen::_return(Node::Stmt *stmt) {
                .type = InstrType::Pop},
          Section::Main);
     stackSize--;
-    stackSizesForScopes.pop_back();
+
+    if (howBadIsRbp > 0)
+      push(Instr{.var=AddInstr{.lhs="%rbp",.rhs="$"+std::to_string(howBadIsRbp)},.type=InstrType::Add},Section::Main);
+  
     push(Instr{.var = MovInstr{.dest = "%rsp",
                                .src = "%rbp",
                                .destSize = DataSize::Qword,
@@ -244,8 +250,13 @@ void codegen::_return(Node::Stmt *stmt) {
              .type = InstrType::Pop},
        Section::Main);
   stackSize--;
-  stackSizesForScopes.pop_back();
-  push(Instr{.var = MovInstr{.dest = "%rsp",
+  // let the stack and stuff handle that out
+  // also, add back the value of "how bad is rbp"
+
+  if (howBadIsRbp > 0)
+    push(Instr{.var=AddInstr{.lhs="%rbp",.rhs="$"+std::to_string(howBadIsRbp)},.type=InstrType::Add},Section::Main);
+  
+    push(Instr{.var = MovInstr{.dest = "%rsp",
                              .src = "%rbp",
                              .destSize = DataSize::Qword,
                              .srcSize = DataSize::Qword},

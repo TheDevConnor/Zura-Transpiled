@@ -21,6 +21,12 @@ void codegen::_arrayExpr(Node::Expr *expr) {
     elementsAlreadyPushed += arrayCounts.at(i).second;
   }
   if (elementCount > 0) {
+    // Screw this guy
+    push(Instr{.var = SubInstr{.lhs = "%rbp",
+                               .rhs = "$" + std::to_string(elementCount * 8)},
+               .type = InstrType::Sub},
+         Section::Main);
+    howBadIsRbp += elementCount * 8;
     for (int i = 0; i < elementCount; i++) {
       // Evaluate the argument
       visitExpr(arr->elements.at(i));
@@ -34,11 +40,6 @@ void codegen::_arrayExpr(Node::Expr *expr) {
            Section::Main);
       stackSize--;
     }
-    // Screw this guy
-    push(Instr{.var = SubInstr{.lhs = "%rsp",
-                               .rhs = "$" + std::to_string(elementCount * 8)},
-               .type = InstrType::Sub},
-         Section::Main);
   }
   arrayCounts.push_back(std::pair<size_t, size_t>(arrayCount++, elementCount));
   // Array is initialized!
@@ -51,7 +52,6 @@ void codegen::_arrayExpr(Node::Expr *expr) {
   stackSize++;
 }
 
-// TODO: !!!! SUPER IMPORTANT: MAKE THIS ACTUALLY WORK LMAO!!!!!!!!
 void codegen::arrayElem(Node::Expr *expr) {
   IndexExpr *realExpr = static_cast<IndexExpr *>(expr);
   push(Instr{.var = Comment{.comment =
@@ -114,12 +114,12 @@ void codegen::binary(Node::Expr *expr) { // kk
   std::string registerLhs = isAdditive ? "%rbx" : "%rax";
   std::string registerRhs = isAdditive ? "%rdx" : "%rcx";
   visitExpr(binary->lhs);
-  push(Instr{.var = PopInstr{.where = registerLhs}, .type = InstrType::Pop},
-       Section::Main);
-  stackSize--;
   visitExpr(binary->rhs);
   push(Instr{.var = PopInstr{.where = registerRhs}, .type = InstrType::Pop},
        Section::Main);
+  push(Instr{.var = PopInstr{.where = registerLhs}, .type = InstrType::Pop},
+       Section::Main);
+  stackSize--;
   stackSize--;
 
   switch (binary->op[0]) {
