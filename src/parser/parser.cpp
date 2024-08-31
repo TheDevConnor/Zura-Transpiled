@@ -10,9 +10,13 @@ Lexer lexer;
 
 Parser::PStruct *Parser::setupParser(PStruct *psr, Lexer *lex,
                                      Lexer::Token tk, std::string current_file) {
-  while (tk.kind != TokenKind::END_OF_FILE) {
+  while (true) {
     psr->tks.push_back(tk);
     tk = lex->scanToken();
+    if (tk.kind == TokenKind::END_OF_FILE) {
+      psr->tks.push_back(tk);
+      break;
+    };
   }
 
   std::unordered_map<std::string, std::string> errors = {};
@@ -33,8 +37,11 @@ Node::Stmt *Parser::parse(const char *source, std::string file) {
   createTypeMaps();
   auto stmts = std::vector<Node::Stmt *>();
 
-  while (vect_tk->hadTokens(vect_tk))
+  while (vect_tk->hadTokens(vect_tk)) {
     stmts.push_back(parseStmt(vect_tk, ""));
+    if (vect_tk->hadTokens(vect_tk))
+      if (vect_tk->tks.at(vect_tk->pos).kind == TokenKind::END_OF_FILE) break;
+  }
 
   // Copy the tokens to the ast node
   node.tks = vect_tk->tks;

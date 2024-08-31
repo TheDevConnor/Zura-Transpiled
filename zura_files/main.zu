@@ -1,5 +1,22 @@
 const main := fn () int {
-  have a: []int = [42, 43, 44, 45];
-  have b: []int = [32, 34, 57, 23];
-  return a[3] + b[2]; # 45 + 57 = 102
+  have total: int = 10;
+
+  have n1: int = 0;
+  have n2: int = 1;
+  have final: int = 0;
+  have count: int = 1;
+
+  if (total <= 1) {
+    return total;
+  }
+
+  # else loop
+  loop (count < total) {
+    final = n1 + n2;
+    n1 = n2;
+    n2 = final;
+    count = count + 1;
+  }
+
+  return final;
 };

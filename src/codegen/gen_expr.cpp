@@ -505,13 +505,13 @@ void codegen::assign(Node::Expr *expr) {
 
   if (offset == 0) {
     push(Instr{.var = PopInstr{.where = "(%rsp)", .whereSize = DataSize::Qword},
-               .type = InstrType::Pop},
+               .type = InstrType::Pop, .optimize = false},
          Section::Main);
     stackSize--;
     return;
   }
   push(Instr{.var = PopInstr{.where = std::to_string(offset * 8) + "(%rsp)"},
-             .type = InstrType::Pop},
+             .type = InstrType::Pop, .optimize = false},
        Section::Main);
   stackSize--;
 }

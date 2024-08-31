@@ -218,6 +218,10 @@ public:
     Instr prev = {.type = InstrType::NONE};
 
     for (Instr &instr : input) {
+      if (!prev.optimize || !instr.optimize) {
+        output.push_back(instr);
+        continue;
+      }
       if (prev.type == opposites.at(instr.type)) {
         if (instr.type == InstrType::Pop) {
           // previous was push, so we could simplify to mov

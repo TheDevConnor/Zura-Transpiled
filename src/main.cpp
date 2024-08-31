@@ -120,10 +120,8 @@ void FlagConfig::runBuild(int argc, char **argv) {
 
 int main(int argc, char **argv) {
     // TODO: Ensure this file can be stored somewhere actually secure, like system files or in a .zurarc file
-    // full path because screw you
 
     get_version("version.txt");  // Update ZuraVersion
-
     auto startTime = std::chrono::high_resolution_clock::now();
 
     FlagConfig::print(argc, argv);
