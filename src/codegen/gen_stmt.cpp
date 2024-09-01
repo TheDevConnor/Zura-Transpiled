@@ -57,7 +57,7 @@ void codegen::funcDecl(Node::Stmt *stmt) {
        Section::Main);
   // push arguments to the stack
   for (auto &args : funcDecl->params) {
-    stackTable.insert({args.first, stackSize});
+    stackTable.insert({args.first, std::pair<size_t, Node::Type *>(stackSize, args.second)});
   }
 
   visitStmt(funcDecl->block);
@@ -88,7 +88,8 @@ void codegen::varDecl(Node::Stmt *stmt) {
   visitExpr(static_cast<ExprStmt *>(varDecl->expr)->expr);
 
   // add variable to the stack
-  stackTable.insert({varDecl->name, stackSize});
+  
+  stackTable.insert({varDecl->name, std::pair<size_t, Node::Type *>(stackSize, varDecl->type)});
 }
 
 void codegen::block(Node::Stmt *stmt) {
@@ -128,6 +129,7 @@ void codegen::print(Node::Stmt *stmt) {
   for (auto &arg : print->args) {
     // visitExpr(arg);
     switch (arg->kind) {
+    // Convert int literals to string literals for easierness
     case NodeKind::ND_NUMBER: {
       auto number = static_cast<NumberExpr *>(arg);
       std::string label = "num" + std::to_string(stringCount++);
@@ -153,6 +155,29 @@ void codegen::print(Node::Stmt *stmt) {
 
       break;
     }
+    case NodeKind::ND_IDENT: {
+      IdentExpr *expr = static_cast<IdentExpr *>(arg);
+      if (!stackTable.contains(expr->name)) {
+        std::cerr << "Print identifier: identifier doesn't exist" << std::endl;
+        exit(1);
+      }
+      SymbolType *type = static_cast<SymbolType *>(stackTable.at(expr->name).second);
+      if (type->name == "int") {
+        nativeFunctionsUsed[NativeASMFunc::printrax] = true;
+        visitExpr(expr);
+        push(Instr{.var=PopInstr{.where="%rax",.whereSize=DataSize::Qword},.type=InstrType::Pop},Section::Main);
+        stackSize--;
+        push(Instr{.var=CallInstr{.name="native_printrax"},.type=InstrType::Call},Section::Main);
+        continue;
+      } else if (type->name == "str") {
+        visitExpr(expr);
+      } else {
+        std::cerr << (int)type->kind << std::endl;
+        exit(1);
+      }
+      break;
+    }
+    case ND_STRING:
     default:
       visitExpr(arg);
       break;
@@ -374,7 +399,7 @@ void codegen::forLoop(Node::Stmt *stmt) {
   push(Instr{.var = PushInstr{.what = "$0x0"}, .type = InstrType::Push},
        Section::Main);
   stackSize++;
-  stackTable.insert({assignee->name, stackSize});
+  stackTable.insert({assignee->name, std::pair<size_t, Node::Type *>(stackSize, stackTable.at(assignee->name).second)});
   visitExpr(assign);
 
   // evalute condition once before in main func

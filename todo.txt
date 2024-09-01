@@ -4,4 +4,7 @@ Add in array push and pop
 Add in structs and enums
 Add in imports
 
+! IMPORTANT !
+'gcc' does not like outputted assembly with native_printrax in the program
+
 if any bugs are found add it in here :)

@@ -86,7 +86,19 @@ void codegen::gen(Node::Stmt *stmt, bool isSaved, std::string output_filename,
     file << "\n# data section for string and stuff"
             "\n.data\n";
     file << Stringifier::stringifyInstrs(data_section);
-    file << ".text\n"
+    if (nativeFunctionsUsed[NativeASMFunc::printrax] == true) {
+      file << "\n.globl digitspace"
+              "\n.globl digitspacepos"
+              "\n.type digitspace, @object"
+              "\n.type digitspacepos, @object"
+              "\n.align 8"
+              "\ndigitspace: .quad 100"
+              "\n.align 8"
+              "\ndigitspacepos: .quad 8\n" 
+              "\n.size digitspace, 8"
+              "\n.size digitspacepos, 8\n";
+    }
+    file << "\n.text\n"
             ".globl main\n"
             ".type main, @function\n"
             "main:\n"
@@ -120,6 +132,44 @@ void codegen::gen(Node::Stmt *stmt, bool isSaved, std::string output_filename,
               "  ret # return\n"
               ".size native_strlen, .-native_strlen\n";
     }
+    if (nativeFunctionsUsed[NativeASMFunc::printrax] == true) { 
+      file << "\n.type native_printrax, @function\n"
+              "\nnative_printrax:"
+              "\n  .cfi_startproc"
+              "\n  movq $digitspace, %rcx"
+              "\n  movq $10, %rbx"
+              "\n  movq %rbx, (%rcx)"
+              "\n  inc %rcx"
+              "\n  movq %rcx, ($digitspacepos)"
+              "\n_printRAXLoop:"
+              "\n  movq $0, %rdx"
+              "\n  movq $10, %rbx"
+              "\n  div %rbx"
+              "\n  pushq %rax"
+              "\n  add $48, %rdx"
+              "\n  lea ($digitspacepos), %rcx"
+              "\n  movb %dl, (%rcx)"
+              "\n  inc %rcx"
+              "\n  movq %rcx, ($digitspacepos)"
+              "\n  popq %rax"
+              "\n  test %rax, %rax"
+              "\n  jnz _printRAXLoop"
+              "\n_printRAXLoop2:"
+              "\n  lea ($digitspacepos), %rcx"
+              "\n  movq $1, %rax"
+              "\n  movq $1, %rdi"
+              "\n  movq %rcx, %rsi"
+              "\n  movq $1, %rdx"
+              "\n  syscall"
+              "\n  lea ($digitspacepos), %rcx"
+              "\n  dec %rcx"
+              "\n  mov %rcx, ($digitspacepos)"
+              "\n  cmp %rcx, ($digitspace)"
+              "\n  jge _printRAXLoop2"
+              "\n  ret"
+              "\n  .cfi_endproc"
+              "\n  .size native_printrax, .-native_printrax\n";
+    }
     file << "\n# non-main user functions" << std::endl;
     file << Stringifier::stringifyInstrs(head_section);
     file.close();
@@ -141,27 +191,20 @@ void codegen::gen(Node::Stmt *stmt, bool isSaved, std::string output_filename,
 
   // Compile, but do not link main.o
   std::string assembler =
-      "gcc -c " + output_filename + ".s -o " + output_filename + ".o";
+      "gcc -nostdlib -e main " + output_filename + ".s -o " + output_filename;
   std::string assembler_log = output_filename + "_assembler.log";
   if (!execute_command(assembler, assembler_log))
     return;
 
-  // Link with entry point "main"
-  std::string linker =
-      "ld " + output_filename + ".o -e main -o " + output_filename;
-  std::string linker_log = output_filename + "_linker.log";
-  if (!execute_command(linker, linker_log))
-    return;
-
   if (!isSaved) {
     std::string remove =
-        "rm " + output_filename + ".s " + output_filename + ".o";
+        "rm " + output_filename + ".s " + output_filename;
     system(remove.c_str());
   }
 
   // delete the log files
   // (they are only necessary when something actually goes wrong,
   // and this code is only reached when we know it doesn't)
-  std::string remove_log = "rm " + assembler_log + " " + linker_log;
+  std::string remove_log = "rm " + assembler_log;
   system(remove_log.c_str());
 }

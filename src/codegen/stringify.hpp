@@ -51,6 +51,15 @@ public:
         ss << "mov" << dsToChar(instr.srcSize) << ' ' << instr.src << ", " << instr.dest << "\n\t";
         return ss.str();
       }
+      std::string operator()(LeaInstr instr) const {
+        if (instr.destSize != instr.srcSize) {
+          // Operands are different sizes...
+          // That shouldnt really be the case, though!
+        }
+        std::stringstream ss; // C++  is trash why did i quit zig
+        ss << "lea" << dsToChar(instr.srcSize) << ' ' << instr.src << ", " << instr.dest << "\n\t";
+        return ss.str();
+      }
       std::string operator()(PushInstr instr) const {
         return "push " + instr.what + "\n\t";
       }
@@ -148,6 +157,7 @@ public:
         return "# " + instr.comment + "\n\t";
       }
       std::string operator()(LinkerDirective instr) const { return instr.value; } // It is the responsibility of LinkerDirective to have its own formatting
+
     };
     return std::visit(InstrVisitor {}, instr.var);
   }
