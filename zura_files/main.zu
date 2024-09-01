@@ -1,19 +1,4 @@
 const main := fn () int {
-  have total: int = 14; # 13 will return 233, but 14 will return 10 
-                        #                 (What i call stack rolling!)
-  have n1: int = 0;
-  have n2: int = 1;
-  have final: int = 0;
-
-  if (total <= 1) {
-    return total;
-  }
-
-  loop (count = 1; count < total) : (count = count + 1) {
-    final = n1 + n2;
-    n1 = n2;
-    n2 = final;
-  }
-
-  return final;
+  dis("Number: ", 10, "\n");
+  return 0;
 };

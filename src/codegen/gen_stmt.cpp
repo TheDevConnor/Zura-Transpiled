@@ -1,5 +1,7 @@
 #include "gen.hpp"
 #include "optimize.hpp"
+#include <cstddef>
+#include <string>
 #include <sys/cdefs.h>
 
 void codegen::visitStmt(Node::Stmt *stmt) {
@@ -98,7 +100,10 @@ void codegen::block(Node::Stmt *stmt) {
   }
   // If difference is zero, it will skip!
   if (howBadIsRbp > 0)
-    push(Instr{.var=AddInstr{.lhs="%rbp",.rhs="$"+std::to_string(howBadIsRbp)},.type=InstrType::Add},Section::Main);
+    push(Instr{.var = AddInstr{.lhs = "%rbp",
+                               .rhs = "$" + std::to_string(howBadIsRbp)},
+               .type = InstrType::Add},
+         Section::Main);
   if (stackSizesForScopes.size() < scopeCount)
     return; // A function must have returned, meaning rsp and stuff will already
             // be handled
@@ -119,8 +124,39 @@ void codegen::print(Node::Stmt *stmt) {
 
   push(Instr{.var = Comment{.comment = "print stmt"}}, Section::Main);
   nativeFunctionsUsed[NativeASMFunc::strlen] = true;
+
   for (auto &arg : print->args) {
-    visitExpr(arg);
+    // visitExpr(arg);
+    switch (arg->kind) {
+    case NodeKind::ND_NUMBER: {
+      auto number = static_cast<NumberExpr *>(arg);
+      std::string label = "num" + std::to_string(stringCount++);
+
+      // Push the label onto the stack
+      push(Instr{.var = PushInstr{.what = '$' + label,
+                                  .whatSize = DataSize::Qword},
+                 .type = InstrType::Push},
+           Section::Main);
+      stackSize++;
+
+      // Define the label for the string
+      push(Instr{.var = Label{.name = label}, .type = InstrType::Label},
+           Section::Data);
+
+      // Store the processed string
+      push(Instr{.var =
+                     AscizInstr{.what = "\"" +
+                                        std::to_string(size_t(number->value)) +
+                                        "\""},
+                 .type = InstrType::Asciz},
+           Section::Data);
+
+      break;
+    }
+    default:
+      visitExpr(arg);
+      break;
+    }
     // assume type-checker worked properly and a string is passed in
     push(Instr{.var = PopInstr({.where = "%rsi", .whereSize = DataSize::Qword}),
                .type = InstrType::Pop},
@@ -229,8 +265,11 @@ void codegen::_return(Node::Stmt *stmt) {
     stackSize--;
 
     if (howBadIsRbp > 0)
-      push(Instr{.var=AddInstr{.lhs="%rbp",.rhs="$"+std::to_string(howBadIsRbp)},.type=InstrType::Add},Section::Main);
-  
+      push(Instr{.var = AddInstr{.lhs = "%rbp",
+                                 .rhs = "$" + std::to_string(howBadIsRbp)},
+                 .type = InstrType::Add},
+           Section::Main);
+
     push(Instr{.var = MovInstr{.dest = "%rsp",
                                .src = "%rbp",
                                .destSize = DataSize::Qword,
@@ -254,9 +293,12 @@ void codegen::_return(Node::Stmt *stmt) {
   // also, add back the value of "how bad is rbp"
 
   if (howBadIsRbp > 0)
-    push(Instr{.var=AddInstr{.lhs="%rbp",.rhs="$"+std::to_string(howBadIsRbp)},.type=InstrType::Add},Section::Main);
-  
-    push(Instr{.var = MovInstr{.dest = "%rsp",
+    push(Instr{.var = AddInstr{.lhs = "%rbp",
+                               .rhs = "$" + std::to_string(howBadIsRbp)},
+               .type = InstrType::Add},
+         Section::Main);
+
+  push(Instr{.var = MovInstr{.dest = "%rsp",
                              .src = "%rbp",
                              .destSize = DataSize::Qword,
                              .srcSize = DataSize::Qword},
@@ -279,25 +321,37 @@ void codegen::whileLoop(Node::Stmt *stmt) {
              .type = InstrType::Comment},
        Section::Main);
   // evalute condition once before in main func
-  push(Instr{.var = Label { .name = preLoopLabel }, .type = InstrType::Label}, Section::Main);
+  push(Instr{.var = Label{.name = preLoopLabel}, .type = InstrType::Label},
+       Section::Main);
   visitExpr(whileLoop->condition);
   // result in 0x0 or 0x1 on stack
-  push(Instr{.var = PopInstr{.where="%rcx", .whereSize = DataSize::Qword}, .type = InstrType::Pop}, Section::Main);
+  push(Instr{.var = PopInstr{.where = "%rcx", .whereSize = DataSize::Qword},
+             .type = InstrType::Pop},
+       Section::Main);
   stackSize--;
   // Result of condition in rcx
-  push(Instr{.var = LinkerDirective{.value="test %rcx, %rcx\n\t"}, .type = InstrType::Linker}, Section::Main);
+  push(Instr{.var = LinkerDirective{.value = "test %rcx, %rcx\n\t"},
+             .type = InstrType::Linker},
+       Section::Main);
   // Condition failed already? That's too sad. Ignore the rest of the loop!
-  push(Instr{.var = JumpInstr { .op = JumpCondition::Zero, .label = postLoopLabel }, .type = InstrType::Jmp }, Section::Main);
-  
+  push(
+      Instr{.var = JumpInstr{.op = JumpCondition::Zero, .label = postLoopLabel},
+            .type = InstrType::Jmp},
+      Section::Main);
+
   // Condition passed, start loop body
   visitStmt(whileLoop->block);
   // Loop body is over, execute optional
   if (whileLoop->optional != nullptr) {
-	visitExpr(whileLoop->optional);
+    visitExpr(whileLoop->optional);
   }
-  push(Instr{.var = JumpInstr { .op = JumpCondition::Unconditioned, .label = preLoopLabel }, .type = InstrType::Jmp }, Section::Main);
+  push(Instr{.var = JumpInstr{.op = JumpCondition::Unconditioned,
+                              .label = preLoopLabel},
+             .type = InstrType::Jmp},
+       Section::Main);
 
-  push(Instr{.var = Label { .name = postLoopLabel }, .type = InstrType::Label }, Section::Main);
+  push(Instr{.var = Label{.name = postLoopLabel}, .type = InstrType::Label},
+       Section::Main);
   conditionalCount++;
 }
 
@@ -307,40 +361,53 @@ void codegen::forLoop(Node::Stmt *stmt) {
   std::string preLoopLabel = "pre_loop" + std::to_string(loopCount);
   std::string postLoopLabel = "post_loop" + std::to_string(loopCount++);
 
-  push(Instr{.var = Comment{.comment = "for loop"},
-			 .type = InstrType::Comment},
-	   Section::Main);
-  
+  push(Instr{.var = Comment{.comment = "for loop"}, .type = InstrType::Comment},
+       Section::Main);
+
   // declare the variable
   auto assign = static_cast<AssignmentExpr *>(forLoop->forLoop);
   auto assignee = static_cast<IdentExpr *>(assign->assignee);
-  push(Instr{.var = Comment{.comment = "define variable '" + assignee->name + "'"},
-			 .type = InstrType::Comment},
-	   Section::Main);
-  push(Instr{.var = PushInstr{.what = "$0x0"}, .type = InstrType::Push}, Section::Main);
+  push(Instr{.var =
+                 Comment{.comment = "define variable '" + assignee->name + "'"},
+             .type = InstrType::Comment},
+       Section::Main);
+  push(Instr{.var = PushInstr{.what = "$0x0"}, .type = InstrType::Push},
+       Section::Main);
   stackSize++;
   stackTable.insert({assignee->name, stackSize});
   visitExpr(assign);
 
   // evalute condition once before in main func
-  push(Instr{.var = Label { .name = preLoopLabel }, .type = InstrType::Label}, Section::Main);
+  push(Instr{.var = Label{.name = preLoopLabel}, .type = InstrType::Label},
+       Section::Main);
   visitExpr(forLoop->condition);
   // result in 0x0 or 0x1 on stack
-  push(Instr{.var = PopInstr{.where="%rcx", .whereSize = DataSize::Qword}, .type = InstrType::Pop}, Section::Main);
+  push(Instr{.var = PopInstr{.where = "%rcx", .whereSize = DataSize::Qword},
+             .type = InstrType::Pop},
+       Section::Main);
   stackSize--;
   // Result of condition in rcx
-  push(Instr{.var = LinkerDirective{.value="test %rcx, %rcx\n\t"}, .type = InstrType::Linker}, Section::Main);
+  push(Instr{.var = LinkerDirective{.value = "test %rcx, %rcx\n\t"},
+             .type = InstrType::Linker},
+       Section::Main);
   // Condition failed already? That's too sad. Ignore the rest of the loop!
-  push(Instr{.var = JumpInstr { .op = JumpCondition::Zero, .label = postLoopLabel }, .type = InstrType::Jmp }, Section::Main);
-  
+  push(
+      Instr{.var = JumpInstr{.op = JumpCondition::Zero, .label = postLoopLabel},
+            .type = InstrType::Jmp},
+      Section::Main);
+
   // Condition passed, start loop body
   visitStmt(forLoop->block);
   // Loop body is over, execute optional
-  if (forLoop->optional != nullptr) { 
-  	visitExpr(forLoop->optional);
+  if (forLoop->optional != nullptr) {
+    visitExpr(forLoop->optional);
   }
-  push(Instr{.var = JumpInstr { .op = JumpCondition::Unconditioned, .label = preLoopLabel }, .type = InstrType::Jmp }, Section::Main);
+  push(Instr{.var = JumpInstr{.op = JumpCondition::Unconditioned,
+                              .label = preLoopLabel},
+             .type = InstrType::Jmp},
+       Section::Main);
 
-  push(Instr{.var = Label { .name = postLoopLabel }, .type = InstrType::Label }, Section::Main);
+  push(Instr{.var = Label{.name = postLoopLabel}, .type = InstrType::Label},
+       Section::Main);
   conditionalCount++;
 }
