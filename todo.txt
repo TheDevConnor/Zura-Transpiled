@@ -1,0 +1,7 @@
+Fix recursive calls
+Fix increment and decrement ++ and --
+Add in array push and pop
+Add in structs and enums
+Add in imports
+
+if any bugs are found add it in here :)
