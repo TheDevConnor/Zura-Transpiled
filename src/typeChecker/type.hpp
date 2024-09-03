@@ -27,7 +27,6 @@ public:
 
   std::unordered_map<std::string, Node::Type *> global_symbol_table;
   std::unordered_map<std::string, Node::Type *> local_symbol_table;
-  std::unordered_map<std::string, Node::Type *> loop_local_symbol_table;
   /// fn_name (fn_name, fn_return type) ->  { param name, param type }
   std::vector<std::pair<NameTypePair,
                         std::vector<std::pair<std::string, Node::Type *>>>>

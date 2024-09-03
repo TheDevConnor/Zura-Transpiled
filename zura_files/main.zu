@@ -17,5 +17,6 @@ const main := fn () int {
     n2 = final;
     count = count + 1;
   }
-  return 0;
+
+  return final;
 };
