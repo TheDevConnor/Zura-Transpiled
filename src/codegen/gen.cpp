@@ -13,7 +13,7 @@ bool codegen::execute_command(const std::string &command,
                               const std::string &log_file) {
   std::string command_with_error_logging = command + " 2> " + log_file;
   int result = std::system(command_with_error_logging.c_str());
-  // Read log file
+  // Read log file 
   std::ifstream log(log_file);
   std::string log_contents = "";
   if (log.is_open()) {
@@ -32,9 +32,10 @@ bool codegen::execute_command(const std::string &command,
 
   if (result != 0) {
     Lexer lexer;
-    ErrorClass::error(0, 0, "Error executing command: " + command, log_contents,
-                      "Codegen Error", file_name, lexer, {}, false, false, true,
-                      false, false, true);
+    ErrorClass::error(0, 0, "Error executing command: " + command,
+                      log_contents, "Codegen Error",
+                      file_name, lexer, {}, false, false, true, false, false,
+                      true);
     return false;
   }
   return true;
@@ -81,24 +82,11 @@ void codegen::gen(Node::Stmt *stmt, bool isSaved, std::string output_filename,
     // Copying gcc and hoping something changes (it won't)
     // .file directive does not like non-c and non-cpp files but it might be
     // useful for something somewhere later
-    file << "#.file \"" << static_cast<ProgramStmt *>(stmt)->inputPath
-         << "\"\n";
+    file << "#.file \"" << static_cast<ProgramStmt *>(stmt)->inputPath << "\"\n";
     file << "\n# data section for string and stuff"
             "\n.data\n";
     file << Stringifier::stringifyInstrs(data_section);
-    if (nativeFunctionsUsed[NativeASMFunc::printrax] == true) {
-      file << "\n.globl digitspace"
-              "\n.globl digitspacepos"
-              "\n.type digitspace, @object"
-              "\n.type digitspacepos, @object"
-              "\n.align 8"
-              "\ndigitspace: .quad 100"
-              "\n.align 8"
-              "\ndigitspacepos: .quad 8\n"
-              "\n.size digitspace, 8"
-              "\n.size digitspacepos, 8\n";
-    }
-    file << "\n.text\n"
+    file << ".text\n"
             ".globl main\n"
             ".type main, @function\n"
             "main:\n"
@@ -109,8 +97,7 @@ void codegen::gen(Node::Stmt *stmt, bool isSaved, std::string output_filename,
             "  movq %rax, %rdi\n"
             "  movq $60, %rax\n"
             "  syscall\n"
-            // Technically, `ret` not needed becuase func exits above but we
-            // pretend that it is
+            // Technically, `ret` not needed becuase func exits above but we pretend that it is
             "  ret\n"
             "  .cfi_endproc\n"
             ".size main, .-main\n";
@@ -132,44 +119,6 @@ void codegen::gen(Node::Stmt *stmt, bool isSaved, std::string output_filename,
               "  popq %rbp               # restore base pointer\n"
               "  ret # return\n"
               ".size native_strlen, .-native_strlen\n";
-    }
-    if (nativeFunctionsUsed[NativeASMFunc::printrax] == true) {
-      file << "\n.type native_printrax, @function\n"
-              "\nnative_printrax:"
-              "\n  .cfi_startproc"
-              "\n  movq $digitspace, %rcx"
-              "\n  movq $10, %rbx"
-              "\n  movq %rbx, (%rcx)"
-              "\n  inc %rcx"
-              "\n  movq %rcx, ($digitspacepos)"
-              "\n_printRAXLoop:"
-              "\n  movq $0, %rdx"
-              "\n  movq $10, %rbx"
-              "\n  div %rbx"
-              "\n  pushq %rax"
-              "\n  add $48, %rdx"
-              "\n  lea ($digitspacepos), %rcx"
-              "\n  movb %dl, (%rcx)"
-              "\n  inc %rcx"
-              "\n  movq %rcx, ($digitspacepos)"
-              "\n  popq %rax"
-              "\n  test %rax, %rax"
-              "\n  jnz _printRAXLoop"
-              "\n_printRAXLoop2:"
-              "\n  lea ($digitspacepos), %rcx"
-              "\n  movq $1, %rax"
-              "\n  movq $1, %rdi"
-              "\n  movq %rcx, %rsi"
-              "\n  movq $1, %rdx"
-              "\n  syscall"
-              "\n  lea ($digitspacepos), %rcx"
-              "\n  dec %rcx"
-              "\n  mov %rcx, ($digitspacepos)"
-              "\n  cmp %rcx, ($digitspace)"
-              "\n  jge _printRAXLoop2"
-              "\n  ret"
-              "\n  .cfi_endproc"
-              "\n  .size native_printrax, .-native_printrax\n";
     }
     file << "\n# non-main user functions" << std::endl;
     file << Stringifier::stringifyInstrs(head_section);

@@ -109,13 +109,6 @@ struct AscizInstr {
   std::string what;
 };
 
-struct LeaInstr {
-  std::string src; // Always the effective address
-  std::string dest; // Desintation (usually register)
-  DataSize srcSize; // Always the system standard (usually quadword)
-  DataSize destSize; // Destination size
-};
-
 enum class InstrType {
   Push,
   Pop,
@@ -140,14 +133,10 @@ enum class InstrType {
   Qword,
 
   // system (no opposites)
-  // Movement of memory
-  Mov,
-  Lea,
-
-
   Label,
   Linker,
   Call,
+  Mov,
   Syscall,
   Ret,
   Comment,
@@ -178,7 +167,7 @@ struct Instr {
   std::variant<MovInstr, PushInstr, PopInstr, XorInstr, AddInstr, SubInstr,
                MulInstr, DivInstr, CmpInstr, SetInstr, Label, Syscall, Ret, 
                NegInstr, NotInstr, JumpInstr, Comment, DBInstr, CallInstr,
-              LinkerDirective, AscizInstr, LeaInstr>
+              LinkerDirective, AscizInstr>
       var;
   InstrType type;
   bool optimize = true;
@@ -213,7 +202,6 @@ inline std::unordered_map<InstrType, InstrType> opposites = {
     {InstrType::Jmp, InstrType::NONE}, // if you jumped, you can't "unjump"
     {InstrType::Label, InstrType::NONE},
     {InstrType::Mov, InstrType::NONE},
-    {InstrType::Lea, InstrType::NONE},
     {InstrType::Syscall, InstrType::NONE},
     {InstrType::Ret, InstrType::NONE},
     {InstrType::Comment, InstrType::NONE},
@@ -255,15 +243,7 @@ public:
             output.push_back(newInstr);
             continue;
           }
-          if (prevAsPush.what.find('(') != std::string::npos) {
-            Instr newInstr = {
-              .var = LeaInstr { .src = prevAsPush.what, .dest = currAsPop.where, .srcSize = prevAsPush.whatSize, .destSize = currAsPop.whereSize },
-              .type = InstrType::Lea
-            };
-            prev = newInstr;
-            output.push_back(newInstr);
-            continue;
-          }
+
           // simplify to mov
           Instr newInstr = {
               .var = MovInstr{.dest = currAsPop.where, .src = prevAsPush.what, .destSize = currAsPop.whereSize, .srcSize = prevAsPush.whatSize},

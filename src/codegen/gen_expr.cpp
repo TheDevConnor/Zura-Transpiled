@@ -222,7 +222,7 @@ void codegen::binary(Node::Expr *expr) { // kk
            Section::Main);
     }
     pushCompAsExpr();
-    break;
+    break; 
   case '=':
     if (binary->op[1] == '=') {
       push(Instr{.var = CmpInstr{.lhs = registerLhs, .rhs = registerRhs},
@@ -252,7 +252,7 @@ void codegen::binary(Node::Expr *expr) { // kk
                  .type = InstrType::Jmp},
            Section::Main);
       pushCompAsExpr();
-      break; //
+      break;
     }
 
     // unary NOT operation (visited elsewhere)
@@ -333,7 +333,6 @@ void codegen::unary(Node::Expr *expr) {
          Section::Main);
     break;
   case '+':
-    // NOTE: This is not correctly incrementing the value
     if (unary->op[1] == '+') {
       // pop the current value into rax
       push(Instr{.var = PopInstr{.where = "%rax"}, .type = InstrType::Pop},
@@ -349,7 +348,7 @@ void codegen::unary(Node::Expr *expr) {
       push(Instr{.var = PushInstr{.what = "%rax"}, .type = InstrType::Push},
            Section::Main);
       stackSize++;
-      break;
+      break; 
     }
   default:
     break;
@@ -432,7 +431,7 @@ void codegen::primary(Node::Expr *expr) {
   }
   case ND_IDENT: {
     auto ident = static_cast<IdentExpr *>(expr);
-    int offset = (stackSize - stackTable.at(ident->name).first) * 8;
+    int offset = (stackSize - stackTable.at(ident->name)) * 8;
     push(Instr{.var =
                    Comment{.comment = "clone variable '" + ident->name + "'"}},
          Section::Main);
@@ -502,19 +501,17 @@ void codegen::assign(Node::Expr *expr) {
                       true, false, false, true);
   }
   visitExpr(assignExpr->rhs);
-  int offset = (stackSize - stackTable.at(assignee->name).first) - 1;
+  int offset = (stackSize - stackTable.at(assignee->name)) - 1;
 
   if (offset == 0) {
     push(Instr{.var = PopInstr{.where = "(%rsp)", .whereSize = DataSize::Qword},
-               .type = InstrType::Pop,
-               .optimize = false},
+               .type = InstrType::Pop, .optimize = false},
          Section::Main);
     stackSize--;
     return;
   }
   push(Instr{.var = PopInstr{.where = std::to_string(offset * 8) + "(%rsp)"},
-             .type = InstrType::Pop,
-             .optimize = false},
+             .type = InstrType::Pop, .optimize = false},
        Section::Main);
   stackSize--;
 }
