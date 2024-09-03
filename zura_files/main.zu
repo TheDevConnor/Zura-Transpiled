@@ -1,5 +1,6 @@
 const main := fn () int {
-  have x: int = 15;
-  dis("Uh oh, Stinky!", x, "\n");
+  loop(i = 0; i < 10) : (i = i + 1) {
+    dis("Hello, World!\n");
+  }
   return 0;
 };

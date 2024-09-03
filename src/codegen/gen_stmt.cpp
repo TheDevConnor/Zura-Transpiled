@@ -1,6 +1,7 @@
 #include "gen.hpp"
 #include "optimize.hpp"
 #include <cstddef>
+#include <ostream>
 #include <string>
 #include <sys/cdefs.h>
 
@@ -57,7 +58,8 @@ void codegen::funcDecl(Node::Stmt *stmt) {
        Section::Main);
   // push arguments to the stack
   for (auto &args : funcDecl->params) {
-    stackTable.insert({args.first, std::pair<size_t, Node::Type *>(stackSize, args.second)});
+    stackTable.insert(
+        {args.first, std::pair<size_t, Node::Type *>(stackSize, args.second)});
   }
 
   visitStmt(funcDecl->block);
@@ -88,8 +90,9 @@ void codegen::varDecl(Node::Stmt *stmt) {
   visitExpr(static_cast<ExprStmt *>(varDecl->expr)->expr);
 
   // add variable to the stack
-  
-  stackTable.insert({varDecl->name, std::pair<size_t, Node::Type *>(stackSize, varDecl->type)});
+
+  stackTable.insert({varDecl->name, std::pair<size_t, Node::Type *>(
+                                        stackSize, varDecl->type)});
 }
 
 void codegen::block(Node::Stmt *stmt) {
@@ -157,17 +160,23 @@ void codegen::print(Node::Stmt *stmt) {
     }
     case NodeKind::ND_IDENT: {
       IdentExpr *expr = static_cast<IdentExpr *>(arg);
-      if (!stackTable.contains(expr->name)) {
+      if (stackTable.count(expr->name) == 0) {
         std::cerr << "Print identifier: identifier doesn't exist" << std::endl;
         exit(1);
       }
-      SymbolType *type = static_cast<SymbolType *>(stackTable.at(expr->name).second);
+      SymbolType *type =
+          static_cast<SymbolType *>(stackTable.at(expr->name).second);
       if (type->name == "int") {
         nativeFunctionsUsed[NativeASMFunc::printrax] = true;
         visitExpr(expr);
-        push(Instr{.var=PopInstr{.where="%rax",.whereSize=DataSize::Qword},.type=InstrType::Pop},Section::Main);
+        push(Instr{.var =
+                       PopInstr{.where = "%rax", .whereSize = DataSize::Qword},
+                   .type = InstrType::Pop},
+             Section::Main);
         stackSize--;
-        push(Instr{.var=CallInstr{.name="native_printrax"},.type=InstrType::Call},Section::Main);
+        push(Instr{.var = CallInstr{.name = "native_printrax"},
+                   .type = InstrType::Call},
+             Section::Main);
         continue;
       } else if (type->name == "str") {
         visitExpr(expr);
@@ -392,6 +401,7 @@ void codegen::forLoop(Node::Stmt *stmt) {
   // declare the variable
   auto assign = static_cast<AssignmentExpr *>(forLoop->forLoop);
   auto assignee = static_cast<IdentExpr *>(assign->assignee);
+
   push(Instr{.var =
                  Comment{.comment = "define variable '" + assignee->name + "'"},
              .type = InstrType::Comment},
@@ -399,7 +409,9 @@ void codegen::forLoop(Node::Stmt *stmt) {
   push(Instr{.var = PushInstr{.what = "$0x0"}, .type = InstrType::Push},
        Section::Main);
   stackSize++;
-  stackTable.insert({assignee->name, std::pair<size_t, Node::Type *>(stackSize, stackTable.at(assignee->name).second)});
+  stackTable.insert(
+      {assignee->name, std::make_pair(stackSize, static_cast<Node::Type *>(
+                                                     new SymbolType("int")))});
   visitExpr(assign);
 
   // evalute condition once before in main func

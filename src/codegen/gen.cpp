@@ -13,7 +13,7 @@ bool codegen::execute_command(const std::string &command,
                               const std::string &log_file) {
   std::string command_with_error_logging = command + " 2> " + log_file;
   int result = std::system(command_with_error_logging.c_str());
-  // Read log file 
+  // Read log file
   std::ifstream log(log_file);
   std::string log_contents = "";
   if (log.is_open()) {
@@ -32,10 +32,9 @@ bool codegen::execute_command(const std::string &command,
 
   if (result != 0) {
     Lexer lexer;
-    ErrorClass::error(0, 0, "Error executing command: " + command,
-                      log_contents, "Codegen Error",
-                      file_name, lexer, {}, false, false, true, false, false,
-                      true);
+    ErrorClass::error(0, 0, "Error executing command: " + command, log_contents,
+                      "Codegen Error", file_name, lexer, {}, false, false, true,
+                      false, false, true);
     return false;
   }
   return true;
@@ -82,7 +81,8 @@ void codegen::gen(Node::Stmt *stmt, bool isSaved, std::string output_filename,
     // Copying gcc and hoping something changes (it won't)
     // .file directive does not like non-c and non-cpp files but it might be
     // useful for something somewhere later
-    file << "#.file \"" << static_cast<ProgramStmt *>(stmt)->inputPath << "\"\n";
+    file << "#.file \"" << static_cast<ProgramStmt *>(stmt)->inputPath
+         << "\"\n";
     file << "\n# data section for string and stuff"
             "\n.data\n";
     file << Stringifier::stringifyInstrs(data_section);
@@ -94,7 +94,7 @@ void codegen::gen(Node::Stmt *stmt, bool isSaved, std::string output_filename,
               "\n.align 8"
               "\ndigitspace: .quad 100"
               "\n.align 8"
-              "\ndigitspacepos: .quad 8\n" 
+              "\ndigitspacepos: .quad 8\n"
               "\n.size digitspace, 8"
               "\n.size digitspacepos, 8\n";
     }
@@ -109,7 +109,8 @@ void codegen::gen(Node::Stmt *stmt, bool isSaved, std::string output_filename,
             "  movq %rax, %rdi\n"
             "  movq $60, %rax\n"
             "  syscall\n"
-            // Technically, `ret` not needed becuase func exits above but we pretend that it is
+            // Technically, `ret` not needed becuase func exits above but we
+            // pretend that it is
             "  ret\n"
             "  .cfi_endproc\n"
             ".size main, .-main\n";
@@ -132,7 +133,7 @@ void codegen::gen(Node::Stmt *stmt, bool isSaved, std::string output_filename,
               "  ret # return\n"
               ".size native_strlen, .-native_strlen\n";
     }
-    if (nativeFunctionsUsed[NativeASMFunc::printrax] == true) { 
+    if (nativeFunctionsUsed[NativeASMFunc::printrax] == true) {
       file << "\n.type native_printrax, @function\n"
               "\nnative_printrax:"
               "\n  .cfi_startproc"
@@ -191,20 +192,27 @@ void codegen::gen(Node::Stmt *stmt, bool isSaved, std::string output_filename,
 
   // Compile, but do not link main.o
   std::string assembler =
-      "gcc -nostdlib -e main " + output_filename + ".s -o " + output_filename;
+      "gcc -c " + output_filename + ".s -o " + output_filename + ".o";
   std::string assembler_log = output_filename + "_assembler.log";
   if (!execute_command(assembler, assembler_log))
     return;
 
+  // Link with entry point "main"
+  std::string linker =
+      "ld " + output_filename + ".o -e main -o " + output_filename;
+  std::string linker_log = output_filename + "_linker.log";
+  if (!execute_command(linker, linker_log))
+    return;
+
   if (!isSaved) {
     std::string remove =
-        "rm " + output_filename + ".s " + output_filename;
+        "rm " + output_filename + ".s " + output_filename + ".o";
     system(remove.c_str());
   }
 
   // delete the log files
   // (they are only necessary when something actually goes wrong,
   // and this code is only reached when we know it doesn't)
-  std::string remove_log = "rm " + assembler_log;
+  std::string remove_log = "rm " + assembler_log + " " + linker_log;
   system(remove_log.c_str());
 }
