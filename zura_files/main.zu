@@ -1,4 +1,13 @@
-const main := fn () int {
+const main := fn () int { 
+  # FizzBuzz
+  loop (i = 1; i <= 100) : (i = i + 1) {
+    if (i % 15 == 0) dis("FizzBuzz\n");
+    if (i % 3 == 0) dis("Fizz\n");
+    if (i % 5 == 0) dis("Buzz\n");
+    else dis("i\n");
+  }
+
+  # Fibonacci
   have n1: int = 0;
   have n2: int = 1;
   have final: int = 0;

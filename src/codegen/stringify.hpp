@@ -4,7 +4,6 @@
 
 #include <string>
 #include <vector>
-#include <iostream>
 #include <sstream>
 
 class Stringifier { // converts Instr structures into AT&T Syntax strings

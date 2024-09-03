@@ -119,8 +119,39 @@ void codegen::print(Node::Stmt *stmt) {
 
   push(Instr{.var = Comment{.comment = "print stmt"}}, Section::Main);
   nativeFunctionsUsed[NativeASMFunc::strlen] = true;
+
   for (auto &arg : print->args) {
-    visitExpr(arg);
+    // visitExpr(arg);
+    switch (arg->kind) {
+    case NodeKind::ND_NUMBER: {
+      auto number = static_cast<NumberExpr *>(arg);
+      std::string label = "num" + std::to_string(stringCount++);
+
+      // Push the label onto the stack
+      push(Instr{.var = PushInstr{.what = '$' + label,
+                                  .whatSize = DataSize::Qword},
+                 .type = InstrType::Push},
+           Section::Main);
+      stackSize++;
+
+      // Define the label for the string
+      push(Instr{.var = Label{.name = label}, .type = InstrType::Label},
+           Section::Data);
+
+      // Store the processed string
+      push(Instr{.var =
+                     AscizInstr{.what = "\"" +
+                                        std::to_string(size_t(number->value)) +
+                                        "\""},
+                 .type = InstrType::Asciz},
+           Section::Data);
+
+      break;
+    }
+    default:
+      visitExpr(arg);
+      break;
+    }
     // assume type-checker worked properly and a string is passed in
     push(Instr{.var = PopInstr({.where = "%rsi", .whereSize = DataSize::Qword}),
                .type = InstrType::Pop},
@@ -254,9 +285,12 @@ void codegen::_return(Node::Stmt *stmt) {
   // also, add back the value of "how bad is rbp"
 
   if (howBadIsRbp > 0)
-    push(Instr{.var=AddInstr{.lhs="%rbp",.rhs="$"+std::to_string(howBadIsRbp)},.type=InstrType::Add},Section::Main);
-  
-    push(Instr{.var = MovInstr{.dest = "%rsp",
+    push(Instr{.var = AddInstr{.lhs = "%rbp",
+                               .rhs = "$" + std::to_string(howBadIsRbp)},
+               .type = InstrType::Add},
+         Section::Main);
+
+  push(Instr{.var = MovInstr{.dest = "%rsp",
                              .src = "%rbp",
                              .destSize = DataSize::Qword,
                              .srcSize = DataSize::Qword},

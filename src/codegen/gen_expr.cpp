@@ -3,7 +3,6 @@
 #include "optimize.hpp"
 
 #include <cstddef>
-#include <iostream>
 
 void codegen::visitExpr(Node::Expr *expr) {
   auto handler = lookup(exprHandlers, expr->kind);
