@@ -200,9 +200,8 @@ void TypeChecker::visitFor(Maps *map, Node::Stmt *stmt) {
   // now we visit the block
   visitStmt(map, for_stmt->block);
 
-  // clear the for loop var name
+  // clear the local table
   map->local_symbol_table.erase(for_stmt->name);
-
   return_type = nullptr;
 }
 
