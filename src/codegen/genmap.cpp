@@ -12,7 +12,8 @@ void codegen::initMaps() {
       {ND_BLOCK_STMT, block}, {ND_RETURN_STMT, _return},
       {ND_IF_STMT, ifStmt},   {ND_EXPR_STMT, expr},
       {ND_PRINT_STMT, print}, {ND_WHILE_STMT, whileLoop},
-      {ND_FOR_STMT, forLoop},
+      {ND_FOR_STMT, forLoop}, {ND_BREAK_STMT, _break},
+        {ND_CONTINUE_STMT, _continue},
   };
   exprHandlers = {
       {ND_BINARY, binary},    {ND_UNARY, unary},    {ND_CALL, call},

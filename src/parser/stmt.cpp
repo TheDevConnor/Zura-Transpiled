@@ -72,8 +72,6 @@ Node::Stmt *Parser::varStmt(PStruct *psr, std::string name) {
                      new ExprStmt(line, column, assignedValue));
 }
 
-// TODO: Implement the print stmt
-// dis("print %d", .{1});
 Node::Stmt *Parser::printStmt(PStruct *psr, std::string name) {
   auto line = psr->tks[psr->pos].line;
   auto column = psr->tks[psr->pos].column;
@@ -402,4 +400,24 @@ Node::Stmt *Parser::importStmt(PStruct *psr, std::string name) {
               "Expected a SEMICOLON at the end of an import stmt");
 
   return new ImportStmt(line, column, path, result);
+}
+
+Node::Stmt *Parser::breakStmt(PStruct *psr, std::string name) {
+  auto line = psr->tks[psr->pos].line;
+  auto column = psr->tks[psr->pos].column;
+  psr->expect(psr, TokenKind::BREAK,
+              "Expected a BREAK keyword to start a break stmt");
+  psr->expect(psr, TokenKind::SEMICOLON,
+              "Expected a SEMICOLON at the end of a break stmt");
+  return new BreakStmt(line, column);
+}
+
+Node::Stmt *Parser::continueStmt(PStruct *psr, std::string name) {
+  auto line = psr->tks[psr->pos].line;
+  auto column = psr->tks[psr->pos].column;
+  psr->expect(psr, TokenKind::CONTINUE,
+              "Expected a CONTINUE keyword to start a continue stmt");
+  psr->expect(psr, TokenKind::SEMICOLON,
+              "Expected a SEMICOLON at the end of a continue stmt");
+  return new ContinueStmt(line, column);
 }

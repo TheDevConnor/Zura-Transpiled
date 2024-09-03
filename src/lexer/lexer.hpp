@@ -80,6 +80,8 @@ enum TokenKind {
   PRIV,
   TEMPLATE,
   TYPEALIAS,
+  BREAK, 
+  CONTINUE,
 
   // Error
   ERROR_,

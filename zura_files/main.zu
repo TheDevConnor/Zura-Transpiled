@@ -17,6 +17,34 @@ const main := fn () int {
     n1 = n2;
     n2 = final;
   }
+  # return final; # 55
 
-  return final;
+  # Factorial
+  have num: int = 5;
+  have fact: int = 1;
+
+  loop (i = 1; i <= num) : (i = i + 1) {
+    fact = fact * i;
+  }
+
+  # return fact; # 120
+
+  # Prime
+  have prime: int = 13;
+  have isPrime: bool = true;
+
+  loop (i = 2; i <= prime / 2) : (i = i + 1) {
+    if (prime % i == 0) {
+      isPrime = false;
+      break;
+    }
+  }
+
+  if (isPrime) {
+    dis("Prime\n");
+  } else {
+    dis("Not Prime\n");
+  }
+
+  return 0;
 };

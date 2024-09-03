@@ -64,6 +64,7 @@ void Lexer::initMap() {
       {"const", TokenKind::_CONST},      {"import", TokenKind::IMPORT},
       {"pub", TokenKind::PUB},           {"priv", TokenKind::PRIV},
       {"template", TokenKind::TEMPLATE}, {"typealias", TokenKind::TYPEALIAS},
+      {"break", TokenKind::BREAK}, {"continue", TokenKind::CONTINUE},
   };
 
   scMap = {

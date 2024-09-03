@@ -61,6 +61,7 @@ void Parser::createMaps() {
       {TokenKind::STRUCT, structStmt},    {TokenKind::ENUM, enumStmt},
       {TokenKind::LOOP, loopStmt},        {TokenKind::PRINT, printStmt},
       {TokenKind::IMPORT, importStmt},    {TokenKind::TEMPLATE, templateStmt},
+      {TokenKind::BREAK, breakStmt},      {TokenKind::CONTINUE, continueStmt},
   };
   nud_lu = {
       {TokenKind::NUMBER, primary},     {TokenKind::IDENTIFIER, primary},

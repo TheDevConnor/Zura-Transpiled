@@ -52,6 +52,8 @@ void forLoop(Node::Stmt *stmt);
 void ifStmt(Node::Stmt *stmt);
 void print(Node::Stmt *stmt);
 void expr(Node::Stmt *stmt);
+void _break(Node::Stmt *stmt);
+void _continue(Node::Stmt *stmt);
 void _return(Node::Stmt *stmt);
 
 void _arrayExpr(Node::Expr *expr);

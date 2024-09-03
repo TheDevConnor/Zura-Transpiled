@@ -475,3 +475,31 @@ public:
 
   ~ImportStmt() { delete stmt; }
 };
+
+class BreakStmt : public Node::Stmt {
+public:
+  int line, pos;
+
+  BreakStmt(int line, int pos) : line(line), pos(pos) {
+    kind = NodeKind::ND_BREAK_STMT;
+  }
+
+  void debug(int ident = 0) const override {
+    Node::printIndent(ident);
+    std::cout << "BreakStmt\n";
+  }
+};
+
+class ContinueStmt : public Node::Stmt {
+public:
+  int line, pos;
+
+  ContinueStmt(int line, int pos) : line(line), pos(pos) {
+    kind = NodeKind::ND_CONTINUE_STMT;
+  }
+
+  void debug(int ident = 0) const override {
+    Node::printIndent(ident);
+    std::cout << "ContinueStmt\n";
+  }
+};

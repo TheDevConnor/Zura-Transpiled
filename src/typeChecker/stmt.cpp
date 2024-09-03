@@ -222,3 +222,11 @@ void TypeChecker::visitWhile(Maps *map, Node::Stmt *stmt) {
 
   return_type = nullptr;
 }
+
+void TypeChecker::visitBreak(Maps *map, Node::Stmt *stmt) {
+  // nothing to do here
+}
+
+void TypeChecker::visitContinue(Maps *map, Node::Stmt *stmt) {
+  // nothing to do here
+}
