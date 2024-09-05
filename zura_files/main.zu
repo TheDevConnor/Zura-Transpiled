@@ -1,50 +1,8 @@
 const main := fn () int { 
-  # FizzBuzz
-  loop (i = 1; i <= 100) : (i = i + 1) {
-    if (i % 15 == 0) dis("FizzBuzz\n");
-    if (i % 3 == 0) dis("Fizz\n");
-    if (i % 5 == 0) dis("Buzz\n");
-    else dis("i\n");
-  }
-
-  # Fibonacci
-  have n1: int = 0;
-  have n2: int = 1;
-  have final: int = 0;
-
-  loop (count = 1; count < 10) : (count = count + 1) {
-    final = n1 + n2;
-    n1 = n2;
-    n2 = final;
-  }
-  # return final; # 55
-
-  # Factorial
-  have num: int = 5;
-  have fact: int = 1;
-
-  loop (i = 1; i <= num) : (i = i + 1) {
-    fact = fact * i;
-  }
-
-  # return fact; # 120
-
-  # Prime
-  have prime: int = 13;
-  have isPrime: bool = true;
-
-  loop (i = 2; i <= prime / 2) : (i = i + 1) {
-    if (prime % i == 0) {
-      isPrime = false;
-      break;
-    }
-  }
-
-  if (isPrime) {
-    dis("Prime\n");
+  have x: int = 9;
+  if (x > 5) {
+    return 0;
   } else {
-    dis("Not Prime\n");
+    return 1;
   }
-
-  return 0;
 };

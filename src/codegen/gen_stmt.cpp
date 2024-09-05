@@ -208,27 +208,78 @@ void codegen::ifStmt(Node::Stmt *stmt) {
        Section::Main);
 
   std::string preConditionalCount = std::to_string(++conditionalCount);
+  BinaryExpr *bin = nullptr;
+  if (ifstmt->condition->kind == ND_BINARY) bin = static_cast<BinaryExpr *>(ifstmt->condition);
+  if (ifstmt->condition->kind == ND_GROUP) {
+     GroupExpr *grp = static_cast<GroupExpr *>(ifstmt->condition);
+     if (grp->expr->kind == ND_BINARY) bin = static_cast<BinaryExpr *>(grp->expr);
+  }
+  if (bin == nullptr) {
+     // visit the expr, jump if not zero
+     visitExpr(ifstmt->condition);
+     // pop value somewhere relatively unused, that is unlikely to be overriden
+     // somewhere else
+     push(Instr{.var = PopInstr{.where = "%rcx"}, .type = InstrType::Pop},
+          Section::Main);
+     stackSize--;
+     // NOTE: This is not a directive! Test Instr does not exist, so pushing
+     // plaintext is easier
+     push(Instr{.var = LinkerDirective{.value = "test %rcx, %rcx\n\t"},
+               .type = InstrType::Cmp},
+          Section::Main);
+     push(Instr{.var = JumpInstr{.op = JumpCondition::NotZero,
+                                   .label = ("conditional" + preConditionalCount)},
+               .type = InstrType::Jmp},
+          Section::Main);
+     // Evaluate else
+     if (ifstmt->elseStmt != nullptr) {
+          visitStmt(ifstmt->elseStmt);
+     }
+  } else {
+     // We have a binary expression!
+     // Calculate it!
+     visitExpr(bin->lhs);
+     // lhs rax
+     // rhs rbx
+     if (bin->rhs->kind == ND_BINARY) {
+          visitExpr(bin->rhs);
+          push(Instr{.var=PopInstr{.where="%rbx",.whereSize=DataSize::Qword},.type=InstrType::Pop},Section::Main);
+          push(Instr{.var=PopInstr{.where="%rax",.whereSize=DataSize::Qword},.type=InstrType::Pop},Section::Main);
+     } else {
+          push(Instr{.var=PopInstr{.where="%rax",.whereSize=DataSize::Qword},.type=InstrType::Pop},Section::Main);
+          visitExpr(bin->rhs);
+          push(Instr{.var=PopInstr{.where="%rbx",.whereSize=DataSize::Qword},.type=InstrType::Pop},Section::Main);
+     }
+     // values in registers, jump for condition
+     JumpCondition jc;
+     switch (bin->op[0]) {
+          case '>': {
+               bin->op[1] == '=' ? (jc = JumpCondition::GreaterEqual) : (jc = JumpCondition::Greater);
+               break;
+          }
+          case '<': {
+               bin->op[1] == '=' ? (jc = JumpCondition::LessEqual) : (jc = JumpCondition::Less);
+               break;
+          }
+          case '=': {
+               if (bin->op[1] != '=') {
+                    std::cerr << "Invalid binary expression '='" << std::endl;
+                    exit(1);
+               }
+               jc = JumpCondition::Equal;
+               break;
+          }
+          case '!': {
+               if (bin->op[1] != '=') {
+                    std::cerr << "Invalid binary expression '!'" << std::endl;
+                    exit(1);
+               }
+               jc = JumpCondition::NotEqual;
+               break;
+          }
 
-  // visit the expr, jump if not zero
-  visitExpr(ifstmt->condition);
-
-  // pop value somewhere relatively unused, that is unlikely to be overriden
-  // somewhere else
-  push(Instr{.var = PopInstr{.where = "%rcx"}, .type = InstrType::Pop},
-       Section::Main);
-  stackSize--;
-  // NOTE: This is not a directive! Test Instr does not exist, so pushing
-  // plaintext is easier
-  push(Instr{.var = LinkerDirective{.value = "test %rcx, %rcx\n\t"},
-             .type = InstrType::Cmp},
-       Section::Main);
-  push(Instr{.var = JumpInstr{.op = JumpCondition::NotZero,
-                              .label = ("conditional" + preConditionalCount)},
-             .type = InstrType::Jmp},
-       Section::Main);
-  // Evaluate else
-  if (ifstmt->elseStmt != nullptr) {
-    visitStmt(ifstmt->elseStmt);
+     }
+     push(Instr{.var=JumpInstr{.op = jc, .label = "conditional" + preConditionalCount}});
   }
   push(Instr{.var = JumpInstr{.op = JumpCondition::Unconditioned,
                               .label = "main" + preConditionalCount},
