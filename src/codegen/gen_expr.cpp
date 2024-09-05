@@ -110,75 +110,79 @@ void codegen::binary(Node::Expr *expr) { // kk
   bool isAdditive = (binary->op[0] == '+' || binary->op[0] == '-');
 
   // ADD / MUL are different          ADDITIVE     MULTIPLICATIVE
-  std::string registerLhs = isAdditive ? "%rbx" : "%rax";
-  std::string registerRhs = isAdditive ? "%rdx" : "%rcx";
+  std::string registerLhs = isAdditive ? "%r12" : "%rax";
+  std::string registerRhs = isAdditive ? "%r9" : "%r8";
   visitExpr(binary->lhs);
-  visitExpr(binary->rhs);
-  push(Instr{.var = PopInstr{.where = registerRhs}, .type = InstrType::Pop},
-       Section::Main);
-  push(Instr{.var = PopInstr{.where = registerLhs}, .type = InstrType::Pop},
-       Section::Main);
-  stackSize--;
-  stackSize--;
 
   switch (binary->op[0]) {
   case '+':
-    // push(Optimezer::Instr { .var = Comment { .comment = "Addition" }, .type =
-    // InstrType::Comment });
-    push(Instr{.var = AddInstr{.lhs = registerLhs, .rhs = registerRhs},
-               .type = InstrType::Add},
-         Section::Main);
+  case '-': {
+    if (binary->rhs->kind == ND_BINARY) {
+        // Sacrifice an unoptimized instr or two
+        visitExpr(binary->rhs);
+        push(Instr{.var = PopInstr{.where = registerRhs}, .type = InstrType::Pop},
+            Section::Main);
+        push(Instr{.var = PopInstr{.where = registerLhs}, .type = InstrType::Pop},
+            Section::Main);
+        stackSize--;
+        stackSize--;
+    } else {
+        push(Instr{.var = PopInstr{.where = registerLhs}, .type = InstrType::Pop},
+            Section::Main);
+        stackSize--;
+        visitExpr(binary->rhs);
+        push(Instr{.var = PopInstr{.where = registerRhs}, .type = InstrType::Pop},
+            Section::Main);
+        stackSize--;
+    }
+    binary->op[0] == '+'
+     ? push(Instr{.var = AddInstr{.lhs = registerLhs, .rhs = registerRhs}, .type=InstrType::Add},Section::Main)
+     : push(Instr{.var = SubInstr{.lhs = registerLhs, .rhs = registerRhs}, .type=InstrType::Sub},Section::Main);
+
     push(Instr{.var = PushInstr{.what = registerLhs}, .type = InstrType::Push},
-         Section::Main);
+        Section::Main);
     stackSize++;
     break;
-  case '-':
-    // push(Optimezer::Instr { .var = Comment { .comment = "Subtraction" },
-    // .type = InstrType::Comment });
-    push(Instr{.var = SubInstr{.lhs = registerLhs, .rhs = registerRhs},
-               .type = InstrType::Sub},
-         Section::Main);
-    push(Instr{.var = PushInstr{.what = registerLhs}, .type = InstrType::Push},
-         Section::Main);
-    stackSize++;
-    break;
+  }
   case '*':
-    // push(Optimezer::Instr { .var = Comment { .comment = "Multiplication" },
-    // .type = InstrType::Comment }, true);
-    push(Instr{.var = MulInstr{.from = registerRhs}, .type = InstrType::Mul},
-         Section::Main);
-    push(Instr{.var = PushInstr{.what = registerLhs}, .type = InstrType::Push},
-         Section::Main);
-    stackSize++;
-    break;
   case '/':
-    // push(Optimezer::Instr { .var = Comment { .comment = "Division" }, .type =
-    // InstrType::Comment }) rdx is the upper-64 bits of the first param, so
-    // make sure we don't divide by something stupid
-    push(Instr{.var = XorInstr{.lhs = "%rdx", .rhs = "%rdx"},
-               .type = InstrType::Xor},
-         Section::Main);
-    push(Instr{.var = DivInstr{.from = registerRhs}, .type = InstrType::Div},
-         Section::Main);
-    push(Instr{.var = PushInstr{.what = registerLhs}, .type = InstrType::Push},
-         Section::Main);
+  case '%': {
+    if (binary->rhs->kind == ND_BINARY) {
+        // Sacrifice an unoptimized instr or two
+        visitExpr(binary->rhs);
+        push(Instr{.var = PopInstr{.where = registerRhs}, .type = InstrType::Pop},
+            Section::Main);
+        push(Instr{.var = PopInstr{.where = registerLhs}, .type = InstrType::Pop},
+            Section::Main);
+        stackSize--;
+        stackSize--;
+    } else {
+        push(Instr{.var = PopInstr{.where = registerLhs}, .type = InstrType::Pop},
+            Section::Main);
+        stackSize--;
+        visitExpr(binary->rhs);
+        push(Instr{.var = PopInstr{.where = registerRhs}, .type = InstrType::Pop},
+            Section::Main);
+        stackSize--;
+    }
+    push(Instr{.var=XorInstr{.lhs="%rdx",.rhs="%rdx"},.type=InstrType::Xor},Section::Main);
+    if (binary->op[0] == '*') {
+        push(Instr{.var = MulInstr{.from=registerLhs}, .type=InstrType::Mul},Section::Main);
+        push(Instr{.var = PushInstr{.what = registerLhs}, .type = InstrType::Push},
+            Section::Main);
+    } else if (binary->op[0] == '/') {
+        push(Instr{.var = DivInstr{.from=registerLhs}, .type=InstrType::Div},Section::Main);
+        push(Instr{.var = PushInstr{.what = registerLhs}, .type = InstrType::Push},
+            Section::Main);
+    } else if (binary->op[0] == '%') {
+        push(Instr{.var = DivInstr{.from=registerLhs}, .type=InstrType::Div},Section::Main);
+        push(Instr{.var = PushInstr{.what = "%rdx"}, .type = InstrType::Push},
+            Section::Main);
+    }
+
     stackSize++;
     break;
-  case '%':
-    // push(Optimezer::Instr { .var = Comment { .comment = "Modulus" }, .type =
-    // InstrType::Comment });
-    push(Instr{.var = XorInstr{.lhs = "%rdx", .rhs = "%rdx"},
-               .type = InstrType::Xor},
-         Section::Main);
-    push(Instr{.var = DivInstr{.from = registerRhs}, .type = InstrType::Div},
-         Section::Main);
-    push(Instr{.var = MovInstr{.dest = registerLhs, .src = "%rdx"},
-               .type = InstrType::Mov},
-         Section::Main);
-    push(Instr{.var = PushInstr{.what = registerLhs}, .type = InstrType::Push},
-         Section::Main);
-    stackSize++;
-    break;
+  }
   // Comparisons
   case '>':
     // push(Optimezer::Instr { .var = Comment { .comment = "Greater Than" },
