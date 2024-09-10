@@ -26,6 +26,7 @@ enum NodeKind {
   ND_MEMBER,
   ND_RESOLUTION, // ::
   ND_BOOL,
+  ND_CAST,
 
   // Statements
   ND_EXPR_STMT,

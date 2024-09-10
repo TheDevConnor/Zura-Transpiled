@@ -8,11 +8,12 @@
 
 Lexer lexer;
 
-Parser::PStruct *Parser::setupParser(PStruct *psr, Lexer *lex,
-                                     Lexer::Token tk, std::string current_file) {
+Parser::PStruct *Parser::setupParser(PStruct *psr, Lexer *lex, Lexer::Token tk,
+                                     std::string current_file) {
   while (true) {
     psr->tks.push_back(tk);
     tk = lex->scanToken();
+    std::cout << tk.kind << " " << tk.value << std::endl;
     if (tk.kind == TokenKind::END_OF_FILE) {
       psr->tks.push_back(tk);
       break;
@@ -21,7 +22,7 @@ Parser::PStruct *Parser::setupParser(PStruct *psr, Lexer *lex,
 
   std::unordered_map<std::string, std::string> errors = {};
   psr->current_file = current_file;
-  return new PStruct{psr->tks, psr->current_file, psr->pos}; 
+  return new PStruct{psr->tks, psr->current_file, psr->pos};
 }
 
 Node::Stmt *Parser::parse(const char *source, std::string file) {
@@ -40,7 +41,8 @@ Node::Stmt *Parser::parse(const char *source, std::string file) {
   while (vect_tk->hadTokens(vect_tk)) {
     stmts.push_back(parseStmt(vect_tk, ""));
     if (vect_tk->hadTokens(vect_tk))
-      if (vect_tk->tks.at(vect_tk->pos).kind == TokenKind::END_OF_FILE) break;
+      if (vect_tk->tks.at(vect_tk->pos).kind == TokenKind::END_OF_FILE)
+        break;
   }
 
   // Copy the tokens to the ast node

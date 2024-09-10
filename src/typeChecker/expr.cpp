@@ -1,5 +1,6 @@
 #include "type.hpp"
 #include <memory>
+#include <sstream>
 
 void TypeChecker::visitExpr(Maps *map, Node::Expr *expr) {
   ExprAstLookup(expr, map);
@@ -7,9 +8,21 @@ void TypeChecker::visitExpr(Maps *map, Node::Expr *expr) {
 
 void TypeChecker::visitNumber(Maps *map, Node::Expr *expr) {
   auto number = static_cast<NumberExpr *>(expr);
-  // TODO: check if the number is within the range a specific intege and if it
-  // is a float
-  return_type = std::make_shared<SymbolType>("int");
+
+  double numericValue = number->value;
+
+  std::stringstream ss;
+  ss << numericValue;
+  std::string numberStr = ss.str();
+
+  // Check if there is a decimal point
+  bool isFloat = numberStr.find('.') != std::string::npos;
+
+  if (isFloat) {
+    return_type = std::make_shared<SymbolType>("float");
+  } else {
+    return_type = std::make_shared<SymbolType>("int");
+  }
 }
 
 void TypeChecker::visitString(Maps *map, Node::Expr *expr) {
@@ -154,7 +167,9 @@ void TypeChecker::visitAssign(Maps *map, Node::Expr *expr) {
   }
 
   if (type_to_string(lhs.get()) != type_to_string(rhs.get())) {
-    std::string msg = "Assignment requires both sides to be the same type";
+    std::string msg =
+        "Assignment requires both sides to be the same type and got '" +
+        type_to_string(lhs.get()) + "' and '" + type_to_string(rhs.get()) + "'";
     handlerError(assign->line, assign->pos, msg, "", "Type Error");
   }
 
@@ -190,7 +205,7 @@ void TypeChecker::visitCall(Maps *map, Node::Expr *expr) {
 }
 
 void TypeChecker::visitMember(Maps *map, Node::Expr *expr) {
-  std::cout << "Not implemented yet" << std::endl;
+  std::cout << "Not implemented yet for member" << std::endl;
 }
 
 void TypeChecker::visitArray(Maps *map, Node::Expr *expr) {
@@ -220,7 +235,7 @@ void TypeChecker::visitArray(Maps *map, Node::Expr *expr) {
   }
   return_type =
       std::make_shared<SymbolType>("[]" + type_to_string(map->array_table[0]));
-  
+
   // clear the array table
   map->array_table.clear();
 }
@@ -248,3 +263,30 @@ void TypeChecker::visitIndex(Maps *map, Node::Expr *expr) {
   return_type =
       std::make_shared<SymbolType>(type_to_string(array.get()).substr(2));
 }
+
+void TypeChecker::visitCast(Maps *map, Node::Expr *expr) {
+  // Cast the generic expression to a CastExpr
+  auto cast = static_cast<CastExpr *>(expr);
+
+  // Cast the cast expression's target (castee) to an IdentExpr to get the
+  // variable name
+  auto cast_ident = static_cast<IdentExpr *>(cast->castee);
+
+  // Find the variable in the local symbol table and global symbol table
+  auto var = (map->local_symbol_table.find(cast_ident->name) != nullptr)
+                 ? map->local_symbol_table.find(cast_ident->name)
+                 : map->global_symbol_table.find(cast_ident->name);
+
+  if (var != nullptr) {
+    // Variable was found; update its type
+    var->second = cast->castee_type;
+  } else {
+    // Variable was not found in the symbol table
+    std::string msg =
+        cast_ident->name + " not found in the symbol table for casting";
+    handlerError(cast->line, cast->pos, msg, "", "Symbol Table Error");
+  }
+
+  return_type = std::make_shared<SymbolType>(type_to_string(cast->castee_type));
+}
+

@@ -82,6 +82,7 @@ enum TokenKind {
   TYPEALIAS,
   BREAK, 
   CONTINUE,
+  CAST,
 
   // Error
   ERROR_,

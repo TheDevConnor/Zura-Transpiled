@@ -53,6 +53,33 @@ public:
   }
 };
 
+class CastExpr : public Node::Expr {
+public: 
+  int line, pos;
+  Node::Expr *castee;
+  Node::Type *castee_type;
+
+  CastExpr(int line, int pos, Node::Expr *castee, Node::Type *castee_type)
+      : line(line), pos(pos), castee(castee), castee_type(castee_type) {
+    kind = NodeKind::ND_CAST;
+  }
+
+  void debug(int indent = 0) const override {
+    Node::printIndent(indent);
+    std::cout << "CastExpr: \n";
+    castee->debug(indent + 1);
+    Node::printIndent(indent + 1);
+    std::cout << "Type: ";
+    castee_type->debug(indent + 1);
+    std::cout << std::endl;
+  }
+
+  ~CastExpr() {
+    delete castee;
+    delete castee_type;
+  }
+};
+
 class BinaryExpr : public Node::Expr {
 public:
   int line, pos;

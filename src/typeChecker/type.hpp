@@ -119,4 +119,5 @@ void visitMember(Maps *map, Node::Expr *expr);
 void visitAssign(Maps *map, Node::Expr *expr);
 void visitArray(Maps *map, Node::Expr *expr);
 void visitIndex(Maps *map, Node::Expr *expr);
+void visitCast(Maps *map, Node::Expr *expr);
 } // namespace TypeChecker

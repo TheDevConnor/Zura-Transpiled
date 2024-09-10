@@ -1,8 +1,24 @@
+template <typealias T>
+const swap := fn (a: T, b: T) void {
+   have temp: T = a;
+   a = b;
+   b = temp;
+};
+
 const main := fn () int { 
-  have x: int = 9;
-  if (x > 5) {
-    return 0;
-  } else {
-    return 1;
-  }
+   have x: int = 10; 
+   have y: int = 20;
+
+   dis("Before swap: 'x=", x, "' and ''y=", y, "'\n");
+   swap(x, y);
+   dis("after swap: 'x=", x, "' and ''y=", y, "'\n");
+
+   have fx: float = cast(x, float);
+   have yx: float = cast(y, float);
+
+   dis("Before swap: 'x=", fx, "' and ''y=", yx, "'\n");
+   swap(fx, yx);
+   dis("after swap: 'x=", fx, "' and ''y=", yx, "'\n");
+
+   return 0;
 };

@@ -41,14 +41,30 @@ void TypeChecker::visitFn(Maps *map, Node::Stmt *stmt) {
 
   visitStmt(map, fn_stmt->block);
 
-  if (return_type != nullptr) {
-    if (type_to_string(return_type.get()) !=
-        type_to_string(fn_stmt->returnType)) {
-      std::string msg = "Function '" + fn_stmt->name + "' must return a '" +
-                        type_to_string(fn_stmt->returnType) + "' but got '" +
-                        type_to_string(return_type.get()) + "'";
-      handlerError(fn_stmt->line, fn_stmt->pos, msg, "", "Type Error");
-    }
+  if (return_type == nullptr) {
+    // throw an error (but this should not happen ever)
+    std::string msg = "return_type is not defined";
+    handlerError(fn_stmt->line, fn_stmt->pos, msg, "", "Type Error");
+  }
+
+  if (type_to_string(fn_stmt->returnType) == "void") {
+    // also add the function name to the global table and function table
+    map->declare(map->global_symbol_table, fn_stmt->name, fn_stmt->returnType,
+                 fn_stmt->line, fn_stmt->pos);
+
+    return_type = nullptr;
+    map->local_symbol_table
+        .clear(); // clear the local table for the next function
+    return;
+  }
+
+  if (type_to_string(return_type.get()) !=
+      type_to_string(fn_stmt->returnType)) {
+    std::string msg = "Function '" + fn_stmt->name + "' must return a '" +
+                      type_to_string(fn_stmt->returnType) + "' but got '" +
+                      type_to_string(return_type.get()) + "'";
+    std::cout << "In here" << std::endl;
+    handlerError(fn_stmt->line, fn_stmt->pos, msg, "", "Type Error");
   }
 
   // also add the function name to the global table and function table
@@ -160,10 +176,12 @@ void TypeChecker::visitTemplateStmt(Maps *map, Node::Stmt *stmt) {
   auto templateStmt = static_cast<TemplateStmt *>(stmt);
 
   // create a new type for the template which is an any type
-  auto type = new SymbolType("any");
+  // auto type = new SymbolType("any");
+  Node::Type *type = nullptr;
 
   // add the template to the global table
   for (auto &name : templateStmt->typenames) {
+    type = new SymbolType(name);
     map->declare_fn(map, name, {name, type}, {}, templateStmt->line,
                     templateStmt->pos);
   }

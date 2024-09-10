@@ -66,7 +66,7 @@ Lexer::Token Lexer::number() {
   while (isdigit(peek()))
     advance();
 
-  if (peek() == '.' && isdigit(peek() + 1)) {
+  if (peek() == '.') {
     advance();
     while (isdigit(peek()))
       advance();

@@ -78,6 +78,32 @@ Node::Expr *Parser::_prefix(PStruct *psr) {
   return new PrefixExpr(line, column, right, op.value);
 }
 
+Node::Expr *Parser::cast_expr(PStruct *psr) {
+  auto line = psr->tks[psr->pos].line;
+  auto column = psr->tks[psr->pos].column;
+
+  psr->expect(psr, CAST, "expected 'CAST' keyword!");
+
+  Node::Expr *castee = nullptr;
+  Node::Type *castee_type = nullptr;
+
+  psr->expect(psr, TokenKind::LEFT_PAREN, "Expected a 'LEFT_PAREN' to start a cast!");
+  while (psr->current(psr).kind != TokenKind::RIGHT_PAREN) {
+    std::cout << psr->current(psr).value << std::endl;
+
+    castee = primary(psr);
+    castee->debug();
+
+    psr->expect(psr, TokenKind::COMMA, "expected a comma between the castee and cast type!");
+
+    castee_type = parseType(psr, defaultValue);
+    castee_type->debug();
+  }
+  psr->expect(psr, TokenKind::RIGHT_PAREN, "Expected L_Paren to begin a cast!");
+
+  return new CastExpr(line, column, castee, castee_type);
+}
+
 Node::Expr *Parser::_postfix(PStruct *psr, Node::Expr *left, BindingPower bp) {
   auto line = psr->tks[psr->pos].line;
   auto column = psr->tks[psr->pos].column;
@@ -104,7 +130,7 @@ Node::Expr *Parser::array(PStruct *psr) {
   psr->expect(psr, TokenKind::RIGHT_BRACKET,
               "Expected a R_Bracket to end an array expr!");
 
-  return new ArrayExpr(line, column, nullptr, elements); 
+  return new ArrayExpr(line, column, nullptr, elements);
 }
 
 Node::Expr *Parser::binary(PStruct *psr, Node::Expr *left, BindingPower bp) {
@@ -145,15 +171,15 @@ Node::Expr *Parser::index(PStruct *psr, Node::Expr *left, BindingPower bp) {
   case TokenKind::LEFT_ARROW: {
     psr->expect(psr, TokenKind::LEFT_ARROW,
                 "Expected a L_Arrow to pop an index from an array!");
-    
+
     // check if the next token is a right bracket to pop the last element
     if (psr->current(psr).kind == TokenKind::RIGHT_BRACKET) {
       psr->advance(psr);
-      return new PopExpr(line, column, left, nullptr); 
+      return new PopExpr(line, column, left, nullptr);
     }
 
     index = parseExpr(psr, defaultValue);
-    
+
     psr->expect(psr, TokenKind::RIGHT_BRACKET,
                 "Expected a R_Bracket to end an index expr!");
     return new PopExpr(line, column, left, index);
@@ -172,10 +198,10 @@ Node::Expr *Parser::index(PStruct *psr, Node::Expr *left, BindingPower bp) {
                   "Expected a R_Bracket to end an index expr!");
       return new PushExpr(line, column, left, index, push_index);
     }
-    
+
     psr->expect(psr, TokenKind::RIGHT_BRACKET,
                 "Expected a R_Bracket to end an index expr!");
-    return new PushExpr(line, column, left, index, nullptr); 
+    return new PushExpr(line, column, left, index, nullptr);
   }
   default:
     // This is a normal index

@@ -69,7 +69,7 @@ void Parser::createMaps() {
       {TokenKind::MINUS, unary},        {TokenKind::PLUS_PLUS, _prefix},
       {TokenKind::BANG, unary},         {TokenKind::MINUS_MINUS, _prefix},
       {TokenKind::LEFT_BRACKET, array}, {TokenKind::TR, bool_expr},
-      {TokenKind::FAL, bool_expr},
+      {TokenKind::FAL, bool_expr},      {TokenKind::CAST, cast_expr},
   };
   led_lu = {
       {TokenKind::PLUS, binary},
@@ -147,6 +147,7 @@ void Parser::createMaps() {
 
       {TokenKind::PLUS_PLUS, BindingPower::prefix},
       {TokenKind::MINUS_MINUS, BindingPower::prefix},
+      {TokenKind::CAST, BindingPower::prefix},
 
       {TokenKind::IDENTIFIER, BindingPower::defaultValue},
       {TokenKind::NUMBER, BindingPower::defaultValue},

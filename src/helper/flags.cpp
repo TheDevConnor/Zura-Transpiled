@@ -51,6 +51,7 @@ void Flags::runFile(const char *path, std::string outName, bool save) {
   auto result = Parser::parse(source, path);
   ErrorClass::printError();
   // std::cout << "Passed Parsing" << std::endl;
+  result->debug();
 
   Flags::updateProgressBar(0.5);
   TypeChecker::performCheck(result);
