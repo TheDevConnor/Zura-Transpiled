@@ -28,8 +28,11 @@ Node::Expr *Parser::primary(PStruct *psr) {
   auto column = psr->tks[psr->pos].column;
 
   switch (psr->current(psr).kind) {
-  case TokenKind::NUMBER: {
-    return new NumberExpr(line, column, std::stod(psr->advance(psr).value));
+  case TokenKind::INT: {
+    return new IntExpr(line, column, std::stoi(psr->advance(psr).value));
+  }
+  case TokenKind::FLOAT: {
+    return new FloatExpr(line, column, std::stof(psr->advance(psr).value));
   }
   case TokenKind::IDENTIFIER: {
     return new IdentExpr(line, column, psr->advance(psr).value);
@@ -89,15 +92,11 @@ Node::Expr *Parser::cast_expr(PStruct *psr) {
 
   psr->expect(psr, TokenKind::LEFT_PAREN, "Expected a 'LEFT_PAREN' to start a cast!");
   while (psr->current(psr).kind != TokenKind::RIGHT_PAREN) {
-    std::cout << psr->current(psr).value << std::endl;
-
     castee = primary(psr);
-    castee->debug();
 
     psr->expect(psr, TokenKind::COMMA, "expected a comma between the castee and cast type!");
 
     castee_type = parseType(psr, defaultValue);
-    castee_type->debug();
   }
   psr->expect(psr, TokenKind::RIGHT_PAREN, "Expected L_Paren to begin a cast!");
 

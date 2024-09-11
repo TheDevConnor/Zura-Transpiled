@@ -64,12 +64,13 @@ void Parser::createMaps() {
       {TokenKind::BREAK, breakStmt},      {TokenKind::CONTINUE, continueStmt},
   };
   nud_lu = {
-      {TokenKind::NUMBER, primary},     {TokenKind::IDENTIFIER, primary},
-      {TokenKind::STRING, primary},     {TokenKind::LEFT_PAREN, group},
-      {TokenKind::MINUS, unary},        {TokenKind::PLUS_PLUS, _prefix},
-      {TokenKind::BANG, unary},         {TokenKind::MINUS_MINUS, _prefix},
-      {TokenKind::LEFT_BRACKET, array}, {TokenKind::TR, bool_expr},
-      {TokenKind::FAL, bool_expr},      {TokenKind::CAST, cast_expr},
+      {TokenKind::INT, primary},         {TokenKind::FLOAT, primary},
+      {TokenKind::IDENTIFIER, primary},  {TokenKind::STRING, primary},
+      {TokenKind::LEFT_PAREN, group},    {TokenKind::MINUS, unary},
+      {TokenKind::PLUS_PLUS, _prefix},   {TokenKind::BANG, unary},
+      {TokenKind::MINUS_MINUS, _prefix}, {TokenKind::LEFT_BRACKET, array},
+      {TokenKind::TR, bool_expr},        {TokenKind::FAL, bool_expr},
+      {TokenKind::CAST, cast_expr},
   };
   led_lu = {
       {TokenKind::PLUS, binary},
@@ -150,7 +151,8 @@ void Parser::createMaps() {
       {TokenKind::CAST, BindingPower::prefix},
 
       {TokenKind::IDENTIFIER, BindingPower::defaultValue},
-      {TokenKind::NUMBER, BindingPower::defaultValue},
+      {TokenKind::INT, BindingPower::defaultValue},
+      {TokenKind::FLOAT, BindingPower::defaultValue},
       {TokenKind::STRING, BindingPower::defaultValue},
 
       {TokenKind::RANGE, BindingPower::range},

@@ -8,7 +8,8 @@
 
 enum NodeKind {
   // Expressions
-  ND_NUMBER,
+  ND_INT,
+  ND_FLOAT,
   ND_IDENT,
   ND_STRING,
   ND_BINARY,

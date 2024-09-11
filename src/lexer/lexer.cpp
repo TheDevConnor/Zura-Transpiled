@@ -70,9 +70,10 @@ Lexer::Token Lexer::number() {
     advance();
     while (isdigit(peek()))
       advance();
+    return makeToken(TokenKind::FLOAT);
   }
 
-  return makeToken(TokenKind::NUMBER);
+  return makeToken(TokenKind::INT);
 }
 
 Lexer::Token Lexer::String() {

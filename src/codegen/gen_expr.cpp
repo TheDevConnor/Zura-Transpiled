@@ -421,12 +421,17 @@ void codegen::ternary(Node::Expr *expr) {
 
 void codegen::primary(Node::Expr *expr) {
   switch (expr->kind) {
-  case ND_NUMBER: {
-    auto number = static_cast<NumberExpr *>(expr);
-    auto res = (number->value == (int)number->value)
-                   ? std::to_string((int)number->value)
-                   : std::to_string(number->value);
-    push(Instr{.var = PushInstr{.what = '$' + res, .whatSize = DataSize::Qword},
+  case ND_INT: {
+    auto integer = static_cast<IntExpr *>(expr);
+    push(Instr{.var = PushInstr{.what = "$" + std::to_string(integer->value)},
+               .type = InstrType::Push},
+         Section::Main);
+    stackSize++;
+    break;
+  }
+  case ND_FLOAT: {
+    auto floating = static_cast<FloatExpr *>(expr);
+    push(Instr{.var = PushInstr{.what = "$" + std::to_string(floating->value)},
                .type = InstrType::Push},
          Section::Main);
     stackSize++;

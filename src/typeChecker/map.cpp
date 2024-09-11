@@ -32,7 +32,8 @@ std::vector<std::pair<NodeKind, TypeChecker::StmtNodeHandler>>
 
 std::vector<std::pair<NodeKind, TypeChecker::ExprNodeHandler>>
     TypeChecker::exprs = {
-        {NodeKind::ND_NUMBER, visitNumber},
+        {NodeKind::ND_INT, visitInt},
+        {NodeKind::ND_FLOAT, visitFloat},
         {NodeKind::ND_IDENT, visitIdent},
         {NodeKind::ND_STRING, visitString},
         {NodeKind::ND_BINARY, visitBinary},

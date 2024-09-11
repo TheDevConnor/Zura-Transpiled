@@ -126,8 +126,8 @@ void codegen::print(Node::Stmt *stmt) {
   for (auto &arg : print->args) {
     // visitExpr(arg);
     switch (arg->kind) {
-    case NodeKind::ND_NUMBER: {
-      auto number = static_cast<NumberExpr *>(arg);
+    case NodeKind::ND_INT: {
+      auto number = static_cast<IntExpr *>(arg);
       std::string label = "num" + std::to_string(stringCount++);
 
       // Push the label onto the stack

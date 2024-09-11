@@ -1,28 +1,38 @@
 #include "type.hpp"
 #include <memory>
 #include <sstream>
+#include <limits>
 
 void TypeChecker::visitExpr(Maps *map, Node::Expr *expr) {
   ExprAstLookup(expr, map);
 }
 
-void TypeChecker::visitNumber(Maps *map, Node::Expr *expr) {
-  auto number = static_cast<NumberExpr *>(expr);
+void TypeChecker::visitInt(Maps *map, Node::Expr *expr) {
+  auto integer = static_cast<IntExpr *>(expr);
 
-  double numericValue = number->value;
-
-  std::stringstream ss;
-  ss << numericValue;
-  std::string numberStr = ss.str();
-
-  // Check if there is a decimal point
-  bool isFloat = numberStr.find('.') != std::string::npos;
-
-  if (isFloat) {
-    return_type = std::make_shared<SymbolType>("float");
-  } else {
-    return_type = std::make_shared<SymbolType>("int");
+  // check if the integer is within the range of an i32 int
+  if (integer->value > std::numeric_limits<int>::max() ||
+      integer->value < std::numeric_limits<int>::min()) {
+    std::string msg = "Integer '" + std::to_string(integer->value) +
+                      "' is out of range for an 'int' which is 32 bits";
+    handlerError(integer->line, integer->pos, msg, "", "Type Error");
   }
+
+  return_type = std::make_shared<SymbolType>("int");
+}
+
+void TypeChecker::visitFloat(Maps *map, Node::Expr *expr) {
+  auto floating = static_cast<FloatExpr *>(expr);
+
+  // check if the float is within the range of an f32 float
+  if (floating->value > std::numeric_limits<float>::max() ||
+      floating->value < std::numeric_limits<float>::min()) {
+    std::string msg = "Float '" + std::to_string(floating->value) +
+                      "' is out of range for a 'float' which is 32 bits";
+    handlerError(floating->line, floating->pos, msg, "", "Type Error");
+  }
+
+  return_type = std::make_shared<SymbolType>("float");
 }
 
 void TypeChecker::visitString(Maps *map, Node::Expr *expr) {
@@ -212,8 +222,8 @@ void TypeChecker::visitArray(Maps *map, Node::Expr *expr) {
   auto array = static_cast<ArrayExpr *>(expr);
   for (auto &elem : array->elements) {
     // push the type of the element into the array table
-    if (elem->kind == NodeKind::ND_NUMBER) {
-      auto number = static_cast<NumberExpr *>(elem);
+    if (elem->kind == NodeKind::ND_INT) {
+      auto number = static_cast<IntExpr *>(elem);
       map->array_table.push_back(new SymbolType("int"));
     } else if (elem->kind == NodeKind::ND_STRING) {
       map->array_table.push_back(new SymbolType("str"));

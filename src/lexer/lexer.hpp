@@ -51,7 +51,8 @@ enum TokenKind {
   // Literals.
   IDENTIFIER,
   STRING,
-  NUMBER,
+  INT,
+  FLOAT,
 
   // Keywords.
   AND,

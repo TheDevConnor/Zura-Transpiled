@@ -5,19 +5,34 @@
 
 #include "ast.hpp"
 
-class NumberExpr : public Node::Expr {
+class IntExpr : public Node::Expr {
 public:
   int line, pos;
-  double value;
+  int value;
 
-  NumberExpr(int line, int pos, double value)
-      : line(line), pos(pos), value(value) {
-    kind = NodeKind::ND_NUMBER;
+  IntExpr(int line, int pos, int value) : line(line), pos(pos), value(value) {
+    kind = NodeKind::ND_INT;
   }
 
   void debug(int ident = 0) const override {
     Node::printIndent(ident);
-    std::cout << "NumberExpr: " << value << "\n";
+    std::cout << "IntExpr: " << value << "\n";
+  }
+};
+
+class FloatExpr : public Node::Expr {
+public:
+  int line, pos;
+  float value;
+
+  FloatExpr(int line, int pos, float value)
+      : line(line), pos(pos), value(value) {
+    kind = NodeKind::ND_FLOAT;
+  }
+
+  void debug(int ident = 0) const override {
+    Node::printIndent(ident);
+    std::cout << "FloatExpr: " << value << "\n";
   }
 };
 

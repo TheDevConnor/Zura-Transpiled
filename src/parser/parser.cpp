@@ -13,7 +13,6 @@ Parser::PStruct *Parser::setupParser(PStruct *psr, Lexer *lex, Lexer::Token tk,
   while (true) {
     psr->tks.push_back(tk);
     tk = lex->scanToken();
-    std::cout << tk.kind << " " << tk.value << std::endl;
     if (tk.kind == TokenKind::END_OF_FILE) {
       psr->tks.push_back(tk);
       break;

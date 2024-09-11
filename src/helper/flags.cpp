@@ -47,20 +47,20 @@ char *Flags::readFile(const char *path) {
 
 void Flags::runFile(const char *path, std::string outName, bool save) {
   const char *source = readFile(path);
-  Flags::updateProgressBar(0.25);
+
+  Flags::updateProgressBar(0.0);
   auto result = Parser::parse(source, path);
   ErrorClass::printError();
-  // std::cout << "Passed Parsing" << std::endl;
-  result->debug();
+  Flags::updateProgressBar(0.25);
 
-  Flags::updateProgressBar(0.5);
   TypeChecker::performCheck(result);
   ErrorClass::printError();
-  // std::cout << "Passed Type Checking" << std::endl;
-  Flags::updateProgressBar(0.75);
+  Flags::updateProgressBar(0.5);
+
   codegen::gen(result, save, outName, path);
   ErrorClass::printError();
-  // std::cout << "Passed Code Generation" << std::endl;
+  Flags::updateProgressBar(1.0);
+
   delete[] source;
   delete result;
 }
