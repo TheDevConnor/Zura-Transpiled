@@ -1,6 +1,9 @@
 #pragma once
 
 #include <iostream>
+#include <llvm/ADT/APInt.h>
+#include <llvm/IR/Constants.h>
+#include <llvm/IR/Value.h>
 #include <vector>
 
 #include "ast.hpp"
@@ -18,6 +21,8 @@ public:
     Node::printIndent(ident);
     std::cout << "IntExpr: " << value << "\n";
   }
+
+  llvm::Value *codegen() const override;
 };
 
 class FloatExpr : public Node::Expr {
@@ -34,6 +39,8 @@ public:
     Node::printIndent(ident);
     std::cout << "FloatExpr: " << value << "\n";
   }
+
+  llvm::Value *codegen() const override;
 };
 
 class IdentExpr : public Node::Expr {
@@ -50,6 +57,8 @@ public:
     Node::printIndent(ident);
     std::cout << "IdentExpr: " << name << "\n";
   }
+
+  llvm::Value *codegen() const override;
 };
 
 class StringExpr : public Node::Expr {
@@ -66,6 +75,8 @@ public:
     Node::printIndent(ident);
     std::cout << "StringExpr: " << value << "\n";
   }
+
+  llvm::Value *codegen() const override;
 };
 
 class CastExpr : public Node::Expr {
@@ -88,6 +99,8 @@ public:
     castee_type->debug(indent + 1);
     std::cout << std::endl;
   }
+
+  llvm::Value *codegen() const override;
 
   ~CastExpr() {
     delete castee;
@@ -117,6 +130,8 @@ public:
     rhs->debug(ident + 1);
   }
 
+  llvm::Value *codegen() const override;
+
   ~BinaryExpr() {
     delete lhs;
     delete rhs;
@@ -142,6 +157,8 @@ public:
     expr->debug(ident + 1);
   }
 
+  llvm::Value *codegen() const override;
+
   ~UnaryExpr() { delete expr; }
 };
 
@@ -163,6 +180,8 @@ public:
     std::cout << op << "\n";
     expr->debug(ident + 1);
   }
+
+  llvm::Value *codegen() const override;
 
   ~PrefixExpr() { delete expr; }
 };
@@ -186,6 +205,8 @@ public:
     std::cout << op << "\n";
   }
 
+  llvm::Value *codegen() const override;
+
   ~PostfixExpr() { delete expr; }
 };
 
@@ -204,6 +225,8 @@ public:
     std::cout << "GroupExpr: \n";
     expr->debug(ident + 1);
   }
+
+  llvm::Value *codegen() const override;
 
   ~GroupExpr() { delete expr; }
 };
@@ -227,6 +250,8 @@ public:
       elem->debug(ident + 1);
     }
   }
+
+  llvm::Value *codegen() const override;
 
   ~ArrayExpr() {
     for (auto elem : elements) {
@@ -256,6 +281,8 @@ public:
     std::cout << "RHS: \n";
     rhs->debug(ident + 2);
   }
+
+  llvm::Value *codegen() const override;
 
   ~IndexExpr() {
     delete lhs;
@@ -288,6 +315,8 @@ public:
     std::cout << "RHS: \n";
     rhs->debug(ident + 2);
   }
+
+  llvm::Value *codegen() const override;
 
   ~PopExpr() {
     delete lhs;
@@ -324,6 +353,8 @@ public:
     }
   }
 
+  llvm::Value *codegen() const override;
+
   ~PushExpr() {
     delete lhs;
     delete rhs;
@@ -355,6 +386,8 @@ public:
     rhs->debug(ident + 2);
   }
 
+  llvm::Value *codegen() const override;
+
   ~AssignmentExpr() {
     delete assignee;
     delete rhs;
@@ -385,6 +418,8 @@ public:
       arg->debug(ident + 2);
     }
   }
+
+  llvm::Value *codegen() const override;
 
   ~CallExpr() {
     delete callee;
@@ -421,6 +456,8 @@ public:
     rhs->debug(ident + 2);
   }
 
+  llvm::Value *codegen() const override;
+
   ~TernaryExpr() {
     delete condition;
     delete lhs;
@@ -450,6 +487,8 @@ public:
     rhs->debug(ident + 2);
   }
 
+  llvm::Value *codegen() const override;
+
   ~MemberExpr() {
     delete lhs;
     delete rhs;
@@ -478,6 +517,8 @@ public:
     rhs->debug(ident + 2);
   }
 
+  llvm::Value *codegen() const override;
+
   ~ResolutionExpr() {
     delete lhs;
     delete rhs;
@@ -499,4 +540,6 @@ public:
     Node::printIndent(ident + 1);
     std::cout << "Value: " << value << "\n";
   }
+
+  llvm::Value *codegen() const override;
 };

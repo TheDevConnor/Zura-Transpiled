@@ -6,6 +6,8 @@
 #include <string>
 #include <vector>
 
+#include "llvm/IR/Value.h"
+
 enum NodeKind {
   // Expressions
   ND_INT,
@@ -68,13 +70,16 @@ public:
   struct Expr {
     NodeKind kind;
     virtual void debug(int ident = 0) const = 0;
+    virtual llvm::Value *codegen() const = 0;
     virtual ~Expr() = default;
+
   };
 
   struct Stmt {
     NodeKind kind;
     virtual void debug(int ident = 0) const = 0;
     virtual ~Stmt() = default;
+
   };
 
   struct Type {

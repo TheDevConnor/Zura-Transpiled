@@ -4,6 +4,11 @@ project(zura)
 
 set(CMAKE_CXX_STANDARD 20)
 
+find_package(LLVM REQUIRED CONFIG)
+
+message(STATUS "Found LLVM ${LLVM_PACKAGE_VERSION}")
+message(STATUS "Using LLVMConfig.cmake in: ${LLVM_DIR}")
+
 # Specify header and source files
 set(ZURA_HEADER_FILES
     src/helper/error/error.hpp
@@ -53,16 +58,19 @@ set(ZURA_SOURCE_FILES
     src/typeChecker/map.cpp
 
     # Code Gen Files
-    src/codegen/gen_expr.cpp
-    src/codegen/gen_stmt.cpp
-    src/codegen/gen_type.cpp
-    src/codegen/genmap.cpp
-    src/codegen/gen.cpp
+    src/codegen/expr.cpp
     
     src/main.cpp
 )
+
+include_directories(${LLVM_INCLUDE_DIRS})
+add_definitions(${LLVM_DEFINITIONS})
 
 # Create executable
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 add_executable(zura ${ZURA_HEADER_FILES} ${ZURA_SOURCE_FILES})
 add_link_options(-lstdc++)
+
+# Find the libraries that correspond to the LLVM components
+# that we wish to use
+llvm_map_components_to_libnames(llvm_libs support core irreader)

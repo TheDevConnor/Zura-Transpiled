@@ -57,7 +57,7 @@ void Flags::runFile(const char *path, std::string outName, bool save) {
   ErrorClass::printError();
   Flags::updateProgressBar(0.5);
 
-  codegen::gen(result, save, outName, path);
+  codegen::initializeModule();
   ErrorClass::printError();
   Flags::updateProgressBar(1.0);
 
