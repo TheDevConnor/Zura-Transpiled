@@ -44,6 +44,9 @@ void TypeChecker::visitIdent(Maps *map, Node::Expr *expr) {
   auto ident = static_cast<IdentExpr *>(expr);
   auto res = Maps::lookup(map->local_symbol_table, ident->name, ident->line,
                           ident->pos, "local symbol table");
+  // update the ast-node (IdentExpr) to hold the type of the identifier as a property
+  ident->type = res;
+  
   return_type = std::make_shared<SymbolType>(type_to_string(res));
 }
 

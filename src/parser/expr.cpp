@@ -35,7 +35,7 @@ Node::Expr *Parser::primary(PStruct *psr) {
     return new FloatExpr(line, column, std::stof(psr->advance(psr).value));
   }
   case TokenKind::IDENTIFIER: {
-    return new IdentExpr(line, column, psr->advance(psr).value);
+    return new IdentExpr(line, column, psr->advance(psr).value, nullptr);
   }
   case TokenKind::STRING: {
     return new StringExpr(line, column, psr->advance(psr).value);
@@ -81,6 +81,7 @@ Node::Expr *Parser::_prefix(PStruct *psr) {
   return new PrefixExpr(line, column, right, op.value);
 }
 
+// update cast syntax to `cast<value, type>`
 Node::Expr *Parser::cast_expr(PStruct *psr) {
   auto line = psr->tks[psr->pos].line;
   auto column = psr->tks[psr->pos].column;
@@ -90,7 +91,7 @@ Node::Expr *Parser::cast_expr(PStruct *psr) {
   Node::Expr *castee = nullptr;
   Node::Type *castee_type = nullptr;
 
-  psr->expect(psr, TokenKind::LEFT_PAREN, "Expected a 'LEFT_PAREN' to start a cast!");
+  psr->expect(psr, TokenKind::LESS, "Expected a 'LESS' to start a cast!");
   while (psr->current(psr).kind != TokenKind::RIGHT_PAREN) {
     castee = primary(psr);
 
@@ -98,7 +99,7 @@ Node::Expr *Parser::cast_expr(PStruct *psr) {
 
     castee_type = parseType(psr, defaultValue);
   }
-  psr->expect(psr, TokenKind::RIGHT_PAREN, "Expected L_Paren to begin a cast!");
+  psr->expect(psr, TokenKind::GREATER, "Expected GREATER to begin a cast!");
 
   return new CastExpr(line, column, castee, castee_type);
 }

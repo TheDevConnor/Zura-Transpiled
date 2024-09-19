@@ -26,7 +26,7 @@ void TypeChecker::visitConst(Maps *map, Node::Stmt *stmt) {
 }
 
 void TypeChecker::visitFn(Maps *map, Node::Stmt *stmt) {
-  auto fn_stmt = static_cast<fnStmt *>(stmt);
+  auto fn_stmt = static_cast<FnStmt *>(stmt);
 
   // add the function name and params the to the local table
   map->declare(map->local_symbol_table, fn_stmt->name, fn_stmt->returnType,

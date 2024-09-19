@@ -151,8 +151,8 @@ Node::Stmt *Parser::funStmt(PStruct *psr, std::string name) {
               "Expected a SEMICOLON at the end of a function stmt");
 
   if (name == "main")
-    return new fnStmt(line, column, name, params, returnType, body, true, true);
-  return new fnStmt(line, column, name, params, returnType, body, false, false);
+    return new FnStmt(line, column, name, params, returnType, body, true, true);
+  return new FnStmt(line, column, name, params, returnType, body, false, false);
 }
 
 Node::Stmt *Parser::returnStmt(PStruct *psr, std::string name) {

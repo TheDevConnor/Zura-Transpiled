@@ -9,6 +9,16 @@
 #include <iostream>
 #include <string>
 
+void codegen::handlerError(int line, int pos, std::string msg,
+                               std::string note, std::string typeOfError) {
+  Lexer lexer; // dummy lexer
+  if (note != "")
+    ErrorClass::error(line, pos, msg, note, typeOfError, node.current_file,
+                      lexer, node.tks, false, false, false, false, false, true);
+  ErrorClass::error(line, pos, msg, "", typeOfError, node.current_file, lexer,
+                    node.tks, false, false, false, false, false, true);
+}
+
 bool codegen::execute_command(const std::string &command,
                               const std::string &log_file) {
   std::string command_with_error_logging = command + " 2> " + log_file;
@@ -31,11 +41,8 @@ bool codegen::execute_command(const std::string &command,
   log.close();
 
   if (result != 0) {
-    Lexer lexer;
-    ErrorClass::error(0, 0, "Error executing command: " + command,
-                      log_contents, "Codegen Error",
-                      file_name, lexer, {}, false, false, true, false, false,
-                      true);
+    handlerError(0, 0, "Error executing command: " + command, log_contents,
+                 "Codegen Error");
     return false;
   }
   return true;
@@ -124,14 +131,11 @@ void codegen::gen(Node::Stmt *stmt, bool isSaved, std::string output_filename,
     file << Stringifier::stringifyInstrs(head_section);
     file.close();
   } else {
-    Lexer lexer;
-    ErrorClass::error(
-        0, 0,
-        "Unable to open output file for finalized assembly '" +
-            output_filename +
-            ".s' - ensure Zura has permissions to write/create files",
-        "", "Codegen Error", file_name, lexer, {}, false, false, true, false,
-        false, true);
+    handlerError(0, 0,
+                 "Unable to open output file for finalized assembly '" +
+                     output_filename +
+                     ".s' - ensure Zura has permissions to write/create files",
+                 "", "Codegen Error");
   }
 
   output_filename =

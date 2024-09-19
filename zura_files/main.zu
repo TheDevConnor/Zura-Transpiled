@@ -1,20 +1,26 @@
-const calculate_average := fn (a: float, b: float) float {
-   return (a + b) / 2.0;
-};
+# const calculate_average := fn (a: float, b: float) float {
+#    return (a + b) / 2.0;
+# };
 
-const main := fn () int { 
-   have x: int = 2147483647;
-   have y: int = -2147483647;
 
-   dis("Integer values: 'x=", x, "' and 'y=", y, "'\n");
+# const main := fn () int { 
+#    have x: int = 2147483647; # i32 -> int
+#    have y: int = -2147483647;
 
-   have fx: float = cast(x, float);
-   have fy: float = cast(y, float);
+#    dis("Integer values: 'x=", x, "' and 'y=", y, "'\n");
+#    have fx: float = cast<x, float>;
+#    have fy: float = cast<y, float>;
 
-   dis("Float values: 'fx=", fx, "' and 'fy=", fy, "'\n");
+#    dis("Float values: 'fx=", fx, "' and 'fy=", fy, "'\n");
 
-   have avg: float = calculate_average(fx, fy);
-   dis("Average of float values: 'avg=", avg, "'\n");
+#    have avg: float = calculate_average(fx, fy);
+#    dis("Average of float values: 'avg=", avg, "'\n");
 
-   return 0;
+#    return 0;
+# };
+
+const main := fn () int {
+   have x: int = 10;
+   x;
+   return 5; # this is as far as i got, didnt work anyway
 };

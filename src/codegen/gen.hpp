@@ -67,7 +67,7 @@ void assign(Node::Expr *expr);
 void primary(Node::Expr *expr);
 
 // assembly
-enum class Section {
+enum class Section { // BRUH its 10:13 ok ibrb // Connor brb grabing some ice cream
     // section .text
     Main, // main function
     Head, // user functions
@@ -102,4 +102,6 @@ inline const char* file_name;
 
 bool execute_command(const std::string &command, const std::string &log_file);
 void gen(Node::Stmt *stmt, bool isSaved, std::string output, const char* filename);
+void handlerError(int line, int pos, std::string msg, std::string note,
+                  std::string typeOfError);
 } // namespace codegen

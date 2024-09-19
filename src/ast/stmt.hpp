@@ -163,8 +163,7 @@ public:
     }
   }
 };
-
-class fnStmt : public Node::Stmt {
+class FnStmt : public Node::Stmt {
 public:
   int line, pos;
   std::string name;
@@ -174,7 +173,7 @@ public:
   bool isMain = false;
   bool isEntry = false;
 
-  fnStmt(int line, int pos, std::string name,
+  FnStmt(int line, int pos, std::string name,
          std::vector<std::pair<std::string, Node::Type *>> params,
          Node::Type *returnType, Node::Stmt *block, bool isMain = false,
          bool isEntry = false)
@@ -185,7 +184,7 @@ public:
 
   void debug(int ident = 0) const override {
     Node::printIndent(ident);
-    std::cout << "fnStmt: \n";
+    std::cout << "FnStmt: \n";
     Node::printIndent(ident + 1);
     std::cout << "Name: " << name << "\n";
     Node::printIndent(ident + 1);
@@ -203,7 +202,7 @@ public:
     block->debug(ident + 1);
   }
 
-  ~fnStmt() {
+  ~FnStmt() {
     delete block;
     for (auto p : params) {
       delete p.second;

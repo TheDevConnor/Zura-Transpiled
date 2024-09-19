@@ -13,7 +13,6 @@ Node::Type *Parser::parseType(PStruct *psr, BindingPower bp) {
 
   return left;
 }
-
 Node::Type *Parser::symbol_table(PStruct *psr) {
   return new SymbolType(
       psr->expect(psr, TokenKind::IDENTIFIER,

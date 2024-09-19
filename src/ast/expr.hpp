@@ -40,15 +40,21 @@ class IdentExpr : public Node::Expr {
 public:
   int line, pos;
   std::string name;
+  Node::Type *type;
 
-  IdentExpr(int line, int pos, std::string name)
-      : line(line), pos(pos), name(name) {
+  IdentExpr(int line, int pos, std::string name, Node::Type *type)
+      : line(line), pos(pos), name(name), type(type) {
     kind = NodeKind::ND_IDENT;
   }
 
   void debug(int ident = 0) const override {
     Node::printIndent(ident);
     std::cout << "IdentExpr: " << name << "\n";
+    if (type != nullptr) {
+      Node::printIndent(ident + 1);
+      std::cout << "Type: ";
+      type->debug(ident + 1);
+    }
   }
 };
 
