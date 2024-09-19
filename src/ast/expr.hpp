@@ -3,6 +3,7 @@
 #include <iostream>
 #include <vector>
 
+#include "../ir/ir.hpp"
 #include "ast.hpp"
 
 class IntExpr : public Node::Expr {

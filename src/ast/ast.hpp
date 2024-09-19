@@ -1,6 +1,7 @@
 #pragma once
 
 #include "../lexer/lexer.hpp"
+#include "../ir/ir.hpp"
 
 #include <iostream>
 #include <string>
@@ -67,18 +68,21 @@ public:
 
   struct Expr {
     NodeKind kind;
+    virtual IRInstruction* generateIR() const = 0;
     virtual void debug(int ident = 0) const = 0;
     virtual ~Expr() = default;
   };
 
   struct Stmt {
     NodeKind kind;
+    virtual IRInstruction* generateIR() const = 0;
     virtual void debug(int ident = 0) const = 0;
     virtual ~Stmt() = default;
   };
 
   struct Type {
     NodeKind kind;
+    virtual IRInstruction* generateIR() const = 0;
     virtual void debug(int ident = 0) const = 0;
     virtual ~Type() = default;
   };

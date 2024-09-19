@@ -25,6 +25,9 @@ set(ZURA_HEADER_FILES
     # Type Checker Files
     src/typeChecker/type.hpp
 
+    # Ir Files
+    src/ir/ir.hpp
+
     # Code Gen Files
     src/codegen/gen.hpp
 
