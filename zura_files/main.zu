@@ -20,7 +20,5 @@
 # };
 
 const main := fn () int {
-   have x: int = 10;
-   x;
-   return 5; # this is as far as i got, didnt work anyway
+   return 3 - (2 + 1); # 0
 };

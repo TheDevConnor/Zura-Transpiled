@@ -38,6 +38,12 @@ struct XorInstr {
   std::string rhs;
 };
 
+struct BinaryInstr {
+  std::string op;
+  std::string src;
+  std::string dst;
+};
+
 struct AddInstr {
   std::string lhs;
   std::string rhs;
@@ -110,6 +116,7 @@ struct AscizInstr {
 };
 
 enum class InstrType {
+  Binary,
   Push,
   Pop,
   Xor,
@@ -167,7 +174,7 @@ struct Instr {
   std::variant<MovInstr, PushInstr, PopInstr, XorInstr, AddInstr, SubInstr,
                MulInstr, DivInstr, CmpInstr, SetInstr, Label, Syscall, Ret, 
                NegInstr, NotInstr, JumpInstr, Comment, DBInstr, CallInstr,
-              LinkerDirective, AscizInstr>
+              LinkerDirective, AscizInstr, BinaryInstr>
       var;
   InstrType type;
   bool optimize = true;
@@ -190,7 +197,9 @@ inline std::unordered_map<InstrType, InstrType> opposites = {
 
     {InstrType::Neg, InstrType::Neg},
     {InstrType::Not, InstrType::Not},
+
     // Types
+    {InstrType::Binary, InstrType::Binary},
     {InstrType::Ascii, InstrType::Asciz},
     {InstrType::Asciz, InstrType::Ascii},
     {InstrType::Byte, InstrType::Byte},

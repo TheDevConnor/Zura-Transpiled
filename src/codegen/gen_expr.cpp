@@ -11,16 +11,45 @@ void codegen::visitExpr(Node::Expr *expr) {
 
 void codegen::binary(Node::Expr *expr) {
      auto e = static_cast<BinaryExpr *>(expr);
-     std::cerr << "No fancy error for this, beg Connor... (Soviet Pancakes speaking)" << std::endl;
-     std::cerr << "Binary expression not implemented! (Op: " << e->op << "LHS: NodeKind[" << (int)e->lhs->kind << "], RHS: NodeKind[" << (int)e->rhs->kind << "])" << std::endl;
-     exit(-1);
+     // Visit the left and right expressions
+     visitExpr(e->lhs);
+     visitExpr(e->rhs);
+
+     // Pop the right expression
+     push(Instr {.var=PopInstr{.where="%rbx"},.type=InstrType::Pop},Section::Main);
+     stackSize--;
+
+     // Pop the left expression
+     push(Instr {.var=PopInstr{.where="%rax"},.type=InstrType::Pop},Section::Main);
+     stackSize--;
+
+     // Perform the binary operation
+     std::string op = lookup(opMap, e->op);
+     if (op == "imul") {
+          push(Instr {.var=MulInstr{.from="%rbx"},.type=InstrType::Mul},Section::Main);
+     } else if (op == "idiv") {
+          push(Instr {.var=DivInstr{.from="%rbx"},.type=InstrType::Div},Section::Main);
+     } else {
+          push(Instr {.var=BinaryInstr{.op=op,.src="%rbx",.dst="%rax"},.type=InstrType::Binary},Section::Main);
+     }
+
+     // Push the result of the binary operation
+     push(Instr {.var=PushInstr{.what="%rax"},.type=InstrType::Push},Section::Main);
+     stackSize++;
 }
 
 void codegen::grouping(Node::Expr *expr) {
      auto e = static_cast<GroupExpr *>(expr);
-     std::cerr << "No fancy error for this, beg Connor... (Soviet Pancakes speaking)" << std::endl;
-     std::cerr << "Group expression not implemented! (Inner: NodeKind[" << (int)e->expr->kind << "])" << std::endl;
-     exit(-1);
+     // Visit the expression inside the grouping
+     visitExpr(e->expr);
+
+     // Pop the expression inside the grouping
+     push(Instr {.var=PopInstr{.where="%rax"},.type=InstrType::Pop},Section::Main);
+     stackSize--;
+
+     // Push the expression inside the grouping
+     push(Instr {.var=PushInstr{.what="%rax"},.type=InstrType::Push},Section::Main);
+     stackSize++;
 }
 
 void codegen::unary(Node::Expr *expr) {
@@ -52,23 +81,13 @@ void codegen::assign(Node::Expr *expr) {
 }
 
 void codegen::primary(Node::Expr *expr) {
-     // No need to cast for this, this is basically an umbrella for all of the lowest-level expressions
-     // String
-     // Integer
-     // Float
-     // Boolean
+     // TODO: Implement the primary expression
      switch (expr->kind) {
           case NodeKind::ND_INT: {
                auto e = static_cast<IntExpr *>(expr);
                push(Instr {.var=PushInstr{.what='$' + std::to_string(e->value)},.type=InstrType::Push},Section::Main);
                stackSize++;
                break;
-          }
-          case NodeKind::ND_FLOAT: {
-               auto e = static_cast<FloatExpr *>(expr);
-               std::cerr << "No fancy error for this, beg Connor... (Soviet Pancakes speaking)" << std::endl;
-               std::cerr << "Floats not implemented! (Value: " << e->value << ")" << std::endl;
-               exit(-1);
           }
           default: {
                std::cerr << "No fancy error for this, beg Connor... (Soviet Pancakes speaking)" << std::endl;
