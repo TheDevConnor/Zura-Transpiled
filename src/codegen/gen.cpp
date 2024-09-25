@@ -72,13 +72,9 @@ void codegen::gen(Node::Stmt *stmt, bool isSaved, std::string output_filename,
 
   visitStmt(stmt);
 
-  std::cout << "Optimizing...\n";
-
   text_section = Optimizer::optimizeInstrs(text_section);
   head_section = Optimizer::optimizeInstrs(head_section);
   // data section cannot be optimized
-
-  std::cout << "Writing to file...\n";
 
   std::ofstream file(output_filename + ".s");
   if (file.is_open()) {

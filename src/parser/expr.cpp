@@ -82,6 +82,7 @@ Node::Expr *Parser::_prefix(PStruct *psr) {
 }
 
 // update cast syntax to `cast<value, type>`
+// TODO: For some reason it segfaults when parsing a cast expression
 Node::Expr *Parser::cast_expr(PStruct *psr) {
   auto line = psr->tks[psr->pos].line;
   auto column = psr->tks[psr->pos].column;

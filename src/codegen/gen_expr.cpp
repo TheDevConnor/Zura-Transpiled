@@ -25,11 +25,30 @@ void codegen::binary(Node::Expr *expr) {
 
      // Perform the binary operation
      std::string op = lookup(opMap, e->op);
-     if (op == "imul") {
-          push(Instr {.var=MulInstr{.from="%rbx"},.type=InstrType::Mul},Section::Main);
-     } else if (op == "idiv") {
-          push(Instr {.var=DivInstr{.from="%rbx"},.type=InstrType::Div},Section::Main);
-     } else {
+     if (op == "imul" || op == "idiv") {
+          auto instr = (op == "imul") ? InstrType::Mul : InstrType::Div;
+          push(Instr {.var=BinaryInstr{.op=op,.src="%rbx",.dst="%rax"},.type=InstrType::Binary},Section::Main);
+     } else if (op == "mod") {
+         push(Instr {.var=XorInstr{.lhs="%rdx",.rhs="%rdx"},.type=InstrType::Xor},Section::Main);
+         push(Instr {.var=DivInstr{.from="%rbx"},.type=InstrType::Div},Section::Main);
+         push(Instr {.var=BinaryInstr{.op="mov",.src="%rdx",.dst="%rax"},.type=InstrType::Binary},Section::Main);
+     } else if (op == "power") {
+          // power:
+          //      push %rcx              # Save %rcx register (which will be used for loop counter)
+          //      mov %rbx, %rcx         # Move exponent value (3) into %rcx
+          //      dec %rcx               # Decrement %rcx, so it becomes (3-1) = 2
+          //      jz power_zero          # If exponent is 1, jump to power_zero (1-based logic)
+
+          // power_loop:
+          //      mul %rax               # Multiply %rax by itself (2 * 2 = 4)
+          //      dec %rcx               # Decrement %rcx
+          //      jnz power_loop         # If %rcx is not zero, jump to power_loop
+
+          // power_loop_end:
+          //      pop %rcx               # Restore %rcx register
+          //      ret                    # Return
+     } 
+     else {
           push(Instr {.var=BinaryInstr{.op=op,.src="%rbx",.dst="%rax"},.type=InstrType::Binary},Section::Main);
      }
 

@@ -24,8 +24,8 @@ void codegen::initMaps() {
   };
   opMap = {
       {"+", "add"},  {"-", "sub"},    {"*", "imul"},   {"/", "idiv"},
-      {"%", "idiv"}, {"==", "sete"},  {"!=", "setne"}, {"<", "setl"},
+      {"%", "mod"}, {"==", "sete"},  {"!=", "setne"}, {"<", "setl"},
       {">", "setg"}, {"<=", "setle"}, {">=", "setge"}, {"&&", "and"},
-      {"||", "or"},
+      {"||", "or"}, {"^", "power"},
   };
 }
