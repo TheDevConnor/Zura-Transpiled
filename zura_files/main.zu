@@ -1,5 +1,4 @@
 const main := fn () int {
-   have y: int = 20;
    have x: int = 10;
    return x;
 };

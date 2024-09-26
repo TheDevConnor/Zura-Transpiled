@@ -60,9 +60,6 @@ void codegen::varDecl(Node::Stmt *stmt) {
     // Evaluate the initializer expression, if present
     if (s->expr) {
         visitExpr(static_cast<ExprStmt *>(s->expr)->expr);
-        // Pop the evaluated expression into a register (or directly store it)
-        push(Instr {.var=PopInstr{.where="%rax"},.type=InstrType::Pop}, Section::Main);
-        stackSize--;
     }
 
     // Update the symbol table with the variable's position
@@ -114,10 +111,6 @@ void codegen::expr(Node::Stmt *stmt) {
 
 void codegen::_return(Node::Stmt *stmt) {
   auto s = static_cast<ReturnStmt *>(stmt);
-  
-  push(Instr{.var=Comment{.comment="Epilogue for function"},.type=InstrType::Comment},Section::Main);
-  push(Instr{.var=BinaryInstr{.op="popq",.src="%rbp"},.type=InstrType::Binary},Section::Main);
-  stackSize--;
 
   codegen::visitExpr(s->expr);
   push(Instr {.var=PopInstr{.where="%rax"},.type=InstrType::Pop},Section::Main);
