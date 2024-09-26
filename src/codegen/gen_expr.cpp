@@ -108,6 +108,17 @@ void codegen::primary(Node::Expr *expr) {
                stackSize++;
                break;
           }
+          case NodeKind::ND_IDENT: {
+               auto e = static_cast<IdentExpr *>(expr);
+               int offset = (stackSize - stackTable[e->name]) * 8;
+
+               auto res = (offset == 0) ? "(%rbp)" : std::to_string(offset) + "(%rbp)";
+
+               push(Instr {.var=Comment{.comment="Ident that is being pushed '" + e->name + "'"}, .type=InstrType::Comment}, Section::Main);
+               push(Instr {.var=PushInstr{.what=res},.type=InstrType::Push},Section::Main);
+               stackSize++;
+               break;
+          }
           default: {
                std::cerr << "No fancy error for this, beg Connor... (Soviet Pancakes speaking)" << std::endl;
                std::cerr << "Primary expression not implemented! (Type: NodeKind[" << (int)expr->kind << "])" << std::endl;

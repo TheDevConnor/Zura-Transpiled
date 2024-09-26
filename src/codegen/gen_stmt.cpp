@@ -31,32 +31,38 @@ void codegen::constDecl(Node::Stmt *stmt) {
 };
 
 void codegen::funcDecl(Node::Stmt *stmt) {
-  // NOTE: Capitalized F for consistency
-  
   auto s = static_cast<FnStmt *>(stmt);
-  // TODO: Implement function arguments
-  if (s->isMain) {
-    if (s->params.size() > 0) {
-      std::cerr << "No fancy error for this, beg Connor... (Soviet Pancakes speaking)" << std::endl;
-      std::cerr << "Main function parameters not implented!" << std::endl;
-      exit(-1);
-    }
-    // TODO: Check for return type of int
-    push(Instr {.var=Label{.name="_start"},.type=InstrType::Label},Section::Main);
-  } else {
-    push(Instr {.var=Label{.name=s->name},.type=InstrType::Label},Section::Main);
+  int preStackSize = stackSize;
+
+  auto funcName = (s->name == "main") ? "usr_main" : "usr_" + s->name;
+  push(Instr {.var=Label{.name=funcName},.type=InstrType::Label},Section::Main);
+
+  push(Instr{.var = LinkerDirective{.value = ".cfi_startproc\n\t"},.type = InstrType::Linker},Section::Main);
+
+  // Function args
+  for (auto &args : s->params) {
+    stackTable[args.first] = stackSize;
   }
 
-  // Create function label
-  // Create function scope
   codegen::visitStmt(s->block);
+  stackSize = preStackSize;
+
+  push(Instr{.var = LinkerDirective{.value = ".cfi_endproc\n"},.type = InstrType::Linker},Section::Main);
+  push(Instr{.var = LinkerDirective{.value = ".size " + funcName + ", .-" + funcName + "\n\t"},.type = InstrType::Linker},Section::Main);
 };
 
 void codegen::varDecl(Node::Stmt *stmt) {
   auto s = static_cast<VarStmt *>(stmt);
-  std::cerr << "No fancy error for this, beg Connor... (Soviet Pancakes speaking)" << std::endl;
-  std::cerr << "Variables not implented! (Type: " << s->expr << ")" << std::endl;
-  exit(-1);
+  
+  push(Instr {.var=Comment{.comment="Variable declaration for '" + s->name + "'"},.type=InstrType::Comment},Section::Main);
+
+  visitExpr(static_cast<ExprStmt *>(s->expr)->expr);
+
+  // add the variable to the symbol table
+  stackTable[s->name] = stackSize;
+  stackSize++;
+
+  push(Instr {.var=Comment{.comment="End of variable declaration for '" + s->name + "'"},.type=InstrType::Comment},Section::Main);
 };
 
 void codegen::block(Node::Stmt *stmt) {
@@ -98,15 +104,12 @@ void codegen::expr(Node::Stmt *stmt) {
 
 void codegen::_return(Node::Stmt *stmt) {
   auto s = static_cast<ReturnStmt *>(stmt);
-  // TODO: Implement if returns
-  // Connor, please make if expressions a thing
-  // Or just remove this feature in favor of ternary expressions
-  // Thanks :)
-
-  // TODO: Restore stack sizes and stuff
+  
   codegen::visitExpr(s->expr);
   push(Instr {.var=PopInstr{.where="%rax"},.type=InstrType::Pop},Section::Main);
-  push(Instr {.var=Ret{}, .type=InstrType::Ret},Section::Main);
+  stackSize--;
+
+  push(Instr{.var = Ret{}, .type = InstrType::Ret}, Section::Main);
 };
 
 void codegen::_break(Node::Stmt *stmt) {
