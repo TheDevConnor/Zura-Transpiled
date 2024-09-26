@@ -9,11 +9,39 @@ void codegen::visitExpr(Node::Expr *expr) {
   }
 }
 
+void codegen::primary(Node::Expr *expr) {
+     // TODO: Implement the primary expression
+     switch (expr->kind) {
+          case NodeKind::ND_INT: {
+               auto e = static_cast<IntExpr *>(expr);
+               push(Instr {.var=PushInstr{.what="$" + std::to_string(e->value)},.type=InstrType::Push},Section::Main);
+               stackSize++;
+               break;
+          }
+          case NodeKind::ND_IDENT: {
+               auto e = static_cast<IdentExpr *>(expr);
+               int offset = (stackSize - stackTable.at(e->name)) * 8;
+
+               auto res = (offset == 0) ? "(%rsp)" : std::to_string(offset) + "(%rsp)";
+
+               push(Instr {.var=Comment{.comment="Ident that is being pushed '" + e->name + "'"}, .type=InstrType::Comment}, Section::Main);
+               push(Instr {.var=PushInstr{.what=res},.type=InstrType::Push},Section::Main);
+               stackSize++;
+               break;
+          }
+          default: {
+               std::cerr << "No fancy error for this, beg Connor... (Soviet Pancakes speaking)" << std::endl;
+               std::cerr << "Primary expression not implemented! (Type: NodeKind[" << (int)expr->kind << "])" << std::endl;
+               exit(-1);
+          }
+     }
+}
+
 void codegen::binary(Node::Expr *expr) {
      auto e = static_cast<BinaryExpr *>(expr);
      // Visit the left and right expressions
-     visitExpr(e->lhs);
      visitExpr(e->rhs);
+     visitExpr(e->lhs);
 
      // Pop the right expression
      push(Instr {.var=PopInstr{.where="%rbx"},.type=InstrType::Pop},Section::Main);
@@ -33,20 +61,6 @@ void codegen::binary(Node::Expr *expr) {
          push(Instr {.var=DivInstr{.from="%rbx"},.type=InstrType::Div},Section::Main);
          push(Instr {.var=BinaryInstr{.op="mov",.src="%rdx",.dst="%rax"},.type=InstrType::Binary},Section::Main);
      } else if (op == "power") {
-          // power:
-          //      push %rcx              # Save %rcx register (which will be used for loop counter)
-          //      mov %rbx, %rcx         # Move exponent value (3) into %rcx
-          //      dec %rcx               # Decrement %rcx, so it becomes (3-1) = 2
-          //      jz power_zero          # If exponent is 1, jump to power_zero (1-based logic)
-
-          // power_loop:
-          //      mul %rax               # Multiply %rax by itself (2 * 2 = 4)
-          //      dec %rcx               # Decrement %rcx
-          //      jnz power_loop         # If %rcx is not zero, jump to power_loop
-
-          // power_loop_end:
-          //      pop %rcx               # Restore %rcx register
-          //      ret                    # Return
      } 
      else {
           push(Instr {.var=BinaryInstr{.op=op,.src="%rbx",.dst="%rax"},.type=InstrType::Binary},Section::Main);
@@ -55,6 +69,13 @@ void codegen::binary(Node::Expr *expr) {
      // Push the result of the binary operation
      push(Instr {.var=PushInstr{.what="%rax"},.type=InstrType::Push},Section::Main);
      stackSize++;
+}
+
+void codegen::unary(Node::Expr *expr) {
+     auto e = static_cast<UnaryExpr *>(expr);
+     std::cerr << "No fancy error for this, beg Connor... (Soviet Pancakes speaking)" << std::endl;
+     std::cerr << "Unary expression not implemented! (Op: " << e->op << ", Expr: " << e->expr->kind << ")" << std::endl;
+     exit(-1);
 }
 
 void codegen::grouping(Node::Expr *expr) {
@@ -69,13 +90,6 @@ void codegen::grouping(Node::Expr *expr) {
      // Push the expression inside the grouping
      push(Instr {.var=PushInstr{.what="%rax"},.type=InstrType::Push},Section::Main);
      stackSize++;
-}
-
-void codegen::unary(Node::Expr *expr) {
-     auto e = static_cast<UnaryExpr *>(expr);
-     std::cerr << "No fancy error for this, beg Connor... (Soviet Pancakes speaking)" << std::endl;
-     std::cerr << "Unary expression not implemented! (Op: " << e->op << ", Expr: " << e->expr->kind << ")" << std::endl;
-     exit(-1);
 }
 
 void codegen::call(Node::Expr *expr) {
@@ -97,34 +111,6 @@ void codegen::assign(Node::Expr *expr) {
      std::cerr << "No fancy error for this, beg Connor... (Soviet Pancakes speaking)" << std::endl;
      std::cerr << "Assign expression not implemented! (New value: NodeKind[" << (int)e->rhs->kind << "], Assignee: NodeKind[" << (int)e->assignee->kind << "])" << std::endl;
      exit(-1);
-}
-
-void codegen::primary(Node::Expr *expr) {
-     // TODO: Implement the primary expression
-     switch (expr->kind) {
-          case NodeKind::ND_INT: {
-               auto e = static_cast<IntExpr *>(expr);
-               push(Instr {.var=PushInstr{.what='$' + std::to_string(e->value)},.type=InstrType::Push},Section::Main);
-               stackSize++;
-               break;
-          }
-          case NodeKind::ND_IDENT: {
-               auto e = static_cast<IdentExpr *>(expr);
-               int offset = (stackSize - stackTable[e->name]) * 8;
-
-               auto res = (offset == 0) ? "(%rbp)" : std::to_string(offset) + "(%rbp)";
-
-               push(Instr {.var=Comment{.comment="Ident that is being pushed '" + e->name + "'"}, .type=InstrType::Comment}, Section::Main);
-               push(Instr {.var=PushInstr{.what=res},.type=InstrType::Push},Section::Main);
-               stackSize++;
-               break;
-          }
-          default: {
-               std::cerr << "No fancy error for this, beg Connor... (Soviet Pancakes speaking)" << std::endl;
-               std::cerr << "Primary expression not implemented! (Type: NodeKind[" << (int)expr->kind << "])" << std::endl;
-               exit(-1);
-          }
-     }
 }
 
 void codegen::_arrayExpr(Node::Expr *expr) {

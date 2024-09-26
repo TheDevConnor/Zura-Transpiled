@@ -100,7 +100,7 @@ void codegen::gen(Node::Stmt *stmt, bool isSaved, std::string output_filename,
             "  .cfi_startproc\n"
             "  pushq %rbp\n"
             "  movq %rsp, %rbp\n"
-            "  call usr_main\n"
+            "  call _start\n"
             "  movq %rax, %rdi\n"
             "  movq $60, %rax\n"
             "  syscall\n"

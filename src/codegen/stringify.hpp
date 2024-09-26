@@ -147,7 +147,11 @@ public:
         return "# " + instr.comment + "\n\t";
       }
       std::string operator()(BinaryInstr instr) const {
-        return instr.op + " " + instr.src + ", " + instr.dst + "\n\t";
+        std::string inst = instr.op + " " + instr.src;
+        if (instr.dst != "") {
+          inst += ", " + instr.dst;
+        }
+        return inst + "\n\t";
       }
       std::string operator()(LinkerDirective instr) const { return instr.value; } // It is the responsibility of LinkerDirective to have its own formatting
     };

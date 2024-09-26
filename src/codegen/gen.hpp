@@ -86,6 +86,8 @@ inline std::vector<Instr> data_section = {}; // Technically, this will just be e
 
 inline std::unordered_map<NativeASMFunc, bool> nativeFunctionsUsed = {};
 
+inline std::vector<size_t> scopes = {};
+
 inline bool isEntryPoint = false;
 inline size_t howBadIsRbp = 0;
 inline size_t conditionalCount = 0;

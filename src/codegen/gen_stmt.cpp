@@ -34,7 +34,8 @@ void codegen::funcDecl(Node::Stmt *stmt) {
   auto s = static_cast<FnStmt *>(stmt);
   int preStackSize = stackSize;
 
-  auto funcName = (s->name == "main") ? "usr_main" : "usr_" + s->name;
+  auto funcName = (s->name == "main") ? "_start" : "usr_" + s->name;
+  push(Instr{.var = LinkerDirective{.value = "\n.type " + funcName + ", @function"},.type = InstrType::Linker},Section::Main);
   push(Instr {.var=Label{.name=funcName},.type=InstrType::Label},Section::Main);
 
   push(Instr{.var = LinkerDirective{.value = ".cfi_startproc\n\t"},.type = InstrType::Linker},Section::Main);
@@ -52,24 +53,31 @@ void codegen::funcDecl(Node::Stmt *stmt) {
 };
 
 void codegen::varDecl(Node::Stmt *stmt) {
-  auto s = static_cast<VarStmt *>(stmt);
-  
-  push(Instr {.var=Comment{.comment="Variable declaration for '" + s->name + "'"},.type=InstrType::Comment},Section::Main);
+    auto s = static_cast<VarStmt *>(stmt);
 
-  visitExpr(static_cast<ExprStmt *>(s->expr)->expr);
+    push(Instr {.var=Comment{.comment="Variable declaration for '" + s->name + "'"},.type=InstrType::Comment},Section::Main);
 
-  // add the variable to the symbol table
-  stackTable[s->name] = stackSize;
-  stackSize++;
+    // Evaluate the initializer expression, if present
+    if (s->expr) {
+        visitExpr(static_cast<ExprStmt *>(s->expr)->expr);
+        // Pop the evaluated expression into a register (or directly store it)
+        push(Instr {.var=PopInstr{.where="%rax"},.type=InstrType::Pop}, Section::Main);
+        stackSize--;
+    }
 
-  push(Instr {.var=Comment{.comment="End of variable declaration for '" + s->name + "'"},.type=InstrType::Comment},Section::Main);
-};
+    // Update the symbol table with the variable's position
+    stackTable[s->name] = stackSize;
+
+    push(Instr {.var=Comment{.comment="End of variable declaration for '" + s->name + "'"},.type=InstrType::Comment}, Section::Main);
+}
+
 
 void codegen::block(Node::Stmt *stmt) {
   auto s = static_cast<BlockStmt *>(stmt);
   // TODO: Track the number of variables and pop them off later
   // This should be handled by the IR when i get around to it though
-
+  auto preSS = stackSize;
+  scopes.push_back(preSS);
   for (Node::Stmt *stm : s->stmts) {
     if (stm->kind == ND_FN_STMT) {
       // No 🫴
@@ -79,6 +87,8 @@ void codegen::block(Node::Stmt *stmt) {
     }
     codegen::visitStmt(stm);
   }
+  scopes.pop_back();
+  stackSize = preSS;
 };
 
 void codegen::ifStmt(Node::Stmt *stmt) {
@@ -105,6 +115,10 @@ void codegen::expr(Node::Stmt *stmt) {
 void codegen::_return(Node::Stmt *stmt) {
   auto s = static_cast<ReturnStmt *>(stmt);
   
+  push(Instr{.var=Comment{.comment="Epilogue for function"},.type=InstrType::Comment},Section::Main);
+  push(Instr{.var=BinaryInstr{.op="popq",.src="%rbp"},.type=InstrType::Binary},Section::Main);
+  stackSize--;
+
   codegen::visitExpr(s->expr);
   push(Instr {.var=PopInstr{.where="%rax"},.type=InstrType::Pop},Section::Main);
   stackSize--;
