@@ -33,8 +33,12 @@ void codegen::constDecl(Node::Stmt *stmt) {
 void codegen::funcDecl(Node::Stmt *stmt) {
   auto s = static_cast<FnStmt *>(stmt);
   int preStackSize = stackSize;
-
-  auto funcName = (s->name == "main") ? s->name : "usr_" + s->name;
+  auto funcName = "usr_" + s->name;
+  isEntryPoint = false;
+  if (s->name == "main") {
+    funcName = "main";
+    isEntryPoint = true;
+  }
   push(Instr{.var = LinkerDirective{.value = "\n.type " + funcName + ", @function"},.type = InstrType::Linker},Section::Main);
   push(Instr {.var=Label{.name=funcName},.type=InstrType::Label},Section::Main);
 
@@ -42,7 +46,7 @@ void codegen::funcDecl(Node::Stmt *stmt) {
 
   push(Instr{.var=PushInstr{.what="%rbp",.whatSize=DataSize::Qword},.type=InstrType::Push},Section::Main);
   push(Instr{.var=MovInstr{.dest="%rbp",.src="%rsp",.destSize=DataSize::Qword,.srcSize=DataSize::Qword},.type=InstrType::Mov},Section::Main);
-  if (s->name == "main") {
+  if (isEntryPoint) {
     stackSize = 0;
   }
   stackSize++; // Increase for the push of rbp
@@ -129,6 +133,11 @@ void codegen::_return(Node::Stmt *stmt) {
     stackSize--;
   } else {
     push(Instr{.var=MovInstr{.dest="%rbp",.src=std::to_string(8 * (stackSize-funcBlockStart))+"(%rsp)",.destSize=DataSize::Qword,.srcSize=DataSize::Qword},.type=InstrType::Mov},Section::Main);
+  }
+  if (isEntryPoint) {
+    push(Instr{.var=MovInstr{.dest="%rdi",.src="%rax",.destSize=DataSize::Qword,.srcSize=DataSize::Qword},.type=InstrType::Mov},Section::Main);
+    push(Instr{.var=MovInstr{.dest="%rax",.src="$60",.destSize=DataSize::Qword,.srcSize=DataSize::Qword},.type=InstrType::Mov},Section::Main);
+    push(Instr{.var = Syscall{.name="SYS_EXIT"}, .type = InstrType::Syscall}, Section::Main);
   }
   push(Instr{.var = Ret{}, .type = InstrType::Ret}, Section::Main);
 };
