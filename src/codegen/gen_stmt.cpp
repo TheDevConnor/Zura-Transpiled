@@ -125,7 +125,7 @@ void codegen::_return(Node::Stmt *stmt) {
   stackSize--;
   // Pop the stacksize (important for no segfaults (: )
   if (stackSize - funcBlockStart == 0) {
-    push(Instr {.var=PopInstr{.where="%rsp",.whereSize=DataSize::Qword},.type=InstrType::Pop},Section::Main);
+    push(Instr {.var=PopInstr{.where="%rbp",.whereSize=DataSize::Qword},.type=InstrType::Pop},Section::Main);
     stackSize--;
   } else {
     push(Instr{.var=MovInstr{.dest="%rbp",.src=std::to_string(8 * (stackSize-funcBlockStart))+"(%rsp)",.destSize=DataSize::Qword,.srcSize=DataSize::Qword},.type=InstrType::Mov},Section::Main);
