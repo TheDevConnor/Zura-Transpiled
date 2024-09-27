@@ -9,6 +9,7 @@ void codegen::visitExpr(Node::Expr *expr) {
   }
 }
 
+// A basic "fallback" type of expression that covers all 1-D, basic expr's
 void codegen::primary(Node::Expr *expr) {
      // TODO: Implement the primary expression
      switch (expr->kind) {
@@ -20,18 +21,23 @@ void codegen::primary(Node::Expr *expr) {
           }
           case NodeKind::ND_IDENT: {
                auto e = static_cast<IdentExpr *>(expr);
+               if (!stackTable.contains(e->name)) {
+                    // TODO: Maybe implement a "did you mean" system using Levenshtein distance
+                    std::cerr << "Use of undefined variable '" << e->name << "'." << std::endl;
+                    exit(-1);
+               }
                int offset = (stackSize - stackTable.at(e->name)) * 8;
 
                auto res = (offset == 0) ? "(%rsp)" : std::to_string(offset) + "(%rsp)";
 
-               push(Instr {.var=Comment{.comment="Ident that is being pushed '" + e->name + "'"}, .type=InstrType::Comment}, Section::Main);
+               push(Instr {.var=Comment{.comment="Clone variable '" + e->name + "' for use as expr"}, .type=InstrType::Comment}, Section::Main);
                push(Instr {.var=PushInstr{.what=res},.type=InstrType::Push},Section::Main);
                stackSize++;
                break;
           }
           default: {
                std::cerr << "No fancy error for this, beg Connor... (Soviet Pancakes speaking)" << std::endl;
-               std::cerr << "Primary expression not implemented! (Type: NodeKind[" << (int)expr->kind << "])" << std::endl;
+               std::cerr << "Primary expression type not implemented! (Type: NodeKind[" << (int)expr->kind << "])" << std::endl;
                exit(-1);
           }
      }
@@ -40,6 +46,10 @@ void codegen::primary(Node::Expr *expr) {
 void codegen::binary(Node::Expr *expr) {
      auto e = static_cast<BinaryExpr *>(expr);
      // Visit the left and right expressions
+
+     // NOTE: This will have a setup like "push push, pop pop"
+     // which could be optimized into "mov, mov", but that could possibly mess up
+     // nested binexpr's and other operations
      visitExpr(e->rhs);
      visitExpr(e->lhs);
 
@@ -61,6 +71,7 @@ void codegen::binary(Node::Expr *expr) {
          push(Instr {.var=DivInstr{.from="%rbx"},.type=InstrType::Div},Section::Main);
          push(Instr {.var=BinaryInstr{.op="mov",.src="%rdx",.dst="%rax"},.type=InstrType::Binary},Section::Main);
      } else if (op == "power") {
+          // TODO: call native pow func
      } 
      else {
           push(Instr {.var=BinaryInstr{.op=op,.src="%rbx",.dst="%rax"},.type=InstrType::Binary},Section::Main);
@@ -94,9 +105,16 @@ void codegen::grouping(Node::Expr *expr) {
 
 void codegen::call(Node::Expr *expr) {
      auto e = static_cast<CallExpr *>(expr);
-     std::cerr << "No fancy error for this, beg Connor... (Soviet Pancakes speaking)" << std::endl;
-     std::cerr << "Call expression not implemented! (Name: " << e->callee << ")" << std::endl;
-     exit(-1);
+     auto n = static_cast<IdentExpr *>(e->callee);
+     // Push each argument one by one.
+     for (auto p : e->args) {
+          // evaluate them
+          codegen::visitExpr(p);
+     }
+     // Call the function
+     push(Instr {.var=CallInstr{.name="usr_" + n->name},.type=InstrType::Call,.optimize=false},Section::Main);
+     push(Instr {.var=PushInstr{.what="%rax",.whatSize=DataSize::Qword},.type=InstrType::Push},Section::Main);
+     stackSize++;
 }
 
 void codegen::ternary(Node::Expr *expr) {

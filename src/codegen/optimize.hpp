@@ -84,10 +84,10 @@ struct JumpInstr {
   std::string label;
 };
 
-struct SetInstr {
-  std::string what;
-  std::string where;
-};
+// struct SetInstr {
+//   std::string what;
+//   std::string where;
+// };
 
 struct DBInstr {
   std::string what;
@@ -172,7 +172,7 @@ enum class JumpCondition {
 
 struct Instr {
   std::variant<MovInstr, PushInstr, PopInstr, XorInstr, AddInstr, SubInstr,
-               MulInstr, DivInstr, CmpInstr, SetInstr, Label, Syscall, Ret, 
+               MulInstr, DivInstr, CmpInstr, Label, Syscall, Ret, 
                NegInstr, NotInstr, JumpInstr, Comment, DBInstr, CallInstr,
               LinkerDirective, AscizInstr, BinaryInstr>
       var;
@@ -229,6 +229,7 @@ public:
     for (Instr &instr : input) {
       if (!prev.optimize || !instr.optimize) {
         output.push_back(instr);
+        prev = Instr {.type=InstrType::NONE};
         continue;
       }
       if (prev.type == opposites.at(instr.type)) {
@@ -239,8 +240,10 @@ public:
           PushInstr prevAsPush = std::get<PushInstr>(prev.var);
           PopInstr currAsPop = std::get<PopInstr>(instr.var);
 
-          if (prevAsPush.what == currAsPop.where)
+          if (prevAsPush.what == currAsPop.where) {
+            prev = Instr {.type=InstrType::NONE};
             continue; // No 🫴
+          }
 
           if (prevAsPush.what == "0" &&
               (currAsPop.where.find('[') == std::string::npos)) {

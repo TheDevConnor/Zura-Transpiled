@@ -34,19 +34,27 @@ void codegen::funcDecl(Node::Stmt *stmt) {
   auto s = static_cast<FnStmt *>(stmt);
   int preStackSize = stackSize;
 
-  auto funcName = (s->name == "main") ? "_start" : "usr_" + s->name;
+  auto funcName = (s->name == "main") ? s->name : "usr_" + s->name;
   push(Instr{.var = LinkerDirective{.value = "\n.type " + funcName + ", @function"},.type = InstrType::Linker},Section::Main);
   push(Instr {.var=Label{.name=funcName},.type=InstrType::Label},Section::Main);
 
   push(Instr{.var = LinkerDirective{.value = ".cfi_startproc\n\t"},.type = InstrType::Linker},Section::Main);
 
+  push(Instr{.var=PushInstr{.what="%rbp",.whatSize=DataSize::Qword},.type=InstrType::Push},Section::Main);
+  push(Instr{.var=MovInstr{.dest="%rbp",.src="%rsp",.destSize=DataSize::Qword,.srcSize=DataSize::Qword},.type=InstrType::Mov},Section::Main);
+  if (s->name == "main") {
+    stackSize = 0;
+  }
+  stackSize++; // Increase for the push of rbp
+  funcBlockStart = stackSize;
   // Function args
   for (auto &args : s->params) {
     stackTable[args.first] = stackSize;
   }
-
   codegen::visitStmt(s->block);
   stackSize = preStackSize;
+  funcBlockStart = -1;
+  // Function ends with ret so we can't really push any other instructions.
 
   push(Instr{.var = LinkerDirective{.value = ".cfi_endproc\n"},.type = InstrType::Linker},Section::Main);
   push(Instr{.var = LinkerDirective{.value = ".size " + funcName + ", .-" + funcName + "\n\t"},.type = InstrType::Linker},Section::Main);
@@ -115,7 +123,13 @@ void codegen::_return(Node::Stmt *stmt) {
   codegen::visitExpr(s->expr);
   push(Instr {.var=PopInstr{.where="%rax"},.type=InstrType::Pop},Section::Main);
   stackSize--;
-
+  // Pop the stacksize (important for no segfaults (: )
+  if (stackSize - funcBlockStart == 0) {
+    push(Instr {.var=PopInstr{.where="%rsp",.whereSize=DataSize::Qword},.type=InstrType::Pop},Section::Main);
+    stackSize--;
+  } else {
+    push(Instr{.var=MovInstr{.dest="%rbp",.src=std::to_string(8 * (stackSize-funcBlockStart))+"(%rsp)",.destSize=DataSize::Qword,.srcSize=DataSize::Qword},.type=InstrType::Mov},Section::Main);
+  }
   push(Instr{.var = Ret{}, .type = InstrType::Ret}, Section::Main);
 };
 

@@ -16,7 +16,8 @@ public:
     return output;
   }
 
-  inline static char dsToChar(DataSize in) {
+  // dataSize to Char
+  inline static std::string dsToChar(DataSize in) {
     /* good to have for a quick look
     NONE,  0
     BYTE,  1
@@ -26,16 +27,16 @@ public:
     */
     switch (in) {
       case DataSize::Byte:
-        return 'b';
+        return "b";
       case DataSize::Word:
-        return 'w';
+        return "w";
       case DataSize::Dword:
-        return 'l'; // 'long'
+        return "l"; // 'long' - aka 'dword'
       case DataSize::Qword:
-        return 'q';
+        return "q";
       case DataSize::None:
       default:
-        return 0; // lets ru
+        return ""; // "I dont know", but usually the assembler can assume types
     }
   }
 
@@ -51,32 +52,37 @@ public:
         return ss.str();
       }
       std::string operator()(PushInstr instr) const {
-        return "push " + instr.what + "\n\t";
+        return "push" + dsToChar(instr.whatSize) + " " + instr.what + "\n\t";
       }
       std::string operator()(PopInstr instr) const {
-        return "pop " + instr.where + "\n\t";
+        return "pop" + dsToChar(instr.whereSize) + " " + instr.where + "\n\t";
       }
       std::string operator()(XorInstr instr) const {
-        return "xor " + instr.lhs + ", " + instr.rhs + "\n\t";
+        // Assume qword
+        return "xorq " + instr.lhs + ", " + instr.rhs + "\n\t";
       }
       std::string operator()(AddInstr instr) const {
-        return "add " + instr.rhs + ", " + instr.lhs + "\n\t";
+        return "addq " + instr.rhs + ", " + instr.lhs + "\n\t";
       }
       std::string operator()(SubInstr instr) const {
-        return "sub " + instr.rhs + ", " + instr.lhs + "\n\t";
+        return "subq " + instr.rhs + ", " + instr.lhs + "\n\t";
       }
       std::string operator()(MulInstr instr) const {
-        return "mul " + instr.from + "\n\t";
+        return "mulq " + instr.from + "\n\t";
       }
       std::string operator()(DivInstr instr) const {
-        return "div " + instr.from + "\n\t";
+        return "divq " + instr.from + "\n\t";
       }
       std::string operator()(Label instr) const {
         return "\n" + instr.name + ":\n\t";
       }
       std::string operator()(CmpInstr instr) const {
         // For some GODFORSAKEN reason, AT&T syntax switches `cmp` instruction operands, too!
-        return "cmp " + instr.rhs + ", " + instr.lhs + "\n\t";
+        /*
+        cmpq $8, $16
+        jg example # JUMPS IF 16 > 8 ???!?!?
+        */
+        return "cmpq " + instr.rhs + ", " + instr.lhs + "\n\t";
       }
       std::string operator()(JumpInstr instr) const {
         std::string keyword = {};
@@ -121,31 +127,40 @@ public:
         }
         return keyword + " " + instr.label + "\n\t";
       }
-      std::string operator()(SetInstr instr) const {
-        return "set" + instr.what + " " + instr.where + "\n\t";
-      }
+      // connor was on something bro lmao
+      // set is not an instruction :joy:
+      // std::string operator()(SetInstr instr) const {
+      //   return "set" + instr.what + " " + instr.where + "\n\t";
+      // }
       std::string operator()(CallInstr instr) const {
         return "call " + instr.name + "\n\t";
       }
       std::string operator()(Syscall instr) const {
         return "syscall # " + instr.name + "\n\t";
       }
+      // 2's complement - negate a reg / effective addr
       std::string operator()(NegInstr instr) const {
         return "neg " + instr.what + "\n\t";
       }
+      // bitwise not
       std::string operator()(NotInstr instr) const {
         return "not " + instr.what + "\n\t";
       }
+      // define bytes (intel syntax, replaced by .asciz)
       std::string operator()(DBInstr instr) const {
         return "db " + instr.what + "\n\t";
       }
+      // define an ascii string with null (zero) termination
       std::string operator()(AscizInstr instr) const {
         return ".asciz " + instr.what + "\n\t";
       }
+      // return from %rip and trace back up the call stack
       std::string operator()(Ret instr) const { return "ret\n\t"; }
+      // self explanatory
       std::string operator()(Comment instr) const {
         return "# " + instr.comment + "\n\t";
       }
+      // binary operation (Add, Sub, Mul, Div, ...)
       std::string operator()(BinaryInstr instr) const {
         std::string inst = instr.op + " " + instr.src;
         if (instr.dst != "") {
@@ -153,7 +168,9 @@ public:
         }
         return inst + "\n\t";
       }
-      std::string operator()(LinkerDirective instr) const { return instr.value; } // It is the responsibility of LinkerDirective to have its own formatting
+      // String literal (eg .cfi_startproc in functions)
+      // It is the responsibility of the input to have its own formatting
+      std::string operator()(LinkerDirective instr) const { return instr.value; }
     };
     return std::visit(InstrVisitor {}, instr.var);
   }

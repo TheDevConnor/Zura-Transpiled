@@ -71,6 +71,7 @@ void FlagConfig::runBuild(int argc, char **argv) {
         [](const char *arg) { return strcmp(arg, "-name") == 0; },
         [](const char *arg) { return strcmp(arg, "-save") == 0; },
         [](const char *arg) { return strcmp(arg, "-clean") == 0; },
+        [](const char *arg) { return strcmp(arg, "test") == 0; },
     };
 
     if (argc < 2) {
@@ -85,6 +86,39 @@ void FlagConfig::runBuild(int argc, char **argv) {
                 std::system(remove.c_str());
                 return;
             }
+            if (i == 4) { // test
+                // TODO: Standard programs that return known return values / console outputs
+                // Eg.
+                /*
+                const main := fn () int {
+                    return 5;
+                }
+                -------------------- Expect 5
+                const main := fn () int {
+                    have x: int = 4;
+                    return x;
+                }
+                -------------------- Expect 4
+                const main := fn () int {
+                    return (5 + 9) / 2;
+                }
+                -------------------- Expect 7
+                const main := fn () int {
+                    have x: int = 8;
+                    x = 3;
+                    return x;
+                }
+                -------------------- Expect 3
+                const abc := fn () int {
+                    return 9;
+                }
+
+                const main := fn () int {
+                    return abc();
+                }
+                -------------------- Expect 9
+                */
+            }
             if (i == 0) { // build
                 if (argc < 3) {
                     std::cout << "No file specified" << std::endl;
@@ -96,6 +130,7 @@ void FlagConfig::runBuild(int argc, char **argv) {
                 bool saveFlag = false;
 
                 // Check for additional flags after 'build'
+                // TODO: Remove nested loop ..?!?!?!?
                 for (int j = 3; j < argc; ++j) {
                     if (strcmp(argv[j], "-name") == 0) {
                         if (j + 1 < argc) {

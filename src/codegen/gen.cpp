@@ -85,7 +85,7 @@ void codegen::gen(Node::Stmt *stmt, bool isSaved, std::string output_filename,
             "# "
          << ZuraVersion
          << "\n"
-            "# What's New: Loops (While/For)\n";
+            "# What's New: Rewrite compiler to be WAY BETTER!\n";
     // Copying gcc and hoping something changes (it won't)
     // .file directive does not like non-c and non-cpp files but it might be
     // useful for something somewhere later
@@ -94,20 +94,7 @@ void codegen::gen(Node::Stmt *stmt, bool isSaved, std::string output_filename,
             "\n.data\n";
     file << Stringifier::stringifyInstrs(data_section);
     file << ".text\n"
-            ".globl main\n"
-            ".type main, @function\n"
-            "main:\n"
-            "  .cfi_startproc\n"
-            "  pushq %rbp\n"
-            "  movq %rsp, %rbp\n"
-            "  call _start\n"
-            "  movq %rax, %rdi\n"
-            "  movq $60, %rax\n"
-            "  syscall\n"
-            // Technically, `ret` not needed becuase func exits above but we pretend that it is
-            "  ret\n"
-            "  .cfi_endproc\n"
-            ".size main, .-main\n";
+            ".globl main\n";
     file << Stringifier::stringifyInstrs(text_section);
     file << "\n# zura functions\n";
     if (nativeFunctionsUsed[NativeASMFunc::strlen] == true) {

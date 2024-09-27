@@ -96,6 +96,8 @@ inline size_t loopCount = 0;
 inline size_t arrayCount = 0;
 //                            idx    # ELEM
 inline std::vector<std::pair<size_t, size_t>> arrayCounts = {};
+
+inline size_t funcBlockStart = -1; // Set to "stackSize" on FuncDecl blocks, will be set to crazy value when not used
 void push(Instr instr, Section section = Section::Main);
 
 void pushCompAsExpr(); // assuming compexpr's will already do the "cmp" and "jmp", we will push 0x0 or 0x1 depending on the result

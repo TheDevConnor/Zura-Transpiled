@@ -1,4 +1,9 @@
+const abc := fn () int {
+
+   return 6;
+};
+
+
 const main := fn () int {
-   have x: int = 10;
-   return x;
+   return abc();
 };
