@@ -1,9 +1,20 @@
-const abc := fn () int {
-
-   return 6;
+const calculate_average := fn (a: float, b: float) float {
+   return (a + b) / 2.0;
 };
 
+const main := fn () int { 
+   have x: int = 10;
+   have y: int = 20;
 
-const main := fn () int {
-   return abc();
+   dis("Integer values: 'x=", x, "' and 'y=", y, "'\n");
+
+   have fx: float = @cast<float>(x);
+   have fy: float = @cast<float>(y);
+
+   dis("Float values: 'fx=", fx, "' and 'fy=", fy, "'\n");
+
+   have avg: float = calculate_average(fx, fy);
+   dis("Average of float values: 'avg=", avg, "'\n");
+
+   return 0;
 };

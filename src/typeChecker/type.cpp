@@ -8,6 +8,7 @@ void TypeChecker::performCheck(Node::Stmt *stmt) {
   visitStmt(map.get(), stmt); // Pass the instance of Maps to visitStmt
 
   if (!foundMain) {
+    std::cout << "No main function found" << std::endl;
     handlerError(0, 0, "No main function found",
                  "Try adding this function: \n\tconst main := fn() int { \n\t  "
                  "  return 0\n\t}",

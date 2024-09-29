@@ -73,6 +73,8 @@ public:
   lookup_fn(Maps *maps, std::string name, int line, int pos);
 };
 
+inline bool needsReturn = false;
+
 void performCheck(Node::Stmt *stmt);
 void printTables(Maps *map);
 

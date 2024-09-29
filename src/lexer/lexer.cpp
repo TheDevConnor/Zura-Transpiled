@@ -117,8 +117,9 @@ Lexer::Token Lexer::scanToken() {
   char c = Lexer::advance();
 
   auto res = isalpha(c)   ? makeToken(identifier().kind)
-             : isdigit(c) ? makeToken(number().kind)
-             : c == '"'   ? makeToken(String().kind)
+                          : c == '@'  ? makeToken(at_keywords[identifier().value])
+                          : isdigit(c) ? makeToken(number().kind)
+                          : c == '"'   ? makeToken(String().kind)
                           : makeToken(sc_dc_lookup(c));
 
   if (res.kind == TokenKind::UNKNOWN) {

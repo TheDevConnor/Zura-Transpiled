@@ -58,6 +58,15 @@ void TypeChecker::visitFn(Maps *map, Node::Stmt *stmt) {
     return;
   }
 
+  // Verify that we have a return stmt in the function
+  if (!needsReturn && type_to_string(fn_stmt->returnType) != "void") {
+    std::cout << "In here" << std::endl;
+    std::string msg = "Function '" + fn_stmt->name + "' requeries a return stmt "
+                      "but none was found";
+    handlerError(fn_stmt->line, fn_stmt->pos, msg, "", "Type Error");
+    return;
+  }
+
   if (type_to_string(return_type.get()) !=
       type_to_string(fn_stmt->returnType)) {
     std::string msg = "Function '" + fn_stmt->name + "' must return a '" +
@@ -163,6 +172,7 @@ void TypeChecker::visitPrint(Maps *map, Node::Stmt *stmt) {
 
 void TypeChecker::visitReturn(Maps *map, Node::Stmt *stmt) {
   auto return_stmt = static_cast<ReturnStmt *>(stmt);
+  needsReturn = true;
 
   if (return_stmt->stmt != nullptr) { // if the return statement is a statement
     visitStmt(map, return_stmt->stmt);

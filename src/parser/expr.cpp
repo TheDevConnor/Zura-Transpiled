@@ -81,8 +81,7 @@ Node::Expr *Parser::_prefix(PStruct *psr) {
   return new PrefixExpr(line, column, right, op.value);
 }
 
-// update cast syntax to `cast<value, type>`
-// TODO: For some reason it segfaults when parsing a cast expression
+// update cast syntax to `@cast<type>(expr)`
 Node::Expr *Parser::cast_expr(PStruct *psr) {
   auto line = psr->tks[psr->pos].line;
   auto column = psr->tks[psr->pos].column;
@@ -93,14 +92,14 @@ Node::Expr *Parser::cast_expr(PStruct *psr) {
   Node::Type *castee_type = nullptr;
 
   psr->expect(psr, TokenKind::LESS, "Expected a 'LESS' to start a cast!");
-  while (psr->current(psr).kind != TokenKind::RIGHT_PAREN) {
-    castee = primary(psr);
-
-    psr->expect(psr, TokenKind::COMMA, "expected a comma between the castee and cast type!");
-
-    castee_type = parseType(psr, defaultValue);
-  }
+  castee_type = parseType(psr, defaultValue);
   psr->expect(psr, TokenKind::GREATER, "Expected GREATER to begin a cast!");
+
+  psr->expect(psr, TokenKind::LEFT_PAREN,
+              "Expected a L_Paran to be able to cast an expression!");
+  castee = parseExpr(psr, defaultValue);
+  psr->expect(psr, TokenKind::RIGHT_PAREN,
+              "Expected a R_Paran to end a cast expr!");
 
   return new CastExpr(line, column, castee, castee_type);
 }

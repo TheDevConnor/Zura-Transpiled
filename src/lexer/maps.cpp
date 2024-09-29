@@ -50,6 +50,11 @@ void Lexer::initMap() {
        }},
   };
 
+  at_keywords = {
+      {"@template", TokenKind::TEMPLATE}, {"@typealias", TokenKind::TYPEALIAS},
+      {"@cast", TokenKind::CAST},
+  };
+
   keywords = {
       {"and", TokenKind::AND},           {"else", TokenKind::ELSE},
       {"false", TokenKind::FAL},         {"fn", TokenKind::FUN},
@@ -63,9 +68,7 @@ void Lexer::initMap() {
       {"enum", TokenKind::ENUM},         {"union", TokenKind::UNION},
       {"const", TokenKind::_CONST},      {"import", TokenKind::IMPORT},
       {"pub", TokenKind::PUB},           {"priv", TokenKind::PRIV},
-      {"template", TokenKind::TEMPLATE}, {"typealias", TokenKind::TYPEALIAS},
       {"break", TokenKind::BREAK},       {"continue", TokenKind::CONTINUE},
-      {"cast", TokenKind::CAST},
   };
 
   scMap = {
@@ -80,7 +83,7 @@ void Lexer::initMap() {
       {':', TokenKind::COLON},         {'=', TokenKind::EQUAL},
       {'!', TokenKind::BANG},          {'<', TokenKind::LESS},
       {'>', TokenKind::GREATER},       {'&', TokenKind::LAND},
-      {'|', TokenKind::LOR},           {'@', TokenKind::AT},
+      {'|', TokenKind::LOR}, 
   };
 
   dcMap = {
