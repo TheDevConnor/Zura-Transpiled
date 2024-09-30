@@ -373,10 +373,11 @@ public:
   int line, pos;
   Node::Expr *callee;
   std::vector<Node::Expr *> args;
+  Node::Type *template_type;
 
   CallExpr(int line, int pos, Node::Expr *callee,
-           std::vector<Node::Expr *> args)
-      : line(line), pos(pos), callee(callee), args(args) {
+           std::vector<Node::Expr *> args, Node::Type *template_type)
+      : line(line), pos(pos), callee(callee), args(args), template_type(template_type) {
     kind = NodeKind::ND_CALL;
   }
 
@@ -386,6 +387,12 @@ public:
     Node::printIndent(ident + 1);
     std::cout << "Callee: \n";
     callee->debug(ident + 2);
+    Node::printIndent(ident + 1);
+    if (template_type != nullptr) {
+      std::cout << "Template Type: ";
+      template_type->debug(ident + 2);
+      std::cout << std::endl;
+    }
     Node::printIndent(ident + 1);
     std::cout << "Arguments: \n";
     for (auto arg : args) {

@@ -51,8 +51,7 @@ void Lexer::initMap() {
   };
 
   at_keywords = {
-      {"@template", TokenKind::TEMPLATE}, {"@typealias", TokenKind::TYPEALIAS},
-      {"@cast", TokenKind::CAST},
+      {"@template", TokenKind::TEMPLATE}, {"@cast", TokenKind::CAST},
   };
 
   keywords = {
@@ -69,6 +68,7 @@ void Lexer::initMap() {
       {"const", TokenKind::_CONST},      {"import", TokenKind::IMPORT},
       {"pub", TokenKind::PUB},           {"priv", TokenKind::PRIV},
       {"break", TokenKind::BREAK},       {"continue", TokenKind::CONTINUE},
+      {"typename", TokenKind::TYPEALIAS},
   };
 
   scMap = {

@@ -227,8 +227,11 @@ Node::Expr *Parser::assign(PStruct *psr, Node::Expr *left, BindingPower bp) {
 
 Node::Expr *Parser::parse_call(PStruct *psr, Node::Expr *left,
                                BindingPower bp) {
+  std::cout << "Parsing a call expr!" << std::endl;
   auto line = psr->tks[psr->pos].line;
   auto column = psr->tks[psr->pos].column;
+
+  Node::Type *template_type = nullptr;
 
   psr->expect(psr, TokenKind::LEFT_PAREN,
               "Expected a L_Paran to start a call expr!");
@@ -244,7 +247,16 @@ Node::Expr *Parser::parse_call(PStruct *psr, Node::Expr *left,
   psr->expect(psr, TokenKind::RIGHT_PAREN,
               "Expected a R_Paren to end a call expr!");
 
-  return new CallExpr(line, column, left, args);
+  if (psr->current(psr).kind == TokenKind::LESS) {
+    psr->expect(psr, TokenKind::LESS,
+                "Expected a LESS to start a template type in a call expr!");
+    template_type = parseType(psr, defaultValue);
+    psr->expect(psr, TokenKind::GREATER,
+                "Expected a GREATER to end a template type in a call expr!");
+    return new CallExpr(line, column, left, args, template_type);
+  }
+
+  return new CallExpr(line, column, left, args, template_type);
 }
 
 Node::Expr *Parser::_ternary(PStruct *psr, Node::Expr *left, BindingPower bp) {
