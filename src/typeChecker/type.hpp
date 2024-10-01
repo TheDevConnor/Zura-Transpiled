@@ -107,6 +107,7 @@ void visitBreak(Maps *map, Node::Stmt *stmt);
 void visitContinue(Maps *map, Node::Stmt *stmt);
 
 // !Expr functions
+void visitTemplateCall(Maps *map, Node::Expr *expr);  
 void visitExpr(Maps *map, Node::Expr *expr);
 void visitInt(Maps *map, Node::Expr *expr);
 void visitFloat(Maps *map, Node::Expr *expr);

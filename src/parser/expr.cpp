@@ -138,6 +138,22 @@ Node::Expr *Parser::binary(PStruct *psr, Node::Expr *left, BindingPower bp) {
   auto column = psr->tks[psr->pos].column;
 
   auto op = psr->advance(psr);
+
+  // check if we are doing a template call type operation or a binary operation
+  if (op.kind == TokenKind::LESS) {
+    auto *template_type = parseType(psr, defaultValue);
+
+    if (template_type != nullptr) {
+      psr->expect(psr, TokenKind::GREATER,
+                  "Expected a GREATER to end a template type in a binary expr!");
+
+      auto *right =  parse_call(psr, left, defaultValue);
+
+      return new TemplateCallExpr(line, column, left, template_type, right);
+    }
+    // do nothing if the template type is null and continue to parse the binary
+  }
+
   auto *right = parseExpr(psr, bp);
 
   return new BinaryExpr(line, column, left, right, op.value);
@@ -227,11 +243,8 @@ Node::Expr *Parser::assign(PStruct *psr, Node::Expr *left, BindingPower bp) {
 
 Node::Expr *Parser::parse_call(PStruct *psr, Node::Expr *left,
                                BindingPower bp) {
-  std::cout << "Parsing a call expr!" << std::endl;
   auto line = psr->tks[psr->pos].line;
   auto column = psr->tks[psr->pos].column;
-
-  Node::Type *template_type = nullptr;
 
   psr->expect(psr, TokenKind::LEFT_PAREN,
               "Expected a L_Paran to start a call expr!");
@@ -239,24 +252,16 @@ Node::Expr *Parser::parse_call(PStruct *psr, Node::Expr *left,
 
   while (psr->current(psr).kind != TokenKind::RIGHT_PAREN) {
     args.push_back(parseExpr(psr, defaultValue));
+    
     if (psr->current(psr).kind == TokenKind::COMMA)
       psr->expect(psr, TokenKind::COMMA,
-                  "Expected a COMMA after an arguement!");
+                  "Expected a COMMA after an argument in a call expr!");
   }
 
   psr->expect(psr, TokenKind::RIGHT_PAREN,
               "Expected a R_Paren to end a call expr!");
 
-  if (psr->current(psr).kind == TokenKind::LESS) {
-    psr->expect(psr, TokenKind::LESS,
-                "Expected a LESS to start a template type in a call expr!");
-    template_type = parseType(psr, defaultValue);
-    psr->expect(psr, TokenKind::GREATER,
-                "Expected a GREATER to end a template type in a call expr!");
-    return new CallExpr(line, column, left, args, template_type);
-  }
-
-  return new CallExpr(line, column, left, args, template_type);
+  return new CallExpr(line, column, left, args);
 }
 
 Node::Expr *Parser::_ternary(PStruct *psr, Node::Expr *left, BindingPower bp) {

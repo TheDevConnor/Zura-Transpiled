@@ -60,7 +60,6 @@ void TypeChecker::visitFn(Maps *map, Node::Stmt *stmt) {
 
   // Verify that we have a return stmt in the function
   if (!needsReturn && type_to_string(fn_stmt->returnType) != "void") {
-    std::cout << "In here" << std::endl;
     std::string msg = "Function '" + fn_stmt->name + "' requeries a return stmt "
                       "but none was found";
     handlerError(fn_stmt->line, fn_stmt->pos, msg, "", "Type Error");

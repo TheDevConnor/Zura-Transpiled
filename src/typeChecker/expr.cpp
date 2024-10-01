@@ -7,6 +7,13 @@ void TypeChecker::visitExpr(Maps *map, Node::Expr *expr) {
   ExprAstLookup(expr, map);
 }
 
+void TypeChecker::visitTemplateCall(Maps *map, Node::Expr *expr) {
+  auto template_call = static_cast<TemplateCallExpr *>(expr);
+
+  auto msg = "Template function calls are not supported yet";
+  handlerError(template_call->line, template_call->pos, msg, "", "Type Error");
+}
+
 void TypeChecker::visitInt(Maps *map, Node::Expr *expr) {
   auto integer = static_cast<IntExpr *>(expr);
 

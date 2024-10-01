@@ -23,6 +23,7 @@ enum NodeKind {
   ND_POP,
   ND_PUSH,
   ND_CALL,
+  ND_TEMPLATE_CALL,
   ND_ASSIGN,
   ND_TERNARY,
   ND_MEMBER,

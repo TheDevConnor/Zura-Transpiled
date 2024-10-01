@@ -373,11 +373,10 @@ public:
   int line, pos;
   Node::Expr *callee;
   std::vector<Node::Expr *> args;
-  Node::Type *template_type;
 
   CallExpr(int line, int pos, Node::Expr *callee,
-           std::vector<Node::Expr *> args, Node::Type *template_type)
-      : line(line), pos(pos), callee(callee), args(args), template_type(template_type) {
+           std::vector<Node::Expr *> args)
+      : line(line), pos(pos), callee(callee), args(args) {
     kind = NodeKind::ND_CALL;
   }
 
@@ -387,12 +386,6 @@ public:
     Node::printIndent(ident + 1);
     std::cout << "Callee: \n";
     callee->debug(ident + 2);
-    Node::printIndent(ident + 1);
-    if (template_type != nullptr) {
-      std::cout << "Template Type: ";
-      template_type->debug(ident + 2);
-      std::cout << std::endl;
-    }
     Node::printIndent(ident + 1);
     std::cout << "Arguments: \n";
     for (auto arg : args) {
@@ -405,6 +398,41 @@ public:
     for (auto arg : args) {
       delete arg;
     }
+  }
+};
+
+class TemplateCallExpr : public Node::Expr {
+public:
+  int line, pos;
+  Node::Expr *callee;
+  Node::Type *template_type;
+  Node::Expr *args;
+
+  TemplateCallExpr(int line, int pos, Node::Expr *callee, Node::Type *template_type,
+                   Node::Expr *args)
+      : line(line), pos(pos), callee(callee), template_type(template_type), args(args) {
+    kind = NodeKind::ND_TEMPLATE_CALL;
+  }
+
+  void debug(int ident = 0) const override {
+    Node::printIndent(ident);
+    std::cout << "TemplateCallExpr: \n";
+    Node::printIndent(ident + 1);
+    std::cout << "Callee: \n";
+    callee->debug(ident + 2);
+    Node::printIndent(ident + 1);
+    std::cout << "Template Type: ";
+    template_type->debug(ident + 2);
+    std::cout << std::endl;
+    Node::printIndent(ident + 1);
+    std::cout << "Arguments: \n";
+    args->debug(ident + 2);
+  }
+
+  ~TemplateCallExpr() {
+    delete callee;
+    delete template_type;
+    delete args;
   }
 };
 

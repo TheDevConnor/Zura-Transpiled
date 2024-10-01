@@ -5,7 +5,7 @@ const add := fn(a: T, b: T) T {
 };
 
 const main := fn() int {
-   dis("Using an interger add function -> ", add(1, 2)<int>);
-   dis("Using a float add function -> ", add(1.1, 2.2)<float>);
+   dis("Using an interger add function -> ", add<int>(1, 2));
+   dis("Using a float add function -> ", add<float>(1.1, 2.2));
    return 0;
 };
