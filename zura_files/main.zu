@@ -1,11 +1,5 @@
-# TODO: Add in type checking for template functions and calls
-@template <typename T>
-const add := fn(a: T, b: T) T {
-   return a + b;
-};
-
-const main := fn() int {
-   dis("Using an interger add function -> ", add<int>(1, 2));
-   dis("Using a float add function -> ", add<float>(1.1, 2.2));
-   return 0;
+const main := fn () int { 
+   have x: int = 1;
+   have y: int = 2;
+   return xy;
 };

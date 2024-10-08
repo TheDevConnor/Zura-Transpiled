@@ -1,7 +1,6 @@
 #pragma once
 
 #include "../lexer/lexer.hpp"
-#include "../ir/ir.hpp"
 
 #include <iostream>
 #include <string>

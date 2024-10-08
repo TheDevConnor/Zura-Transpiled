@@ -6,7 +6,7 @@
 #include "../../common.hpp"
 #include "../../lexer/lexer.hpp"
 #include "../../parser/parser.hpp"
-#include "../color.hpp"
+#include "../term_color/color.hpp"
 #include "error.hpp"
 
 Color col;

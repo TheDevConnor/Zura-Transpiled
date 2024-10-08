@@ -1,7 +1,10 @@
+#include "../helper/math/math.hpp"
 #include "type.hpp"
 #include <memory>
 #include <sstream>
+
 #include <limits>
+#include <optional>
 
 void TypeChecker::visitExpr(Maps *map, Node::Expr *expr) {
   ExprAstLookup(expr, map);
@@ -51,10 +54,28 @@ void TypeChecker::visitIdent(Maps *map, Node::Expr *expr) {
   auto ident = static_cast<IdentExpr *>(expr);
   auto res = Maps::lookup(map->local_symbol_table, ident->name, ident->line,
                           ident->pos, "local symbol table");
-  // update the ast-node (IdentExpr) to hold the type of the identifier as a property
+
+  // check if we found something in the local symbol table if not return error
+  // of 'did you mean'
+  if (type_to_string(res) == "unknown") {
+    std::vector<std::string> stackKeys;
+    for (auto const &[key, _] : map->local_symbol_table) {
+      stackKeys.push_back(key);
+    }
+    std::optional<std::string> closest =
+        string_distance(stackKeys, ident->name, 3);
+    if (closest.has_value()) {
+      std::string msg = "Undefined variable '" + ident->name + "'";
+      std::string note = "Did you mean '" + closest.value() + "'?";
+      handlerError(ident->line, ident->pos, msg, note, "Symbol Table Error");
+    }
+  }
+
+  // update the ast-node (IdentExpr) to hold the type of the identifier as a
+  // property
   ident->type = res;
-  
   return_type = std::make_shared<SymbolType>(type_to_string(res));
+
 }
 
 void TypeChecker::visitBinary(Maps *map, Node::Expr *expr) {
@@ -309,4 +330,3 @@ void TypeChecker::visitCast(Maps *map, Node::Expr *expr) {
 
   return_type = std::make_shared<SymbolType>(type_to_string(cast->castee_type));
 }
-
