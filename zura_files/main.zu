@@ -1,5 +1,6 @@
 const main := fn () int { 
    have x: int = 1;
    have y: int = 2;
-   return xy;
+   have u: int = 6;
+   return (x + y * u - x) / y; 
 };

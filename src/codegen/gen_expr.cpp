@@ -51,52 +51,39 @@ void codegen::primary(Node::Expr *expr) {
 
 void codegen::binary(Node::Expr *expr) {
   auto e = static_cast<BinaryExpr *>(expr);
-  // Visit the left and right expressions
+  bool isAddition = (e->op == "+" || e->op == "-");
 
-  // NOTE: This will have a setup like "push push, pop pop"
-  // which could be optimized into "mov, mov", but that could possibly mess up
-  // nested binexpr's and other operations
-  visitExpr(e->rhs);
+  std::string lhs_reg = isAddition ? "%rbx" : "%rax";
+  std::string rhs_reg = isAddition ? "%rcx" : "%rbx";
+
   visitExpr(e->lhs);
-
-  // Pop the right expression
-  push(Instr{.var = PopInstr{.where = "%rbx"}, .type = InstrType::Pop},
+  visitExpr(e->rhs);
+  
+  // Pop the right hand side
+  push(Instr{.var = PopInstr{.where = rhs_reg}, .type = InstrType::Pop},
        Section::Main);
   stackSize--;
 
-  // Pop the left expression
-  push(Instr{.var = PopInstr{.where = "%rax"}, .type = InstrType::Pop},
+  // Pop the left hand side
+  push(Instr{.var = PopInstr{.where = lhs_reg}, .type = InstrType::Pop},
        Section::Main);
   stackSize--;
 
-  // Perform the binary operation
+  // Perform the binary operation 
   std::string op = lookup(opMap, e->op);
   if (op == "imul" || op == "idiv") {
-    auto instr = (op == "imul") ? InstrType::Mul : InstrType::Div;
-    push(Instr{.var = BinaryInstr{.op = op, .src = "%rbx", .dst = "%rax"},
-               .type = InstrType::Binary},
+    push(Instr{.var = BinaryInstr{.op = op, .src = rhs_reg}, .type = InstrType::Binary},
          Section::Main);
-  } else if (op == "mod") {
-    push(Instr{.var = XorInstr{.lhs = "%rdx", .rhs = "%rdx"},
-               .type = InstrType::Xor},
-         Section::Main);
-    push(Instr{.var = DivInstr{.from = "%rbx"}, .type = InstrType::Div},
-         Section::Main);
-    push(Instr{.var = BinaryInstr{.op = "mov", .src = "%rdx", .dst = "%rax"},
-               .type = InstrType::Binary},
-         Section::Main);
-  } else if (op == "power") {
-    // TODO: call native pow func
-  } else {
-    push(Instr{.var = BinaryInstr{.op = op, .src = "%rax", .dst = "%rbx"},
-               .type = InstrType::Binary},
-         Section::Main);
+  } else if (op == "add") {
+    push(Instr{.var = AddInstr{.lhs=lhs_reg,.rhs=rhs_reg},.type=InstrType::Add},Section::Main);
+  } else if (op == "sub") {
+    push(Instr{.var=SubInstr{.lhs=lhs_reg,.rhs=rhs_reg},.type=InstrType::Sub},Section::Main);
   }
-
-  // Push the result of the binary operation
-//   push(Instr{.var = PushInstr{.what = "%rax"}, .type = InstrType::Push},
-//        Section::Main);
-//   stackSize++;
+  
+  // Push the result
+  push(Instr{.var = PushInstr{.what = lhs_reg}, .type = InstrType::Push},
+    Section::Main);
+  stackSize++;
 }
 
 void codegen::unary(Node::Expr *expr) {

@@ -39,15 +39,16 @@ void codegen::funcDecl(Node::Stmt *stmt) {
     funcName = "main";
     isEntryPoint = true;
   }
+
   push(Instr{.var = LinkerDirective{.value = "\n.type " + funcName + ", @function"},.type = InstrType::Linker},Section::Main);
   push(Instr {.var=Label{.name=funcName},.type=InstrType::Label},Section::Main);
-
   push(Instr{.var = LinkerDirective{.value = ".cfi_startproc\n\t"},.type = InstrType::Linker},Section::Main);
 
-  push(Instr{.var=PushInstr{.what="%rbp",.whatSize=DataSize::Qword},.type=InstrType::Push},Section::Main);
-  push(Instr{.var=MovInstr{.dest="%rbp",.src="%rsp",.destSize=DataSize::Qword,.srcSize=DataSize::Qword},.type=InstrType::Mov},Section::Main);
   if (isEntryPoint) {
     stackSize = 0;
+  } else {
+    push(Instr{.var=PushInstr{.what="%rbp",.whatSize=DataSize::Qword},.type=InstrType::Push},Section::Main);
+    push(Instr{.var=MovInstr{.dest="%rbp",.src="%rsp",.destSize=DataSize::Qword,.srcSize=DataSize::Qword},.type=InstrType::Mov},Section::Main);
   }
   stackSize++; // Increase for the push of rbp
   funcBlockStart = stackSize;
@@ -127,17 +128,19 @@ void codegen::_return(Node::Stmt *stmt) {
   codegen::visitExpr(s->expr);
   push(Instr {.var=PopInstr{.where="%rax"},.type=InstrType::Pop},Section::Main);
   stackSize--;
+  if (isEntryPoint) {
+    // Who cares about the stack, we're exiting the program lmao
+    push(Instr{.var=MovInstr{.dest="%rdi",.src="%rax",.destSize=DataSize::Qword,.srcSize=DataSize::Qword},.type=InstrType::Mov},Section::Main);
+    push(Instr{.var=MovInstr{.dest="%rax",.src="$60",.destSize=DataSize::Qword,.srcSize=DataSize::Qword},.type=InstrType::Mov},Section::Main);
+    push(Instr{.var = Syscall{.name="SYS_EXIT"}, .type = InstrType::Syscall}, Section::Main);
+    return;
+  }
   // Pop the stacksize (important for no segfaults (: )
   if (stackSize - funcBlockStart == 0) {
     push(Instr {.var=PopInstr{.where="%rbp",.whereSize=DataSize::Qword},.type=InstrType::Pop},Section::Main);
     stackSize--;
   } else {
     push(Instr{.var=MovInstr{.dest="%rbp",.src=std::to_string(8 * (stackSize-funcBlockStart))+"(%rsp)",.destSize=DataSize::Qword,.srcSize=DataSize::Qword},.type=InstrType::Mov},Section::Main);
-  }
-  if (isEntryPoint) {
-    push(Instr{.var=MovInstr{.dest="%rdi",.src="%rax",.destSize=DataSize::Qword,.srcSize=DataSize::Qword},.type=InstrType::Mov},Section::Main);
-    push(Instr{.var=MovInstr{.dest="%rax",.src="$60",.destSize=DataSize::Qword,.srcSize=DataSize::Qword},.type=InstrType::Mov},Section::Main);
-    push(Instr{.var = Syscall{.name="SYS_EXIT"}, .type = InstrType::Syscall}, Section::Main);
   }
   push(Instr{.var = Ret{}, .type = InstrType::Ret}, Section::Main);
 };

@@ -140,7 +140,7 @@ public:
       }
       // 2's complement - negate a reg / effective addr
       std::string operator()(NegInstr instr) const {
-        return "neg " + instr.what + "\n\t";
+        return "negq " + instr.what + "\n\t";
       }
       // bitwise not
       std::string operator()(NotInstr instr) const {
@@ -169,7 +169,7 @@ public:
         return inst + "\n\t";
       }
       // String literal (eg .cfi_startproc in functions)
-      // It is the responsibility of the input to have its own formatting
+      // It is the responsibility of the input to have its own formatting (\n\t)
       std::string operator()(LinkerDirective instr) const { return instr.value; }
     };
     return std::visit(InstrVisitor {}, instr.var);

@@ -1,10 +1,3 @@
-Fix recursive calls
-Fix increment and decrement ++ and --
-Add in array push and pop
-Add in structs and enums
-Add in imports
+Just get back what we once had
 
-! IMPORTANT !
-'gcc' does not like outputted assembly with native_printrax in the program
-
-if any bugs are found add it in here :)
+Variables added to `-8(%rbp)` rather than arbitrarily on the stack

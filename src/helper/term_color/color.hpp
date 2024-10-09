@@ -31,6 +31,7 @@ private:
     return "";
   }
 
+  // Check to see if the terminal supports color
   bool terminal_supports_color() {
     FILE *pipe = popen("/bin/sh -c 'tput colors'", "r");
     if (!pipe)
