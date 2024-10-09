@@ -1,6 +1,5 @@
 const main := fn () int { 
-   have x: int = 1;
-   have y: int = 2;
-   have u: int = 6;
-   return (x + y * u - x) / y; 
+   have res: str = "Hello, World!";
+   dis(res, "\n");
+   return 0;
 };

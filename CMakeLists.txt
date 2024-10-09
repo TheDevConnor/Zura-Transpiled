@@ -59,6 +59,7 @@ set(ZURA_SOURCE_FILES
     src/codegen/gen_stmt.cpp
     src/codegen/gen_type.cpp
     src/codegen/genmap.cpp
+    src/codegen/helper.cpp
     src/codegen/gen.cpp
     
     src/main.cpp

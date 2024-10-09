@@ -30,12 +30,36 @@ void codegen::primary(Node::Expr *expr) {
     auto res = (offset == 0) ? "(%rsp)" : std::to_string(offset) + "(%rsp)";
 
     push(Instr{.var = Comment{.comment = "Clone variable '" + e->name +
-                                         "' for use as expr"},
+                                         "' for use as expr (offset: " +
+                                         std::to_string(offset) + ")"},
                .type = InstrType::Comment},
          Section::Main);
+
+    // Push the instruction to use the calculated stack location
     push(Instr{.var = PushInstr{.what = res}, .type = InstrType::Push},
          Section::Main);
     stackSize++;
+    break;
+  }
+  case ND_STRING: {
+    auto string = static_cast<StringExpr *>(expr);
+    std::string label = "string" + std::to_string(stringCount);
+
+    // Push the label onto the stack
+    push(Instr{.var =
+                   PushInstr{.what = '$' + label, .whatSize = DataSize::Qword},
+               .type = InstrType::Push},
+         Section::Main);
+    stackSize++;
+
+    // define the string in the data section
+    push(Instr{.var = Label{.name = label}, .type = InstrType::Label},
+         Section::Data);
+
+    // Push the string onto the data section
+    push(Instr{.var = AscizInstr{.what=string->value},
+               .type = InstrType::Asciz},
+         Section::Data);
     break;
   }
   default: {
@@ -58,7 +82,7 @@ void codegen::binary(Node::Expr *expr) {
 
   visitExpr(e->lhs);
   visitExpr(e->rhs);
-  
+
   // Pop the right hand side
   push(Instr{.var = PopInstr{.where = rhs_reg}, .type = InstrType::Pop},
        Section::Main);
@@ -69,20 +93,25 @@ void codegen::binary(Node::Expr *expr) {
        Section::Main);
   stackSize--;
 
-  // Perform the binary operation 
+  // Perform the binary operation
   std::string op = lookup(opMap, e->op);
   if (op == "imul" || op == "idiv") {
-    push(Instr{.var = BinaryInstr{.op = op, .src = rhs_reg}, .type = InstrType::Binary},
+    push(Instr{.var = BinaryInstr{.op = op, .src = rhs_reg},
+               .type = InstrType::Binary},
          Section::Main);
   } else if (op == "add") {
-    push(Instr{.var = AddInstr{.lhs=lhs_reg,.rhs=rhs_reg},.type=InstrType::Add},Section::Main);
+    push(Instr{.var = AddInstr{.lhs = lhs_reg, .rhs = rhs_reg},
+               .type = InstrType::Add},
+         Section::Main);
   } else if (op == "sub") {
-    push(Instr{.var=SubInstr{.lhs=lhs_reg,.rhs=rhs_reg},.type=InstrType::Sub},Section::Main);
+    push(Instr{.var = SubInstr{.lhs = lhs_reg, .rhs = rhs_reg},
+               .type = InstrType::Sub},
+         Section::Main);
   }
-  
+
   // Push the result
   push(Instr{.var = PushInstr{.what = lhs_reg}, .type = InstrType::Push},
-    Section::Main);
+       Section::Main);
   stackSize++;
 }
 

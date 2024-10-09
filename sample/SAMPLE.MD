@@ -1,132 +1,205 @@
-Examples for Zura!
+# Zura Programming Language
+
+Zura is a statically typed language that blends familiar syntax with modern constructs such as templates, type casting, and high-level control structures. This documentation serves as an introduction to the syntax, constructs, and idioms of Zura.
 
 ## Table of Contents
-- [Hello World](#hello-world)
-- [Comments](#comments)
-- [Binary Operators](#binary-operators)
-- [Variables](#variables)
-- [Functions](#functions)
-    - [Nested Functions](#nested-functions)
+1. [Basic Syntax](#basic-syntax)
+2. [Data Types](#data-types)
+3. [Variables](#variables)
+4. [Functions](#functions)
+5. [Loops and Conditionals](#loops-and-conditionals)
+6. [Structures](#structures)
+7. [Enums](#enums)
+8. [Templates](#templates)
+9. [Pointers](#pointer)
+10. [Casting](#casting)
+11. [Built-in Functions](#built-in-functions)
 
-## Hello World
-```zura
-fn main(argc: i8, argv: []str) i8 {
-    info "Hello World!";
-    exit 0;
-}
-```
-BOOM! You just wrote your first Zura program! Now let's break it down.
+## Basic Syntax
 
-```zura
-fn main(argc: i8, argv: []str) i8 {
-```
-This marks the main function, a mandatory element in every Zura program. The main function must yield an integer and accepts two arguments: argc, denoting the argument count, and argv, an array of strings containing program arguments.
+Zura uses a unique combination of operators and control structures for defining variables, functions, and loops. All Zura programs must define a `main` function which serves as the entry point.
 
-```zura
-    info "Hello World!";
-```
-This line calls the info function, printing the supplied string to the console.
-
-```zura
-    exit 0;
-```
-Here, the exit function concludes the program with the provided exit code.
-
-```zura
-}
-```
-This denotes the conclusion of the main function, a standard requirement for all functions in Zura.
-
-## Comments
-```zura
-fn main(argc: i8, argv: []str) i8 {
-    # This is a single line comment
-    /*
-        :( Not supported yet
-    */
-    info "Hello World!";
-    exit 0;
-}
-```
-Comments are very simple in Zura. Single line comments are denoted by two forward slashes, and multiline comments are denoted by a forward slash followed by an asterisk, and concluded by an asterisk followed by a forward slash. Nothing more to it.
-
-## Binary Operators
-In Zura there are 6 binary operators: +, -, *, /, %, and ^ by default. These operators are used to perform arithmetic operations on numbers. Here is an examples:
-```zura
-fn main(argc: i8, argv: []str) i8 {
-    have x: i8 = 1 + (2 * 3) / 4 % 5; // Which returns 2
-    info "%d", x;
-    exit 0;
-}
+```cpp
+const main := fn () int {
+   return 0;
+};
 ```
 
-The '^' is not supported yet. It will be added in the future.
+## Data Types
+
+Zura supports the following data types:
+
+- `int`: 32-bit signed integer
+- `float`: 64-bit floating-point number
+- `bool`: Boolean value
+- `string`: String value
+- `char`: Character value (Not implemented yet)
+
+```cpp
+have x: int = 10;
+have y: float = 10.5;
+have z: bool = true;
+have s: str = "Hello, World!";
+have c: char = 'A';
+```
 
 ## Variables
-```zura
-fn main(argc: i8, argv: []str) i8 {
-    have x: i8 = 0; // staticly typed variable
-    auto y := 0;     // dynamically typed variable
-    info "%d + %d = %d", x, y, x + y;
-    exit 0;
-}
-```
-This program outputs 0 + 0 = 0 to the console. Let's delve into it.
 
-```zura
-    have x: i8 = 0; // staticly typed variable
-```
-Here, have introduces a variable declaration. x is the variable name, i8 denotes its type, and = 0 assigns an initial value. Also node 
-that here we are using a static type, meaning that the type of the variable is known at compile time. Because of this, we can use the have keyword to declare the variable.
+Variables in Zura are defined using the `have` keyword. Variables can be assigned a value at the time of declaration or later in the program.
 
-```zura
-    auto y := 0;     // dynamically typed variable
+```cpp
+have x: int = 10;
+have y: int;
+y = 20;
 ```
-Whereas the previous variable was statically typed, this one is dynamically typed. This means that the type of the variable is not known at compile time. Because of this, we must use the auto keyword to declare the variable. Meaning that the type of the variable is inferred from the value assigned to it.
 
-```zura
-    info "%d + %d = %d", x, y, x + y;
+You can also use the `auto` keyword to let the compiler infer the type of the variable.
+
+```cpp
+auto z = 30;
 ```
-A call to the info function outputs formatted text, showcasing the values of x, y, and their sum.
-
-The rest of the program is the same as the previous example. With the exit function concluding the program. And the closing brace denoting the end of the main function.
+where `z` is inferred to be of type `int`.
 
 ## Functions
-```zura
-fn add(x: i8, y: i8) i8 {
-    return x + y;
+
+Functions in Zura are defined using the `fn` keyword. Functions can take arguments and return values.
+
+```cpp
+const add := fn (x: int, y: int) int {
+   return x + y;
+};
+```
+
+## Loops and Conditionals
+
+Zura supports `if`, `else`, `while`, and `for` control structures, but the difference is that we use the `loop` keyword instead of `for` and `while`.
+
+```cpp
+# for loop
+loop (i := 0; i < 10) : (i++) {
+   dis(i, "\n");
 }
 
-fn main(argc: i8, argv: str[]) i8 {
-    info "%d + %d = %d", 1, 2, add(1, 2);
-    exit 0;
+# while loop
+loop (i := 0; i < 10) {
+   dis(i, "\n");
 }
 ```
-This simple example introduces a function, akin to prior examples, but with a return type and statement.
 
-```zura
-fn add(x: i8, y: i8) i8 {
-    return x + y;
-}
-```
-This declares the add function, specifying its name, arguments, return type, and body containing a return statement. To write a function, we must first use the fn keyword, followed by the function name, then the arguments, then the return type, and finally the body of the function. The body of the function is denoted by the opening and closing braces. The return statement returns the value of the expression following it. In this case, the sum of x and y.
+You can also have optional conditions in the while loop.
 
-```zura
-fn main(argc: i8, argv: []str) i8 {
-    info "%d + %d = %d", 1, 2, add(1, 2);
-    exit 0;
+```cpp
+have x: int = 0;
+loop (x < 10) : (x++) {
+   dis(x, "\n");
 }
 ```
-This declares the add function, specifying its name, arguments, return type, and body containing a return statement. Except this time the print function is being called, showcasing the sum of 1 and 2. The rest of the program is the same as the previous example.
 
-### Nested Functions
-```zura
-fn main(argc: i8, argv: []str) i8 {
-    fn add(x: i8, y: i8) i8 {
-        return x + y;
-    }
-    info "%d + %d = %d", 1, 2, add(1, 2);
-    exit 0;
+The `if` and `else` statements are similar to other languages.
+
+```cpp
+have x: int = 10;
+if (x > 10) {
+   dis("x is greater than 10\n");
+} else {
+   dis("x is less than or equal to 10\n");
 }
 ```
-This snippet showcases nested functions, functions declared within other functions.
+
+## Structures
+
+Zura supports structures which allow you to define custom data types.
+
+```cpp
+const Point := struct {
+   have x: int;
+   have y: int;
+};
+
+have p: Point = Point(10, 20);
+dis("Point: (", p.x, ", ", p.y, ")\n");
+```
+
+## Enums
+
+Zura supports enums which allow you to define a set of named constants.
+
+```cpp
+const Color := enum {
+   Red,
+   Green,
+   Blue
+};
+
+have c: Color = Color.Red;
+dis("Color: ", c, "\n");
+```
+
+## Templates
+ 
+Zura supports templates which allow you to define generic functions and data structures.
+These are very similar to C++ templates.
+
+```cpp
+@template <typename T>
+const swap := fn (a: T, b: T) T {
+   have temp: T = a;
+   a = b;
+   b = temp;
+
+   return a;
+};
+```
+
+## Casting
+
+Zura supports casting between different types using the `cast` keyword.
+The syntax is `@cast<type>(value)`.
+
+```cpp
+have x: float = 10.5;
+have y: int = @cast<int>(x);
+```
+
+Here is a more complex example:
+
+```cpp
+const calculate_average := fn (a: float, b: float) float {
+   return (a + b) / 2.0;
+};
+
+const main := fn () int { 
+   have x: int = 10;
+   have y: int = 20;
+
+   dis("Integer values: 'x=", x, "' and 'y=", y, "'\n");
+
+   have fx: float = @cast<float>(x);
+   have fy: float = @cast<float>(y);
+
+   dis("Float values: 'fx=", fx, "' and 'fy=", fy, "'\n");
+
+   have avg: float = calculate_average(fx, fy);
+   dis("Average of float values: 'avg=", avg, "'\n");
+
+   return 0;
+};
+```
+
+## Built-in Functions
+
+Zura provides a set of built-in functions for common operations such as input/output, string manipulation, and math functions.
+
+```cpp
+have x: int = 10;
+dis("Value of x: ", x, "\n");
+
+have s: string = "Hello, World!";
+dis("String value: ", s, "\n");
+
+have y: int = @input<int>("Enter a number: ");
+dis("You entered: ", y, "\n");
+
+have x: int = @cast<int>(10.5);
+dis("Casting float to int: ", x, "\n");
+```
