@@ -29,7 +29,6 @@ set(ZURA_HEADER_FILES
     # Code Gen Files
     src/codegen/gen.hpp
 
-    inc/update.hpp
     src/common.hpp
 )
 

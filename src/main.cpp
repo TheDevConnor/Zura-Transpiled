@@ -7,7 +7,6 @@
 #include <sys/stat.h>
 #include <cstdlib>  // Include this for std::system
 
-#include "../inc/update.hpp"
 #include "common.hpp"
 #include "helper/flags.hpp"
 
@@ -55,7 +54,7 @@ void FlagConfig::print(int argc, char **argv) {
     for (int i = 0; i < 4; i++) {
         if (conditions[i](argv[1])) {
             if (i == 3) {
-                promptUpdate();
+                std::cout << "This feature is not yet implemented" << std::endl;
                 Exit(ExitValue::UPDATED);
             }
             std::cout << messages[i] << std::endl;

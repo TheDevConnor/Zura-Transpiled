@@ -1,8 +1,5 @@
-#include "../helper/math/math.hpp"
 #include "gen.hpp"
 #include "optimize.hpp"
-
-#include <optional>
 
 void codegen::visitExpr(Node::Expr *expr) {
   auto handler = lookup(exprHandlers, expr->kind);
@@ -43,7 +40,7 @@ void codegen::primary(Node::Expr *expr) {
   }
   case ND_STRING: {
     auto string = static_cast<StringExpr *>(expr);
-    std::string label = "string" + std::to_string(stringCount);
+    std::string label = "string" + std::to_string(stringCount++);
 
     // Push the label onto the stack
     push(Instr{.var =

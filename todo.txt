@@ -1,3 +1,7 @@
 Just get back what we once had
 
 Variables added to `-8(%rbp)` rather than arbitrarily on the stack
+
+Add in control flow to the codegen
+Fix Functions so that they can return a usable value
+Add in struct, enums, and unions
