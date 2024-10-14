@@ -1,5 +1,6 @@
 const main := fn () int { 
-   have res: str = "Hello, World!";
+   have x: int = 1;
+   have res: str = (1 < x) ? "true" : "false";
    dis(res, "\n");
    return 0;
 };
