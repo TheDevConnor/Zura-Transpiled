@@ -148,6 +148,10 @@ $ ./build.sh debug or ./build.sh release
 Or you can download the latest release from [here](https://github.com/TheDevConnor/Zura-Transpiled/releases/tag/pre-release) and add either the `zura.exe` (For Windows) or `zura` (For Linux) executable to your path.
 Eventually, I will add a script to automate this process.
 
+<!-- sample/SAMPLE.md -->
+Now feel free to go take a look at the documentation to see how to use the language.
+[Documentation](sample/SAMPLE.md)
+
 ###  Development env
 
 This `Dockerfile` sets up a basic development environment with the necessary compilers, build tools, and utilities for developing the Zura language. It also includes Vim and Emacs as text editors for code editing directly within the container. The final command (`CMD ["/bin/bash"]`) opens a bash shell when the container starts, allowing you to run build commands, edit files, or use version control directly inside the container.
