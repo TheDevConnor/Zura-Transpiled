@@ -28,6 +28,34 @@ void codegen::moveRegister(const std::string &dest, const std::string &src,
        Section::Main);
 }
 
+JumpCondition codegen::getJumpCondition(const std::string &op) {
+  if (op == ">") return JumpCondition::Greater;
+  if (op == ">=") return JumpCondition::GreaterEqual;
+  if (op == "<") return JumpCondition::Less;
+  if (op == "<=") return JumpCondition::LessEqual;
+  if (op == "==") return JumpCondition::Equal;
+  if (op == "!=") return JumpCondition::NotEqual;
+  std::cerr << "Invalid operator for comparison" << std::endl;
+  exit(-1);
+}
+
+void codegen::processBinaryExpression(BinaryExpr *cond, const std::string &preconCount) {
+  // Evaluate LHS first, store in %rax
+  visitExpr(cond->lhs);
+  popToRegister("%rax");
+
+  // Evaluate RHS, store in %rbx
+  visitExpr(cond->rhs);
+  popToRegister("%rbx");
+
+  // Perform comparison (this order ensures LHS > RHS works correctly)
+  push(Instr{.var = CmpInstr{.lhs = "%rax", .rhs = "%rbx"}, .type = InstrType::Cmp}, Section::Main);
+
+  // Jump based on the correct condition
+  JumpCondition jmpCond = getJumpCondition(cond->op);
+  push(Instr{.var = JumpInstr{.op = jmpCond, .label = "conditional" + preconCount}, .type = InstrType::Jmp}, Section::Main);
+}
+
 bool codegen::execute_command(const std::string &command,
                               const std::string &log_file) {
   std::string command_with_error_logging = command + " 2> " + log_file;

@@ -167,7 +167,7 @@ enum class JumpCondition {
 
   Less,
   LessEqual,
-  NotLess, // just GreaterEqual, but different keyword
+  NotLess, // just GreaterEqual, but different keyword  
 };
 
 struct Instr {

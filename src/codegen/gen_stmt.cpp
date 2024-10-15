@@ -121,13 +121,50 @@ void codegen::block(Node::Stmt *stmt) {
 
 void codegen::ifStmt(Node::Stmt *stmt) {
   auto s = static_cast<IfStmt *>(stmt);
-  std::cerr
-      << "No fancy error for this, beg Connor... (Soviet Pancakes speaking)"
-      << std::endl;
-  std::cerr << "If statements now implemented! (Condition: NodeKind["
-            << (int)s->condition->kind << "])" << std::endl;
-  exit(-1);
-};
+  std::string preconCount = std::to_string(conditionalCount++);
+
+  push(Instr{.var = Comment{.comment = "if statement"}, .type = InstrType::Comment}, Section::Main);
+
+  BinaryExpr *cond = nullptr;
+  if (s->condition->kind == ND_GROUP) {
+    auto group = static_cast<GroupExpr *>(s->condition);
+    cond = (group->expr->kind == ND_BINARY) ? static_cast<BinaryExpr *>(group->expr) : nullptr;
+  } else {
+    cond = static_cast<BinaryExpr *>(s->condition);
+  }
+
+  if (!cond) {
+    // Handle non-binary conditions
+    visitExpr(s->condition);
+    popToRegister("%rcx");
+    push(Instr{.var = LinkerDirective{.value = "test %rcx, %rcx"}, .type = InstrType::Linker}, Section::Main);
+    push(Instr{.var = JumpInstr{.op = JumpCondition::NotZero, .label = "conditional" + preconCount}, .type = InstrType::Jmp}, Section::Main);
+  } else {
+    // Process binary expression
+    processBinaryExpression(cond, preconCount);
+  }
+
+  // Jump to "main" label if condition is false (fall through)
+  std::string elseLabel = "else" + preconCount;
+  push(Instr{.var = JumpInstr{.op = JumpCondition::Unconditioned, .label = elseLabel}, .type = InstrType::Jmp}, Section::Main);
+
+  // True condition block: label and code for 'thenStmt'
+  push(Instr{.var = Label{.name = "conditional" + preconCount}, .type = InstrType::Label}, Section::Main);
+  visitStmt(s->thenStmt);
+
+  // After executing 'thenStmt', jump to the end to avoid executing 'elseStmt'
+  std::string endLabel = "main" + preconCount;
+  push(Instr{.var = JumpInstr{.op = JumpCondition::Unconditioned, .label = endLabel},.type = InstrType::Jmp}, Section::Main);
+
+  // False condition block (else case): label and code for 'elseStmt'
+  push(Instr{.var = Label{.name = elseLabel}, .type = InstrType::Label}, Section::Main);
+  if (s->elseStmt) {
+    visitStmt(s->elseStmt);
+  }
+
+  // End label (where both 'thenStmt' and 'elseStmt' converge)
+  push(Instr{.var = Label{.name = endLabel}, .type = InstrType::Label}, Section::Main);
+}
 
 void codegen::print(Node::Stmt *stmt) {
   auto print = static_cast<PrintStmt *>(stmt);

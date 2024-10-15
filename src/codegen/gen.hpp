@@ -108,6 +108,10 @@ inline const char* file_name;
 void moveRegister(const std::string &dest, const std::string &src, DataSize dest_size, DataSize src_size);
 void popToRegister(const std::string &reg);
 
+// Helper for the if statement condition
+void processBinaryExpression(BinaryExpr *cond, const std::string &preconCount);
+JumpCondition getJumpCondition(const std::string &op);
+
 bool execute_command(const std::string &command, const std::string &log_file);
 void gen(Node::Stmt *stmt, bool isSaved, std::string output, const char* filename);
 void handlerError(int line, int pos, std::string msg, std::string note,

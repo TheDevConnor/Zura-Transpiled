@@ -36,7 +36,7 @@ void codegen::gen(Node::Stmt *stmt, bool isSaved, std::string output_filename,
             "# "
          << ZuraVersion
          << "\n"
-            "# What's New: Rewrite compiler to be WAY BETTER!\n";
+            "# What's New: Compiler Rewrite add in if stmt\n";
     // Copying gcc and hoping something changes (it won't)
     // .file directive does not like non-c and non-cpp files but it might be
     // useful for something somewhere later
