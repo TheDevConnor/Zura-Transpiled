@@ -65,6 +65,36 @@ void codegen::gen(Node::Stmt *stmt, bool isSaved, std::string output_filename,
               "  ret # return\n"
               ".size native_strlen, .-native_strlen\n";
     }
+    if (nativeFunctionsUsed[NativeASMFunc::itoa] == true) {
+      file << ".type native_itoa, @function\n"
+           "native_itoa:\n"
+            "  pushq %rbp              # save base pointer\n"
+            "  movq %rsp, %rbp         # set base pointer\n"
+            "  movq $-1, %rdi          # buffer\n"
+            "  leaq (%rsp, %rdi, 1), %rbx\n"
+            "  movq %rsi, %rax         # number\n"
+            "  movq $0, %rdi           # counter\n"
+            "  pushq $0x0\n"
+            "  jmp itoa_loop\n"
+            "itoa_loop:\n"
+            "  movq $0, %rdx\n"
+            "  movq $10, %rcx\n"
+            "  div %rcx\n"
+            "  addq $48, %rdx\n"
+            "  pushq %rdx\n"
+            "  movb (%rsp), %cl\n"
+            "  movb %cl, (%rbx, %rdi, 1)\n"
+            "  test %rax, %rax\n"
+            "  je itoa_end\n"
+            "  dec %rdi\n"
+            "  jmp itoa_loop\n"
+            "itoa_end:\n"
+            "  leaq (%rbx, %rdi, 1), %rax\n"
+            "  movq %rbp, %rsp\n"
+            "  popq %rbp\n"
+            "  ret\n"
+            ".size native_itoa, .-native_itoa\n";
+    }
     file << "\n# non-main user functions" << std::endl;
     file << Stringifier::stringifyInstrs(head_section);
     file.close();

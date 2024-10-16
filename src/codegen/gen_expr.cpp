@@ -168,13 +168,11 @@ void codegen::ternary(Node::Expr *expr) {
 
 void codegen::assign(Node::Expr *expr) {
   auto e = static_cast<AssignmentExpr *>(expr);
-  std::cerr
-      << "No fancy error for this, beg Connor... (Soviet Pancakes speaking)"
-      << std::endl;
-  std::cerr << "Assign expression not implemented! (New value: NodeKind["
-            << (int)e->rhs->kind << "], Assignee: NodeKind["
-            << (int)e->assignee->kind << "])" << std::endl;
-  exit(-1);
+  auto lhs = static_cast<IdentExpr *>(e->assignee);
+  visitExpr(e->rhs);
+  int offset = (stackSize - stackTable.at(lhs->name)) - 1;
+  auto res = (offset == 0) ? "(%rsp)" : std::to_string(offset * 8) + "(%rsp)";
+  popToRegister("%rax");
 }
 
 void codegen::_arrayExpr(Node::Expr *expr) {

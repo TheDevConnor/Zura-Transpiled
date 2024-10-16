@@ -39,7 +39,7 @@ JumpCondition codegen::getJumpCondition(const std::string &op) {
   exit(-1);
 }
 
-void codegen::processBinaryExpression(BinaryExpr *cond, const std::string &preconCount) {
+void codegen::processBinaryExpression(BinaryExpr *cond, const std::string &preconCount, const std::string &name, bool isLoop) {
   // Evaluate LHS first, store in %rax
   visitExpr(cond->lhs);
   popToRegister("%rax");
@@ -48,12 +48,17 @@ void codegen::processBinaryExpression(BinaryExpr *cond, const std::string &preco
   visitExpr(cond->rhs);
   popToRegister("%rbx");
 
-  // Perform comparison (this order ensures LHS > RHS works correctly)
-  push(Instr{.var = CmpInstr{.lhs = "%rax", .rhs = "%rbx"}, .type = InstrType::Cmp}, Section::Main);
+  if (isLoop) {
+    // Perform comparison (this order ensures LHS < RHS works correctly)(loops)
+    push(Instr{.var = CmpInstr{.lhs = "%rbx", .rhs = "%rax"}, .type = InstrType::Cmp}, Section::Main);
+  } else {
+    // Perform comparison (this order ensures LHS > RHS works correctly)(ifs)
+    push(Instr{.var = CmpInstr{.lhs = "%rax", .rhs = "%rbx"}, .type = InstrType::Cmp}, Section::Main);
+  }
 
   // Jump based on the correct condition
   JumpCondition jmpCond = getJumpCondition(cond->op);
-  push(Instr{.var = JumpInstr{.op = jmpCond, .label = "conditional" + preconCount}, .type = InstrType::Jmp}, Section::Main);
+  push(Instr{.var = JumpInstr{.op = jmpCond, .label = name + preconCount}, .type = InstrType::Jmp}, Section::Main);
 }
 
 void codegen::handleExitSyscall() {

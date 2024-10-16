@@ -122,7 +122,7 @@ void codegen::ifStmt(Node::Stmt *stmt) {
     push(Instr{.var = JumpInstr{.op = JumpCondition::NotZero, .label = "conditional" + preconCount}, .type = InstrType::Jmp}, Section::Main);
   } else {
     // Process binary expression
-    processBinaryExpression(cond, preconCount);
+    processBinaryExpression(cond, preconCount, "conditional");
   }
 
   // Jump to "main" label if condition is false (fall through)
@@ -152,50 +152,58 @@ void codegen::print(Node::Stmt *stmt) {
 
   push(Instr{.var = Comment{.comment = "print stmt"}}, Section::Main);
   nativeFunctionsUsed[NativeASMFunc::strlen] = true;
+
   for (auto &arg : print->args) {
     switch (arg->kind) {
     case ND_STRING: {
-     visitExpr(arg);
-      // assume type-checker worked properly and a string is passed in
-      popToRegister("%rsi");
-
-      // calculate string length using native function
+      visitExpr(arg);
+      popToRegister("%rsi"); // String address
       moveRegister("%rdi", "%rsi", DataSize::Qword, DataSize::Qword);
       push(Instr{.var = CallInstr{.name = "native_strlen"}}, Section::Main);
-      moveRegister("%rdx", "%rax", DataSize::Qword, DataSize::Qword);
+      moveRegister("%rdx", "%rax", DataSize::Qword, DataSize::Qword); // Length of string
 
       // syscall id for write on x86 is 1
       moveRegister("%rax", "$1", DataSize::Qword, DataSize::Qword);
-
       // set rdi to 1 (file descriptor for stdout)
       moveRegister("%rdi", "$1", DataSize::Qword, DataSize::Qword);
 
-      // create call
-      push(Instr{.var = Syscall({.name = "SYS_WRITE"}),
-                 .type = InstrType::Syscall},
-           Section::Main);
+      // Make syscall to write
+      push(Instr{.var = Syscall({.name = "SYS_WRITE"}), .type = InstrType::Syscall}, Section::Main);
       break;
     }
+
+    case ND_INT: {
+      nativeFunctionsUsed[NativeASMFunc::itoa] = true;
+      visitExpr(arg);
+      popToRegister("%rax");
+      push(Instr{.var = CallInstr{.name = "native_itoa"}}, Section::Main); // Convert int to string
+      
+      // Now we have the integer string in %rax (assuming %rax holds the pointer to the result)
+      moveRegister("%rsi", "%rax", DataSize::Qword, DataSize::Qword);
+      push(Instr{.var = CallInstr{.name = "native_strlen"}}, Section::Main);
+      moveRegister("%rdx", "%rax", DataSize::Qword, DataSize::Qword); // Length of number string
+      
+      // syscall id for write on x86 is 1
+      moveRegister("%rax", "$1", DataSize::Qword, DataSize::Qword);
+      // set rdi to 1 (file descriptor for stdout)
+      moveRegister("%rdi", "$1", DataSize::Qword, DataSize::Qword);
+
+      // Make syscall to write
+      push(Instr{.var = Syscall({.name = "SYS_WRITE"}), .type = InstrType::Syscall}, Section::Main);
+      break;
+    }
+
     default: {
       visitExpr(arg);
       popToRegister("%rsi");
 
-      // calculate string length using native function  
-      moveRegister("%rdi", "%rsi", DataSize::Qword, DataSize::Qword);
-      push(Instr{.var = CallInstr{.name = "native_strlen"}}, Section::Main);
-
-      moveRegister("%rdx", "%rax", DataSize::Qword, DataSize::Qword);
-
       // syscall id for write on x86 is 1
       moveRegister("%rax", "$1", DataSize::Qword, DataSize::Qword);
-
       // set rdi to 1 (file descriptor for stdout)
       moveRegister("%rdi", "$1", DataSize::Qword, DataSize::Qword);
 
-      // create call
-      push(Instr{.var = Syscall({.name = "SYS_WRITE"}),
-                 .type = InstrType::Syscall},
-           Section::Main);
+      // Make syscall to write
+      push(Instr{.var = Syscall({.name = "SYS_WRITE"}), .type = InstrType::Syscall}, Section::Main);
     }
     }
   }
@@ -219,14 +227,45 @@ void codegen::_return(Node::Stmt *stmt) {
    }
 }
 
-
 void codegen::forLoop(Node::Stmt *stmt) {
   auto s = static_cast<ForStmt *>(stmt);
-  std::cerr
-      << "No fancy error for this, beg Connor... (Soviet Pancakes speaking)"
-      << std::endl;
-  std::cerr << "For loops not implemented!" << std::endl;
-  exit(-1);
+
+  std::string preconCount = std::to_string(conditionalCount++);
+
+  push(Instr{.var = Comment{.comment = "for loop"}, .type = InstrType::Comment}, Section::Main);
+
+  // Create unique labels for the loop start and end
+  std::string preLoopLabel = "loop_pre" + std::to_string(loopCount);
+  std::string postLoopLabel = "loop_post" + std::to_string(loopCount++);
+  
+  // Declare the loop variable
+  auto assign = static_cast<AssignmentExpr *>(s->forLoop);
+  auto assignee = static_cast<IdentExpr *>(assign->assignee);
+
+  push(Instr{.var = Comment{.comment = "For loop variable declaration"}, .type = InstrType::Comment}, Section::Main);
+
+  stackTable.insert({assignee->name, stackSize}); // Track the variable in the stack table
+  visitExpr(assign);  // Process the initial loop assignment (e.g., i = 0)
+
+  // Set loop start label
+  push(Instr{.var = Label{.name = preLoopLabel}, .type = InstrType::Label}, Section::Main);
+  // Evaluate the loop condition
+  processBinaryExpression(static_cast<BinaryExpr *>(s->condition), preconCount, "loop_post", true);
+
+  // Execute the loop body (if condition is true)
+  visitStmt(s->block);  // Visit the statements inside the loop body
+
+  // Evaluate the loop increment (e.g., i++)
+  if (s->optional != nullptr) {
+    visitExpr(s->optional);  // Process the loop increment if provided
+    text_section.pop_back();
+  }
+
+  // Jump back to the start of the loop
+  push(Instr{.var = JumpInstr{.op = JumpCondition::Unconditioned, .label = preLoopLabel}, .type = InstrType::Jmp}, Section::Main);
+
+  // Set loop end label
+  push(Instr{.var = Label{.name = postLoopLabel}, .type = InstrType::Label}, Section::Main);
 };
 
 void codegen::whileLoop(Node::Stmt *stmt) {

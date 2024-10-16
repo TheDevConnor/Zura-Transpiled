@@ -77,7 +77,7 @@ enum class Section { // BRUH its 10:13 ok ibrb // Connor brb grabing some ice cr
 
 enum class NativeASMFunc {
     strlen,
-    print,
+    itoa,
 };
 
 inline std::vector<Instr> text_section = {};
@@ -111,7 +111,7 @@ void handleExitSyscall();
 void handleReturnCleanup();
 
 // Helper for the if statement condition
-void processBinaryExpression(BinaryExpr *cond, const std::string &preconCount);
+void processBinaryExpression(BinaryExpr *cond, const std::string &preconCount, const std::string &name, bool isLoop = false);
 JumpCondition getJumpCondition(const std::string &op);
 
 bool execute_command(const std::string &command, const std::string &log_file);
