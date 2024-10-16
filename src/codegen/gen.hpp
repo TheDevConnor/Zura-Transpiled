@@ -107,6 +107,8 @@ inline const char* file_name;
 // Helper function to pop the value from the stack to a register
 void moveRegister(const std::string &dest, const std::string &src, DataSize dest_size, DataSize src_size);
 void popToRegister(const std::string &reg);
+void handleExitSyscall();
+void handleReturnCleanup();
 
 // Helper for the if statement condition
 void processBinaryExpression(BinaryExpr *cond, const std::string &preconCount);

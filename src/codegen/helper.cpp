@@ -56,6 +56,22 @@ void codegen::processBinaryExpression(BinaryExpr *cond, const std::string &preco
   push(Instr{.var = JumpInstr{.op = jmpCond, .label = "conditional" + preconCount}, .type = InstrType::Jmp}, Section::Main);
 }
 
+void codegen::handleExitSyscall() {
+  push(Instr{.var = MovInstr{.dest = "%rdi", .src = "%rax", .destSize = DataSize::Qword, .srcSize = DataSize::Qword}, .type = InstrType::Mov}, Section::Main);
+  push(Instr{.var = MovInstr{.dest = "%rax", .src = "$60", .destSize = DataSize::Qword, .srcSize = DataSize::Qword}, .type = InstrType::Mov}, Section::Main);
+  push(Instr{.var = Syscall{.name = "SYS_EXIT"}, .type = InstrType::Syscall}, Section::Main);
+}
+
+void codegen::handleReturnCleanup() {
+  if (stackSize - funcBlockStart == 0) {
+    push(Instr{.var = PopInstr{.where = "%rbp", .whereSize = DataSize::Qword}, .type = InstrType::Pop}, Section::Main);
+    stackSize--;
+  } else {
+    push(Instr{.var = MovInstr{.dest = "%rbp", .src = std::to_string(8 * (stackSize - funcBlockStart)) + "(%rsp)", .destSize = DataSize::Qword, .srcSize = DataSize::Qword}, .type = InstrType::Mov}, Section::Main);
+  }
+}
+
+
 bool codegen::execute_command(const std::string &command,
                               const std::string &log_file) {
   std::string command_with_error_logging = command + " 2> " + log_file;

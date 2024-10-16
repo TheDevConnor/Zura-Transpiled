@@ -2,7 +2,7 @@ const main := fn () int {
    have x: int = 5;
    have y: int = 10;
 
-   if (x > y) {
+   if (x <= y) {
       dis("True Statement\n");
    } else {
       dis("False Statement\n");

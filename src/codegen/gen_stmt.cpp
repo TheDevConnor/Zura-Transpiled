@@ -9,6 +9,13 @@ void codegen::visitStmt(Node::Stmt *stmt) {
   }
 }
 
+void codegen::expr(Node::Stmt *stmt) {
+  auto s = static_cast<ExprStmt *>(stmt);
+  // Just evaluate the expression
+  // TODO: Remove the last push statement or something idk its late
+  codegen::visitExpr(s->expr);
+};
+
 void codegen::program(Node::Stmt *stmt) {
   auto s = static_cast<ProgramStmt *>(stmt);
   for (Node::Stmt *stm : s->stmt) {
@@ -25,64 +32,48 @@ void codegen::constDecl(Node::Stmt *stmt) {
 void codegen::funcDecl(Node::Stmt *stmt) {
   auto s = static_cast<FnStmt *>(stmt);
   int preStackSize = stackSize;
-  auto funcName = "usr_" + s->name;
-  isEntryPoint = false;
-  if (s->name == "main") {
-    funcName = "main";
-    isEntryPoint = true;
-  }
 
-  push(Instr{.var = LinkerDirective{.value =
-                                        "\n.type " + funcName + ", @function"},
-             .type = InstrType::Linker},
-       Section::Main);
-  push(Instr{.var = Label{.name = funcName}, .type = InstrType::Label},
-       Section::Main);
-  push(Instr{.var = LinkerDirective{.value = ".cfi_startproc\n\t"},
-             .type = InstrType::Linker},
-       Section::Main);
+  isEntryPoint = (s->name == "main") ? true : false;
+  auto funcName = (isEntryPoint) ? "main" : "usr_" + s->name;
+
+  push(Instr{.var = LinkerDirective{.value = "\n.type " + funcName + ", @function"},.type = InstrType::Linker},Section::Main);
+  push(Instr{.var = Label{.name = funcName}, .type = InstrType::Label},Section::Main);
+  push(Instr{.var = LinkerDirective{.value = ".cfi_startproc\n\t"},.type = InstrType::Linker},Section::Main);
 
   if (isEntryPoint) {
     stackSize = 0;
   } else {
-    push(Instr{.var = PushInstr{.what = "%rbp", .whatSize = DataSize::Qword},
-               .type = InstrType::Push},
-         Section::Main);
+    push(Instr{.var = PushInstr{.what = "%rbp", .whatSize = DataSize::Qword},.type = InstrType::Push},Section::Main);
     stackSize++;
     push(Instr{.var = MovInstr{.dest = "%rbp",
-                               .src = "%rsp",
-                               .destSize = DataSize::Qword,
-                               .srcSize = DataSize::Qword},
-               .type = InstrType::Mov},
-         Section::Main);
+                                      .src = "%rsp",
+                                      .destSize = DataSize::Qword,
+                                      .srcSize = DataSize::Qword},
+               .type = InstrType::Mov},Section::Main);
   }
   stackSize++; // Increase for the push of rbp
   funcBlockStart = stackSize;
+
   // Function args
   for (auto &args : s->params) {
     stackTable[args.first] = stackSize;
   }
+
   codegen::visitStmt(s->block);
   stackSize = preStackSize;
   funcBlockStart = -1;
   // Function ends with ret so we can't really push any other instructions.
 
-  push(Instr{.var = LinkerDirective{.value = ".cfi_endproc\n"},
-             .type = InstrType::Linker},
-       Section::Main);
-  push(Instr{.var = LinkerDirective{.value = ".size " + funcName + ", .-" +
-                                             funcName + "\n\t"},
-             .type = InstrType::Linker},
-       Section::Main);
+  push(Instr{.var = LinkerDirective{.value = ".cfi_endproc\n"},.type = InstrType::Linker},Section::Main);
+  push(Instr{.var = LinkerDirective{.value = ".size " + funcName + ", .-" + funcName + "\n\t"},
+              .type = InstrType::Linker},Section::Main);
 };
 
 void codegen::varDecl(Node::Stmt *stmt) {
   auto s = static_cast<VarStmt *>(stmt);
 
-  push(Instr{.var = Comment{.comment =
-                                "Variable declaration for '" + s->name + "'"},
-             .type = InstrType::Comment},
-       Section::Main);
+  push(Instr{.var = Comment{.comment = "Variable declaration for '" + s->name + "'"},
+              .type = InstrType::Comment},Section::Main);
 
   // Evaluate the initializer expression, if present
   if (s->expr) {
@@ -90,12 +81,10 @@ void codegen::varDecl(Node::Stmt *stmt) {
   }
 
   // Update the symbol table with the variable's position
-  stackTable[s->name] = stackSize;
+  stackTable.insert({s->name, stackSize});
 
-  push(Instr{.var = Comment{.comment = "End of variable declaration for '" +
-                                       s->name + "'"},
-             .type = InstrType::Comment},
-       Section::Main);
+  push(Instr{.var = Comment{.comment = "End of variable declaration for '" + s->name + "'"},
+              .type = InstrType::Comment},Section::Main);
 }
 
 void codegen::block(Node::Stmt *stmt) {
@@ -105,14 +94,6 @@ void codegen::block(Node::Stmt *stmt) {
   auto preSS = stackSize;
   scopes.push_back(preSS);
   for (Node::Stmt *stm : s->stmts) {
-    if (stm->kind == ND_FN_STMT) {
-      // No 🫴
-      std::cerr
-          << "No fancy error for this, beg Connor... (Soviet Pancakes speaking)"
-          << std::endl;
-      std::cerr << "Nested functions not allowed!" << std::endl;
-      exit(-1);
-    }
     codegen::visitStmt(stm);
   }
   scopes.pop_back();
@@ -137,7 +118,7 @@ void codegen::ifStmt(Node::Stmt *stmt) {
     // Handle non-binary conditions
     visitExpr(s->condition);
     popToRegister("%rcx");
-    push(Instr{.var = LinkerDirective{.value = "test %rcx, %rcx"}, .type = InstrType::Linker}, Section::Main);
+    push(Instr{.var = CmpInstr{.lhs = "%rcx", .rhs = "$0"}, .type = InstrType::Cmp}, Section::Main);
     push(Instr{.var = JumpInstr{.op = JumpCondition::NotZero, .label = "conditional" + preconCount}, .type = InstrType::Jmp}, Section::Main);
   } else {
     // Process binary expression
@@ -220,55 +201,41 @@ void codegen::print(Node::Stmt *stmt) {
   }
 }
 
-void codegen::expr(Node::Stmt *stmt) {
-  auto s = static_cast<ExprStmt *>(stmt);
-  // Just evaluate the expression
-  // TODO: Remove the last push statement or something idk its late
-  codegen::visitExpr(s->expr);
+void codegen::_return(Node::Stmt *stmt) {
+  auto returnStmt = static_cast<ReturnStmt *>(stmt);
+
+  // Generate return value for the function
+  codegen::visitExpr(returnStmt->expr);
+
+  // Store the return value in the RAX register
+  push(Instr{.var = PopInstr{.where = "%rax"}, .type = InstrType::Pop}, Section::Main);
+  stackSize--;
+
+   if (isEntryPoint) {
+     handleExitSyscall();
+   } else {
+     handleReturnCleanup();
+     push(Instr{.var = Ret{}, .type = InstrType::Ret}, Section::Main);
+   }
+}
+
+
+void codegen::forLoop(Node::Stmt *stmt) {
+  auto s = static_cast<ForStmt *>(stmt);
+  std::cerr
+      << "No fancy error for this, beg Connor... (Soviet Pancakes speaking)"
+      << std::endl;
+  std::cerr << "For loops not implemented!" << std::endl;
+  exit(-1);
 };
 
-void codegen::_return(Node::Stmt *stmt) {
-  auto s = static_cast<ReturnStmt *>(stmt);
-
-  codegen::visitExpr(s->expr);
-  push(Instr{.var = PopInstr{.where = "%rax"}, .type = InstrType::Pop},
-       Section::Main);
-  stackSize--;
-  if (isEntryPoint) {
-    // Who cares about the stack, we're exiting the program lmao
-    push(Instr{.var = MovInstr{.dest = "%rdi",
-                               .src = "%rax",
-                               .destSize = DataSize::Qword,
-                               .srcSize = DataSize::Qword},
-               .type = InstrType::Mov},
-         Section::Main);
-    push(Instr{.var = MovInstr{.dest = "%rax",
-                               .src = "$60",
-                               .destSize = DataSize::Qword,
-                               .srcSize = DataSize::Qword},
-               .type = InstrType::Mov},
-         Section::Main);
-    push(Instr{.var = Syscall{.name = "SYS_EXIT"}, .type = InstrType::Syscall},
-         Section::Main);
-    return;
-  }
-  // Pop the stacksize (important for no segfaults (: )
-  if (stackSize - funcBlockStart == 0) {
-    push(Instr{.var = PopInstr{.where = "%rbp", .whereSize = DataSize::Qword},
-               .type = InstrType::Pop},
-         Section::Main);
-    stackSize--;
-  } else {
-    push(Instr{.var = MovInstr{.dest = "%rbp",
-                               .src = std::to_string(
-                                          8 * (stackSize - funcBlockStart)) +
-                                      "(%rsp)",
-                               .destSize = DataSize::Qword,
-                               .srcSize = DataSize::Qword},
-               .type = InstrType::Mov},
-         Section::Main);
-  }
-  push(Instr{.var = Ret{}, .type = InstrType::Ret}, Section::Main);
+void codegen::whileLoop(Node::Stmt *stmt) {
+  auto s = static_cast<WhileStmt *>(stmt);
+  std::cerr
+      << "No fancy error for this, beg Connor... (Soviet Pancakes speaking)"
+      << std::endl;
+  std::cerr << "While loops not implemented!" << std::endl;
+  exit(-1);
 };
 
 void codegen::_break(Node::Stmt *stmt) {
@@ -286,23 +253,5 @@ void codegen::_continue(Node::Stmt *stmt) {
       << "No fancy error for this, beg Connor... (Soviet Pancakes speaking)"
       << std::endl;
   std::cerr << "Continue statements not implemented!" << std::endl;
-  exit(-1);
-};
-
-void codegen::forLoop(Node::Stmt *stmt) {
-  auto s = static_cast<ForStmt *>(stmt);
-  std::cerr
-      << "No fancy error for this, beg Connor... (Soviet Pancakes speaking)"
-      << std::endl;
-  std::cerr << "For loops not implemented!" << std::endl;
-  exit(-1);
-};
-
-void codegen::whileLoop(Node::Stmt *stmt) {
-  auto s = static_cast<WhileStmt *>(stmt);
-  std::cerr
-      << "No fancy error for this, beg Connor... (Soviet Pancakes speaking)"
-      << std::endl;
-  std::cerr << "While loops not implemented!" << std::endl;
   exit(-1);
 };
