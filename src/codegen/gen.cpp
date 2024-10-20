@@ -23,7 +23,11 @@ void codegen::gen(Node::Stmt *stmt, bool isSaved, std::string output_filename,
 
   visitStmt(stmt);
 
+  // Make 2 passes of optimization
   text_section = Optimizer::optimizeInstrs(text_section);
+  text_section = Optimizer::optimizeInstrs(text_section);
+  
+  head_section = Optimizer::optimizeInstrs(head_section);
   head_section = Optimizer::optimizeInstrs(head_section);
   // data section cannot be optimized
 

@@ -31,7 +31,12 @@ T lookup(const std::unordered_map<U, T> &map, U key) {
 
 void initMaps();
 
-inline std::unordered_map<std::string, size_t> stackTable = {};
+// Signed 64-bit integer
+
+// Start at one because retrieving 0(%rbp) results in unusual behavior
+inline int64_t variableCount = 1;
+
+inline std::unordered_map<std::string, size_t> variableTable = {};
 inline std::vector<size_t> stackSizesForScopes = {}; // wordy term for "when we start a scope, push its stack size"
 inline size_t stackSize;
 
@@ -86,12 +91,14 @@ inline std::vector<Instr> data_section = {}; // Technically, this will just be e
 
 inline std::unordered_map<NativeASMFunc, bool> nativeFunctionsUsed = {};
 
-inline std::vector<size_t> scopes = {};
+// Stack count, Variable count
+inline std::vector<std::pair<size_t, int64_t>> scopes = {};
 
 inline bool isEntryPoint = false;
 inline size_t howBadIsRbp = 0;
 inline size_t conditionalCount = 0;
 inline size_t stringCount = 0;
+inline size_t floatCount = 0;
 inline size_t loopCount = 0;
 inline size_t arrayCount = 0;
 //                            idx    # ELEM
@@ -107,6 +114,7 @@ inline const char* file_name;
 // Helper function to pop the value from the stack to a register
 void moveRegister(const std::string &dest, const std::string &src, DataSize dest_size, DataSize src_size);
 void popToRegister(const std::string &reg);
+void pushRegister(const std::string &reg);
 void handleExitSyscall();
 void handleReturnCleanup();
 

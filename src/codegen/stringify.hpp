@@ -147,8 +147,26 @@ public:
         return "not " + instr.what + "\n\t";
       }
       // define bytes (intel syntax, replaced by .asciz)
-      std::string operator()(DBInstr instr) const {
-        return "db " + instr.what + "\n\t";
+      std::string operator()(DataSectionInstr instr) const {
+        std::string op = "";
+        switch (instr.bytesToDefine) {
+          case DataSize::Byte:
+            op = ".byte";
+            break;
+          case DataSize::Word:
+            op = ".word";
+            break;
+          case DataSize::Dword:
+            op = ".long";
+            break;
+          case DataSize::Qword:
+            op = ".qword";
+            break;
+          default:
+            op = "UNIMPLEMENTED";
+            break;
+        }
+        return op + " " + instr.what = "\n\t";
       }
       // define an ascii string with null (zero) termination
       std::string operator()(AscizInstr instr) const {
@@ -167,6 +185,34 @@ public:
           inst += ", " + instr.dst;
         }
         return inst + "\n\t";
+      }
+
+      std::string operator()(ConvertInstr instr) const {
+        std::string inst = "cvt";
+        switch (instr.convType) {
+          case ConvertType::SI2SS:
+            inst += "si2ss";
+            break;
+          case ConvertType::SS2SI:
+            inst += "ss2si";
+            break;
+          case ConvertType::SD2SI:
+            inst += "sd2si";
+            break;
+          case ConvertType::SI2SD:
+            inst += "si2sd";
+            break;
+          case ConvertType::SS2SD:
+            inst += "ss2sd";
+            break;
+          case ConvertType::SD2SS:
+            inst += "sd2ss";
+            break;
+          default:
+            inst += "UNIMPLEMENTED";
+            break;
+        }
+        return inst + " " + instr.from + ", " + instr.to + "\n\t";
       }
       // String literal (eg .cfi_startproc in functions)
       // It is the responsibility of the input to have its own formatting (\n\t)

@@ -12,6 +12,12 @@ void codegen::handlerError(int line, int pos, std::string msg, std::string note,
                     node.tks, false, false, false, false, false, true);
 }
 
+void codegen::pushRegister(const std::string &reg) {
+  push(Instr{.var=PushInstr{.what=reg},.type= InstrType::Push},
+    Section::Main);
+  stackSize++;
+}
+
 void codegen::popToRegister(const std::string &reg) {
   push(Instr{.var = PopInstr({.where = reg}), .type = InstrType::Pop},
        Section::Main);
@@ -62,8 +68,8 @@ void codegen::processBinaryExpression(BinaryExpr *cond, const std::string &preco
 }
 
 void codegen::handleExitSyscall() {
-  push(Instr{.var = MovInstr{.dest = "%rdi", .src = "%rax", .destSize = DataSize::Qword, .srcSize = DataSize::Qword}, .type = InstrType::Mov}, Section::Main);
-  push(Instr{.var = MovInstr{.dest = "%rax", .src = "$60", .destSize = DataSize::Qword, .srcSize = DataSize::Qword}, .type = InstrType::Mov}, Section::Main);
+  moveRegister("%rdi", "%rax", DataSize::Qword, DataSize::Qword);
+  moveRegister("%rax", "$60", DataSize::Qword, DataSize::Qword);
   push(Instr{.var = Syscall{.name = "SYS_EXIT"}, .type = InstrType::Syscall}, Section::Main);
 }
 
@@ -71,6 +77,7 @@ void codegen::handleReturnCleanup() {
   if (stackSize - funcBlockStart == 0) {
     push(Instr{.var = PopInstr{.where = "%rbp", .whereSize = DataSize::Qword}, .type = InstrType::Pop}, Section::Main);
     stackSize--;
+    push(Instr{.var=LinkerDirective{.value=".cfi_def_cfa 7, 8\n\t"},.type=InstrType::Linker},Section::Main);
   } else {
     push(Instr{.var = MovInstr{.dest = "%rbp", .src = std::to_string(8 * (stackSize - funcBlockStart)) + "(%rsp)", .destSize = DataSize::Qword, .srcSize = DataSize::Qword}, .type = InstrType::Mov}, Section::Main);
   }

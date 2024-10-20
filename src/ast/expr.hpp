@@ -4,6 +4,7 @@
 #include <vector>
 
 #include "ast.hpp"
+#include "types.hpp"
 
 class IntExpr : public Node::Expr {
 public:
@@ -11,7 +12,9 @@ public:
   int value;
 
   IntExpr(int line, int pos, int value) : line(line), pos(pos), value(value) {
-    kind = NodeKind::ND_INT;
+    kind =  NodeKind::ND_INT;
+    // make a new type of "int"
+    this->asmType = new SymbolType("int");
   }
 
   void debug(int ident = 0) const override {
@@ -28,6 +31,7 @@ public:
   FloatExpr(int line, int pos, float value)
       : line(line), pos(pos), value(value) {
     kind = NodeKind::ND_FLOAT;
+    this->asmType = new SymbolType("float");
   }
 
   void debug(int ident = 0) const override {
@@ -45,6 +49,7 @@ public:
   IdentExpr(int line, int pos, std::string name, Node::Type *type)
       : line(line), pos(pos), name(name), type(type) {
     kind = NodeKind::ND_IDENT;
+    // Let type be redefined in typecheck (shhh)
   }
 
   void debug(int ident = 0) const override {
@@ -66,6 +71,7 @@ public:
   StringExpr(int line, int pos, std::string value)
       : line(line), pos(pos), value(value) {
     kind = NodeKind::ND_STRING;
+    this->asmType = new SymbolType("str");
   }
 
   void debug(int ident = 0) const override {
@@ -83,6 +89,7 @@ public:
   CastExpr(int line, int pos, Node::Expr *castee, Node::Type *castee_type)
       : line(line), pos(pos), castee(castee), castee_type(castee_type) {
     kind = NodeKind::ND_CAST;
+    this->asmType = castee_type;
   }
 
   void debug(int indent = 0) const override {
@@ -112,6 +119,26 @@ public:
              std::string op)
       : line(line), pos(pos), lhs(lhs), rhs(rhs), op(op) {
     kind = NodeKind::ND_BINARY;
+    
+    SymbolType *lhsType = static_cast<SymbolType *>(lhs->asmType);
+    SymbolType *rhsType = static_cast<SymbolType *>(rhs->asmType);
+    if (!lhsType) asmType = rhsType;
+    else if (!rhsType) asmType = lhsType;
+    else if (lhsType->name == rhsType->name) {
+      asmType = lhsType;
+    } else {
+      // prefer int over float over bool over string
+      if (lhsType->name == "int" || rhsType->name == "int") {
+        asmType = new SymbolType("int");
+      } else if (lhsType->name == "float" || rhsType->name == "float") {
+        asmType = new SymbolType("float");
+      } else if (lhsType->name == "bool" || rhsType->name == "bool") {
+        asmType = new SymbolType("bool");
+      } else {
+        asmType = new SymbolType("str");
+      }
+    }
+    
   }
 
   void debug(int ident = 0) const override {
@@ -138,6 +165,11 @@ public:
   UnaryExpr(int line, int pos, Node::Expr *expr, std::string op)
       : line(line), pos(pos), expr(expr), op(op) {
     kind = NodeKind::ND_UNARY;
+    SymbolType *exprType = static_cast<SymbolType *>(expr->asmType);
+    if (op == "-" && exprType->name != "int" && exprType->name != "float") {
+      std::cerr << "excuse me bruh how do i negate a '" << exprType->name << "'?" << std::endl; 
+    }
+    asmType = exprType;
   }
 
   void debug(int ident = 0) const override {
@@ -150,7 +182,6 @@ public:
 
   ~UnaryExpr() { delete expr; }
 };
-
 class PrefixExpr : public Node::Expr {
 public:
   int line, pos;
@@ -160,6 +191,7 @@ public:
   PrefixExpr(int line, int pos, Node::Expr *expr, std::string op)
       : line(line), pos(pos), expr(expr), op(op) {
     kind = NodeKind::ND_PREFIX;
+    asmType = expr->asmType;
   }
 
   void debug(int ident = 0) const override {
@@ -172,7 +204,6 @@ public:
 
   ~PrefixExpr() { delete expr; }
 };
-
 class PostfixExpr : public Node::Expr {
 public:
   int line, pos;
@@ -182,6 +213,7 @@ public:
   PostfixExpr(int line, int pos, Node::Expr *expr, std::string op)
       : line(line), pos(pos), expr(expr), op(op) {
     kind = NodeKind::ND_POSTFIX;
+    asmType = expr->asmType;
   }
 
   void debug(int ident = 0) const override {
@@ -203,6 +235,7 @@ public:
   GroupExpr(int line, int pos, Node::Expr *expr)
       : line(line), pos(pos), expr(expr) {
     kind = NodeKind::ND_GROUP;
+    asmType = expr->asmType;
   }
 
   void debug(int ident = 0) const override {
@@ -224,6 +257,7 @@ public:
             std::vector<Node::Expr *> elements)
       : line(line), pos(pos), type(type), elements(elements) {
     kind = NodeKind::ND_ARRAY;
+    asmType = type;
   }
 
   void debug(int ident = 0) const override {
@@ -250,6 +284,7 @@ public:
   IndexExpr(int line, int pos, Node::Expr *lhs, Node::Expr *rhs)
       : line(line), pos(pos), lhs(lhs), rhs(rhs) {
     kind = NodeKind::ND_INDEX;
+    asmType = lhs->asmType;
   }
 
   void debug(int ident = 0) const override {
@@ -278,6 +313,7 @@ public:
   PopExpr(int line, int pos, Node::Expr *lhs, Node::Expr *rhs)
       : line(line), pos(pos), lhs(lhs), rhs(rhs) {
     kind = NodeKind::ND_POP;
+    asmType = lhs->asmType;
   }
 
   void debug(int ident = 0) const override {
@@ -312,6 +348,7 @@ public:
            Node::Expr *index)
       : line(line), pos(pos), lhs(lhs), rhs(rhs), index(index) {
     kind = NodeKind::ND_PUSH;
+    asmType = lhs->asmType;
   }
 
   void debug(int ident = 0) const override {
@@ -346,6 +383,7 @@ public:
   AssignmentExpr(int line, int pos, Expr *assignee, std::string op, Expr *rhs)
       : line(line), pos(pos), assignee(assignee), op(op), rhs(rhs) {
     kind = NodeKind::ND_ASSIGN;
+    asmType = rhs->asmType;
   }
 
   void debug(int ident = 0) const override {
@@ -377,6 +415,7 @@ public:
            std::vector<Node::Expr *> args)
       : line(line), pos(pos), callee(callee), args(args) {
     kind = NodeKind::ND_CALL;
+    // Let typecheck fill out the function return
   }
 
   void debug(int ident = 0) const override {
@@ -411,6 +450,7 @@ public:
                    Node::Expr *args)
       : line(line), pos(pos), callee(callee), template_type(template_type), args(args) {
     kind = NodeKind::ND_TEMPLATE_CALL;
+    // what the fuck
   }
 
   void debug(int ident = 0) const override {
@@ -446,6 +486,12 @@ public:
               Node::Expr *rhs)
       : line(line), pos(pos), condition(condition), lhs(lhs), rhs(rhs) {
     kind = NodeKind::ND_TERNARY;
+    
+    if (lhs->asmType != rhs->asmType) {
+      std::cerr << "how do i check this ternary lmao" << std::endl;
+    } else {
+      asmType = lhs->asmType;
+    }
   }
 
   void debug(int ident = 0) const override {
@@ -478,6 +524,7 @@ public:
   MemberExpr(int line, int pos, Node::Expr *lhs, Node::Expr *rhs)
       : line(line), pos(pos), lhs(lhs), rhs(rhs) {
     kind = NodeKind::ND_MEMBER;
+    // type check whatever the rhs is supposed to be
   }
 
   void debug(int ident = 0) const override {
@@ -506,6 +553,7 @@ public:
   ResolutionExpr(int line, int pos, Node::Expr *lhs, Node::Expr *rhs)
       : line(line), pos(pos), lhs(lhs), rhs(rhs) {
     kind = NodeKind::ND_RESOLUTION;
+    std::cerr << "excuse me lets like not do the .. thing ok?" << std::endl;
   }
 
   void debug(int ident = 0) const override {
@@ -532,6 +580,7 @@ public:
 
   BoolExpr(int line, int pos, bool value) : line(line), pos(pos), value(value) {
     kind = NodeKind::ND_BOOL;
+    asmType = new SymbolType("bool");
   }
 
   void debug(int ident = 0) const override {

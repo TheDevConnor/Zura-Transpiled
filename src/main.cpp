@@ -159,7 +159,7 @@ int main(int argc, char **argv) {
     auto startTime = std::chrono::high_resolution_clock::now();
 
     FlagConfig::print(argc, argv);
-    auto midTime = std::chrono::high_resolution_clock::now();
+    // auto midTime = std::chrono::high_resolution_clock::now();
 
     FlagConfig::runBuild(argc, argv);
     auto endTime = std::chrono::high_resolution_clock::now();

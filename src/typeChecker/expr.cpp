@@ -1,5 +1,7 @@
 #include "../helper/math/math.hpp"
 #include "type.hpp"
+#include "../ast/types.hpp"
+#include "../ast/ast.hpp"
 #include <memory>
 #include <sstream>
 
@@ -73,7 +75,7 @@ void TypeChecker::visitIdent(Maps *map, Node::Expr *expr) {
 
   // update the ast-node (IdentExpr) to hold the type of the identifier as a
   // property
-  ident->type = res;
+  ident->type = ident->asmType = res;
   return_type = std::make_shared<SymbolType>(type_to_string(res));
 
 }
@@ -88,6 +90,7 @@ void TypeChecker::visitBinary(Maps *map, Node::Expr *expr) {
   // validate the types of the lhs and rhs
   if (lhs == nullptr || rhs == nullptr) {
     return_type = std::make_shared<SymbolType>("unknown");
+    expr->asmType = return_type.get();
     return;
   }
 
@@ -101,6 +104,7 @@ void TypeChecker::visitBinary(Maps *map, Node::Expr *expr) {
       handlerError(binary->line, binary->pos, msg, "", "Type Error");
     }
     return_type = lhs;
+    expr->asmType = return_type.get();
     return;
   }
 
@@ -116,6 +120,7 @@ void TypeChecker::visitBinary(Maps *map, Node::Expr *expr) {
       handlerError(binary->line, binary->pos, msg, "", "Type Error");
     }
     return_type = std::make_shared<SymbolType>("bool");
+    expr->asmType = return_type.get();
     return;
   }
 }
@@ -126,6 +131,7 @@ void TypeChecker::visitUnary(Maps *map, Node::Expr *expr) {
 
   if (return_type == nullptr) {
     return_type = std::make_shared<SymbolType>("unknown");
+    expr->asmType = return_type.get();
     return;
   }
 
@@ -153,13 +159,14 @@ void TypeChecker::visitUnary(Maps *map, Node::Expr *expr) {
     }
   }
 
-  return_type = return_type;
+  expr->asmType = return_type.get();
 }
 
 void TypeChecker::visitGrouping(Maps *map, Node::Expr *expr) {
   auto grouping = static_cast<GroupExpr *>(expr);
   visitExpr(map, grouping->expr);
   return_type = return_type;
+  expr->asmType = return_type.get();
 }
 
 void TypeChecker::visitBool(Maps *map, Node::Expr *expr) {
@@ -230,6 +237,7 @@ void TypeChecker::visitCall(Maps *map, Node::Expr *expr) {
     handlerError(call->line, call->pos, msg, "", "Type Error");
   }
 
+  // ew that was me
   for (int i = 0; i < call->args.size(); i++) {
     visitExpr(map, call->args[i]);
     if (type_to_string(return_type.get()) !=
@@ -242,6 +250,7 @@ void TypeChecker::visitCall(Maps *map, Node::Expr *expr) {
     }
   }
 
+  expr->asmType = fn.first.second;
   return_type = std::make_shared<SymbolType>(type_to_string(fn.first.second));
 }
 
@@ -260,6 +269,8 @@ void TypeChecker::visitArray(Maps *map, Node::Expr *expr) {
       map->array_table.push_back(new SymbolType("str"));
     } else if (elem->kind == NodeKind::ND_BOOL) {
       map->array_table.push_back(new SymbolType("bool"));
+    } else if (elem->kind == NodeKind::ND_FLOAT) {
+      map->array_table.push_back(new SymbolType("float"));
     }
 
     // check if the type of the element is the same as the previous element

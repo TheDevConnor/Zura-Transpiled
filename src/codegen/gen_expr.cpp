@@ -14,17 +14,14 @@ void codegen::primary(Node::Expr *expr) {
   switch (expr->kind) {
   case NodeKind::ND_INT: {
     auto e = static_cast<IntExpr *>(expr);
-    push(Instr{.var = PushInstr{.what = "$" + std::to_string(e->value)},
-               .type = InstrType::Push},
-         Section::Main);
-    stackSize++;
+    pushRegister("$" + std::to_string(e->value));
     break;
   }
   case NodeKind::ND_IDENT: {
     auto e = static_cast<IdentExpr *>(expr);
-    int offset = (stackSize - stackTable.at(e->name)) * 8;
+    int offset = variableTable[e->name];
 
-    auto res = (offset == 0) ? "(%rsp)" : std::to_string(offset) + "(%rsp)";
+    auto res = std::to_string(offset * -8) + "(%rbp)";
 
     push(Instr{.var = Comment{.comment = "Clone variable '" + e->name +
                                          "' for use as expr (offset: " +
@@ -32,10 +29,8 @@ void codegen::primary(Node::Expr *expr) {
                .type = InstrType::Comment},
          Section::Main);
 
-    // Push the instruction to use the calculated stack location
-    push(Instr{.var = PushInstr{.what = res}, .type = InstrType::Push},
-         Section::Main);
-    stackSize++;
+    // Push the result (the retrieved data)
+    pushRegister(res);
     break;
   }
   case ND_STRING: {
@@ -43,11 +38,7 @@ void codegen::primary(Node::Expr *expr) {
     std::string label = "string" + std::to_string(stringCount++);
 
     // Push the label onto the stack
-    push(Instr{.var =
-                   PushInstr{.what = '$' + label, .whatSize = DataSize::Qword},
-               .type = InstrType::Push},
-         Section::Main);
-    stackSize++;
+    pushRegister("$" + label);
 
     // define the string in the data section
     push(Instr{.var = Label{.name = label}, .type = InstrType::Label},
@@ -56,6 +47,23 @@ void codegen::primary(Node::Expr *expr) {
     // Push the string onto the data section
     push(Instr{.var = AscizInstr{.what=string->value},
                .type = InstrType::Asciz},
+         Section::Data);
+    break;
+  }
+  case ND_FLOAT: {
+    auto string = static_cast<StringExpr *>(expr);
+    std::string label = "float" + std::to_string(floatCount++);
+
+    // Push the label onto the stack
+    pushRegister("$" + label);
+
+    // define the string in the data section
+    push(Instr{.var = Label{.name = label}, .type = InstrType::Label},
+         Section::Data);
+
+    // Push the string onto the data section
+    push(Instr{.var = DataSectionInstr{.bytesToDefine = DataSize::Dword /* long */, .what=string->value},
+               .type = InstrType::DB},
          Section::Data);
     break;
   }
@@ -81,35 +89,61 @@ void codegen::binary(Node::Expr *expr) {
   visitExpr(e->rhs);
 
   // Pop the right hand side
-  push(Instr{.var = PopInstr{.where = rhs_reg}, .type = InstrType::Pop},
-       Section::Main);
-  stackSize--;
+  popToRegister(rhs_reg);
 
   // Pop the left hand side
-  push(Instr{.var = PopInstr{.where = lhs_reg}, .type = InstrType::Pop},
-       Section::Main);
-  stackSize--;
+  popToRegister(lhs_reg);
 
   // Perform the binary operation
   std::string op = lookup(opMap, e->op);
-  if (op == "imul" || op == "idiv") {
-    push(Instr{.var = BinaryInstr{.op = op, .src = rhs_reg},
+
+  SymbolType *lhsType = static_cast<SymbolType *>(e->lhs->asmType);
+  SymbolType *rhsType = static_cast<SymbolType *>(e->rhs->asmType);
+  if (lhsType->name == "str" || rhsType->name == "str") {
+    std::cerr << "excuse me you cant concat strings :(" << std::endl;
+    exit(-1);
+  }
+  if (lhsType->name == "float" || rhsType->name == "float") {
+    // Ensure both values are floats 
+    if (lhsType->name != "float") {
+      //                                                 int2float
+      push(Instr{.var = ConvertInstr{.convType = ConvertType::SI2SS, .from = lhs_reg, .to = "%xmm0"},
+                 .type = InstrType::Convert},
+           Section::Main);
+      lhs_reg = "%xmm0";
+    } else if (rhsType->name != "float") {
+      //                                                 int2float
+      push(Instr{.var = ConvertInstr{.convType = ConvertType::SI2SS, .from = rhs_reg, .to = "%xmm1"},
+                 .type = InstrType::Convert},
+           Section::Main);
+      rhs_reg = "%xmm1";
+    }
+    // Perform the operation
+    std::string op = "";
+    if (e->op == "add") op = "addss";
+    if (e->op == "sub") op = "subss";
+    if (e->op == "mul") op = "mulss";
+    if (e->op == "div") op = "divss";
+    // Ignore the others because nobody cares about them HAHAH
+    push(Instr{.var = BinaryInstr{.op = op, .src = rhs_reg, .dst = lhs_reg},
                .type = InstrType::Binary},
          Section::Main);
-  } else if (op == "add") {
-    push(Instr{.var = AddInstr{.lhs = lhs_reg, .rhs = rhs_reg},
-               .type = InstrType::Add},
-         Section::Main);
-  } else if (op == "sub") {
-    push(Instr{.var = SubInstr{.lhs = lhs_reg, .rhs = rhs_reg},
-               .type = InstrType::Sub},
-         Section::Main);
   }
-
+  if (lhsType->name == "int" && rhsType->name == "int") {
+    // Use regular ones! You'll be fine.
+    // Modulo (op == mod) is division but push rdx instead
+    if (op == "mod") {
+      push(Instr{.var = MovInstr{.dest = "%rdx", .src = "%rax"},
+                 .type = InstrType::Mov},
+           Section::Main);
+    } else {
+      push(Instr{.var = BinaryInstr{.op = op, .src = rhs_reg, .dst = lhs_reg},
+                 .type = InstrType::Binary},
+           Section::Main);
+    }
+  }
   // Push the result
-  push(Instr{.var = PushInstr{.what = lhs_reg}, .type = InstrType::Push},
-       Section::Main);
-  stackSize++;
+  pushRegister(lhs_reg);
 }
 
 void codegen::unary(Node::Expr *expr) {
@@ -126,16 +160,6 @@ void codegen::grouping(Node::Expr *expr) {
   auto e = static_cast<GroupExpr *>(expr);
   // Visit the expression inside the grouping
   visitExpr(e->expr);
-
-  // Pop the expression inside the grouping
-  push(Instr{.var = PopInstr{.where = "%rax"}, .type = InstrType::Pop},
-       Section::Main);
-  stackSize--;
-
-  // Push the expression inside the grouping
-  push(Instr{.var = PushInstr{.what = "%rax"}, .type = InstrType::Push},
-       Section::Main);
-  stackSize++;
 }
 
 void codegen::call(Node::Expr *expr) {
@@ -151,10 +175,7 @@ void codegen::call(Node::Expr *expr) {
              .type = InstrType::Call,
              .optimize = false},
        Section::Main);
-  push(Instr{.var = PushInstr{.what = "%rax", .whatSize = DataSize::Qword},
-             .type = InstrType::Push},
-       Section::Main);
-  stackSize++;
+  pushRegister("%rax");
 }
 
 void codegen::ternary(Node::Expr *expr) {
@@ -170,8 +191,8 @@ void codegen::assign(Node::Expr *expr) {
   auto e = static_cast<AssignmentExpr *>(expr);
   auto lhs = static_cast<IdentExpr *>(e->assignee);
   visitExpr(e->rhs);
-  int offset = (stackSize - stackTable.at(lhs->name)) - 1;
-  auto res = (offset == 0) ? "(%rsp)" : std::to_string(offset * 8) + "(%rsp)";
+  int offset = variableTable[lhs->name];
+  auto res = std::to_string(offset * -8) + "(%rbp)";
   popToRegister("%rax");
 }
 

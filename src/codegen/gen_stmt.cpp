@@ -40,23 +40,25 @@ void codegen::funcDecl(Node::Stmt *stmt) {
   push(Instr{.var = Label{.name = funcName}, .type = InstrType::Label},Section::Main);
   push(Instr{.var = LinkerDirective{.value = ".cfi_startproc\n\t"},.type = InstrType::Linker},Section::Main);
 
-  if (isEntryPoint) {
-    stackSize = 0;
-  } else {
-    push(Instr{.var = PushInstr{.what = "%rbp", .whatSize = DataSize::Qword},.type = InstrType::Push},Section::Main);
-    stackSize++;
-    push(Instr{.var = MovInstr{.dest = "%rbp",
-                                      .src = "%rsp",
-                                      .destSize = DataSize::Qword,
-                                      .srcSize = DataSize::Qword},
-               .type = InstrType::Mov},Section::Main);
-  }
+  stackSize = 0;
+  // Define literally (do not adjust cfa for this)
+  push(Instr{.var = PushInstr{.what = "%rbp", .whatSize = DataSize::Qword},.type = InstrType::Push},Section::Main);
+  stackSize++;
+  push(Instr{.var=LinkerDirective{.value=".cfi_def_cfa_offset 16\n\t"},.type=InstrType::Linker},Section::Main);
+  push(Instr{.var = MovInstr{.dest = "%rbp",
+    .src = "%rsp",
+    .destSize = DataSize::Qword,
+    .srcSize = DataSize::Qword},
+    .type = InstrType::Mov},
+  Section::Main);
+  push(Instr{.var=LinkerDirective{.value=".cfi_def_cfa_register 6\n\t"},.type=InstrType::Linker},Section::Main);
   stackSize++; // Increase for the push of rbp
   funcBlockStart = stackSize;
 
   // Function args
   for (auto &args : s->params) {
-    stackTable[args.first] = stackSize;
+    // TODO: REPLACE THIS IMMEDIATELY!
+    variableTable.insert({args.first, variableCount++});
   }
 
   codegen::visitStmt(s->block);
@@ -80,8 +82,10 @@ void codegen::varDecl(Node::Stmt *stmt) {
     visitExpr(static_cast<ExprStmt *>(s->expr)->expr);
   }
 
+  std::string where = std::to_string(variableCount * -8) + "(%rbp)";
+  popToRegister(where);
   // Update the symbol table with the variable's position
-  stackTable.insert({s->name, stackSize});
+  variableTable.insert({s->name, variableCount++});
 
   push(Instr{.var = Comment{.comment = "End of variable declaration for '" + s->name + "'"},
               .type = InstrType::Comment},Section::Main);
@@ -92,12 +96,14 @@ void codegen::block(Node::Stmt *stmt) {
   // TODO: Track the number of variables and pop them off later
   // This should be handled by the IR when i get around to it though
   auto preSS = stackSize;
-  scopes.push_back(preSS);
+  auto preVS = variableCount;
+  scopes.push_back(std::pair(preSS, preVS));
   for (Node::Stmt *stm : s->stmts) {
     codegen::visitStmt(stm);
   }
   scopes.pop_back();
   stackSize = preSS;
+  variableCount = preVS;
 };
 
 void codegen::ifStmt(Node::Stmt *stmt) {
@@ -117,8 +123,8 @@ void codegen::ifStmt(Node::Stmt *stmt) {
   if (!cond) {
     // Handle non-binary conditions
     visitExpr(s->condition);
-    popToRegister("%rcx");
-    push(Instr{.var = CmpInstr{.lhs = "%rcx", .rhs = "$0"}, .type = InstrType::Cmp}, Section::Main);
+    popToRegister("%ecx");
+    push(Instr{.var = CmpInstr{.lhs = "%ecx", .rhs = "$0"}, .type = InstrType::Cmp}, Section::Main);
     push(Instr{.var = JumpInstr{.op = JumpCondition::NotZero, .label = "conditional" + preconCount}, .type = InstrType::Jmp}, Section::Main);
   } else {
     // Process binary expression
@@ -216,8 +222,7 @@ void codegen::_return(Node::Stmt *stmt) {
   codegen::visitExpr(returnStmt->expr);
 
   // Store the return value in the RAX register
-  push(Instr{.var = PopInstr{.where = "%rax"}, .type = InstrType::Pop}, Section::Main);
-  stackSize--;
+  popToRegister("%rax");
 
    if (isEntryPoint) {
      handleExitSyscall();
@@ -244,7 +249,7 @@ void codegen::forLoop(Node::Stmt *stmt) {
 
   push(Instr{.var = Comment{.comment = "For loop variable declaration"}, .type = InstrType::Comment}, Section::Main);
 
-  stackTable.insert({assignee->name, stackSize}); // Track the variable in the stack table
+  variableTable.insert({assignee->name, variableCount++}); // Track the variable in the stack table
   visitExpr(assign);  // Process the initial loop assignment (e.g., i = 0)
 
   // Set loop start label

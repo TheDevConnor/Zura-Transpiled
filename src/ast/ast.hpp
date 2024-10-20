@@ -65,9 +65,15 @@ public:
   std::vector<Lexer::Token> tks;
   // Store the current file name
   std::string current_file;
-
+  struct Type {
+    NodeKind kind; // Pointer, Array, Symbol
+    virtual void debug(int ident = 0) const = 0;
+    virtual ~Type() = default;
+  };
+  
   struct Expr {
     NodeKind kind;
+    Type *asmType;
     virtual void debug(int ident = 0) const = 0;
     virtual ~Expr() = default;
   };
@@ -76,12 +82,6 @@ public:
     NodeKind kind;
     virtual void debug(int ident = 0) const = 0;
     virtual ~Stmt() = default;
-  };
-
-  struct Type {
-    NodeKind kind;
-    virtual void debug(int ident = 0) const = 0;
-    virtual ~Type() = default;
   };
 
   static void printIndent(int ident) {

@@ -1,6 +1,5 @@
-const main := fn () int { 
-   loop(i = 0; i <= 10) : (i = i + 1) {
-      dis("Hello, World!\n");
-   }
-   return 0;
+const main := fn() int {
+   have x: int = 5;
+   have y: int = 19;
+   return x * y + x;
 };

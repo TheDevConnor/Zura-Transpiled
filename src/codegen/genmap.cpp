@@ -23,9 +23,14 @@ void codegen::initMaps() {
       {ND_POSTFIX, unary},   {ND_ARRAY, _arrayExpr}, {ND_INDEX, arrayElem},
   };
   opMap = {
-      {"+", "add"},  {"-", "sub"},    {"*", "imul"},   {"/", "idiv"},
-      {"%", "mod"}, {"==", "sete"},  {"!=", "setne"}, {"<", "setl"},
-      {">", "setg"}, {"<=", "setle"}, {">=", "setge"}, {"&&", "and"},
-      {"||", "or"}, {"^", "power"},
+      {"+", "add"}, {"-", "sub"}, 
+      {"*", "imul"}, {"/", "idiv"}, {"%", "mod"}, // mod is div but special 
+      {"^", "exp"}, 
+
+      {"==", "sete"}, {"!=", "setne"},
+      {">", "setg"}, {">=", "setge"}, 
+      {"<", "setl"}, {"<=", "setle"},
+      {"||", "lor"}, {"|", "bor"},
+      {"&&", "land"}, {"&", "band"}
   };
 }
