@@ -59,7 +59,7 @@ void codegen::gen(Node::Stmt *stmt, bool isSaved, std::string output_filename,
   }
   if (rodt_section.size() > 0) {
     file << "\n# readonly data section - contains constant strings and floats (for now)"
-            "\n.rodata\n";
+            "\n.section .rodata\n";
     file << Stringifier::stringifyInstrs(rodt_section);
   }
   file << ".text\n"
