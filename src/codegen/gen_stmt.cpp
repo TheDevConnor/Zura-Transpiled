@@ -1,5 +1,5 @@
 #include "gen.hpp"
-#include "optimize.hpp"
+#include "optimizer/optimize.hpp"
 #include <sys/cdefs.h>
 
 void codegen::visitStmt(Node::Stmt *stmt) {

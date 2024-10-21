@@ -2,8 +2,8 @@
 #include "../common.hpp"
 
 #include "gen.hpp"
-#include "optimize.hpp"
-#include "stringify.hpp"
+#include "optimizer/optimize.hpp"
+#include "optimizer/stringify.hpp"
 #include <cstdlib>
 #include <fstream>
 #include <iostream>

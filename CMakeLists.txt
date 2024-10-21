@@ -27,6 +27,9 @@ set(ZURA_HEADER_FILES
     src/typeChecker/type.hpp
 
     # Code Gen Files
+    src/codegen/optimizer/optimize.hpp
+    src/codegen/optimizer/stringify.hpp
+    src/codegen/optimizer/instr.hpp
     src/codegen/gen.hpp
 
     src/common.hpp
@@ -54,6 +57,7 @@ set(ZURA_SOURCE_FILES
     src/typeChecker/map.cpp
 
     # Code Gen Files
+    src/codegen/optimizer/optimize.cpp
     src/codegen/gen_expr.cpp
     src/codegen/gen_stmt.cpp
     src/codegen/gen_type.cpp

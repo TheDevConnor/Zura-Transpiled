@@ -3,7 +3,7 @@
 #include "../ast/expr.hpp"
 #include "../ast/stmt.hpp"
 #include "../ast/types.hpp"
-#include "optimize.hpp"
+#include "optimizer/optimize.hpp"
 
 #include <string>
 #include <unordered_map>

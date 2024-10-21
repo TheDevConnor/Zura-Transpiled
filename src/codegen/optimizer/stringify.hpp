@@ -1,7 +1,8 @@
 #pragma once
 
-#include "optimize.hpp"
+#include "instr.hpp"
 
+#include <iostream>
 #include <string>
 #include <vector>
 #include <sstream>

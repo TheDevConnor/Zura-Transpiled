@@ -1,5 +1,5 @@
 #include "gen.hpp"
-#include "optimize.hpp"
+#include "optimizer/optimize.hpp"
 
 void codegen::visitExpr(Node::Expr *expr) {
   auto handler = lookup(exprHandlers, expr->kind);
