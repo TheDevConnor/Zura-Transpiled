@@ -51,18 +51,19 @@ void codegen::primary(Node::Expr *expr) {
     break;
   }
   case ND_FLOAT: {
-    auto string = static_cast<StringExpr *>(expr);
+    auto floating = static_cast<FloatExpr *>(expr);
     std::string label = "float" + std::to_string(floatCount++);
 
     // Push the label onto the stack
-    pushRegister("$" + label);
+    moveRegister("%xmm0", label + "(%rip)", DataSize::SS, DataSize::SS);
+    push(Instr{.var=PushInstr{.what="%xmm0",.whatSize=DataSize::SS},.type=InstrType::Push},Section::Main);
 
     // define the string in the data section
     push(Instr{.var = Label{.name = label}, .type = InstrType::Label},
          Section::Data);
 
     // Push the string onto the data section
-    push(Instr{.var = DataSectionInstr{.bytesToDefine = DataSize::Dword /* long */, .what=string->value},
+    push(Instr{.var = DataSectionInstr{.bytesToDefine = DataSize::Dword /* long */, .what=std::to_string(convertFloatToInt(floating->value))},
                .type = InstrType::DB},
          Section::Data);
     break;
@@ -88,11 +89,7 @@ void codegen::binary(Node::Expr *expr) {
   visitExpr(e->lhs);
   visitExpr(e->rhs);
 
-  // Pop the right hand side
-  popToRegister(rhs_reg);
 
-  // Pop the left hand side
-  popToRegister(lhs_reg);
 
   // Perform the binary operation
   std::string op = lookup(opMap, e->op);
@@ -104,32 +101,29 @@ void codegen::binary(Node::Expr *expr) {
     exit(-1);
   }
   if (lhsType->name == "float" || rhsType->name == "float") {
-    // Ensure both values are floats 
-    if (lhsType->name != "float") {
-      //                                                 int2float
-      push(Instr{.var = ConvertInstr{.convType = ConvertType::SI2SS, .from = lhs_reg, .to = "%xmm0"},
-                 .type = InstrType::Convert},
-           Section::Main);
-      lhs_reg = "%xmm0";
-    } else if (rhsType->name != "float") {
-      //                                                 int2float
-      push(Instr{.var = ConvertInstr{.convType = ConvertType::SI2SS, .from = rhs_reg, .to = "%xmm1"},
-                 .type = InstrType::Convert},
-           Section::Main);
-      rhs_reg = "%xmm1";
-    }
+    lhs_reg = "%xmm0";
+    rhs_reg = "%xmm1";
+    // Pop the right hand side
+    popToRegister(rhs_reg);
+
+    // Pop the left hand side
+    popToRegister(lhs_reg);
     // Perform the operation
-    std::string op = "";
-    if (e->op == "add") op = "addss";
-    if (e->op == "sub") op = "subss";
-    if (e->op == "mul") op = "mulss";
-    if (e->op == "div") op = "divss";
+    if (op == "add") op = "addss";
+    if (op == "sub") op = "subss";
+    if (op == "mul") op = "mulss";
+    if (op == "div") op = "divss";
     // Ignore the others because nobody cares about them HAHAH
     push(Instr{.var = BinaryInstr{.op = op, .src = rhs_reg, .dst = lhs_reg},
                .type = InstrType::Binary},
          Section::Main);
   }
   if (lhsType->name == "int" && rhsType->name == "int") {
+      // Pop the right hand side
+    popToRegister(rhs_reg);
+
+    // Pop the left hand side
+    popToRegister(lhs_reg);
     // Use regular ones! You'll be fine.
     // Modulo (op == mod) is division but push rdx instead
     if (op == "mod") {
@@ -154,6 +148,49 @@ void codegen::unary(Node::Expr *expr) {
   std::cerr << "Unary expression not implemented! (Op: " << e->op
             << ", Expr: " << e->expr->kind << ")" << std::endl;
   exit(-1);
+}
+
+void codegen::cast(Node::Expr *expr) {
+  auto e = static_cast<CastExpr *>(expr);
+  SymbolType *toType = static_cast<SymbolType *>(e->castee_type);
+  SymbolType *fromType = static_cast<SymbolType *>(e->castee->asmType);
+  if (fromType->name == "str") {
+    std::cerr << "Explicitly casting from string is not allowed" << std::endl;
+    exit(-1);
+  }
+  visitExpr(e->castee);
+  if (toType->name == "float") {
+    // We are casting into a float.
+    popToRegister("%rax"); // This actually doesnt matter but rax is fast and also our garbage disposal
+    // Perform the conversion
+    if (fromType->name == "int") {
+      push(Instr{.var = ConvertInstr{.convType = ConvertType::SI2SS, .from = "%rax", .to = "%xmm1"},
+                .type = InstrType::Convert},
+          Section::Main);
+      // push xmm0
+      push(Instr{.var=PushInstr{.what="%xmm0",.whatSize=DataSize::SS},.type=InstrType::Push},Section::Main);
+    }
+    if (fromType->name == "float") {
+      // Do nothing, it's already a float
+      // Optimizer will know that this redundant push/pop is, of course, redundant
+      pushRegister("%rax");
+    }
+  } else if (toType->name == "int") {
+    if (fromType->name == "int") {
+      // Do nothing, it's already an int
+      return;
+    }
+
+    if (fromType->name == "float") {
+      popToRegister("%xmm0");
+      // Perform the conversion (always truncate for now)
+      push(Instr{.var = ConvertInstr{.convType = ConvertType::TSS2SI, .from = "%xmm0", .to = "%rax"},
+                .type = InstrType::Convert},
+          Section::Main);
+      // push rax - its ok becasue rax holds an int now! it fits on our int-based stack! woohoo!!!!
+      pushRegister("%rax");
+    }
+  }
 }
 
 void codegen::grouping(Node::Expr *expr) {

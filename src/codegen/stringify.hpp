@@ -24,6 +24,7 @@ public:
     WORD,  2
     DWORD, 3
     QWORD, 4 
+    SS,    5
     */
     switch (in) {
       case DataSize::Byte:
@@ -34,6 +35,8 @@ public:
         return "l"; // 'long' - aka 'dword'
       case DataSize::Qword:
         return "q";
+      case DataSize::SS:
+        return "ss";
       case DataSize::None:
       default:
         return ""; // "I dont know", but usually the assembler can assume types
@@ -146,7 +149,7 @@ public:
       std::string operator()(NotInstr instr) const {
         return "not " + instr.what + "\n\t";
       }
-      // define bytes (intel syntax, replaced by .asciz)
+      // define bytes 
       std::string operator()(DataSectionInstr instr) const {
         std::string op = "";
         switch (instr.bytesToDefine) {
@@ -157,18 +160,21 @@ public:
             op = ".word";
             break;
           case DataSize::Dword:
+          case DataSize::SS:
             op = ".long";
             break;
+          case DataSize::None: // assume qword (i mean, this is x86-64 architecture after all)
           case DataSize::Qword:
+          // case DataSize::DS:
             op = ".qword";
             break;
           default:
             op = "UNIMPLEMENTED";
             break;
         }
-        return op + " " + instr.what = "\n\t";
+        return op + " " + instr.what + "\n\t";
       }
-      // define an ascii string with null (zero) termination
+      // define an ascii (UTF-8) string with null (zero) termination
       std::string operator()(AscizInstr instr) const {
         return ".asciz " + instr.what + "\n\t";
       }
@@ -190,27 +196,33 @@ public:
       std::string operator()(ConvertInstr instr) const {
         std::string inst = "cvt";
         switch (instr.convType) {
-          case ConvertType::SI2SS:
+          case ConvertType::SI2SS: // single int to scalar single-precision
             inst += "si2ss";
             break;
-          case ConvertType::SS2SI:
+          case ConvertType::SS2SI: // scalar single-precision to single int
             inst += "ss2si";
             break;
-          case ConvertType::SD2SI:
+          case ConvertType::SD2SI: // scalar double-precision to single int
             inst += "sd2si";
             break;
-          case ConvertType::SI2SD:
+          case ConvertType::SI2SD: // single int to scalar double-precision
             inst += "si2sd";
             break;
-          case ConvertType::SS2SD:
+          case ConvertType::SS2SD: // scalar single-precision to scalar double-precision
             inst += "ss2sd";
             break;
-          case ConvertType::SD2SS:
+          case ConvertType::SD2SS: // scalar double-precision to scalar single-precision
             inst += "sd2ss";
             break;
-          default:
-            inst += "UNIMPLEMENTED";
+          case ConvertType::TSD2SI: // truncate scalar double-precision to single int
+            inst += "tsd2si";
             break;
+          case ConvertType::TSS2SI: // truncate scalar single-precision to single int
+            inst += "tss2si";
+            break;
+          default:
+            std::cerr << "Unimplemnted ConvertType [" << (int)instr.convType << "]" << std::endl;
+            return "# unimplented cvt. :(\n\t";
         }
         return inst + " " + instr.from + ", " + instr.to + "\n\t";
       }

@@ -70,6 +70,9 @@ void call(Node::Expr *expr);
 void ternary(Node::Expr *expr);
 void assign(Node::Expr *expr);
 void primary(Node::Expr *expr);
+void cast(Node::Expr *expr);
+
+int convertFloatToInt(float input); // Float input. Crazy, right?
 
 // assembly
 enum class Section { // BRUH its 10:13 ok ibrb // Connor brb grabing some ice cream

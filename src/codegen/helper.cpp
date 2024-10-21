@@ -83,6 +83,14 @@ void codegen::handleReturnCleanup() {
   }
 }
 
+int codegen::convertFloatToInt(float input) {
+  union {
+    float f;
+    int i;
+  } u;
+  u.f = input;
+  return u.i;
+}
 
 bool codegen::execute_command(const std::string &command,
                               const std::string &log_file) {

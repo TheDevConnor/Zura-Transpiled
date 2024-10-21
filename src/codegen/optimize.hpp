@@ -14,6 +14,7 @@ enum class DataSize {
   Word,   // 16 bits
   Dword,  // 32 bits
   Qword,  // 64 bits
+  SS,     // 24-bits - yes its weird. Scalar single-precision float.
 };
 
 

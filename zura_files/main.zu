@@ -1,5 +1,6 @@
 const main := fn() int {
-   have x: int = 5;
-   have y: int = 19;
-   return x * y + x;
+   have x: float = 3.5;
+   have y: float = 4.5;
+   have z: float = x + y;
+   return @cast<int>(z);
 };

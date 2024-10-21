@@ -21,6 +21,7 @@ void codegen::initMaps() {
       {ND_IDENT, primary},   {ND_STRING, primary},   {ND_BOOL, primary},
       {ND_GROUP, grouping},  {ND_ASSIGN, assign},    {ND_PREFIX, unary},
       {ND_POSTFIX, unary},   {ND_ARRAY, _arrayExpr}, {ND_INDEX, arrayElem},
+      {ND_CAST, cast}
   };
   opMap = {
       {"+", "add"}, {"-", "sub"}, 
