@@ -128,5 +128,7 @@ void codegen::push(Instr instr, Section section) {
     head_section.push_back(instr);
   } else if (section == Section::Data) {
     data_section.push_back(instr);
+  } else if (section == Section::ReadonlyData) {
+    rodt_section.push_back(instr);
   }
 }

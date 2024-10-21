@@ -42,12 +42,12 @@ void codegen::primary(Node::Expr *expr) {
 
     // define the string in the data section
     push(Instr{.var = Label{.name = label}, .type = InstrType::Label},
-         Section::Data);
+         Section::ReadonlyData);
 
     // Push the string onto the data section
     push(Instr{.var = AscizInstr{.what=string->value},
                .type = InstrType::Asciz},
-         Section::Data);
+         Section::ReadonlyData);
     break;
   }
   case ND_FLOAT: {
@@ -60,12 +60,12 @@ void codegen::primary(Node::Expr *expr) {
 
     // define the string in the data section
     push(Instr{.var = Label{.name = label}, .type = InstrType::Label},
-         Section::Data);
+         Section::ReadonlyData);
 
     // Push the string onto the data section
     push(Instr{.var = DataSectionInstr{.bytesToDefine = DataSize::Dword /* long */, .what=std::to_string(convertFloatToInt(floating->value))},
                .type = InstrType::DB},
-         Section::Data);
+         Section::ReadonlyData);
     break;
   }
   default: {

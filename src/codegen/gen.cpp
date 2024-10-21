@@ -17,6 +17,7 @@ void codegen::gen(Node::Stmt *stmt, bool isSaved, std::string output_filename,
   text_section.clear();
   head_section.clear();
   data_section.clear();
+  rodt_section.clear();
   // output_code.clear();
 
   // stmt->debug();
@@ -30,85 +31,91 @@ void codegen::gen(Node::Stmt *stmt, bool isSaved, std::string output_filename,
   head_section = Optimizer::optimizeInstrs(head_section);
   head_section = Optimizer::optimizeInstrs(head_section);
   // data section cannot be optimized
+  // rodata section cant be optimized either
 
   std::ofstream file(output_filename + ".s");
-  if (file.is_open()) {
-    file << "# ┌-------------------------------┐\n"
-            "# |   Zura lang by TheDevConnor   |\n"
-            "# |  assembly by Soviet Pancakes  |\n"
-            "# └-------------------------------┘\n"
-            "# "
-         << ZuraVersion
-         << "\n"
-            "# What's New: Compiler Rewrite add in if stmt\n";
-    // Copying gcc and hoping something changes (it won't)
-    // .file directive does not like non-c and non-cpp files but it might be
-    // useful for something somewhere later
-    file << "#.file \"" << static_cast<ProgramStmt *>(stmt)->inputPath << "\"\n";
-    file << "\n# data section for string and stuff"
+  if (!file.is_open()) handlerError(0, 0,
+              "Unable to open output file for finalized assembly '" +
+                  output_filename +
+                  ".s' - ensure Zura has permissions to write/create files",
+              "", "Codegen Error");
+  
+  file << "# ┌-------------------------------┐\n"
+          "# |   Zura lang by TheDevConnor   |\n"
+          "# |  assembly by Soviet Pancakes  |\n"
+          "# └-------------------------------┘\n"
+          "# "
+        << ZuraVersion
+        << "\n"
+          "# What's New: Floating point math and casting\n";
+  // Copying gcc and hoping something changes (it won't)
+  // .file directive does not like non-c and non-cpp files but it might be
+  // useful for something somewhere later
+  file << "#.file \"" << static_cast<ProgramStmt *>(stmt)->inputPath << "\"\n";
+  if (data_section.size() > 0) {
+    file << "\n# data section for pre-allocated, mutable data"
             "\n.data\n";
     file << Stringifier::stringifyInstrs(data_section);
-    file << ".text\n"
-            ".globl main\n";
-    file << Stringifier::stringifyInstrs(text_section);
-    file << "\n# zura functions\n";
-    if (nativeFunctionsUsed[NativeASMFunc::strlen] == true) {
-      file << ".type native_strlen, @function\n"
-              "native_strlen:\n"
-              "  pushq %rbp              # save base pointer\n"
-              "  movq %rsp, %rbp         # set base pointer\n"
-              "  movq %rdi, %rcx         # move string to rcx\n"
-              "  xorq %rax, %rax         # clear rax\n"
-              "  strlen_loop:\n"
-              "    cmpb $0, (%rcx, %rax) # compare byte at rcx + rax to 0\n"
-              "    je strlen_end         # if byte is 0, end\n"
-              "    incq %rax             # increment rax\n"
-              "    jmp strlen_loop # loop\n"
-              "  strlen_end:\n"
-              "  popq %rbp               # restore base pointer\n"
-              "  ret # return\n"
-              ".size native_strlen, .-native_strlen\n";
-    }
-    if (nativeFunctionsUsed[NativeASMFunc::itoa] == true) {
-      file << ".type native_itoa, @function\n"
-           "native_itoa:\n"
+  }
+  if (rodt_section.size() > 0) {
+    file << "\n# readonly data section - contains constant strings and floats (for now)"
+            "\n.rodata\n";
+    file << Stringifier::stringifyInstrs(rodt_section);
+  }
+  file << ".text\n"
+          ".globl main\n";
+  file << Stringifier::stringifyInstrs(text_section);
+  file << "\n# zura functions\n";
+  if (nativeFunctionsUsed[NativeASMFunc::strlen] == true) {
+    file << ".type native_strlen, @function\n"
+            "native_strlen:\n"
             "  pushq %rbp              # save base pointer\n"
             "  movq %rsp, %rbp         # set base pointer\n"
-            "  movq $-1, %rdi          # buffer\n"
-            "  leaq (%rsp, %rdi, 1), %rbx\n"
-            "  movq %rsi, %rax         # number\n"
-            "  movq $0, %rdi           # counter\n"
-            "  pushq $0x0\n"
-            "  jmp itoa_loop\n"
-            "itoa_loop:\n"
-            "  movq $0, %rdx\n"
-            "  movq $10, %rcx\n"
-            "  div %rcx\n"
-            "  addq $48, %rdx\n"
-            "  pushq %rdx\n"
-            "  movb (%rsp), %cl\n"
-            "  movb %cl, (%rbx, %rdi, 1)\n"
-            "  test %rax, %rax\n"
-            "  je itoa_end\n"
-            "  dec %rdi\n"
-            "  jmp itoa_loop\n"
-            "itoa_end:\n"
-            "  leaq (%rbx, %rdi, 1), %rax\n"
-            "  movq %rbp, %rsp\n"
-            "  popq %rbp\n"
-            "  ret\n"
-            ".size native_itoa, .-native_itoa\n";
-    }
-    file << "\n# non-main user functions" << std::endl;
-    file << Stringifier::stringifyInstrs(head_section);
-    file.close();
-  } else {
-    handlerError(0, 0,
-                 "Unable to open output file for finalized assembly '" +
-                     output_filename +
-                     ".s' - ensure Zura has permissions to write/create files",
-                 "", "Codegen Error");
+            "  movq %rdi, %rcx         # move string to rcx\n"
+            "  xorq %rax, %rax         # clear rax\n"
+            "  strlen_loop:\n"
+            "    cmpb $0, (%rcx, %rax) # compare byte at rcx + rax to 0\n"
+            "    je strlen_end         # if byte is 0, end\n"
+            "    incq %rax             # increment rax\n"
+            "    jmp strlen_loop # loop\n"
+            "  strlen_end:\n"
+            "  popq %rbp               # restore base pointer\n"
+            "  ret # return\n"
+            ".size native_strlen, .-native_strlen\n";
   }
+  if (nativeFunctionsUsed[NativeASMFunc::itoa] == true) {
+    file << ".type native_itoa, @function\n"
+          "native_itoa:\n"
+          "  pushq %rbp              # save base pointer\n"
+          "  movq %rsp, %rbp         # set base pointer\n"
+          "  movq $-1, %rdi          # buffer\n"
+          "  leaq (%rsp, %rdi, 1), %rbx\n"
+          "  movq %rsi, %rax         # number\n"
+          "  movq $0, %rdi           # counter\n"
+          "  pushq $0x0\n"
+          "  jmp itoa_loop\n"
+          "itoa_loop:\n"
+          "  movq $0, %rdx\n"
+          "  movq $10, %rcx\n"
+          "  div %rcx\n"
+          "  addq $48, %rdx\n"
+          "  pushq %rdx\n"
+          "  movb (%rsp), %cl\n"
+          "  movb %cl, (%rbx, %rdi, 1)\n"
+          "  test %rax, %rax\n"
+          "  je itoa_end\n"
+          "  dec %rdi\n"
+          "  jmp itoa_loop\n"
+          "itoa_end:\n"
+          "  leaq (%rbx, %rdi, 1), %rax\n"
+          "  movq %rbp, %rsp\n"
+          "  popq %rbp\n"
+          "  ret\n"
+          ".size native_itoa, .-native_itoa\n";
+  }
+  file << "\n# non-main user functions" << std::endl;
+  file << Stringifier::stringifyInstrs(head_section);
+  file.close();
 
   output_filename =
       output_filename.substr(0, output_filename.find_last_of("."));

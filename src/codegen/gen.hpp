@@ -80,7 +80,9 @@ enum class Section { // BRUH its 10:13 ok ibrb // Connor brb grabing some ice cr
     Main, // main function
     Head, // user functions
     // section .data
-    Data, // strings, constants
+    Data,
+    // section .rodata
+    ReadonlyData,
 };
 
 enum class NativeASMFunc {
@@ -90,7 +92,8 @@ enum class NativeASMFunc {
 
 inline std::vector<Instr> text_section = {};
 inline std::vector<Instr> head_section = {};
-inline std::vector<Instr> data_section = {}; // Technically, this will just be either Label or DBInstr
+inline std::vector<Instr> data_section = {}; // This is only really one of three instructions
+inline std::vector<Instr> rodt_section = {}; // Same as data section
 
 inline std::unordered_map<NativeASMFunc, bool> nativeFunctionsUsed = {};
 
