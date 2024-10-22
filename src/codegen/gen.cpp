@@ -10,8 +10,9 @@
 #include <string>
 
 void codegen::gen(Node::Stmt *stmt, bool isSaved, std::string output_filename,
-                  const char *filename) {
+                  const char *filename, bool isDebug) {
   file_name = filename;
+  debug = isDebug;
   initMaps();
 
   text_section.clear();
@@ -49,9 +50,11 @@ void codegen::gen(Node::Stmt *stmt, bool isSaved, std::string output_filename,
         << "\n"
           "# What's New: Debug symbols (Open GDB and try it!)\n";
   // This one defines the file the whole assembly is related to
-  file << ".file   \"" << static_cast<ProgramStmt *>(stmt)->inputPath << "\"\n";
-  // This one is for debug mainly
-  file << ".file 0 \"" << static_cast<ProgramStmt *>(stmt)->inputPath << "\"\n";
+  if (debug) {
+    file << ".file   \"" << static_cast<ProgramStmt *>(stmt)->inputPath << "\"\n";
+    file << ".file 0 \"" << static_cast<ProgramStmt *>(stmt)->inputPath << "\"\n";
+  }
+
   if (data_section.size() > 0) {
     file << "\n# data section for pre-allocated, mutable data"
             "\n.data\n";

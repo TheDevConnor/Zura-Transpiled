@@ -70,6 +70,7 @@ void FlagConfig::runBuild(int argc, char **argv) {
         [](const char *arg) { return strcmp(arg, "-name") == 0; },
         [](const char *arg) { return strcmp(arg, "-save") == 0; },
         [](const char *arg) { return strcmp(arg, "-clean") == 0; },
+        [](const char *arg) { return strcmp(arg, "-debug") == 0; },
         [](const char *arg) { return strcmp(arg, "test") == 0; },
     };
 
@@ -127,6 +128,7 @@ void FlagConfig::runBuild(int argc, char **argv) {
                 const char *fileName = argv[2]; // ! important for linker dir later
                 const char *outputName = "out";
                 bool saveFlag = false;
+                bool isDebug = false;
 
                 // Check for additional flags after 'build'
                 // TODO: Remove nested loop ..?!?!?!?
@@ -141,10 +143,12 @@ void FlagConfig::runBuild(int argc, char **argv) {
                         }
                     } else if (strcmp(argv[j], "-save") == 0) {
                         saveFlag = true;
+                    } else if (strcmp(argv[j], "-debug") == 0) {
+                        isDebug = true;
                     }
                 }
 
-                Flags::runFile(fileName, outputName, saveFlag);
+                Flags::runFile(fileName, outputName, saveFlag, isDebug);
                 return; // Exit after handling the 'build' command
             }
         }

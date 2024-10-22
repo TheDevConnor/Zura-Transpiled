@@ -45,7 +45,7 @@ char *Flags::readFile(const char *path) {
   return buffer;
 }
 
-void Flags::runFile(const char *path, std::string outName, bool save) {
+void Flags::runFile(const char *path, std::string outName, bool save, bool debug) {
   const char *source = readFile(path);
 
   Flags::updateProgressBar(0.0);
@@ -57,7 +57,7 @@ void Flags::runFile(const char *path, std::string outName, bool save) {
   ErrorClass::printError();
   Flags::updateProgressBar(0.5);
 
-  codegen::gen(result, save, outName, path);
+  codegen::gen(result, save, outName, path, debug);
   ErrorClass::printError();
   Flags::updateProgressBar(1.0);
 

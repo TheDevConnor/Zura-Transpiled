@@ -117,6 +117,8 @@ void pushCompAsExpr(); // assuming compexpr's will already do the "cmp" and "jmp
 
 inline const char* file_name;
 
+inline bool debug = false;
+
 // Helper function to pop the value from the stack to a register
 void moveRegister(const std::string &dest, const std::string &src, DataSize dest_size, DataSize src_size);
 void popToRegister(const std::string &reg);
@@ -130,7 +132,7 @@ void processBinaryExpression(BinaryExpr *cond, const std::string &preconCount, c
 JumpCondition getJumpCondition(const std::string &op);
 
 bool execute_command(const std::string &command, const std::string &log_file);
-void gen(Node::Stmt *stmt, bool isSaved, std::string output, const char* filename);
+void gen(Node::Stmt *stmt, bool isSaved, std::string output, const char* filename, bool isDebug);
 void handlerError(int line, int pos, std::string msg, std::string note,
                   std::string typeOfError);
 } // namespace codegen

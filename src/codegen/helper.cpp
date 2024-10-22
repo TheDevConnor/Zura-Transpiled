@@ -13,8 +13,8 @@ void codegen::handlerError(int line, int pos, std::string msg, std::string note,
 }
 
 void codegen::pushRegister(const std::string &reg) {
-  push(Instr{.var=PushInstr{.what=reg},.type= InstrType::Push},
-    Section::Main);
+  push(Instr{.var = PushInstr{.what = reg}, .type = InstrType::Push},
+       Section::Main);
   stackSize++;
 }
 
@@ -35,17 +35,25 @@ void codegen::moveRegister(const std::string &dest, const std::string &src,
 }
 
 JumpCondition codegen::getJumpCondition(const std::string &op) {
-  if (op == ">") return JumpCondition::Greater;
-  if (op == ">=") return JumpCondition::GreaterEqual;
-  if (op == "<") return JumpCondition::Less;
-  if (op == "<=") return JumpCondition::LessEqual;
-  if (op == "==") return JumpCondition::Equal;
-  if (op == "!=") return JumpCondition::NotEqual;
+  if (op == ">")
+    return JumpCondition::Greater;
+  if (op == ">=")
+    return JumpCondition::GreaterEqual;
+  if (op == "<")
+    return JumpCondition::Less;
+  if (op == "<=")
+    return JumpCondition::LessEqual;
+  if (op == "==")
+    return JumpCondition::Equal;
+  if (op == "!=")
+    return JumpCondition::NotEqual;
   std::cerr << "Invalid operator for comparison" << std::endl;
   exit(-1);
 }
 
-void codegen::processBinaryExpression(BinaryExpr *cond, const std::string &preconCount, const std::string &name, bool isLoop) {
+void codegen::processBinaryExpression(BinaryExpr *cond,
+                                      const std::string &preconCount,
+                                      const std::string &name, bool isLoop) {
   // Evaluate LHS first, store in %rax
   visitExpr(cond->lhs);
   popToRegister("%rax");
@@ -56,30 +64,48 @@ void codegen::processBinaryExpression(BinaryExpr *cond, const std::string &preco
 
   if (isLoop) {
     // Perform comparison (this order ensures LHS < RHS works correctly)(loops)
-    push(Instr{.var = CmpInstr{.lhs = "%rbx", .rhs = "%rax"}, .type = InstrType::Cmp}, Section::Main);
+    push(Instr{.var = CmpInstr{.lhs = "%rbx", .rhs = "%rax"},
+               .type = InstrType::Cmp},
+         Section::Main);
   } else {
     // Perform comparison (this order ensures LHS > RHS works correctly)(ifs)
-    push(Instr{.var = CmpInstr{.lhs = "%rax", .rhs = "%rbx"}, .type = InstrType::Cmp}, Section::Main);
+    push(Instr{.var = CmpInstr{.lhs = "%rax", .rhs = "%rbx"},
+               .type = InstrType::Cmp},
+         Section::Main);
   }
 
   // Jump based on the correct condition
   JumpCondition jmpCond = getJumpCondition(cond->op);
-  push(Instr{.var = JumpInstr{.op = jmpCond, .label = name + preconCount}, .type = InstrType::Jmp}, Section::Main);
+  push(Instr{.var = JumpInstr{.op = jmpCond, .label = name + preconCount},
+             .type = InstrType::Jmp},
+       Section::Main);
 }
 
 void codegen::handleExitSyscall() {
   moveRegister("%rdi", "%rax", DataSize::Qword, DataSize::Qword);
   moveRegister("%rax", "$60", DataSize::Qword, DataSize::Qword);
-  push(Instr{.var = Syscall{.name = "SYS_EXIT"}, .type = InstrType::Syscall}, Section::Main);
+  push(Instr{.var = Syscall{.name = "SYS_EXIT"}, .type = InstrType::Syscall},
+       Section::Main);
 }
 
 void codegen::handleReturnCleanup() {
   if (stackSize - funcBlockStart == 0) {
-    push(Instr{.var = PopInstr{.where = "%rbp", .whereSize = DataSize::Qword}, .type = InstrType::Pop}, Section::Main);
+    push(Instr{.var = PopInstr{.where = "%rbp", .whereSize = DataSize::Qword},
+               .type = InstrType::Pop},
+         Section::Main);
     stackSize--;
-    push(Instr{.var=LinkerDirective{.value=".cfi_def_cfa 7, 8\n\t"},.type=InstrType::Linker},Section::Main);
+    push(Instr{.var = LinkerDirective{.value = ".cfi_def_cfa 7, 8\n\t"},
+               .type = InstrType::Linker},
+         Section::Main);
   } else {
-    push(Instr{.var = MovInstr{.dest = "%rbp", .src = std::to_string(8 * (stackSize - funcBlockStart)) + "(%rsp)", .destSize = DataSize::Qword, .srcSize = DataSize::Qword}, .type = InstrType::Mov}, Section::Main);
+    push(Instr{.var = MovInstr{.dest = "%rbp",
+                               .src = std::to_string(
+                                          8 * (stackSize - funcBlockStart)) +
+                                      "(%rsp)",
+                               .destSize = DataSize::Qword,
+                               .srcSize = DataSize::Qword},
+               .type = InstrType::Mov},
+         Section::Main);
   }
 }
 
@@ -134,5 +160,9 @@ void codegen::push(Instr instr, Section section) {
 }
 
 void codegen::pushDebug(int line) {
-  push(Instr{.var = LinkerDirective{.value = ".loc 0 " + std::to_string(line) + "\n\t"}, .type = InstrType::Linker}, Section::Main);
+  if (debug)
+    push(Instr{.var = LinkerDirective{.value = ".loc 0 " +
+                                               std::to_string(line) + "\n\t"},
+               .type = InstrType::Linker},
+         Section::Main);
 }
