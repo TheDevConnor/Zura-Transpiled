@@ -14,6 +14,7 @@ void codegen::primary(Node::Expr *expr) {
   switch (expr->kind) {
   case NodeKind::ND_INT: {
     auto e = static_cast<IntExpr *>(expr);
+    pushDebug(e->line);
     pushRegister("$" + std::to_string(e->value));
     break;
   }
@@ -29,6 +30,8 @@ void codegen::primary(Node::Expr *expr) {
                .type = InstrType::Comment},
          Section::Main);
 
+    pushDebug(e->line);
+
     // Push the result (the retrieved data)
     pushRegister(res);
     break;
@@ -37,6 +40,7 @@ void codegen::primary(Node::Expr *expr) {
     auto string = static_cast<StringExpr *>(expr);
     std::string label = "string" + std::to_string(stringCount++);
 
+    pushDebug(string->line);
     // Push the label onto the stack
     pushRegister("$" + label);
 
@@ -53,6 +57,7 @@ void codegen::primary(Node::Expr *expr) {
   case ND_FLOAT: {
     auto floating = static_cast<FloatExpr *>(expr);
     std::string label = "float" + std::to_string(floatCount++);
+    pushDebug(floating->line);
 
     // Push the label onto the stack
     moveRegister("%xmm0", label + "(%rip)", DataSize::SS, DataSize::SS);
@@ -85,6 +90,8 @@ void codegen::binary(Node::Expr *expr) {
 
   std::string lhs_reg = isAddition ? "%rbx" : "%rax";
   std::string rhs_reg = isAddition ? "%rcx" : "%rbx";
+
+  pushDebug(e->line);
 
   visitExpr(e->lhs);
   visitExpr(e->rhs);
@@ -158,6 +165,7 @@ void codegen::cast(Node::Expr *expr) {
     std::cerr << "Explicitly casting from string is not allowed" << std::endl;
     exit(-1);
   }
+  pushDebug(e->line);
   visitExpr(e->castee);
   if (toType->name == "float") {
     // We are casting into a float.
@@ -196,12 +204,14 @@ void codegen::cast(Node::Expr *expr) {
 void codegen::grouping(Node::Expr *expr) {
   auto e = static_cast<GroupExpr *>(expr);
   // Visit the expression inside the grouping
+  pushDebug(e->line);
   visitExpr(e->expr);
 }
 
 void codegen::call(Node::Expr *expr) {
   auto e = static_cast<CallExpr *>(expr);
   auto n = static_cast<IdentExpr *>(e->callee);
+  pushDebug(e->line);
   // Push each argument one by one.
   for (auto p : e->args) {
     // evaluate them
@@ -227,6 +237,7 @@ void codegen::ternary(Node::Expr *expr) {
 void codegen::assign(Node::Expr *expr) {
   auto e = static_cast<AssignmentExpr *>(expr);
   auto lhs = static_cast<IdentExpr *>(e->assignee);
+  pushDebug(e->line);
   visitExpr(e->rhs);
   int offset = variableTable[lhs->name];
   auto res = std::to_string(offset * -8) + "(%rbp)";

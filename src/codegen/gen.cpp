@@ -47,11 +47,11 @@ void codegen::gen(Node::Stmt *stmt, bool isSaved, std::string output_filename,
           "# "
         << ZuraVersion
         << "\n"
-          "# What's New: Floating point math and casting\n";
-  // Copying gcc and hoping something changes (it won't)
-  // .file directive does not like non-c and non-cpp files but it might be
-  // useful for something somewhere later
-  file << "#.file \"" << static_cast<ProgramStmt *>(stmt)->inputPath << "\"\n";
+          "# What's New: Debug symbols (Open GDB and try it!)\n";
+  // This one defines the file the whole assembly is related to
+  file << ".file   \"" << static_cast<ProgramStmt *>(stmt)->inputPath << "\"\n";
+  // This one is for debug mainly
+  file << ".file 0 \"" << static_cast<ProgramStmt *>(stmt)->inputPath << "\"\n";
   if (data_section.size() > 0) {
     file << "\n# data section for pre-allocated, mutable data"
             "\n.data\n";
@@ -65,7 +65,7 @@ void codegen::gen(Node::Stmt *stmt, bool isSaved, std::string output_filename,
   file << ".text\n"
           ".globl main\n";
   file << Stringifier::stringifyInstrs(text_section);
-  file << "\n# zura functions\n";
+  if (nativeFunctionsUsed.size() > 0) file << "\n# zura functions\n";
   if (nativeFunctionsUsed[NativeASMFunc::strlen] == true) {
     file << ".type native_strlen, @function\n"
             "native_strlen:\n"
@@ -113,8 +113,10 @@ void codegen::gen(Node::Stmt *stmt, bool isSaved, std::string output_filename,
           "  ret\n"
           ".size native_itoa, .-native_itoa\n";
   }
-  file << "\n# non-main user functions" << std::endl;
-  file << Stringifier::stringifyInstrs(head_section);
+  if (head_section.size() > 0) {
+    file << "\n# non-main user functions" << std::endl;
+    file << Stringifier::stringifyInstrs(head_section);
+  }
   file.close();
 
   output_filename =
@@ -124,7 +126,7 @@ void codegen::gen(Node::Stmt *stmt, bool isSaved, std::string output_filename,
 
   // Compile, but do not link main.o
   std::string assembler =
-      "gcc -c " + output_filename + ".s -o " + output_filename + ".o";
+      "gcc -c -g " + output_filename + ".s -o " + output_filename + ".o";
   std::string assembler_log = output_filename + "_assembler.log";
   if (!execute_command(assembler, assembler_log))
     return;
@@ -135,16 +137,16 @@ void codegen::gen(Node::Stmt *stmt, bool isSaved, std::string output_filename,
   std::string linker_log = output_filename + "_linker.log";
   if (!execute_command(linker, linker_log))
     return;
-
+  int exitCode; // NOTE: This is to remove warnings. It is not practical lmao
   if (!isSaved) {
     std::string remove =
         "rm " + output_filename + ".s " + output_filename + ".o";
-    system(remove.c_str());
+    exitCode = system(remove.c_str());
   }
 
   // delete the log files
   // (they are only necessary when something actually goes wrong,
   // and this code is only reached when we know it doesn't)
   std::string remove_log = "rm " + assembler_log + " " + linker_log;
-  system(remove_log.c_str());
+  exitCode = system(remove_log.c_str());
 }

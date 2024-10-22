@@ -6,11 +6,14 @@ void Optimizer::optimizePair(std::vector<Instr> *output, Instr &prev, Instr &cur
         return;
     }
 
+    // A temporary change - might add future compiler options to re-enable this later
     if (curr.type == InstrType::Comment)
         return;
 
     if (curr.type == InstrType::Mov) {
         processMov(output, prev, curr);
+    } else if (curr.type == InstrType::Linker) {
+        simplifyDebug(output, curr);
     } else if (prev.type == opposites.at(curr.type)) {
         processOppositePair(output, prev, curr);
     } else {
@@ -18,6 +21,7 @@ void Optimizer::optimizePair(std::vector<Instr> *output, Instr &prev, Instr &cur
     }
 }
 
+// Will run more instruction-specific optimizations depending on the type of the pair.
 std::vector<Instr> Optimizer::optimizeInstrs(std::vector<Instr> &input) {
     if (input.empty())
         return {};
@@ -25,20 +29,34 @@ std::vector<Instr> Optimizer::optimizeInstrs(std::vector<Instr> &input) {
     std::vector<Instr> firstPass;
     Instr prev = {.type = InstrType::NONE};
 
+    // Optimizes touching pairs
+    /* asm
+    pushq $4
+    popq %rax
+    */
     for (Instr &instr : input) {
         optimizePair(&firstPass, prev, instr);
         prev = instr;
     }
 
-    removePushPopPairs(firstPass);
+    // Ex:
+    /* asm
+    pushq $4
+    # Comment getting the way
+    popq %rax
+    */
+   // will get optimized here
+    optimizeSpacedPairs(firstPass);
     return firstPass;
 }
 
+// As the name says.
 void Optimizer::appendAndResetPrev(std::vector<Instr> *output, Instr &curr, Instr &prev) {
     output->push_back(curr);
     prev = Instr {.type=InstrType::NONE};
 }
 
+// Checks if mov instructions are redundant
 void Optimizer::processMov(std::vector<Instr> *output, Instr &prev, Instr &curr) {
     MovInstr currAsMov = std::get<MovInstr>(curr.var);
 
@@ -57,10 +75,12 @@ void Optimizer::processMov(std::vector<Instr> *output, Instr &prev, Instr &curr)
     output->push_back(curr);
 }
 
+// Are the 2 mov instructions exactly the same src and dst
 bool Optimizer::isSameMov(const MovInstr &prev, const MovInstr &curr) {
     return prev.dest == curr.dest && prev.src == curr.src;
 }
 
+// Are the 2 mov instructions opposites, meaning nothing has changed
 bool Optimizer::isOppositeMov(const MovInstr &prev, const MovInstr &curr) {
     return prev.dest == curr.src && prev.src == curr.dest;
 }
@@ -74,6 +94,16 @@ void Optimizer::processOppositePair(std::vector<Instr> *output, Instr &prev, Ins
     }
 }
 
+void Optimizer::simplifyDebug(std::vector<Instr> *output, Instr &curr) {
+    LinkerDirective currAsLinker = std::get<LinkerDirective>(curr.var);
+    if (currAsLinker.value.find(".loc") == std::string::npos) return output->push_back(curr);
+    int currDebugLine = std::stoi(currAsLinker.value.substr(7));
+    if (currDebugLine == previousDebugLine) return;
+    previousDebugLine = currDebugLine;
+    output->push_back(curr);
+}
+
+// Turn push/pops into mov's or xor's
 void Optimizer::simplifyPushPopPair(std::vector<Instr> *output, Instr &prev, Instr &curr) {
     PushInstr prevAsPush = std::get<PushInstr>(prev.var);
     PopInstr currAsPop = std::get<PopInstr>(curr.var);
@@ -83,7 +113,7 @@ void Optimizer::simplifyPushPopPair(std::vector<Instr> *output, Instr &prev, Ins
         return;
     }
 
-    if (prevAsPush.what == "0" && currAsPop.where.find('[') == std::string::npos) {
+    if (prevAsPush.what == "$0" && currAsPop.where.find('(') == std::string::npos) {
         Instr newInstr = {.var = XorInstr{.lhs = currAsPop.where, .rhs = currAsPop.where}, .type = InstrType::Xor};
         prev = newInstr;
         output->push_back(newInstr);
@@ -97,7 +127,8 @@ void Optimizer::simplifyPushPopPair(std::vector<Instr> *output, Instr &prev, Ins
     }
 }
 
-void Optimizer::removePushPopPairs(std::vector<Instr> &firstPass) {
+// Optimize pairs with a useless instruction in between
+void Optimizer::optimizeSpacedPairs(std::vector<Instr> &firstPass) {
     Instr prev = {.type = InstrType::NONE};
     int prevIndex = 0;
 
@@ -129,6 +160,8 @@ void Optimizer::removePushPopPairs(std::vector<Instr> &firstPass) {
     }
 }
 
+// Normal code compiled from user's zura will never affect the stack registers
+// They will be affected when it is ABSOLUTELY necessary (for exanple, function scopes)
 bool Optimizer::shouldIgnorePushPop(const std::string &reg) {
     return reg == "%rbp" || reg == "%rsp";
 }

@@ -38,7 +38,9 @@ void codegen::funcDecl(Node::Stmt *stmt) {
 
   push(Instr{.var = LinkerDirective{.value = "\n.type " + funcName + ", @function"},.type = InstrType::Linker},Section::Main);
   push(Instr{.var = Label{.name = funcName}, .type = InstrType::Label},Section::Main);
-  push(Instr{.var = LinkerDirective{.value = ".cfi_startproc\n\t"},.type = InstrType::Linker},Section::Main);
+  // push linker directive for the debug info (the line number)
+  pushDebug(s->line);
+  push(Instr{.var=LinkerDirective{.value=".cfi_startproc\n\t"},.type=InstrType::Linker},Section::Main);
 
   stackSize = 0;
   // Define literally (do not adjust cfa for this)
@@ -77,6 +79,9 @@ void codegen::varDecl(Node::Stmt *stmt) {
   push(Instr{.var = Comment{.comment = "Variable declaration for '" + s->name + "'"},
               .type = InstrType::Comment},Section::Main);
 
+  // push another .loc
+  pushDebug(s->line);
+
   // Evaluate the initializer expression, if present
   if (s->expr) {
     visitExpr(static_cast<ExprStmt *>(s->expr)->expr);
@@ -98,6 +103,8 @@ void codegen::block(Node::Stmt *stmt) {
   auto preSS = stackSize;
   auto preVS = variableCount;
   scopes.push_back(std::pair(preSS, preVS));
+  // push a .loc
+  pushDebug(s->line);
   for (Node::Stmt *stm : s->stmts) {
     codegen::visitStmt(stm);
   }
@@ -111,6 +118,7 @@ void codegen::ifStmt(Node::Stmt *stmt) {
   std::string preconCount = std::to_string(conditionalCount++);
 
   push(Instr{.var = Comment{.comment = "if statement"}, .type = InstrType::Comment}, Section::Main);
+  pushDebug(s->line);
 
   BinaryExpr *cond = nullptr;
   if (s->condition->kind == ND_GROUP) {
@@ -158,6 +166,7 @@ void codegen::print(Node::Stmt *stmt) {
 
   push(Instr{.var = Comment{.comment = "print stmt"}}, Section::Main);
   nativeFunctionsUsed[NativeASMFunc::strlen] = true;
+  pushDebug(print->line);
 
   for (auto &arg : print->args) {
     switch (arg->kind) {
@@ -218,6 +227,7 @@ void codegen::print(Node::Stmt *stmt) {
 void codegen::_return(Node::Stmt *stmt) {
   auto returnStmt = static_cast<ReturnStmt *>(stmt);
 
+  pushDebug(returnStmt->line);
   // Generate return value for the function
   codegen::visitExpr(returnStmt->expr);
 
@@ -250,6 +260,7 @@ void codegen::forLoop(Node::Stmt *stmt) {
   push(Instr{.var = Comment{.comment = "For loop variable declaration"}, .type = InstrType::Comment}, Section::Main);
 
   variableTable.insert({assignee->name, variableCount++}); // Track the variable in the stack table
+  pushDebug(s->line);
   visitExpr(assign);  // Process the initial loop assignment (e.g., i = 0)
 
   // Set loop start label

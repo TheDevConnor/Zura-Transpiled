@@ -121,6 +121,7 @@ inline const char* file_name;
 void moveRegister(const std::string &dest, const std::string &src, DataSize dest_size, DataSize src_size);
 void popToRegister(const std::string &reg);
 void pushRegister(const std::string &reg);
+void pushDebug(int line);
 void handleExitSyscall();
 void handleReturnCleanup();
 

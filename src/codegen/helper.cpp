@@ -132,3 +132,7 @@ void codegen::push(Instr instr, Section section) {
     rodt_section.push_back(instr);
   }
 }
+
+void codegen::pushDebug(int line) {
+  push(Instr{.var = LinkerDirective{.value = ".loc 0 " + std::to_string(line) + "\n\t"}, .type = InstrType::Linker}, Section::Main);
+}
