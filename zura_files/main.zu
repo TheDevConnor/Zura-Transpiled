@@ -1,6 +1,9 @@
+const abc := fn () int {
+   have x: int = 59;
+   have y: int = 41;
+   return x + y; # 100
+};
+
 const main := fn() int {
-   have x: float = 3.5;
-   have y: float = 4.5;
-   have z: float = x + y;
-   return @cast<int>(z);
+   return abc();
 };

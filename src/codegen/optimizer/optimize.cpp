@@ -140,7 +140,7 @@ void Optimizer::optimizeSpacedPairs(std::vector<Instr> &firstPass) {
             if (shouldIgnorePushPop(push.what)) continue;
             prev = instr;
             prevIndex = i;
-        } else if (instr.type == InstrType::Pop) {
+        } else if (prev.type == InstrType::Push && instr.type == InstrType::Pop) {
             PopInstr pop = std::get<PopInstr>(instr.var);
             PushInstr push = std::get<PushInstr>(prev.var);
             if (shouldIgnorePushPop(pop.where)) continue;
