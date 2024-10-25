@@ -1,9 +1,7 @@
-const abc := fn () int {
-   have x: int = 59;
-   have y: int = 41;
+const abc := fn (x: int, y: int) int {
    return x + y; # 100
 };
 
 const main := fn() int {
-   return abc();
+   return abc(42, 59);
 };

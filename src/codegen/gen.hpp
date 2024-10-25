@@ -36,7 +36,8 @@ void initMaps();
 // Start at one because retrieving 0(%rbp) results in unusual behavior
 inline int64_t variableCount = 1;
 
-inline std::unordered_map<std::string, size_t> variableTable = {};
+// String could be register (%rdi, %rdx, ...) or effective address (-8(%rbp), ...)
+inline std::unordered_map<std::string, std::string> variableTable = {};
 inline std::vector<size_t> stackSizesForScopes = {}; // wordy term for "when we start a scope, push its stack size"
 inline size_t stackSize;
 
@@ -118,6 +119,9 @@ void pushCompAsExpr(); // assuming compexpr's will already do the "cmp" and "jmp
 inline const char* file_name;
 
 inline bool debug = false;
+
+// Function argument order
+inline static const std::vector<std::string> argOrder = {"%rsi","%rdx","%rcx","%r8","%r9"};
 
 // Helper function to pop the value from the stack to a register
 void moveRegister(const std::string &dest, const std::string &src, DataSize dest_size, DataSize src_size);

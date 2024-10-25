@@ -58,9 +58,9 @@ void codegen::funcDecl(Node::Stmt *stmt) {
   funcBlockStart = stackSize;
 
   // Function args
-  for (auto &args : s->params) {
+  for (int i = 0; i < s->params.size(); i++) {
     // TODO: REPLACE THIS IMMEDIATELY!
-    variableTable.insert({args.first, variableCount++});
+    variableTable.insert({s->params.at(i).first, argOrder.at(i)});
   }
 
   codegen::visitStmt(s->block);
@@ -90,7 +90,7 @@ void codegen::varDecl(Node::Stmt *stmt) {
   std::string where = std::to_string(variableCount * -8) + "(%rbp)";
   popToRegister(where);
   // Update the symbol table with the variable's position
-  variableTable.insert({s->name, variableCount++});
+  variableTable.insert({s->name, where});
 
   push(Instr{.var = Comment{.comment = "End of variable declaration for '" + s->name + "'"},
               .type = InstrType::Comment},Section::Main);
@@ -209,6 +209,8 @@ void codegen::print(Node::Stmt *stmt) {
     }
 
     default: {
+      // Assume char* (string) type
+      // If not, then ITS NOT OUR FAULT IT SEGFAULTS! YOUR code was trash!
       visitExpr(arg);
       popToRegister("%rsi");
 
@@ -259,7 +261,7 @@ void codegen::forLoop(Node::Stmt *stmt) {
 
   push(Instr{.var = Comment{.comment = "For loop variable declaration"}, .type = InstrType::Comment}, Section::Main);
 
-  variableTable.insert({assignee->name, variableCount++}); // Track the variable in the stack table
+  variableTable.insert({assignee->name, std::to_string(-8 * variableCount++) + "(%rbp)"}); // Track the variable in the stack table
   pushDebug(s->line);
   visitExpr(assign);  // Process the initial loop assignment (e.g., i = 0)
 

@@ -20,13 +20,9 @@ void codegen::primary(Node::Expr *expr) {
   }
   case NodeKind::ND_IDENT: {
     auto e = static_cast<IdentExpr *>(expr);
-    int offset = variableTable[e->name];
+    std::string res = variableTable[e->name];
 
-    auto res = std::to_string(offset * -8) + "(%rbp)";
-
-    push(Instr{.var = Comment{.comment = "Clone variable '" + e->name +
-                                         "' for use as expr (offset: " +
-                                         std::to_string(offset) + ")"},
+    push(Instr{.var = Comment{.comment = "Retrieve identifier: '" + e->name + "' located at " + res},
                .type = InstrType::Comment},
          Section::Main);
 
@@ -213,9 +209,14 @@ void codegen::call(Node::Expr *expr) {
   auto n = static_cast<IdentExpr *>(e->callee);
   pushDebug(e->line);
   // Push each argument one by one.
-  for (auto p : e->args) {
+  if (e->args.size() > argOrder.size()) {
+    std::cerr << "Too many arguments in call - consider reducing them or moving them to a globally defined space." << std::endl;
+    exit(-1);
+  }
+  for (int i = 0; i < e->args.size(); i++) {
     // evaluate them
-    codegen::visitExpr(p);
+    codegen::visitExpr(e->args.at(i));
+    popToRegister(argOrder[i]);
   }
   // Call the function
   push(Instr{.var = CallInstr{.name = "usr_" + n->name},
@@ -239,9 +240,9 @@ void codegen::assign(Node::Expr *expr) {
   auto lhs = static_cast<IdentExpr *>(e->assignee);
   pushDebug(e->line);
   visitExpr(e->rhs);
-  int offset = variableTable[lhs->name];
-  auto res = std::to_string(offset * -8) + "(%rbp)";
-  popToRegister("%rax");
+  std::string res = variableTable[lhs->name];
+  popToRegister(res);
+  pushRegister(res); // Expressions return values!
 }
 
 void codegen::_arrayExpr(Node::Expr *expr) {
