@@ -169,12 +169,12 @@ void codegen::print(Node::Stmt *stmt) {
   pushDebug(print->line);
 
   for (auto &arg : print->args) {
-    switch (arg->kind) {
-    case ND_STRING: {
+    std::string argType = static_cast<SymbolType *>(arg->asmType)->name;
+    if (argType == "str") {
       visitExpr(arg);
       popToRegister("%rsi"); // String address
       moveRegister("%rdi", "%rsi", DataSize::Qword, DataSize::Qword);
-      push(Instr{.var = CallInstr{.name = "native_strlen"}}, Section::Main);
+      push(Instr{.var = CallInstr{.name = "native_strlen"}, .type = InstrType::Call}, Section::Main);
       moveRegister("%rdx", "%rax", DataSize::Qword, DataSize::Qword); // Length of string
 
       // syscall id for write on x86 is 1
@@ -185,9 +185,7 @@ void codegen::print(Node::Stmt *stmt) {
       // Make syscall to write
       push(Instr{.var = Syscall({.name = "SYS_WRITE"}), .type = InstrType::Syscall}, Section::Main);
       break;
-    }
-
-    case ND_INT: {
+    } else if (argType == "int") {
       nativeFunctionsUsed[NativeASMFunc::itoa] = true;
       visitExpr(arg);
       popToRegister("%rax");
@@ -206,9 +204,7 @@ void codegen::print(Node::Stmt *stmt) {
       // Make syscall to write
       push(Instr{.var = Syscall({.name = "SYS_WRITE"}), .type = InstrType::Syscall}, Section::Main);
       break;
-    }
-
-    default: {
+    } else {
       // Assume char* (string) type
       // If not, then ITS NOT OUR FAULT IT SEGFAULTS! YOUR code was trash!
       visitExpr(arg);
@@ -221,7 +217,6 @@ void codegen::print(Node::Stmt *stmt) {
 
       // Make syscall to write
       push(Instr{.var = Syscall({.name = "SYS_WRITE"}), .type = InstrType::Syscall}, Section::Main);
-    }
     }
   }
 }
