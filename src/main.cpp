@@ -71,7 +71,7 @@ void FlagConfig::runBuild(int argc, char **argv) {
         [](const char *arg) { return strcmp(arg, "-save") == 0; },
         [](const char *arg) { return strcmp(arg, "-clean") == 0; },
         [](const char *arg) { return strcmp(arg, "-debug") == 0; },
-        [](const char *arg) { return strcmp(arg, "test") == 0; },
+        [](const char *arg) { return strcmp(arg, "-quiet") == 0; },
     };
 
     if (argc < 2) {
@@ -86,39 +86,6 @@ void FlagConfig::runBuild(int argc, char **argv) {
                 std::system(remove.c_str());
                 return;
             }
-            if (i == 4) { // test
-                // TODO: Standard programs that return known return values / console outputs
-                // Eg.
-                /*
-                const main := fn () int {
-                    return 5;
-                }
-                -------------------- Expect 5
-                const main := fn () int {
-                    have x: int = 4;
-                    return x;
-                }
-                -------------------- Expect 4
-                const main := fn () int {
-                    return (5 + 9) / 2;
-                }
-                -------------------- Expect 7
-                const main := fn () int {
-                    have x: int = 8;
-                    x = 3;
-                    return x;
-                }
-                -------------------- Expect 3
-                const abc := fn () int {
-                    return 9;
-                }
-
-                const main := fn () int {
-                    return abc();
-                }
-                -------------------- Expect 9
-                */
-            }
             if (i == 0) { // build
                 if (argc < 3) {
                     std::cout << "No file specified" << std::endl;
@@ -129,6 +96,7 @@ void FlagConfig::runBuild(int argc, char **argv) {
                 const char *outputName = "out";
                 bool saveFlag = false;
                 bool isDebug = false;
+                bool isQuiet = false;
 
                 // Check for additional flags after 'build'
                 // TODO: Remove nested loop ..?!?!?!?
@@ -145,10 +113,12 @@ void FlagConfig::runBuild(int argc, char **argv) {
                         saveFlag = true;
                     } else if (strcmp(argv[j], "-debug") == 0) {
                         isDebug = true;
+                    } else if (strcmp(argv[j], "-quiet") == 0) {
+                        Flags::quiet = isQuiet = true;
                     }
                 }
 
-                Flags::runFile(fileName, outputName, saveFlag, isDebug);
+                Flags::runFile(fileName, outputName, saveFlag, isDebug, !isQuiet);
                 return; // Exit after handling the 'build' command
             }
         }
@@ -162,18 +132,21 @@ int main(int argc, char **argv) {
     get_version("version.txt");  // Update ZuraVersion
     auto startTime = std::chrono::high_resolution_clock::now();
 
-    FlagConfig::print(argc, argv);
+    if (!Flags::quiet) FlagConfig::print(argc, argv);
     // auto midTime = std::chrono::high_resolution_clock::now();
 
     FlagConfig::runBuild(argc, argv);
     auto endTime = std::chrono::high_resolution_clock::now();
 
-    Flags::updateProgressBar(1.0);
-    std::cout << std::endl;
-
-    auto totalDurationMS = std::chrono::duration_cast<std::chrono::milliseconds>(endTime - startTime).count();
-    auto totalDurationUS = std::chrono::duration_cast<std::chrono::microseconds>(endTime - startTime).count();
-    std::cout << "Total time: " << totalDurationMS << "ms (" << totalDurationUS << "µs)" << std::endl;
+    if (!Flags::quiet) {
+        Flags::updateProgressBar(1.0);
+        std::cout << std::endl;
+    }
+    if (!Flags::quiet) {
+        auto totalDurationMS = std::chrono::duration_cast<std::chrono::milliseconds>(endTime - startTime).count();
+        auto totalDurationUS = std::chrono::duration_cast<std::chrono::microseconds>(endTime - startTime).count();
+        std::cout << "Total time: " << totalDurationMS << "ms (" << totalDurationUS << "µs)" << std::endl;
+    }
 
     return ExitValue::BUILT;
 }

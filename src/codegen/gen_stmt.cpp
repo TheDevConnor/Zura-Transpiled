@@ -87,7 +87,7 @@ void codegen::varDecl(Node::Stmt *stmt) {
     visitExpr(static_cast<ExprStmt *>(s->expr)->expr);
   }
 
-  std::string where = std::to_string(variableCount * -8) + "(%rbp)";
+  std::string where = std::to_string(variableCount++ * -8) + "(%rbp)";
   popToRegister(where);
   // Update the symbol table with the variable's position
   variableTable.insert({s->name, where});

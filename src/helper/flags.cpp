@@ -45,21 +45,21 @@ char *Flags::readFile(const char *path) {
   return buffer;
 }
 
-void Flags::runFile(const char *path, std::string outName, bool save, bool debug) {
+void Flags::runFile(const char *path, std::string outName, bool save, bool debug, bool echoOn) {
   const char *source = readFile(path);
 
-  Flags::updateProgressBar(0.0);
+  if (echoOn) Flags::updateProgressBar(0.0);
   auto result = Parser::parse(source, path);
   ErrorClass::printError();
-  Flags::updateProgressBar(0.25);
+  if (echoOn) Flags::updateProgressBar(0.25);
 
   TypeChecker::performCheck(result);
   ErrorClass::printError();
-  Flags::updateProgressBar(0.5);
+  if (echoOn) Flags::updateProgressBar(0.5);
 
   codegen::gen(result, save, outName, path, debug);
   ErrorClass::printError();
-  Flags::updateProgressBar(1.0);
+  if (echoOn) Flags::updateProgressBar(1.0);
 
   delete[] source;
   delete result;

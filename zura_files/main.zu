@@ -1,5 +1,1 @@
-const main := fn () int {
-   have a: str = "haha";
-   dis(a);
-   return 0;
-};
+const main := fn () int { return 4 + 3 * 8; };
