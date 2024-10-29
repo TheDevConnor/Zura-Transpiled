@@ -119,26 +119,7 @@ public:
              std::string op)
       : line(line), pos(pos), lhs(lhs), rhs(rhs), op(op) {
     kind = NodeKind::ND_BINARY;
-    
-    SymbolType *lhsType = static_cast<SymbolType *>(lhs->asmType);
-    SymbolType *rhsType = static_cast<SymbolType *>(rhs->asmType);
-    if (!lhsType) asmType = rhsType;
-    else if (!rhsType) asmType = lhsType;
-    else if (lhsType->name == rhsType->name) {
-      asmType = lhsType;
-    } else {
-      // prefer int over float over bool over string
-      if (lhsType->name == "int" || rhsType->name == "int") {
-        asmType = new SymbolType("int");
-      } else if (lhsType->name == "float" || rhsType->name == "float") {
-        asmType = new SymbolType("float");
-      } else if (lhsType->name == "bool" || rhsType->name == "bool") {
-        asmType = new SymbolType("bool");
-      } else {
-        asmType = new SymbolType("str");
-      }
-    }
-    
+    // Assigning ASMType should be typechecker's problem, where it is supposed to be
   }
 
   void debug(int ident = 0) const override {

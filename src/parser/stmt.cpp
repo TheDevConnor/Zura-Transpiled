@@ -282,7 +282,7 @@ Node::Stmt *Parser::loopStmt(PStruct *psr, std::string name) {
 
       psr->expect(
           psr, TokenKind::SEMICOLON,
-          "Expected a SEMICOLON after the for loop condition in a loop stmt");
+          "Expected a SEMICOLON after the for loop initializer in a loop stmt");
 
       condition = parseExpr(psr, BindingPower::defaultValue);
 

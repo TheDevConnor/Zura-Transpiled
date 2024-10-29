@@ -1,1 +1,7 @@
-const main := fn () int { return 4 + 3 * 8; };
+const main := fn () int {
+    have y: int = 1;
+    loop (x = 4; x < 10) : (x = x + 1) {
+        y = x * 2;
+    }
+    return y; # Returns 20 ! Works great!
+};
