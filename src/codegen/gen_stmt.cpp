@@ -1,4 +1,5 @@
 #include "gen.hpp"
+#include "optimizer/instr.hpp"
 #include "optimizer/optimize.hpp"
 #include <sys/cdefs.h>
 
@@ -160,6 +161,31 @@ void codegen::ifStmt(Node::Stmt *stmt) {
   // End label (where both 'thenStmt' and 'elseStmt' converge)
   push(Instr{.var = Label{.name = endLabel}, .type = InstrType::Label}, Section::Main);
 }
+
+void codegen::enumDecl(Node::Stmt *stmt) {
+  auto s = static_cast<EnumStmt *>(stmt);
+
+  // The feilds are pushed to the .data section
+  int fieldCount = 0;
+  for (auto &field : s->fields) {
+    push(Instr{.var = Label{.name = field}, .type = InstrType::Label}, Section::Data);
+    push(Instr{.var = LinkerDirective{.value = ".long " + std::to_string(fieldCount++)}, .type = InstrType::Linker}, Section::Data);
+
+    // Add the enum field to the global table
+    variableTable.insert({field, std::to_string(fieldCount)});
+  }
+
+  // Add the enum to the global table
+  variableTable.insert({s->name, std::to_string(fieldCount)});
+}
+
+void codegen::structDecl(Node::Stmt *stmt) {
+  auto s = static_cast<StructStmt *>(stmt);
+
+  std::cerr << "Structs are not implemented yet!" << std::endl;
+  exit(-1);
+}
+
 
 void codegen::print(Node::Stmt *stmt) {
   auto print = static_cast<PrintStmt *>(stmt);

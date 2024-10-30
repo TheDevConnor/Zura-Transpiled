@@ -1,18 +1,20 @@
-const fib := fn (n: int) int {
-    have a: int = 0;
-    have b: int = 1;
-
-    if (n <= 1) return n;
-
-    loop(i = 2; i <= n) : (i = i + 1) {
-        have temp: int = a + b;
-        a = b;
-        b = temp;
-    }
-
-    return b;
+const Day := enum {
+    Monday,
+    Tuesday,
+    Wednesday,
+    Thursday,
+    Friday,
+    Saturday,
+    Sunday,
 };
 
-const main := fn () int {
-    return fib(10); # 55
+const main := fn() int {
+    have day: Day;
+
+    day = Day.Tuesday;
+
+    if (day == Day.Monday) dis("Today is Monday");
+    else dis("Today is not Monday");
+
+    return 0;
 };

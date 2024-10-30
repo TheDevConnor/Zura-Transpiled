@@ -265,3 +265,7 @@ void codegen::arrayElem(Node::Expr *expr) {
             << "])" << std::endl;
   exit(-1);
 }
+
+void codegen::memberExpr(Node::Expr *expr) {
+  auto e = static_cast<MemberExpr *>(expr);
+}

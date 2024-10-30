@@ -38,6 +38,7 @@ inline int64_t variableCount = 1;
 
 // String could be register (%rdi, %rdx, ...) or effective address (-8(%rbp), ...)
 inline std::unordered_map<std::string, std::string> variableTable = {};
+inline std::unordered_map<std::string, std::unordered_map<std::string, std::string>> structTable = {};
 inline std::vector<size_t> stackSizesForScopes = {}; // wordy term for "when we start a scope, push its stack size"
 inline size_t stackSize;
 
@@ -48,6 +49,8 @@ void symbolType(Node::Type *type);
 void arrayType(Node::Type *type);
 void pointerType(Node::Type *type);
 
+void structDecl(Node::Stmt *stmt);
+void enumDecl(Node::Stmt *stmt);
 void program(Node::Stmt *stmt);
 void constDecl(Node::Stmt *stmt);
 void funcDecl(Node::Stmt *stmt);
@@ -72,6 +75,7 @@ void ternary(Node::Expr *expr);
 void assign(Node::Expr *expr);
 void primary(Node::Expr *expr);
 void cast(Node::Expr *expr);
+void memberExpr(Node::Expr *expr);
 
 int convertFloatToInt(float input); // Float input. Crazy, right?
 

@@ -255,7 +255,8 @@ void TypeChecker::visitCall(Maps *map, Node::Expr *expr) {
 }
 
 void TypeChecker::visitMember(Maps *map, Node::Expr *expr) {
-  std::cout << "Not implemented yet for member" << std::endl;
+  auto member = static_cast<MemberExpr *>(expr);
+  std::cerr << "Member expression not implemented yet in the TypeChecker" << std::endl;
 }
 
 void TypeChecker::visitArray(Maps *map, Node::Expr *expr) {

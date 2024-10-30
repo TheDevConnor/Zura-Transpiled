@@ -2,6 +2,7 @@
 #include "../ast/types.hpp"
 #include "type.hpp"
 
+#include <iostream>
 #include <memory>
 
 void TypeChecker::visitStmt(Maps *map, Node::Stmt *stmt) {
@@ -116,7 +117,9 @@ void TypeChecker::visitStruct(Maps *map, Node::Stmt *stmt) {
 }
 
 void TypeChecker::visitEnum(Maps *map, Node::Stmt *stmt) {
-  std::cout << "Not implemented yet" << std::endl;
+  auto enum_stmt = static_cast<EnumStmt *>(stmt);
+  // TODO: Implement the enum
+  std::cerr << "Enums are not implemented yet in the TypeChecker!" << std::endl;
 }
 
 void TypeChecker::visitIf(Maps *map, Node::Stmt *stmt) {
