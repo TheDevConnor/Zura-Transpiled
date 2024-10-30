@@ -38,8 +38,7 @@ void codegen::gen(Node::Stmt *stmt, bool isSaved, std::string output_filename,
   if (!file.is_open()) handlerError(0, 0,
               "Unable to open output file for finalized assembly '" +
                   output_filename +
-                  ".s' - ensure Zura has permissions to write/create files",
-              "", "Codegen Error");
+                  ".s' - ensure Zura has permissions to write/create files", "Codegen Error");
   
   file << "# ┌-------------------------------┐\n"
           "# |   Zura lang by TheDevConnor   |\n"

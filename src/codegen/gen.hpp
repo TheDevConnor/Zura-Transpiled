@@ -137,6 +137,5 @@ JumpCondition getJumpCondition(const std::string &op);
 
 bool execute_command(const std::string &command, const std::string &log_file);
 void gen(Node::Stmt *stmt, bool isSaved, std::string output, const char* filename, bool isDebug);
-void handlerError(int line, int pos, std::string msg, std::string note,
-                  std::string typeOfError);
+void handlerError(int line, int pos, std::string msg, std::string typeOfError);
 } // namespace codegen

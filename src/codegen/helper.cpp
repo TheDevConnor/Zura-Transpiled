@@ -2,14 +2,12 @@
 #include "gen.hpp"
 #include <fstream>
 
-void codegen::handlerError(int line, int pos, std::string msg, std::string note,
+void codegen::handlerError(int line, int pos, std::string msg,
                            std::string typeOfError) {
   Lexer lexer; // dummy lexer
-  if (note != "")
-    ErrorClass::error(line, pos, msg, note, typeOfError, node.current_file,
-                      lexer, node.tks, false, false, false, false, false, true);
   ErrorClass::error(line, pos, msg, "", typeOfError, node.current_file, lexer,
-                    node.tks, false, false, false, false, false, true);
+                    node.tks, false, false, false, 
+                    false, false, true);
 }
 
 void codegen::pushRegister(const std::string &reg) {
@@ -125,22 +123,28 @@ bool codegen::execute_command(const std::string &command,
   // Read log file
   std::ifstream log(log_file);
   std::string log_contents = "";
-  if (log.is_open()) {
-    std::string line;
-    bool first = true;
-    while (getline(log, line)) {
-      if (first) {
-        log_contents += line;
-        first = false;
-      } else {
-        log_contents += "\n\t" + line;
-      }
+
+  if (!log.is_open()) {
+    handlerError(0, 0, "Error opening log file: " + log_file, "Codegen Error");
+    return false;
+  }
+  
+  std::string line;
+  bool first = true;
+  while (getline(log, line)) {
+    if (first) {
+      log_contents += line;
+      first = false;
+    } else {
+      log_contents += "\n\t" + line;
     }
   }
+  
   log.close();
 
   if (result != 0) {
-    handlerError(0, 0, "Error executing command: " + command, log_contents,
+    handlerError(0, 0,
+                 "Error executing command: " + command + "\n\t" + log_contents,
                  "Codegen Error");
     return false;
   }
