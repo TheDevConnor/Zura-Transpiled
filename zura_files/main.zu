@@ -1,7 +1,14 @@
 const main := fn () int {
-    have y: int = 1;
-    loop (x = 4; x < 10) : (x = x + 1) {
-        y = x * 2;
+    loop(i = 1; i <= 3) : (i = i + 1) {
+        dis("Outer loop: i \n");
+        loop(j = 1; j <= 5) : (j = j + 1) {
+            if (j == 3) {
+                dis("Break inner loop for j = 3\n");
+                break;
+            }
+            dis("Inner loop: j \n");
+        }
     }
-    return y; # Returns 20 ! Works great!
+    dis("End of main\n");
+    return 0;
 };

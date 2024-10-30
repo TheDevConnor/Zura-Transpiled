@@ -292,18 +292,32 @@ void codegen::whileLoop(Node::Stmt *stmt) {
 
 void codegen::_break(Node::Stmt *stmt) {
   auto s = static_cast<BreakStmt *>(stmt);
-  std::cerr
-      << "No fancy error for this, beg Connor... (Soviet Pancakes speaking)"
-      << std::endl;
-  std::cerr << "Break statements not implemented!" << std::endl;
-  exit(-1);
+  
+  push(Instr{.var = Comment{.comment = "break statement"}, .type = InstrType::Comment}, Section::Main);
+  pushDebug(s->line);
+
+  // Jump to the end of the loop
+  push(Instr{.var = JumpInstr{.op = JumpCondition::Unconditioned, .label = "loop_post" + std::to_string(loopCount - 1)}, .type = InstrType::Jmp}, Section::Main);
+
+  // Break statements are only valid inside loops
+  if (loopCount == 0) {
+    std::cerr << "Error: Break statement outside of loop" << std::endl;
+    exit(-1);
+  }
 };
 
 void codegen::_continue(Node::Stmt *stmt) {
   auto s = static_cast<ContinueStmt *>(stmt);
-  std::cerr
-      << "No fancy error for this, beg Connor... (Soviet Pancakes speaking)"
-      << std::endl;
-  std::cerr << "Continue statements not implemented!" << std::endl;
-  exit(-1);
+
+  push(Instr{.var = Comment{.comment = "continue statement"}, .type = InstrType::Comment}, Section::Main);
+  pushDebug(s->line);
+
+  // Jump back to the start of the loop
+  push(Instr{.var = JumpInstr{.op = JumpCondition::Unconditioned, .label = "loop_pre" + std::to_string(loopCount - 1)}, .type = InstrType::Jmp}, Section::Main);
+
+  // Continue statements are only valid inside loops
+  if (loopCount == 0) {
+    std::cerr << "Error: Continue statement outside of loop" << std::endl;
+    exit(-1);
+  }
 };
