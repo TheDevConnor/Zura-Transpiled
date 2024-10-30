@@ -263,7 +263,7 @@ void codegen::forLoop(Node::Stmt *stmt) {
   // Set loop start label
   push(Instr{.var = Label{.name = preLoopLabel}, .type = InstrType::Label}, Section::Main);
   // Evaluate the loop condition
-  processBinaryExpression(static_cast<BinaryExpr *>(s->condition), preconCount, "loop_post", true);
+  processBinaryExpression(static_cast<BinaryExpr *>(s->condition), preconCount, postLoopLabel, true);
 
   // Execute the loop body (if condition is true)
   visitStmt(s->block);  // Visit the statements inside the loop body
@@ -274,7 +274,7 @@ void codegen::forLoop(Node::Stmt *stmt) {
     text_section.pop_back();
   }
 
-  // Jump back to the start of the loop
+  // Jump back to the loop start
   push(Instr{.var = JumpInstr{.op = JumpCondition::Unconditioned, .label = preLoopLabel}, .type = InstrType::Jmp}, Section::Main);
 
   // Set loop end label

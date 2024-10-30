@@ -65,6 +65,13 @@ void codegen::processBinaryExpression(BinaryExpr *cond,
     push(Instr{.var = CmpInstr{.lhs = "%rbx", .rhs = "%rax"},
                .type = InstrType::Cmp},
          Section::Main);
+
+    // Jump based on the correct condition
+    JumpCondition jmpCond = getJumpCondition(cond->op);
+    push(Instr{.var = JumpInstr{.op = jmpCond, .label = name},
+               .type = InstrType::Jmp},
+         Section::Main);
+    return;
   } else {
     // Perform comparison (this order ensures LHS > RHS works correctly)(ifs)
     push(Instr{.var = CmpInstr{.lhs = "%rax", .rhs = "%rbx"},
