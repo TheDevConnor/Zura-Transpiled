@@ -17,6 +17,21 @@ void TypeChecker::visitExprStmt(Maps *map, Node::Stmt *stmt) {
 void TypeChecker::visitProgram(Maps *map, Node::Stmt *stmt) {
   auto program_stmt = static_cast<ProgramStmt *>(stmt);
   for (auto &stmt : program_stmt->stmt) {
+    // check for a global variable declaration
+    if (stmt->kind == NodeKind::ND_VAR_STMT) {
+      auto var = static_cast<VarStmt *>(stmt);
+      if (var->expr) {
+        visitStmt(map, var);
+      }
+    }
+    // make sure there are no loops or if statements in the global scope
+    if (stmt->kind == NodeKind::ND_FOR_STMT ||
+        stmt->kind == NodeKind::ND_WHILE_STMT ||
+        stmt->kind == NodeKind::ND_IF_STMT) {
+      std::string msg = "Loops and if statements are not allowed in the global "
+                        "scope";
+      handlerError(0, 0, msg, "", "Type Error");
+    }
     visitStmt(map, stmt);
   }
 }
@@ -138,11 +153,6 @@ void TypeChecker::visitIf(Maps *map, Node::Stmt *stmt) {
 
 void TypeChecker::visitVar(Maps *map, Node::Stmt *stmt) {
   auto var_stmt = static_cast<VarStmt *>(stmt);
-
-  if (map->local_symbol_table.empty()) {
-    map->declare(map->global_symbol_table, var_stmt->name, var_stmt->type,
-                 var_stmt->line, var_stmt->pos);
-  }
 
   map->declare(map->local_symbol_table, var_stmt->name, var_stmt->type,
                var_stmt->line, var_stmt->pos);

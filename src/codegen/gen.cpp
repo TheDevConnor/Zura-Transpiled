@@ -54,16 +54,6 @@ void codegen::gen(Node::Stmt *stmt, bool isSaved, std::string output_filename,
     file << ".file 0 \"" << static_cast<ProgramStmt *>(stmt)->inputPath << "\"\n";
   }
 
-  if (data_section.size() > 0) {
-    file << "\n# data section for pre-allocated, mutable data"
-            "\n.data\n";
-    file << Stringifier::stringifyInstrs(data_section);
-  }
-  if (rodt_section.size() > 0) {
-    file << "\n# readonly data section - contains constant strings and floats (for now)"
-            "\n.section .rodata\n";
-    file << Stringifier::stringifyInstrs(rodt_section);
-  }
   file << ".text\n"
           ".globl main\n";
   file << Stringifier::stringifyInstrs(text_section);
@@ -119,6 +109,35 @@ void codegen::gen(Node::Stmt *stmt, bool isSaved, std::string output_filename,
     file << "\n# non-main user functions" << std::endl;
     file << Stringifier::stringifyInstrs(head_section);
   }
+  if (rodt_section.size() > 0) {
+    file << "\n# readonly data section - contains constant strings and floats (for now)"
+            "\n.section .rodata\n";
+    file << Stringifier::stringifyInstrs(rodt_section);
+  }
+  if (data_section.size() > 0) {
+    file << "\n# data section for pre-allocated, mutable data"
+            "\n.data\n";
+    file << Stringifier::stringifyInstrs(data_section);
+  }
+
+  // DWARF debug yayy
+  if (debug) {
+    // Debug symbols should be included
+	  file << ".section	.debug_info,\"\",@progbits\n\t";
+    file << ".Ldebug_info:";
+    file << "\n.long .Ldebug_end - .Ldebug_info" // Length of the debug info header 
+            "\n.short 5" // DWARF version 5
+            "\n.byte 8" // 8 byte registers (64-bit mode)
+            "\n.byte 0" // "Segment selector size" ? Thanks, ChatGPT!
+            "\n";
+    // Attributes or whatever that follow
+    file << Stringifier::stringifyInstrs(die_section) << "\n";
+    file << ".Ldebug_end:\n";
+    
+    file << ".section .debug_str,\"MS\",@progbits,1\n";
+    file << Stringifier::stringifyInstrs(dies_section) << "\n";
+  
+  }
   file.close();
 
   output_filename =
@@ -127,28 +146,22 @@ void codegen::gen(Node::Stmt *stmt, bool isSaved, std::string output_filename,
   ErrorClass::printError(); // Print any errors that may have occurred
 
   // Compile, but do not link main.o
-  std::string assembler =
-      "gcc -c -g " + output_filename + ".s -o " + output_filename + ".o";
+  std::string assembler = // "Dont include standard libraries"
+      "gcc -g " + output_filename + ".s -o " + output_filename;
   std::string assembler_log = output_filename + "_assembler.log";
   if (!execute_command(assembler, assembler_log))
     return;
-
-  // Link with entry point "main"
-  std::string linker =
-      "ld " + output_filename + ".o -e main -o " + output_filename;
-  std::string linker_log = output_filename + "_linker.log";
-  if (!execute_command(linker, linker_log))
-    return;
+  
   int exitCode; // NOTE: This is to remove warnings. It is not practical lmao
   if (!isSaved) {
     std::string remove =
-        "rm " + output_filename + ".s " + output_filename + ".o";
+        "rm " + output_filename + ".s";
     exitCode = system(remove.c_str());
   }
 
   // delete the log files
   // (they are only necessary when something actually goes wrong,
   // and this code is only reached when we know it doesn't)
-  std::string remove_log = "rm " + assembler_log + " " + linker_log;
+  std::string remove_log = "rm " + assembler_log;
   exitCode = system(remove_log.c_str());
 }

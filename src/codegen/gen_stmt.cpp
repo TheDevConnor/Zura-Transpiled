@@ -1,6 +1,5 @@
 #include "gen.hpp"
 #include "optimizer/instr.hpp"
-#include "optimizer/optimize.hpp"
 #include <sys/cdefs.h>
 
 void codegen::visitStmt(Node::Stmt *stmt) {
@@ -20,6 +19,13 @@ void codegen::expr(Node::Stmt *stmt) {
 void codegen::program(Node::Stmt *stmt) {
   auto s = static_cast<ProgramStmt *>(stmt);
   for (Node::Stmt *stm : s->stmt) {
+    // check for a global variable declaration
+    if (stm->kind == ND_VAR_STMT) {
+      auto var = static_cast<VarStmt *>(stm);
+      if (var->expr) {
+        codegen::visitStmt(var);
+      }
+    }
     codegen::visitStmt(stm);
   }
 };
@@ -88,13 +94,18 @@ void codegen::varDecl(Node::Stmt *stmt) {
     visitExpr(static_cast<ExprStmt *>(s->expr)->expr);
   }
 
-  std::string where = std::to_string(variableCount++ * -8) + "(%rbp)";
+  int whereBytes = variableCount++ * -8;
+  std::string where = std::to_string(whereBytes) + "(%rbp)";
   popToRegister(where);
   // Update the symbol table with the variable's position
   variableTable.insert({s->name, where});
 
   push(Instr{.var = Comment{.comment = "End of variable declaration for '" + s->name + "'"},
               .type = InstrType::Comment},Section::Main);
+
+  // Push DWARF DIE for variable declaration!!!!!
+  if (!debug) return;
+  std::string dieLabel = ".Ldie" + std::to_string(dieCount++);
 }
 
 void codegen::block(Node::Stmt *stmt) {
@@ -168,15 +179,15 @@ void codegen::enumDecl(Node::Stmt *stmt) {
   // The feilds are pushed to the .data section
   int fieldCount = 0;
   for (auto &field : s->fields) {
-    push(Instr{.var = Label{.name = field}, .type = InstrType::Label}, Section::Data);
-    push(Instr{.var = LinkerDirective{.value = ".long " + std::to_string(fieldCount++)}, .type = InstrType::Linker}, Section::Data);
+    push(Instr{.var = Label{.name = field}, .type = InstrType::Label}, Section::ReadonlyData);
+    push(Instr{.var = LinkerDirective{.value = ".long " + std::to_string(fieldCount++)}, .type = InstrType::Linker}, Section::ReadonlyData);
 
     // Add the enum field to the global table
-    variableTable.insert({field, std::to_string(fieldCount)});
+    variableTable.insert({field, field});
   }
 
   // Add the enum to the global table
-  variableTable.insert({s->name, std::to_string(fieldCount)});
+  variableTable.insert({s->name, ""}); // You should never refer to the enum base itself. You can only ever get its values
 }
 
 void codegen::structDecl(Node::Stmt *stmt) {

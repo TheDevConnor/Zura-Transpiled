@@ -54,8 +54,15 @@ void TypeChecker::visitString(Maps *map, Node::Expr *expr) {
 
 void TypeChecker::visitIdent(Maps *map, Node::Expr *expr) {
   auto ident = static_cast<IdentExpr *>(expr);
-  auto res = Maps::lookup(map->local_symbol_table, ident->name, ident->line,
-                          ident->pos, "local symbol table");
+  Node::Type *res = nullptr;
+
+  if (map->local_symbol_table.find(ident->name) !=
+      map->local_symbol_table.end()) {
+    res = map->local_symbol_table[ident->name];
+  } else if (map->global_symbol_table.find(ident->name) !=
+             map->global_symbol_table.end()) {
+    res = map->global_symbol_table[ident->name];
+  }
 
   // check if we found something in the local symbol table if not return error
   // of 'did you mean'

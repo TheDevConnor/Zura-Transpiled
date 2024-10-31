@@ -80,7 +80,8 @@ void memberExpr(Node::Expr *expr);
 int convertFloatToInt(float input); // Float input. Crazy, right?
 
 // assembly
-enum class Section { // BRUH its 10:13 ok ibrb // Connor brb grabing some ice cream
+enum class 
+Section { // BRUH its 10:13 ok ibrb // Connor brb grabing some ice cream
     // section .text
     Main, // main function
     Head, // user functions
@@ -88,6 +89,9 @@ enum class Section { // BRUH its 10:13 ok ibrb // Connor brb grabing some ice cr
     Data,
     // section .rodata
     ReadonlyData,
+
+    DIE, // Dwarf Information Entries - basically, they're little stinkbombs that tell the debugger what variable its looking at
+    DIEString, // String literals referenced by DIE's
 };
 
 enum class NativeASMFunc {
@@ -99,6 +103,8 @@ inline std::vector<Instr> text_section = {};
 inline std::vector<Instr> head_section = {};
 inline std::vector<Instr> data_section = {}; // This is only really one of three instructions
 inline std::vector<Instr> rodt_section = {}; // Same as data section
+inline std::vector<Instr> die_section = {}; // Acronym for Dwarf Information Entry
+inline std::vector<Instr> dies_section = {}; // Dwarf Information Entries strings, referenced from DIE's
 
 inline std::unordered_map<NativeASMFunc, bool> nativeFunctionsUsed = {};
 
@@ -106,6 +112,7 @@ inline std::unordered_map<NativeASMFunc, bool> nativeFunctionsUsed = {};
 inline std::vector<std::pair<size_t, int64_t>> scopes = {};
 
 inline bool isEntryPoint = false;
+inline size_t dieCount = 0; // Labels! Labels galore! Im not counting bytes, man! Let LD do it !!!
 inline size_t howBadIsRbp = 0;
 inline size_t conditionalCount = 0;
 inline size_t stringCount = 0;
@@ -117,6 +124,7 @@ inline std::vector<std::pair<size_t, size_t>> arrayCounts = {};
 
 inline size_t funcBlockStart = -1; // Set to "stackSize" on FuncDecl blocks, will be set to crazy value when not used
 void push(Instr instr, Section section = Section::Main);
+void pushLinker(std::string val, Section section);
 
 void pushCompAsExpr(); // assuming compexpr's will already do the "cmp" and "jmp", we will push 0x0 or 0x1 depending on the result
 

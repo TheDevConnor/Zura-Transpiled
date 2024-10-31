@@ -1,12 +1,29 @@
-const pow := fn (x: float, n: int) float {
-    have res: float = 1.0;
-    loop(i = 0; i < n) : (i = i + 1) {
-        res = res * x;
+const fib := fn (n: int) int {
+    have a: int = 0;
+    have b: int = 1;
+
+    if (n <= 1) return n;
+
+    loop(i = 1; i <= n) : (i++) {
+        have temp: int = a + b;
+        a = b;
+        b = temp;
     }
-    return res;
+    return b;
 };
 
+# TODO: Fix infinite loop when prog has more than 1 loop in it
+# TODO: Add float comparisons
+# const pow := fn (x: float, n: int) float {
+#     have res: float = 1.0;
+#     loop(i = 1; i < n) : (i++) {
+#         res = res * x;
+#     }
+#     return res;
+# };
+
 const main := fn() int {
-    have res: float = pow(2.0, 3);
-    return @cast<int>(res);
-};
+    # have res: float = pow(2.0, 3);
+    # return @cast<int>(res);
+    return fib(10); # 55
+}; 

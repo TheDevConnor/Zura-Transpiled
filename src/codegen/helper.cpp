@@ -1,5 +1,6 @@
 #include "../helper/error/error.hpp"
 #include "gen.hpp"
+#include "optimizer/instr.hpp"
 #include <fstream>
 
 void codegen::handlerError(int line, int pos, std::string msg,
@@ -32,6 +33,14 @@ void codegen::moveRegister(const std::string &dest, const std::string &src,
        Section::Main);
 }
 
+void codegen::pushLinker(std::string val, Section section) {
+  push(Instr {
+    .var = LinkerDirective {
+      .value = val
+    }
+  }, section);
+}
+
 JumpCondition codegen::getJumpCondition(const std::string &op) {
   if (op == ">")
     return JumpCondition::Greater;
@@ -52,6 +61,15 @@ JumpCondition codegen::getJumpCondition(const std::string &op) {
 void codegen::processBinaryExpression(BinaryExpr *cond,
                                       const std::string &preconCount,
                                       const std::string &name, bool isLoop) {
+  // TODO: Float comparisons
+  // ucomiss - Compare 2 floats
+  /*
+  ucomiss %xmm0, %xmm1
+  jp NAN
+  jb %xmm0 < %xmm1
+  ja %xmm0 > %xmm1
+  Yes, it's weird
+  */
   // Evaluate LHS first, store in %rax
   visitExpr(cond->lhs);
   popToRegister("%rax");
@@ -143,14 +161,25 @@ bool codegen::execute_command(const std::string &command,
 }
 
 void codegen::push(Instr instr, Section section) {
-  if (section == Section::Main) {
-    text_section.push_back(instr);
-  } else if (section == Section::Head) {
-    head_section.push_back(instr);
-  } else if (section == Section::Data) {
-    data_section.push_back(instr);
-  } else if (section == Section::ReadonlyData) {
-    rodt_section.push_back(instr);
+  switch (section) {
+    case Section::Main:
+      text_section.push_back(instr);
+      break;
+    case Section::Head:
+      head_section.push_back(instr);
+      break;
+    case Section::Data:
+      data_section.push_back(instr);
+      break;
+    case Section::ReadonlyData:
+      rodt_section.push_back(instr);
+      break;
+    case Section::DIE:
+      die_section.push_back(instr);
+      break;
+    case Section::DIEString:
+      dies_section.push_back(instr);
+      break;
   }
 }
 

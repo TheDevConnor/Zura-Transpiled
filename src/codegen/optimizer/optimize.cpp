@@ -113,6 +113,28 @@ void Optimizer::simplifyPushPopPair(std::vector<Instr> *output, Instr &prev, Ins
         return;
     }
 
+    // Check if both have same size and both have effective address ('(') 
+    if (prevAsPush.whatSize == currAsPop.whereSize && prevAsPush.what.find('(') != std::string::npos && currAsPop.where.find('(') != std::string::npos) {
+        // movq (%rax), %rdx
+        // movq %rdx, (%rbx)
+        // I hate that this is the solution, Intel go fix your stinky x86
+        Instr newInstr = {
+            .var = MovInstr{.dest = "%r13", .src = prevAsPush.what, .destSize = DataSize::Qword, .srcSize = prevAsPush.whatSize},
+            .type = InstrType::Mov
+        };
+        prev = newInstr;
+        output->push_back(newInstr);
+
+        Instr anotherNewInstr = {
+            .var = MovInstr{.dest = currAsPop.where, .src = "%r13", .destSize = currAsPop.whereSize, .srcSize = DataSize::Qword},
+            .type = InstrType::Mov
+        };
+        prev = newInstr;
+        output->push_back(anotherNewInstr);
+        prev = {}; // twitch makes me twitch bro its so annoying sometimes
+        return;
+    }
+
     // NOTE: xor instruction cannot handle effective addresses (this is why we checked for the paren)
     if (prevAsPush.what == "$0" && currAsPop.where.find('(') == std::string::npos) {
         Instr newInstr = {.var = XorInstr{.lhs = currAsPop.where, .rhs = currAsPop.where}, .type = InstrType::Xor};

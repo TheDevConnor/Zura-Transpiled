@@ -22,6 +22,12 @@ struct MovInstr {
   DataSize srcSize = DataSize::Qword;  // "movq $15, 0(%rsp)"
 };
 
+struct LeaInstr {
+  DataSize size; // "leaq", "leaw", etc...
+  std::string dest;
+  std::string src;
+};
+
 struct PushInstr {
   std::string what;
   DataSize whatSize = DataSize::Qword;
@@ -168,6 +174,7 @@ enum class InstrType {
   Syscall,
   Ret,
   Comment,
+  Lea,
   NONE
 };
 
@@ -195,7 +202,7 @@ struct Instr {
   std::variant<MovInstr, PushInstr, PopInstr, XorInstr, AddInstr, SubInstr,
                MulInstr, DivInstr, CmpInstr, Label, Syscall, Ret, NegInstr,
                NotInstr, JumpInstr, Comment, DataSectionInstr, CallInstr,
-               LinkerDirective, AscizInstr, BinaryInstr, ConvertInstr>
+               LinkerDirective, AscizInstr, BinaryInstr, ConvertInstr, LeaInstr>
       var;
   InstrType type;
   bool optimize = true;
@@ -221,6 +228,7 @@ inline std::unordered_map<InstrType, InstrType> opposites = {
 
     // Types
     {InstrType::Mov, InstrType::Mov},
+    {InstrType::Lea, InstrType::Lea},
     {InstrType::Convert, InstrType::Convert},
     {InstrType::DB, InstrType::DB},
     {InstrType::Binary, InstrType::Binary},

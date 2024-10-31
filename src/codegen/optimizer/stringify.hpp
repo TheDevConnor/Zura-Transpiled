@@ -68,6 +68,9 @@ public:
       std::string operator()(AddInstr instr) const {
         return "addq " + instr.rhs + ", " + instr.lhs + "\n\t";
       }
+      std::string operator()(LeaInstr instr) const {
+        return "lea" + dsToChar(instr.size) + " " + instr.src + ", " + instr.dest + "\n\t";
+      };
       std::string operator()(SubInstr instr) const {
         return "subq " + instr.rhs + ", " + instr.lhs + "\n\t";
       }

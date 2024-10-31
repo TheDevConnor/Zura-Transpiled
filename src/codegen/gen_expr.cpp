@@ -1,5 +1,4 @@
 #include "gen.hpp"
-#include "optimizer/optimize.hpp"
 
 void codegen::visitExpr(Node::Expr *expr) {
   auto handler = lookup(exprHandlers, expr->kind);
@@ -152,12 +151,25 @@ void codegen::binary(Node::Expr *expr) {
 
 void codegen::unary(Node::Expr *expr) {
   auto e = static_cast<UnaryExpr *>(expr);
-  std::cerr
-      << "No fancy error for this, beg Connor... (Soviet Pancakes speaking)"
-      << std::endl;
-  std::cerr << "Unary expression not implemented! (Op: " << e->op
-            << ", Expr: " << e->expr->kind << ")" << std::endl;
-  exit(-1);
+  pushDebug(e->line); // DEBUG BABY! add stinky little .loc
+  visitExpr(e->expr);
+  // Its gonna be a pop guys
+  PushInstr instr = std::get<PushInstr>(text_section.at(text_section.size() - 1).var);
+  std::string whatWasPushed = instr.what;
+
+  text_section.pop_back();
+
+  if (e->op == "++" || e->op == "--") {
+    // Perform the operation
+    std::string res = (e->op == "++") ? "inc" : "dec";
+    // Dear code reader, i apologize
+    push(Instr {
+      .var = LinkerDirective{ .value = res + "q " + whatWasPushed + "\n\t" },
+      .type = InstrType::Linker   // Hey do you know why this infinatly loops? show asm
+    }, Section::Main);
+  }
+  // Push the result
+  pushRegister(whatWasPushed);
 }
 
 void codegen::cast(Node::Expr *expr) {
