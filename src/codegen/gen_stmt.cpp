@@ -13,8 +13,8 @@ void codegen::visitStmt(Node::Stmt *stmt) {
 void codegen::expr(Node::Stmt *stmt) {
   auto s = static_cast<ExprStmt *>(stmt);
   // Just evaluate the expression
-  // TODO: Remove the last push statement or something idk its late
   codegen::visitExpr(s->expr);
+  text_section.pop_back();
 };
 
 void codegen::program(Node::Stmt *stmt) {
@@ -285,6 +285,8 @@ void codegen::forLoop(Node::Stmt *stmt) {
   variableTable.insert({assignee->name, std::to_string(-8 * variableCount++) + "(%rbp)"}); // Track the variable in the stack table
   pushDebug(s->line);
   visitExpr(assign);  // Process the initial loop assignment (e.g., i = 0)
+  // Remove the last instruction!! Its a push and thats bad!
+  text_section.pop_back();
 
   // Set loop start label
   push(Instr{.var = Label{.name = preLoopLabel}, .type = InstrType::Label}, Section::Main);

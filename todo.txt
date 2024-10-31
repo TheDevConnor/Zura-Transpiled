@@ -13,11 +13,11 @@ Maybe do pointers? (Yes, do pointers)
    - Implement sockets (HTTP requests ??)
    - Note for HTTP:
       - $ man 2 socket
-      - Socket Syscall #: SYS_socket
-      - Socket Domain:    AF_INET (ip v4)
-      - Socket type:      SOCK_STREAM
-      - Bind Syscall #:   SYS_bind
-      - Listen Syscall #: SYS_listen
-      - Accept Syscall #: SYS_accept
-      - Read Syscall #:   SYS_read
+      - Socket Syscall #: SYS_socket 41
+      - Socket Domain:    AF_INET (ip v4) 2
+      - Socket type:      SOCK_STREAM 1
+      - Bind Syscall #:   SYS_bind 49
+      - Listen Syscall #: SYS_listen 50
+      - Accept Syscall #: SYS_accept 43
+      - Read Syscall #:   SYS_read 0
       

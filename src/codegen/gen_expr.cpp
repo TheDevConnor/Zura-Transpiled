@@ -103,6 +103,7 @@ void codegen::binary(Node::Expr *expr) {
     std::cerr << "excuse me you cant concat strings :(" << std::endl;
     exit(-1);
   }
+  // 4.1 + 4.2 = addss instr
   if (lhsType->name == "float" || rhsType->name == "float") {
     lhs_reg = "%xmm0";
     rhs_reg = "%xmm1";
@@ -114,13 +115,19 @@ void codegen::binary(Node::Expr *expr) {
     // Perform the operation
     if (op == "add") op = "addss";
     if (op == "sub") op = "subss";
-    if (op == "mul") op = "mulss";
+    if (op == "mul" || op == "imul") op = "mulss";
     if (op == "div") op = "divss";
     // Ignore the others because nobody cares about them HAHAH
     push(Instr{.var = BinaryInstr{.op = op, .src = rhs_reg, .dst = lhs_reg},
                .type = InstrType::Binary},
          Section::Main);
+    // Push the result
+    push(Instr {
+      .var = PushInstr{.what = "%xmm0", .whatSize = DataSize::SS},
+      .type = InstrType::Push
+    }, Section::Main);
   }
+  // 4 + 4 = add instr
   if (lhsType->name == "int" && rhsType->name == "int") {
       // Pop the right hand side
     popToRegister(rhs_reg);
@@ -138,9 +145,9 @@ void codegen::binary(Node::Expr *expr) {
                  .type = InstrType::Binary},
            Section::Main);
     }
+    // Push the result
+    pushRegister(lhs_reg);
   }
-  // Push the result
-  pushRegister(lhs_reg);
 }
 
 void codegen::unary(Node::Expr *expr) {

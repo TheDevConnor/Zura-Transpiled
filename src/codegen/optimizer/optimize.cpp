@@ -108,23 +108,64 @@ void Optimizer::simplifyPushPopPair(std::vector<Instr> *output, Instr &prev, Ins
     PushInstr prevAsPush = std::get<PushInstr>(prev.var);
     PopInstr currAsPop = std::get<PopInstr>(curr.var);
 
-    if (prevAsPush.what == currAsPop.where) {
+    if (prevAsPush.what == currAsPop.where && prevAsPush.whatSize == currAsPop.whereSize) {
         prev = Instr {.type=InstrType::NONE};
         return;
     }
 
+    // NOTE: xor instruction cannot handle effective addresses (this is why we checked for the paren)
     if (prevAsPush.what == "$0" && currAsPop.where.find('(') == std::string::npos) {
         Instr newInstr = {.var = XorInstr{.lhs = currAsPop.where, .rhs = currAsPop.where}, .type = InstrType::Xor};
         prev = newInstr;
         output->push_back(newInstr);
-    } else {
-        Instr newInstr = {
-            .var = MovInstr{.dest = currAsPop.where, .src = prevAsPush.what, .destSize = currAsPop.whereSize, .srcSize = prevAsPush.whatSize},
-            .type = InstrType::Mov
-        };
-        prev = newInstr;
-        output->push_back(newInstr);
+        return;
     }
+
+    if (currAsPop.whereSize != DataSize::SS && prevAsPush.whatSize == DataSize::SS) {
+        // If this is an effective address, use a regular mov
+        if (currAsPop.where.find('(') == std::string::npos) {
+            // The compiler would know when to convert and when not to.
+            // We have to copy the bits of the float **directly** into the register.
+
+            // movss %xmm0, (%where)
+            // movq (%where), %where
+
+            Instr firstManip = {
+                .var = MovInstr{.dest = "(" + currAsPop.where + ")", .src = prevAsPush.what, .destSize = currAsPop.whereSize, .srcSize = prevAsPush.whatSize},
+                .type = InstrType::Mov,
+                .optimize = false
+            };
+            output->push_back(firstManip);
+
+            Instr secondManip = {
+                .var = MovInstr{.dest = currAsPop.where, .src = "(" + currAsPop.where + ")", .destSize = currAsPop.whereSize, .srcSize = currAsPop.whereSize},
+                .type = InstrType::Mov,
+                .optimize = false
+            };
+            output->push_back(secondManip);
+
+            prev = {}; // This manipulation is necessary!
+            return;
+        }
+    }
+
+    // check if one is float register and one is int register
+    if (currAsPop.whereSize == DataSize::SS && prevAsPush.whatSize != DataSize::SS) {
+        Instr cvtInstr = {
+            .var = ConvertInstr{ .convType = ConvertType::SS2SI, .from = currAsPop.where, .to = currAsPop.where },
+            .type = InstrType::Convert
+        };
+        output->push_back(cvtInstr);
+        prev = cvtInstr;
+        return;
+    }
+    Instr newInstr = {
+        .var = MovInstr{.dest = currAsPop.where, .src = prevAsPush.what, .destSize = currAsPop.whereSize, .srcSize = prevAsPush.whatSize},
+        .type = InstrType::Mov
+    };
+    prev = newInstr;
+    output->push_back(newInstr);
+    return;
 }
 
 // Optimize pairs with a useless instruction in between

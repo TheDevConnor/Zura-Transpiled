@@ -94,24 +94,8 @@ void codegen::handleExitSyscall() {
 }
 
 void codegen::handleReturnCleanup() {
-  if (stackSize - funcBlockStart == 0) {
-    push(Instr{.var = PopInstr{.where = "%rbp", .whereSize = DataSize::Qword},
-               .type = InstrType::Pop},
-         Section::Main);
-    stackSize--;
-    push(Instr{.var = LinkerDirective{.value = ".cfi_def_cfa 7, 8\n\t"},
-               .type = InstrType::Linker},
-         Section::Main);
-  } else {
-    push(Instr{.var = MovInstr{.dest = "%rbp",
-                               .src = std::to_string(
-                                          8 * (stackSize - funcBlockStart)) +
-                                      "(%rsp)",
-                               .destSize = DataSize::Qword,
-                               .srcSize = DataSize::Qword},
-               .type = InstrType::Mov},
-         Section::Main);
-  }
+  // Assuming that the optimizer did its job, we should be safe to pop.
+  popToRegister("%rbp");
 }
 
 int codegen::convertFloatToInt(float input) {

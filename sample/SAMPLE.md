@@ -14,6 +14,7 @@ Zura is a statically typed language that blends familiar syntax with modern cons
 9. [Pointers](#pointer)
 10. [Casting](#casting)
 11. [Built-in Functions](#built-in-functions)
+12. [Debugging Zura](#debug-mode)
 
 ## Basic Syntax
 
@@ -203,3 +204,7 @@ dis("You entered: ", y, "\n");
 have x: int = @cast<int>(10.5);
 dis("Casting float to int: ", x, "\n");
 ```
+
+## Debug mode
+
+Compiling with `-debug` will generate some (albeit very poor) debug symbols along the way of your program. It will basically paste little `.loc`s throughout the main function and a fat `.debug_info` section at the bottom (the latter is still in progress).
