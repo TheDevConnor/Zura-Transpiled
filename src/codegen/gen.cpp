@@ -49,13 +49,13 @@ void codegen::gen(Node::Stmt *stmt, bool isSaved, std::string output_filename,
         << "\n"
           "# What's New: Debug symbols (Open GDB and try it!)\n";
   // This one defines the file the whole assembly is related to
-  if (debug) {
+  if (debug)
     file << ".file   \"" << static_cast<ProgramStmt *>(stmt)->inputPath << "\"\n";
-    file << ".file 0 \"" << static_cast<ProgramStmt *>(stmt)->inputPath << "\"\n";
-  }
+  file << ".text\n";
+  if (debug)
+    file << ".Ltext0:\n.file 0 \"" << static_cast<ProgramStmt *>(stmt)->inputPath << "\"\n";
 
-  file << ".text\n"
-          ".globl main\n";
+  file << ".globl main\n";
   file << Stringifier::stringifyInstrs(text_section);
   if (nativeFunctionsUsed.size() > 0) file << "\n# zura functions\n";
   if (nativeFunctionsUsed[NativeASMFunc::strlen] == true) {
@@ -123,20 +123,76 @@ void codegen::gen(Node::Stmt *stmt, bool isSaved, std::string output_filename,
   // DWARF debug yayy
   if (debug) {
     // Debug symbols should be included
+    file << ".Ldebug_text0:\n";
 	  file << ".section	.debug_info,\"\",@progbits\n\t";
-    file << ".Ldebug_info:";
     file << "\n.long .Ldebug_end - .Ldebug_info" // Length of the debug info header 
-            "\n.short 5" // DWARF version 5
-            "\n.byte 8" // 8 byte registers (64-bit mode)
-            "\n.byte 0" // "Segment selector size" ? Thanks, ChatGPT!
+            "\n.Ldebug_info:" // NOTE: ^^^^ This long tag right here requires the EXCLUSION of those 4 bytes there
+            "\n.value 5" // DWARF version 5
+            "\n.byte 1" // Unit-type DW_UT_compile
+            "\n.byte 8" // 8-bytes registers (64-bit os)
+            "\n.long .Ldebug_abbrev" // Abbreviation offset
+            "\n.uleb128 1" // Forgot
+            "\n.long .Ldebug_producer_string" // DW_AT_producer
+            "\n.byte 0x8012" // DW_AT_language - Being honest, 8012 is a random number and I did NOT go over it with connor LMAO
+            "\n.long .Ldebug_file_string" // DW_AT_name
+            "\n.long .Ldebug_file_dir" // DW_AT_comp_dir
+            "\n.quad .Ltext0" // DW_AT_low_pc
+            "\n.quad .Ldebug_text0 - .Ltext0" // DW_AT_high_pc
+            "\n.long .Ldebug_line0" // DW_AT_stmt_list
             "\n";
+    file << ".Lint_debug_type:\n"
+            ".byte 0x0\n" // The first abbreviation.
+            ".long .Lint_debug_string\n"
+            ".byte 0x05\n" // DW_at_encoding
+            ".byte 0x08\n";
+    file << ".Lfloat_debug_type:\n"
+            ".byte 0x0\n" // The first abbreviation.
+            ".long .Lfloat_debug_string\n"
+            ".byte 0x04\n" // DW_AT_encoding
+            ".byte 0x04\n";
     // Attributes or whatever that follow
     file << Stringifier::stringifyInstrs(die_section) << "\n";
     file << ".Ldebug_end:\n";
+    file << ".section .debug_abbrev,\"\",@progbits\n";
+    file << ".Ldebug_abbrev:\n";
+    // ASM types - Abbreviation
+    file << ".byte 0x02\n"
+            ".byte 0x24\n"
+            ".byte 0x0\n"
+            ".byte 0x03\n" // DW_AT_name
+            ".byte 0x0E\n" // DW_FORM_strp
+            ".byte 0x3E\n" // DW_AT_encoding
+            ".byte 0x0B\n" // DW_FORM_data1
+            ".byte 0x0B\n" // DW_AT_byte_size
+            ".byte 0x0B\n" // DW_FORM_data1
+            ".byte 0x0\n"; // It's done!
+            ".byte 0x0\n"; // It's done!
+    file << Stringifier::stringifyInstrs(diea_section);
+    file << "\n.byte 00\n"; // End of abbreviations
     
-    file << ".section .debug_str,\"MS\",@progbits,1\n";
+    // Still not done
+    // Aranges
+    file << ".section .debug_aranges,\"\",@progbits\n";
+    file << ".Ldebug_aranges:\n";
+    // TODO
+    file << ".quad 0\n"; // End of aranges
+    file << ".quad 0\n"; // End of aranges
+
+    // debug_line
+    file << ".section .debug_line,\"\",@progbits\n";
+    file << ".Ldebug_line0:\n";
+    // TODO
+
+    // debug_str
+    file << ".section .debug_str,\"MS\",@progbits,1\n"
+            ".Ldebug_producer_string: .string \"Zura compiler version " + ZuraVersion + ", debug on\"\n"
+            // TOOD: Convert to path
+            ".Lint_debug_string: .string \"int\"\n"
+            ".Lfloat_debug_string: .string \"float\"\n"
+            ".Ldebug_file_string: .string \"" << static_cast<ProgramStmt *>(stmt)->inputPath << "\"\n"
+            ".Ldebug_file_dir: .string \"" << static_cast<ProgramStmt *>(stmt)->inputPath << "\"\n";
     file << Stringifier::stringifyInstrs(dies_section) << "\n";
-  
+
   }
   file.close();
 

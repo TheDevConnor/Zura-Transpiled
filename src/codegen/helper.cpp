@@ -180,6 +180,9 @@ void codegen::push(Instr instr, Section section) {
     case Section::DIEString:
       dies_section.push_back(instr);
       break;
+    case Section::DIEAbbrev:
+      diea_section.push_back(instr);
+      break;
   }
 }
 

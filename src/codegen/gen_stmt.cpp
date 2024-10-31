@@ -89,6 +89,7 @@ void codegen::varDecl(Node::Stmt *stmt) {
   // push another .loc
   pushDebug(s->line);
 
+  // (the i = 4 part)
   // Evaluate the initializer expression, if present
   if (s->expr) {
     visitExpr(static_cast<ExprStmt *>(s->expr)->expr);
@@ -105,7 +106,42 @@ void codegen::varDecl(Node::Stmt *stmt) {
 
   // Push DWARF DIE for variable declaration!!!!!
   if (!debug) return;
-  std::string dieLabel = ".Ldie" + std::to_string(dieCount++);
+  std::string dieLabel = ".Ldie" + std::to_string(dieCount);
+
+  // DW_TAG_variable - encompasses all variable attributes in literal form
+  pushLinker(dieLabel + ":\n", Section::DIE);
+  pushLinker(".byte 0x12\n", Section::DIEAbbrev); // DW_TAG_variable
+  pushLinker(".byte 0x34\n", Section::DIEAbbrev); // DW_TAG_variable
+  pushLinker(".byte 0x0\n", Section::DIEAbbrev); // Children
+
+  pushLinker(".byte 0x03\n", Section::DIEAbbrev); // DW_AT_name
+  pushLinker(".byte 0x0E\n", Section::DIEAbbrev); // DW_FORM_strp "String Pointer"
+
+  pushLinker(".byte 0x49\n", Section::DIEAbbrev); // DW_AT_type
+  pushLinker(".byte 0x13\n", Section::DIEAbbrev); // DW_FORM_ref4
+
+  pushLinker(".byte 0x2\n", Section::DIEAbbrev); // DW_AT_location
+  pushLinker(".byte 0x18\n", Section::DIEAbbrev); // DW_FORM_exprloc
+
+  pushLinker(".byte 0x0\n", Section::DIEAbbrev); // Finish it off!
+  pushLinker(".byte 0x0\n", Section::DIEAbbrev); // Finish it off!
+  // Abbreviations over. Let's get to the cool part!
+  pushLinker(".byte " + std::to_string(dieCount), Section::DIE);
+  pushLinker("\n.long " + dieLabel + "_string\n", Section::DIE);
+  // Get ASMtype
+  auto asmType = static_cast<SymbolType *>(s->expr->expr->asmType);
+  pushLinker(".long .L" + asmType->name + "_debug_type\n", Section::DIE);
+  // Location
+  pushLinker(".byte 0x18\n", Section::DIE);
+  pushLinker(".uleb128 0x02\n", Section::DIE);
+  pushLinker(".byte 0x91\n", Section::DIE);
+  pushLinker(".sleb128 " + std::to_string(whereBytes) + "\n", Section::DIE);
+
+
+  // DIE String pointer
+  push(Instr{.var = Label{.name = dieLabel + "_string"}, .type = InstrType::Label}, Section::DIEString);
+  pushLinker(".string \"" + s->name + "\"\n", Section::DIEString);
+  dieCount++;
 }
 
 void codegen::block(Node::Stmt *stmt) {

@@ -92,6 +92,7 @@ Section { // BRUH its 10:13 ok ibrb // Connor brb grabing some ice cream
 
     DIE, // Dwarf Information Entries - basically, they're little stinkbombs that tell the debugger what variable its looking at
     DIEString, // String literals referenced by DIE's
+    DIEAbbrev, // Abbreviations for DIE's
 };
 
 enum class NativeASMFunc {
@@ -104,6 +105,7 @@ inline std::vector<Instr> head_section = {};
 inline std::vector<Instr> data_section = {}; // This is only really one of three instructions
 inline std::vector<Instr> rodt_section = {}; // Same as data section
 inline std::vector<Instr> die_section = {}; // Acronym for Dwarf Information Entry
+inline std::vector<Instr> diea_section = {}; // DIE abbreviation (defines attributes used in DIE's)
 inline std::vector<Instr> dies_section = {}; // Dwarf Information Entries strings, referenced from DIE's
 
 inline std::unordered_map<NativeASMFunc, bool> nativeFunctionsUsed = {};
@@ -112,7 +114,7 @@ inline std::unordered_map<NativeASMFunc, bool> nativeFunctionsUsed = {};
 inline std::vector<std::pair<size_t, int64_t>> scopes = {};
 
 inline bool isEntryPoint = false;
-inline size_t dieCount = 0; // Labels! Labels galore! Im not counting bytes, man! Let LD do it !!!
+inline size_t dieCount = 1; // Labels! Labels galore! Im not counting bytes, man! Let LD do it !!!
 inline size_t howBadIsRbp = 0;
 inline size_t conditionalCount = 0;
 inline size_t stringCount = 0;
