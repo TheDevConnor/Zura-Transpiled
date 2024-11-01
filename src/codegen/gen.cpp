@@ -127,33 +127,68 @@ void codegen::gen(Node::Stmt *stmt, bool isSaved, std::string output_filename,
 	  file << ".section	.debug_info,\"\",@progbits\n\t";
     file << "\n.long .Ldebug_end - .Ldebug_info" // Length of the debug info header 
             "\n.Ldebug_info:" // NOTE: ^^^^ This long tag right here requires the EXCLUSION of those 4 bytes there
-            "\n.value 0x5" // DWARF version 5
+            "\n.word 0x5" // DWARF version 5
             "\n.byte 0x1" // Unit-type DW_UT_compile
             "\n.byte 0x8" // 8-bytes registers (64-bit os)
             "\n.long .Ldebug_abbrev"
+            "\n"
+            "\n.uleb128 0x1" // Compilation unit name
+            "\n.long .Ldebug_producer_string"
+            "\n.byte 0x1d" // Language (C)
+            "\n.long .Ldebug_file_string"
+            "\n.long .Ldebug_file_dir"
+            "\n.quad .Ltext0" // Low PC (beginning of .text)
+            "\n.quad .Ldebug_text0-.Ltext0" // High PC (end of .text)
+            "\n.long .Ldebug_line0"
             "\n";
     // Attributes or whatever that follow
     file << Stringifier::stringifyInstrs(die_section) << "\n";
     file << ".Lint_debug_type:\n"
-            ".uleb128 0x1\n"
+            ".uleb128 0x3\n"
             ".long .Lint_debug_string\n"
             ".byte 0x05\n"
             ".byte 0x08\n";
     file << ".Lfloat_debug_type:\n"
-            ".uleb128 0x1\n"
+            ".uleb128 0x3\n"
             ".long .Lfloat_debug_string\n"
             ".byte 0x04\n"
             ".byte 0x04\n";
     file << ".Ldebug_end:\n";
     file << ".section .debug_abbrev,\"\",@progbits\n";
     file << ".Ldebug_abbrev:\n";
+        // Define compilation unit (DW_TAG_compile_unit)
+    file << ".uleb128 0x1\n" // Opcode 1
+            ".uleb128 0x11\n" // DW_TAG_compile_unit
+            ".byte	0x1\n" // Yes children
+            ".uleb128 0x25\n" // producer
+            ".uleb128 0x0E\n" // strp
+
+            ".uleb128 0x13\n" // language
+            ".uleb128 0x0B\n" // byte
+
+            ".uleb128 0x03\n" // at_name (filename)
+            ".uleb128 0x1F\n" // lines_str //
+
+            ".uleb128 0x1B\n" // comp_dir (file dir)
+            ".uleb128 0x1F\n" // lines_str
+
+            ".uleb128 0x11\n" // low pc
+            ".uleb128 0x01\n" // addr
+
+            ".uleb128 0x12\n" // high pc
+            ".uleb128 0x07\n" // data 8 (quad)
+
+            ".uleb128 0x10\n" // stmt_list
+            ".uleb128 0x17\n" // sec_offset
+            ".byte 0x0\n"
+            ".byte 0x0\n";
     // Define Variable Declaration (DW_TAG_variable)
     file << ".uleb128 0x2\n" // Use opcode 2
             ".uleb128 0x34\n" // DW_TAG_variable
             ".byte 0\n" // No children
 
             ".uleb128 0x3\n" // DW_AT_name
-            ".uleb128 0xE\n" // DW_FORM_string
+            ".uleb128 0x0E\n" // DW_FORM_string
 
             ".uleb128 0x3A\n" // DW_AT_decl_file
             ".uleb128 0x0B\n" // DW_FORM_data1
@@ -171,7 +206,7 @@ void codegen::gen(Node::Stmt *stmt, bool isSaved, std::string output_filename,
             ".byte 0x0\n";
     // Define Type Declaration (DW_TAG_base_type)
     file << ".Ldata_type:\n"
-            ".uleb128 0x01\n" // Opcode of this abbreviation - 1
+            ".uleb128 0x03\n" // Opcode of this abbreviation - 3
             ".uleb128 0x24\n" // DW_TAG_base_type (basic type like int, float- perfect for ASMType)
             ".byte 0x0\n" // No children
 
@@ -186,7 +221,7 @@ void codegen::gen(Node::Stmt *stmt, bool isSaved, std::string output_filename,
             ".byte 0x0\n"
             ".byte 0x0\n"; // It's done!
     // Define Subprogram (function) Declaration (DW_TAG_subprogram)
-    file << ".uleb128 0x03\n" // Use opcode 3
+    file << ".uleb128 0x04\n" // Use opcode 4
             ".uleb128 0x2E\n" // DW_TAG_subprogram
             ".byte 0x1\n" // Yes children :(
             
@@ -230,26 +265,38 @@ void codegen::gen(Node::Stmt *stmt, bool isSaved, std::string output_filename,
     // Still not done
     // Aranges
     file << ".section .debug_aranges,\"\",@progbits\n";
-    file << ".Ldebug_aranges:\n";
-    // TODO
-    file << ".quad 0\n"; // End of aranges
-    file << ".quad 0\n"; // End of aranges
+    file << ".Ldebug_aranges:\n"
+            ".long .Ldebug_aranges_end - 4 - .Ldebug_aranges\n" // length of the aranges
+            ".value 0x5\n" // DWARF ver (5)
+            ".long .Ldebug_text0\n"
+            ".byte 0x8\n" // 8-byte addresses
+            ".byte 0x0\n" // x86-64 typically has "flat" (0x0) memory model
+            ".value 0\n"
+            ".value 0\n"
+            ".quad .Ltext0\n"
+            ".quad .Ldebug_text0-.Ltext0\n"
+            ".quad 0\n"
+            ".quad 0\n" // End of aranges
+            ".Ldebug_aranges_end:\n";
 
     // debug_line
     file << ".section .debug_line,\"\",@progbits\n";
     file << ".Ldebug_line0:\n";
     // TODO
-
     // debug_str
     file << ".section .debug_str,\"MS\",@progbits,1\n"
             ".Ldebug_producer_string: .string \"Zura compiler version " + ZuraVersion + ", debug on\"\n"
             // TOOD: Convert to path
             ".Lint_debug_string: .string \"int\"\n"
-            ".Lfloat_debug_string: .string \"float\"\n"
-            ".Ldebug_file_string: .string \"" << static_cast<ProgramStmt *>(stmt)->inputPath << "\"\n"
-            ".Ldebug_file_dir: .string \"" << static_cast<ProgramStmt *>(stmt)->inputPath << "\"\n";
+            ".Lfloat_debug_string: .string \"float\"\n";
     file << Stringifier::stringifyInstrs(dies_section) << "\n";
-
+    // debug_line_str
+    std::string fileRelPath = static_cast<ProgramStmt *>(stmt)->inputPath;
+    std::string fileName = fileRelPath.substr(fileRelPath.find_last_of("/") + 1);
+    std::string fileDir = fileRelPath.substr(0, fileRelPath.find_last_of("/"));
+    file << ".section .debug_line_str,\"MS\",@progbits,1\n"
+            ".Ldebug_file_string: .string \"" << fileName << "\"\n"
+            ".Ldebug_file_dir: .string \"" << fileDir << "\"\n";
   }
   file.close();
 
@@ -260,7 +307,9 @@ void codegen::gen(Node::Stmt *stmt, bool isSaved, std::string output_filename,
 
   // Compile, but do not link main.o
   std::string assembler = // "Dont include standard libraries"
-      "gcc -g " + output_filename + ".s -o " + output_filename;
+      (isDebug)
+        ? "gcc -g -no-pie " + output_filename + ".s -o " + output_filename
+        : "gcc -no-pie " + output_filename + ".s -o " + output_filename;
   std::string assembler_log = output_filename + "_assembler.log";
   if (!execute_command(assembler, assembler_log))
     return;

@@ -45,23 +45,22 @@ void codegen::funcDecl(Node::Stmt *stmt) {
 
 
   // WOO YEAH BABY DEBUG TIME
-  if (!debug) return;
-  SymbolType *st = static_cast<SymbolType *>(s->returnType);
-  std::string asmName = st->name;
 
   if (debug) {
+    SymbolType *st = static_cast<SymbolType *>(s->returnType);
+    std::string asmName = st->name;
     pushLinker(".uleb128 0x3\n"
-              ".byte 0x1\n" // DW_AT_external
+              ".byte 0x4\n" // DW_AT_external
               ".long .L" + funcName + "_string\n"
-                ".byte 0x0\n" // File index 0 - no other file includes allowed (yet)
-                ".byte " + std::to_string(s->line) + "\n" // Line number
-                ".long .L" + asmName + "_debug_type\n" // Return type (DW_AT_type)
-                ".quad .L" + funcName + "_debug_start\n" // Low pc
-                ".quad .L" + funcName + "_debug_end - .L" + funcName + "_debug_start\n"
-                ".uleb128 0x1\n" // 1 byte is gonna follow
-                ".byte 0x9c\n"
-                // No call all calls ??
-                // Look, I'm not dealing with siblings right now
+              ".byte 0x0\n" // File index 0 - no other file includes allowed (yet)
+              ".byte " + std::to_string(s->line) + "\n" // Line number
+              ".long .L" + asmName + "_debug_type\n" // Return type (DW_AT_type)
+              ".quad .L" + funcName + "_debug_start\n" // Low pc
+              ".quad .L" + funcName + "_debug_end - .L" + funcName + "_debug_start\n"
+              ".uleb128 0x1\n" // 1 byte is gonna follow
+              ".byte 0x9c\n"
+              // No call all calls ??
+              // Look, I'm not dealing with siblings right now
               , Section::DIE);
 
     pushLinker(".L" + funcName + "_string: .string \"" + funcName + "\"\n", Section::DIEString);
