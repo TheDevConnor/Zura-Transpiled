@@ -43,8 +43,33 @@ void codegen::funcDecl(Node::Stmt *stmt) {
   isEntryPoint = (s->name == "main") ? true : false;
   auto funcName = (isEntryPoint) ? "main" : "usr_" + s->name;
 
+
+  // WOO YEAH BABY DEBUG TIME
+  if (!debug) return;
+  SymbolType *st = static_cast<SymbolType *>(s->returnType);
+  std::string asmName = st->name;
+
+  if (debug) {
+    pushLinker(".uleb128 0x3\n"
+              ".byte 0x1\n" // DW_AT_external
+              ".long .L" + funcName + "_string\n"
+                ".byte 0x0\n" // File index 0 - no other file includes allowed (yet)
+                ".byte " + std::to_string(s->line) + "\n" // Line number
+                ".long .L" + asmName + "_debug_type\n" // Return type (DW_AT_type)
+                ".quad .L" + funcName + "_debug_start\n" // Low pc
+                ".quad .L" + funcName + "_debug_end - .L" + funcName + "_debug_start\n"
+                ".uleb128 0x1\n" // 1 byte is gonna follow
+                ".byte 0x9c\n"
+                // No call all calls ??
+                // Look, I'm not dealing with siblings right now
+              , Section::DIE);
+
+    pushLinker(".L" + funcName + "_string: .string \"" + funcName + "\"\n", Section::DIEString);
+  }
+
   push(Instr{.var = LinkerDirective{.value = "\n.type " + funcName + ", @function"},.type = InstrType::Linker},Section::Main);
   push(Instr{.var = Label{.name = funcName}, .type = InstrType::Label},Section::Main);
+  pushLinker(".L" + funcName + "_debug_start:\n", Section::Main);
   // push linker directive for the debug info (the line number)
   pushDebug(s->line);
   push(Instr{.var=LinkerDirective{.value=".cfi_startproc\n\t"},.type=InstrType::Linker},Section::Main);
@@ -74,6 +99,7 @@ void codegen::funcDecl(Node::Stmt *stmt) {
   stackSize = preStackSize;
   funcBlockStart = -1;
   // Function ends with ret so we can't really push any other instructions.
+  pushLinker(".L" + funcName + "_debug_end:\n", Section::Main);
 
   push(Instr{.var = LinkerDirective{.value = ".cfi_endproc\n"},.type = InstrType::Linker},Section::Main);
   push(Instr{.var = LinkerDirective{.value = ".size " + funcName + ", .-" + funcName + "\n\t"},
@@ -107,36 +133,18 @@ void codegen::varDecl(Node::Stmt *stmt) {
   // Push DWARF DIE for variable declaration!!!!!
   if (!debug) return;
   std::string dieLabel = ".Ldie" + std::to_string(dieCount);
+  SymbolType *st = static_cast<SymbolType *>(s->expr->expr->asmType);
+  std::string asmName = st->name;
 
-  // DW_TAG_variable - encompasses all variable attributes in literal form
-  pushLinker(dieLabel + ":\n", Section::DIE);
-  pushLinker(".byte 0x12\n", Section::DIEAbbrev); // DW_TAG_variable
-  pushLinker(".byte 0x34\n", Section::DIEAbbrev); // DW_TAG_variable
-  pushLinker(".byte 0x0\n", Section::DIEAbbrev); // Children
-
-  pushLinker(".byte 0x03\n", Section::DIEAbbrev); // DW_AT_name
-  pushLinker(".byte 0x0E\n", Section::DIEAbbrev); // DW_FORM_strp "String Pointer"
-
-  pushLinker(".byte 0x49\n", Section::DIEAbbrev); // DW_AT_type
-  pushLinker(".byte 0x13\n", Section::DIEAbbrev); // DW_FORM_ref4
-
-  pushLinker(".byte 0x2\n", Section::DIEAbbrev); // DW_AT_location
-  pushLinker(".byte 0x18\n", Section::DIEAbbrev); // DW_FORM_exprloc
-
-  pushLinker(".byte 0x0\n", Section::DIEAbbrev); // Finish it off!
-  pushLinker(".byte 0x0\n", Section::DIEAbbrev); // Finish it off!
-  // Abbreviations over. Let's get to the cool part!
-  pushLinker(".byte " + std::to_string(dieCount), Section::DIE);
-  pushLinker("\n.long " + dieLabel + "_string\n", Section::DIE);
-  // Get ASMtype
-  auto asmType = static_cast<SymbolType *>(s->expr->expr->asmType);
-  pushLinker(".long .L" + asmType->name + "_debug_type\n", Section::DIE);
-  // Location
-  pushLinker(".byte 0x18\n", Section::DIE);
-  pushLinker(".uleb128 0x02\n", Section::DIE);
-  pushLinker(".byte 0x91\n", Section::DIE);
-  pushLinker(".sleb128 " + std::to_string(whereBytes) + "\n", Section::DIE);
-
+  pushLinker(".uleb128 0x2\n"
+            ".long " + dieLabel + "_string\n"
+            ".byte 0x0\n" // File index 0 - no other file includes allowed (yet)
+            ".byte " + std::to_string(s->line) + "\n" // Line number
+            ".long .L" + asmName + "_debug_type\n"
+            ".uleb128 0x02\n" // Length of data in location definition
+            ".byte 0x91\n" // DW_OP_fbreg
+            ".sleb128 " + std::to_string(whereBytes) + "\n" // Offset of bytes - the 'x' from above
+  , Section::DIE);
 
   // DIE String pointer
   push(Instr{.var = Label{.name = dieLabel + "_string"}, .type = InstrType::Label}, Section::DIEString);

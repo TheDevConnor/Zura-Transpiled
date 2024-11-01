@@ -1,4 +1,7 @@
 const main := fn () int {
     have x: int = 0;
+    x = 5;
+
+    
     return x;
 };

@@ -127,46 +127,103 @@ void codegen::gen(Node::Stmt *stmt, bool isSaved, std::string output_filename,
 	  file << ".section	.debug_info,\"\",@progbits\n\t";
     file << "\n.long .Ldebug_end - .Ldebug_info" // Length of the debug info header 
             "\n.Ldebug_info:" // NOTE: ^^^^ This long tag right here requires the EXCLUSION of those 4 bytes there
-            "\n.value 5" // DWARF version 5
-            "\n.byte 1" // Unit-type DW_UT_compile
-            "\n.byte 8" // 8-bytes registers (64-bit os)
-            "\n.long .Ldebug_abbrev" // Abbreviation offset
-            "\n.uleb128 1" // Forgot
-            "\n.long .Ldebug_producer_string" // DW_AT_producer
-            "\n.byte 0x8012" // DW_AT_language - Being honest, 8012 is a random number and I did NOT go over it with connor LMAO
-            "\n.long .Ldebug_file_string" // DW_AT_name
-            "\n.long .Ldebug_file_dir" // DW_AT_comp_dir
-            "\n.quad .Ltext0" // DW_AT_low_pc
-            "\n.quad .Ldebug_text0 - .Ltext0" // DW_AT_high_pc
-            "\n.long .Ldebug_line0" // DW_AT_stmt_list
+            "\n.value 0x5" // DWARF version 5
+            "\n.byte 0x1" // Unit-type DW_UT_compile
+            "\n.byte 0x8" // 8-bytes registers (64-bit os)
+            "\n.long .Ldebug_abbrev"
             "\n";
-    file << ".Lint_debug_type:\n"
-            ".byte 0x0\n" // The first abbreviation.
-            ".long .Lint_debug_string\n"
-            ".byte 0x05\n" // DW_at_encoding
-            ".byte 0x08\n";
-    file << ".Lfloat_debug_type:\n"
-            ".byte 0x0\n" // The first abbreviation.
-            ".long .Lfloat_debug_string\n"
-            ".byte 0x04\n" // DW_AT_encoding
-            ".byte 0x04\n";
     // Attributes or whatever that follow
     file << Stringifier::stringifyInstrs(die_section) << "\n";
+    file << ".Lint_debug_type:\n"
+            ".uleb128 0x1\n"
+            ".long .Lint_debug_string\n"
+            ".byte 0x05\n"
+            ".byte 0x08\n";
+    file << ".Lfloat_debug_type:\n"
+            ".uleb128 0x1\n"
+            ".long .Lfloat_debug_string\n"
+            ".byte 0x04\n"
+            ".byte 0x04\n";
     file << ".Ldebug_end:\n";
     file << ".section .debug_abbrev,\"\",@progbits\n";
     file << ".Ldebug_abbrev:\n";
-    // ASM types - Abbreviation
-    file << ".byte 0x02\n"
-            ".byte 0x24\n"
+    // Define Variable Declaration (DW_TAG_variable)
+    file << ".uleb128 0x2\n" // Use opcode 2
+            ".uleb128 0x34\n" // DW_TAG_variable
+            ".byte 0\n" // No children
+
+            ".uleb128 0x3\n" // DW_AT_name
+            ".uleb128 0xE\n" // DW_FORM_string
+
+            ".uleb128 0x3A\n" // DW_AT_decl_file
+            ".uleb128 0x0B\n" // DW_FORM_data1
+
+            ".uleb128 0x3B\n" // DW_AT_decl_line
+            ".uleb128 0x0B\n" // DW_FORM_data1
+
+            ".uleb128 0x49\n" // DW_AT_type
+            ".uleb128 0x13\n" // DW_FORM_ref4 - 4-byte pointer to the .debug_info type
+
+            ".uleb128 0x02\n" // DW_AT_location
+            ".uleb128 0x18\n" // DW_FORM_exprloc
+
             ".byte 0x0\n"
-            ".byte 0x03\n" // DW_AT_name
-            ".byte 0x0E\n" // DW_FORM_strp
-            ".byte 0x3E\n" // DW_AT_encoding
-            ".byte 0x0B\n" // DW_FORM_data1
-            ".byte 0x0B\n" // DW_AT_byte_size
-            ".byte 0x0B\n" // DW_FORM_data1
+            ".byte 0x0\n";
+    // Define Type Declaration (DW_TAG_base_type)
+    file << ".Ldata_type:\n"
+            ".uleb128 0x01\n" // Opcode of this abbreviation - 1
+            ".uleb128 0x24\n" // DW_TAG_base_type (basic type like int, float- perfect for ASMType)
+            ".byte 0x0\n" // No children
+
+            ".uleb128 0x03\n" // DW_AT_name
+            ".uleb128 0x0E\n" // DW_FORM_strp
+
+            ".uleb128 0x3E\n" // DW_AT_encoding
+            ".uleb128 0x0B\n" // DW_FORM_data1
+
+            ".uleb128 0x0B\n" // DW_AT_byte_size
+            ".uleb128 0x0B\n" // 1-byte constant that follows
+            ".byte 0x0\n"
             ".byte 0x0\n"; // It's done!
-            ".byte 0x0\n"; // It's done!
+    // Define Subprogram (function) Declaration (DW_TAG_subprogram)
+    file << ".uleb128 0x03\n" // Use opcode 3
+            ".uleb128 0x2E\n" // DW_TAG_subprogram
+            ".byte 0x1\n" // Yes children :(
+            
+            ".uleb128 0x3F\n" // DW_AT_external
+            ".uleb128 0x0C\n" // DW_FORM_flag
+
+            ".uleb128 0x03\n" // DW_AT_name
+            ".uleb128 0x0E\n" // DW_FORM_strp
+
+            ".uleb128 0x3A\n" // DW_AT_decl_file
+            ".uleb128 0x0B\n" // DW_FORM_data1
+
+            ".uleb128 0x3B\n" // DW_AT_decl_line
+            ".uleb128 0x0B\n" // DW_FORM_data1
+
+            ".uleb128 0x49\n" // DW_AT_type
+            ".uleb128 0x13\n" // DW_FORM_ref4 - 4-byte pointer to the .debug_info type
+
+            ".uleb128 0x11\n" // DW_AT_low_pc
+            ".uleb128 0x01\n" // DW_FORM_addr
+
+            ".uleb128 0x12\n" // DW_AT_high_pc
+            ".uleb128 0x07\n" // DW_FORM_data8 (?)
+
+            ".uleb128 0x40\n" // DW_AT_frame_base
+            ".uleb128 0x18\n" // DW_FORM_exprloc
+
+            ".uleb128 0x7A\n" // DW_AT_call_all_calls
+            ".uleb128 0x19\n" // DW_FORM_flag_present
+
+            // Should I use siblings? I don't know
+            // ".uleb128 0x01\n" // DW_AT_sibling
+            // ".uleb128 0x13\n" // DW_FORM_ref4
+
+            ".byte 0x0\n"
+            ".byte 0x0\n";
+    
     file << Stringifier::stringifyInstrs(diea_section);
     file << "\n.byte 00\n"; // End of abbreviations
     
