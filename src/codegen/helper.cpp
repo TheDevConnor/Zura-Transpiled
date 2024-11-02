@@ -58,6 +58,18 @@ JumpCondition codegen::getJumpCondition(const std::string &op) {
   exit(-1);
 }
 
+int codegen::getExpressionDepth(BinaryExpr *e) {
+    int depth = 0;
+    // We don't need to check for the depth of the left-hand side because it's already been visited
+    if (e->rhs->kind == NodeKind::ND_BINARY) {
+        int rhsDepth = getExpressionDepth(static_cast<BinaryExpr *>(e->rhs));
+        if (rhsDepth > depth) {
+            depth = rhsDepth;
+        }
+    }
+    return depth + 1;
+}
+
 void codegen::processBinaryExpression(BinaryExpr *cond,
                                       const std::string &preconCount,
                                       const std::string &name, bool isLoop) {

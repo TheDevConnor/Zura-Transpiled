@@ -148,53 +148,69 @@ if [ $exit_code -ne $expected_code ]; then
     test12_passed=0
 fi
 
+# test 13: For loop with variable
+expected_code=10
+echo "const main := fn () int { have a: int = 0; loop (i = 0; i < 10) : (i++) { a = a + 1; } return a; };" > zura_files/main.zu
+test13_passed=1
+./release/zura build zura_files/main.zu -name main -quiet
+./main
+exit_code=$?
+if [ $exit_code -ne $expected_code ]; then
+    echo "Test 13 failed, program expected $expected_code with exit code $exit_code"
+    test13_passed=0
+fi
+
 # Now that we are done, go over each test**_passed and print results
 if [ $test1_passed -eq 1 ]; then
-    echo "Test 1 passed"
+    echo "Test 1 passed (exit code)"
 fi
 
 if [ $test2_passed -eq 1 ]; then
-    echo "Test 2 passed"
+    echo "Test 2 passed (variable)"
 fi
 
 if [ $test3_passed -eq 1 ]; then
-    echo "Test 3 passed"
+    echo "Test 3 passed (variable reference)"
 fi
 
 if [ $test4_passed -eq 1 ]; then
-    echo "Test 4 passed"
+    echo "Test 4 passed (binary operation)"
 fi
 
 if [ $test5_passed -eq 1 ]; then
-    echo "Test 5 passed"
+    echo "Test 5 passed (binary operation with variables)"
 fi
 
 if [ $test6_passed -eq 1 ]; then
-    echo "Test 6 passed"
+    echo "Test 6 passed (binary operation with variable and literal)"
 fi
 
 if [ $test7_passed -eq 1 ]; then
-    echo "Test 7 passed"
+    echo "Test 7 passed (dis with string literal)"
 fi
 
 if [ $test8_passed -eq 1 ]; then
-    echo "Test 8 passed"
+    echo "Test 8 passe (dis with string variable)"
 fi
 
 if [ $test9_passed -eq 1 ]; then
-    echo "Test 9 passed"
+    echo "Test 9 passed (function returning constant)"
 fi
 
 if [ $test10_passed -eq 1 ]; then
-    echo "Test 10 passed"
+    echo "Test 10 passed (function returning parameter)"
 fi
 
 if [ $test11_passed -eq 1 ]; then
-    echo "Test 11 passed"
+    echo "Test 11 passed (function doing operation on parameters)"
 fi
 
 if [ $test12_passed -eq 1 ]; then
-    echo "Test 12 passed"
+    echo "Test 12 passed (complex binary expressions)"
+fi
+
+if [ $test13_passed -eq 1 ]; then
+    echo "Test 13 passed (for loop with variable)"
 fi
 
 rm ./main

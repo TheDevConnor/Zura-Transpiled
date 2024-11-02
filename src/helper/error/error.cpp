@@ -96,7 +96,6 @@ std::string ErrorClass::error(int line, int pos, const std::string &msg,
   }
 
   if (isGeneration) {
-    line_error += " ↳ " + note + "\n";
     errors[line] = line_error;
     return line_error;
   }

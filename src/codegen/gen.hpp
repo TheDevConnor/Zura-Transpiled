@@ -147,6 +147,7 @@ void handleReturnCleanup();
 
 // Helper for the if statement condition
 void processBinaryExpression(BinaryExpr *cond, const std::string &preconCount, const std::string &name, bool isLoop = false);
+int getExpressionDepth(BinaryExpr *e);
 JumpCondition getJumpCondition(const std::string &op);
 
 bool execute_command(const std::string &command, const std::string &log_file);

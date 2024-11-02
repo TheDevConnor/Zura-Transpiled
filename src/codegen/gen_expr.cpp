@@ -79,19 +79,21 @@ void codegen::primary(Node::Expr *expr) {
   }
 }
 
+// NOTE: Division is not working properly
 void codegen::binary(Node::Expr *expr) {
   auto e = static_cast<BinaryExpr *>(expr);
   bool isAddition = (e->op == "+" || e->op == "-");
 
-  std::string lhs_reg = isAddition ? "%rbx" : "%rax";
-  std::string rhs_reg = isAddition ? "%rcx" : "%rbx";
+  // Check if we have more than two operands in the expression
+  int depth = getExpressionDepth(e);
+
+  std::string lhs_reg = (isAddition) ? "%rax" : (depth > 1) ? "%rbx" : "%rdi";
+  std::string rhs_reg = (isAddition) ? "%rdi" : (depth > 1) ? "%rcx" : "%rbx";
 
   pushDebug(e->line);
 
   visitExpr(e->lhs);
   visitExpr(e->rhs);
-
-
 
   // Perform the binary operation
   std::string op = lookup(opMap, e->op);
