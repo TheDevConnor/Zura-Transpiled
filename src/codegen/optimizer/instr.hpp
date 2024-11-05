@@ -3,26 +3,50 @@
 #include <string>
 #include <unordered_map>
 #include <variant>
-#include <vector>
 
 enum class JumpCondition;
 
+enum class DataSize {
+  None,  // None/auto type
+  Byte,  // 8 bits
+  Word,  // 16 bits
+  Dword, // 32 bits
+  Qword, // 64 bits
+  SS,    // 24-bits - yes its weird. Scalar single-precision float.
+};
+
 struct MovInstr {
+  std::string dest;
+  std::string src;
+  DataSize destSize = DataSize::Qword; // "movq", "movb", etc...
+  DataSize srcSize = DataSize::Qword;  // "movq $15, 0(%rsp)"
+};
+
+struct LeaInstr {
+  DataSize size; // "leaq", "leaw", etc...
   std::string dest;
   std::string src;
 };
 
 struct PushInstr {
   std::string what;
+  DataSize whatSize = DataSize::Qword;
 };
 
 struct PopInstr {
   std::string where;
+  DataSize whereSize = DataSize::Qword; // "popq", "popb", etc..
 };
 
 struct XorInstr {
   std::string lhs;
   std::string rhs;
+};
+
+struct BinaryInstr {
+  std::string op;
+  std::string src;
+  std::string dst;
 };
 
 struct AddInstr {
@@ -65,12 +89,13 @@ struct JumpInstr {
   std::string label;
 };
 
-struct SetInstr {
-  std::string what;
-  std::string where;
-};
+// struct SetInstr {
+//   std::string what;
+//   std::string where;
+// };
 
-struct DBInstr {
+struct DataSectionInstr {
+  DataSize bytesToDefine;
   std::string what;
 };
 
@@ -88,7 +113,34 @@ struct Comment {
   std::string comment;
 };
 
+struct LinkerDirective {
+  std::string
+      value; // This instruction is effectively pushing a string to the file.
+};
+
+struct AscizInstr {
+  std::string what;
+};
+
+enum class ConvertType {
+  SI2SS,  // single int to scalar single-precision
+  SI2SD,  // single int to scalar double-precision
+  TSS2SI, // truncate scalar single-precision to single int
+  TSD2SI, // truncate scalar double-precision to single int
+  SS2SD,  // scalar single-precision to scalar double-precision
+  SD2SS,  // scalar double-precision to scalar single-precision
+  SS2SI,  // scalar single-precision to single int
+  SD2SI   // scalar double-precision to single int
+};
+
+struct ConvertInstr {
+  ConvertType convType;
+  std::string from;
+  std::string to;
+};
+
 enum class InstrType {
+  Binary,
   Push,
   Pop,
   Xor,
@@ -102,16 +154,27 @@ enum class InstrType {
   Neg,
   Not,
 
+  Convert,
+
   // Types
+  Ascii,
+  Asciz,
   DB,
+
+  Byte,
+  Word,
+  Dword, // actually factually its ".long" hahahhaha
+  Qword,
 
   // system (no opposites)
   Label,
+  Linker,
   Call,
   Mov,
   Syscall,
   Ret,
   Comment,
+  Lea,
   NONE
 };
 
@@ -137,8 +200,9 @@ enum class JumpCondition {
 
 struct Instr {
   std::variant<MovInstr, PushInstr, PopInstr, XorInstr, AddInstr, SubInstr,
-               MulInstr, DivInstr, CmpInstr, SetInstr, Label, Syscall, Ret, 
-               NegInstr, NotInstr, JumpInstr, Comment, DBInstr, CallInstr>
+               MulInstr, DivInstr, CmpInstr, Label, Syscall, Ret, NegInstr,
+               NotInstr, JumpInstr, Comment, DataSectionInstr, CallInstr,
+               LinkerDirective, AscizInstr, BinaryInstr, ConvertInstr, LeaInstr>
       var;
   InstrType type;
   bool optimize = true;
@@ -162,62 +226,26 @@ inline std::unordered_map<InstrType, InstrType> opposites = {
     {InstrType::Neg, InstrType::Neg},
     {InstrType::Not, InstrType::Not},
 
+    // Types
+    {InstrType::Mov, InstrType::Mov},
+    {InstrType::Lea, InstrType::Lea},
+    {InstrType::Convert, InstrType::Convert},
     {InstrType::DB, InstrType::DB},
+    {InstrType::Binary, InstrType::Binary},
+    {InstrType::Ascii, InstrType::Asciz},
+    {InstrType::Asciz, InstrType::Ascii},
+    {InstrType::Byte, InstrType::Byte},
+    {InstrType::Word, InstrType::Word},
+    {InstrType::Dword, InstrType::Dword},
+    {InstrType::Qword, InstrType::Qword},
 
     // system (no opposites)
     {InstrType::Jmp, InstrType::NONE}, // if you jumped, you can't "unjump"
     {InstrType::Label, InstrType::NONE},
-    {InstrType::Mov, InstrType::NONE},
     {InstrType::Syscall, InstrType::NONE},
     {InstrType::Ret, InstrType::NONE},
     {InstrType::Comment, InstrType::NONE},
     {InstrType::Call, InstrType::NONE},
+    {InstrType::Linker, InstrType::Linker},
     {InstrType::NONE, InstrType::NONE}
-
-};
-class Optimizer {
-public:
-  static std::vector<Instr> optimizeInstrs(std::vector<Instr> &input) {
-    std::vector<Instr> output{};
-
-    Instr prev = {.type = InstrType::NONE};
-
-    for (Instr &instr : input) {
-      if (prev.type == opposites.at(instr.type)) {
-        if (instr.type == InstrType::Pop) {
-          // previous was push, so we could simplify to mov
-          output.pop_back();
-
-          PushInstr prevAsPush = std::get<PushInstr>(prev.var);
-          PopInstr currAsPop = std::get<PopInstr>(instr.var);
-
-          if (prevAsPush.what == currAsPop.where)
-            continue; // No 🫴
-
-          if (prevAsPush.what == "0" &&
-              (currAsPop.where.find('[') == std::string::npos)) {
-            // simplify further to XOR
-            Instr newInstr = {
-                .var = XorInstr{.lhs = currAsPop.where, .rhs = currAsPop.where},
-                .type = InstrType::Xor};
-            prev = newInstr;
-            output.push_back(newInstr);
-            continue;
-          }
-
-          // simplify to mov
-          Instr newInstr = {
-              .var = MovInstr{.dest = currAsPop.where, .src = prevAsPush.what},
-              .type = InstrType::Mov};
-          prev = newInstr;
-          output.push_back(newInstr);
-          continue;
-        }
-      }
-      output.push_back(instr);
-      prev = instr;
-    }
-
-    return output;
-  }
 };

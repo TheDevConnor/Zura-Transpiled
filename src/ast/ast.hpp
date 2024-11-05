@@ -8,20 +8,27 @@
 
 enum NodeKind {
   // Expressions
-  ND_NUMBER,
+  ND_INT,
+  ND_FLOAT,
   ND_IDENT,
   ND_STRING,
   ND_BINARY,
   ND_UNARY,
   ND_PREFIX,
+  ND_POSTFIX,
   ND_GROUP,
   ND_ARRAY,
+  ND_INDEX,
+  ND_POP,
+  ND_PUSH,
   ND_CALL,
+  ND_TEMPLATE_CALL,
   ND_ASSIGN,
   ND_TERNARY,
   ND_MEMBER,
   ND_RESOLUTION, // ::
   ND_BOOL,
+  ND_CAST,
 
   // Statements
   ND_EXPR_STMT,
@@ -38,6 +45,9 @@ enum NodeKind {
   ND_PRINT_STMT,
   ND_ENUM_STMT,
   ND_IMPORT_STMT,
+  ND_TEMPLATE_STMT,
+  ND_BREAK_STMT,
+  ND_CONTINUE_STMT,
 
   // Types
   ND_SYMBOL_TYPE,
@@ -55,9 +65,15 @@ public:
   std::vector<Lexer::Token> tks;
   // Store the current file name
   std::string current_file;
-
+  struct Type {
+    NodeKind kind; // Pointer, Array, Symbol
+    virtual void debug(int ident = 0) const = 0;
+    virtual ~Type() = default;
+  };
+  
   struct Expr {
     NodeKind kind;
+    Type *asmType;
     virtual void debug(int ident = 0) const = 0;
     virtual ~Expr() = default;
   };
@@ -66,12 +82,6 @@ public:
     NodeKind kind;
     virtual void debug(int ident = 0) const = 0;
     virtual ~Stmt() = default;
-  };
-
-  struct Type {
-    NodeKind kind;
-    virtual void debug(int ident = 0) const = 0;
-    virtual ~Type() = default;
   };
 
   static void printIndent(int ident) {

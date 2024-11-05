@@ -13,6 +13,19 @@
 
 using namespace std;
 
+void Flags::updateProgressBar(double progress) {
+    const int barWidth = 50;
+    std::cout << "[";
+    int pos = barWidth * progress;
+    for (int i = 0; i < barWidth; ++i) {
+        if (i < pos) std::cout << "=";
+        else if (i == pos) std::cout << ">";
+        else std::cout << " ";
+    }
+    std::cout << "] " << int(progress * 100.0) << " %\r";
+    std::cout.flush();
+}
+
 char *Flags::readFile(const char *path) {
   ifstream file(path, ios::binary);
   if (!file) {
@@ -32,19 +45,21 @@ char *Flags::readFile(const char *path) {
   return buffer;
 }
 
-void Flags::runFile(const char *path, std::string outName, bool save) {
+void Flags::runFile(const char *path, std::string outName, bool save, bool debug, bool echoOn) {
   const char *source = readFile(path);
 
+  if (echoOn) Flags::updateProgressBar(0.0);
   auto result = Parser::parse(source, path);
   ErrorClass::printError();
-
-  // result->debug();
+  if (echoOn) Flags::updateProgressBar(0.25);
 
   TypeChecker::performCheck(result);
   ErrorClass::printError();
-  // std::cout << "Passed Type Checking" << std::endl;
+  if (echoOn) Flags::updateProgressBar(0.5);
 
-  codegen::gen(result, save, outName);
+  codegen::gen(result, save, outName, path, debug);
+  ErrorClass::printError();
+  if (echoOn) Flags::updateProgressBar(1.0);
 
   delete[] source;
   delete result;

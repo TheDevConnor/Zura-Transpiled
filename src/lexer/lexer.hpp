@@ -44,11 +44,15 @@ enum TokenKind {
   SLASH_EQUAL,
   RANGE,
   RESOLUTION,
+  RIGHT_ARROW,
+  LEFT_ARROW,
+  AT,
 
   // Literals.
   IDENTIFIER,
   STRING,
-  NUMBER,
+  INT,
+  FLOAT,
 
   // Keywords.
   AND,
@@ -75,6 +79,11 @@ enum TokenKind {
   IMPORT,
   PUB,
   PRIV,
+  TEMPLATE,
+  TYPEALIAS,
+  BREAK, 
+  CONTINUE,
+  CAST,
 
   // Error
   ERROR_,
@@ -123,6 +132,7 @@ public:
   using WhiteSpaceFunction = std::function<void(Lexer &)>;
   std::unordered_map<TokenKind, const char *> tokenToStringMap;
   std::unordered_map<char, WhiteSpaceFunction> whiteSpaceMap;
+  std::unordered_map<std::string, TokenKind> at_keywords;
   std::unordered_map<std::string, TokenKind> keywords;
   std::unordered_map<std::string, TokenKind> dcMap;
   std::unordered_map<char, TokenKind> scMap;

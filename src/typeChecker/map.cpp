@@ -23,11 +23,17 @@ std::vector<std::pair<NodeKind, TypeChecker::StmtNodeHandler>>
         {NodeKind::ND_IF_STMT, visitIf},
         {NodeKind::ND_EXPR_STMT, visitExprStmt},
         {NodeKind::ND_PRINT_STMT, visitPrint},
+        {NodeKind::ND_TEMPLATE_STMT, visitTemplateStmt},
+        {NodeKind::ND_WHILE_STMT, visitWhile},
+        {NodeKind::ND_FOR_STMT, visitFor},
+        {NodeKind::ND_BREAK_STMT, visitBreak},
+        {NodeKind::ND_CONTINUE_STMT, visitContinue},
 };
 
 std::vector<std::pair<NodeKind, TypeChecker::ExprNodeHandler>>
     TypeChecker::exprs = {
-        {NodeKind::ND_NUMBER, visitNumber},
+        {NodeKind::ND_INT, visitInt},
+        {NodeKind::ND_FLOAT, visitFloat},
         {NodeKind::ND_IDENT, visitIdent},
         {NodeKind::ND_STRING, visitString},
         {NodeKind::ND_BINARY, visitBinary},
@@ -37,7 +43,13 @@ std::vector<std::pair<NodeKind, TypeChecker::ExprNodeHandler>>
         {NodeKind::ND_UNARY, visitUnary},
         {NodeKind::ND_MEMBER, visitMember},
         {NodeKind::ND_ASSIGN, visitAssign},
+        {NodeKind::ND_ARRAY, visitArray},
+        {NodeKind::ND_INDEX, visitIndex},
+        {NodeKind::ND_PREFIX, visitUnary},
+        {NodeKind::ND_POSTFIX, visitUnary},
+        {NodeKind::ND_CAST, visitCast},
         {NodeKind::ND_BOOL, visitBool},
+        {NodeKind::ND_TEMPLATE_CALL, visitTemplateCall},
 };
 
 Node::Stmt *TypeChecker::StmtAstLookup(Node::Stmt *node, Maps *maps) {
@@ -62,6 +74,7 @@ void TypeChecker::Maps::declare_fn(
     Maps *map, std::string name, const Maps::NameTypePair &pair,
     std::vector<std::pair<std::string, Node::Type *>> paramTypes, int line,
     int pos) {
+  // check if the function is already defined      
   auto res = std::find_if(
       map->function_table.begin(), map->function_table.end(),
       [&name](const std::pair<NameTypePair,

@@ -4,10 +4,11 @@
 #include <memory>
 
 void TypeChecker::performCheck(Node::Stmt *stmt) {
-  std::unique_ptr<Maps> map = std::make_unique<Maps>(); 
+  std::unique_ptr<Maps> map = std::make_unique<Maps>();
   visitStmt(map.get(), stmt); // Pass the instance of Maps to visitStmt
 
   if (!foundMain) {
+    std::cout << "No main function found" << std::endl;
     handlerError(0, 0, "No main function found",
                  "Try adding this function: \n\tconst main := fn() int { \n\t  "
                  "  return 0\n\t}",
@@ -22,9 +23,9 @@ void TypeChecker::handlerError(int line, int pos, std::string msg,
   Lexer lexer; // dummy lexer
   if (note != "")
     ErrorClass::error(line, pos, msg, note, typeOfError, node.current_file,
-                      lexer, node.tks, false, false, false, false, true);
+                      lexer, node.tks, false, false, false, false, true, false);
   ErrorClass::error(line, pos, msg, "", typeOfError, node.current_file, lexer,
-                    node.tks, false, false, false, false, true);
+                    node.tks, false, false, false, false, true, false);
 }
 
 std::string TypeChecker::type_to_string(Node::Type *type) {
@@ -39,3 +40,4 @@ std::string TypeChecker::type_to_string(Node::Type *type) {
     return "Unknown type";
   }
 }
+

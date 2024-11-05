@@ -8,16 +8,20 @@
 
 Lexer lexer;
 
-Parser::PStruct *Parser::setupParser(PStruct *psr, Lexer *lex,
-                                     Lexer::Token tk, std::string current_file) {
-  while (tk.kind != TokenKind::END_OF_FILE) {
+Parser::PStruct *Parser::setupParser(PStruct *psr, Lexer *lex, Lexer::Token tk,
+                                     std::string current_file) {
+  while (true) {
     psr->tks.push_back(tk);
     tk = lex->scanToken();
+    if (tk.kind == TokenKind::END_OF_FILE) {
+      psr->tks.push_back(tk);
+      break;
+    };
   }
 
   std::unordered_map<std::string, std::string> errors = {};
   psr->current_file = current_file;
-  return new PStruct{psr->tks, psr->current_file, psr->pos}; 
+  return new PStruct{psr->tks, psr->current_file, psr->pos};
 }
 
 Node::Stmt *Parser::parse(const char *source, std::string file) {
@@ -33,13 +37,17 @@ Node::Stmt *Parser::parse(const char *source, std::string file) {
   createTypeMaps();
   auto stmts = std::vector<Node::Stmt *>();
 
-  while (vect_tk->hadTokens(vect_tk))
+  while (vect_tk->hadTokens(vect_tk)) {
     stmts.push_back(parseStmt(vect_tk, ""));
+    if (vect_tk->hadTokens(vect_tk))
+      if (vect_tk->tks.at(vect_tk->pos).kind == TokenKind::END_OF_FILE)
+        break;
+  }
 
   // Copy the tokens to the ast node
   node.tks = vect_tk->tks;
   node.current_file = vect_tk->current_file;
 
   delete vect_tk;
-  return new ProgramStmt(stmts);
+  return new ProgramStmt(stmts, file);
 }

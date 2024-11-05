@@ -5,18 +5,18 @@
 #include "../ast/stmt.hpp"
 #include "../ast/types.hpp"
 
+#include <algorithm>
 #include <functional>
 #include <memory>
 #include <string>
 #include <unordered_map>
 #include <utility>
-#include <algorithm>
 #include <vector>
 
 namespace TypeChecker {
 inline bool foundMain = false;
 std::string type_to_string(Node::Type *type);
-inline std::shared_ptr<Node::Type> return_type = nullptr; 
+inline std::shared_ptr<Node::Type> return_type = nullptr;
 void handlerError(int line, int pos, std::string msg, std::string note,
                   std::string typeOfError);
 
@@ -28,9 +28,15 @@ public:
   std::unordered_map<std::string, Node::Type *> global_symbol_table;
   std::unordered_map<std::string, Node::Type *> local_symbol_table;
   /// fn_name (fn_name, fn_return type) ->  { param name, param type }
-  std::vector<std::pair<
-      NameTypePair, std::vector<std::pair<std::string, Node::Type *>>>>
+  std::vector<std::pair<NameTypePair,
+                        std::vector<std::pair<std::string, Node::Type *>>>>
       function_table;
+
+  // Template Table
+  std::unordered_map<std::string, Node::Type *> template_table;
+
+  // Array content table
+  std::vector<Node::Type *> array_table;
 
   template <typename T, typename U>
   static void declare(std::unordered_map<T, U> &tables, std::string name,
@@ -67,6 +73,8 @@ public:
   lookup_fn(Maps *maps, std::string name, int line, int pos);
 };
 
+inline bool needsReturn = false;
+
 void performCheck(Node::Stmt *stmt);
 void printTables(Maps *map);
 
@@ -91,11 +99,18 @@ void visitBlock(Maps *map, Node::Stmt *stmt);
 void visitVar(Maps *map, Node::Stmt *stmt);
 void visitPrint(Maps *map, Node::Stmt *stmt);
 void visitIf(Maps *map, Node::Stmt *stmt);
+void visitTemplateStmt(Maps *map, Node::Stmt *stmt);
 void visitReturn(Maps *map, Node::Stmt *stmt);
+void visitWhile(Maps *map, Node::Stmt *stmt);
+void visitFor(Maps *map, Node::Stmt *stmt);
+void visitBreak(Maps *map, Node::Stmt *stmt);
+void visitContinue(Maps *map, Node::Stmt *stmt);
 
 // !Expr functions
+void visitTemplateCall(Maps *map, Node::Expr *expr);  
 void visitExpr(Maps *map, Node::Expr *expr);
-void visitNumber(Maps *map, Node::Expr *expr);
+void visitInt(Maps *map, Node::Expr *expr);
+void visitFloat(Maps *map, Node::Expr *expr);
 void visitString(Maps *map, Node::Expr *expr);
 void visitIdent(Maps *map, Node::Expr *expr);
 void visitBinary(Maps *map, Node::Expr *expr);
@@ -106,4 +121,7 @@ void visitCall(Maps *map, Node::Expr *expr);
 void visitTernary(Maps *map, Node::Expr *expr);
 void visitMember(Maps *map, Node::Expr *expr);
 void visitAssign(Maps *map, Node::Expr *expr);
+void visitArray(Maps *map, Node::Expr *expr);
+void visitIndex(Maps *map, Node::Expr *expr);
+void visitCast(Maps *map, Node::Expr *expr);
 } // namespace TypeChecker

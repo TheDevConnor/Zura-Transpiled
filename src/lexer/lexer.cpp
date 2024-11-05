@@ -49,7 +49,7 @@ Lexer::Token Lexer::errorToken(std::string message) {
   std::vector<Lexer::Token> tokens = {};
   ErrorClass::error(token.line, token.column, message, "", "Lexer Error",
                     scanner.file, *this, tokens, false, false, true, false,
-                    false);
+                    false, false);
   return makeToken(TokenKind::ERROR_);
 }
 
@@ -66,13 +66,14 @@ Lexer::Token Lexer::number() {
   while (isdigit(peek()))
     advance();
 
-  if (peek() == '.' && isdigit(peek() + 1)) {
+  if (peek() == '.') {
     advance();
     while (isdigit(peek()))
       advance();
+    return makeToken(TokenKind::FLOAT);
   }
 
-  return makeToken(TokenKind::NUMBER);
+  return makeToken(TokenKind::INT);
 }
 
 Lexer::Token Lexer::String() {
@@ -116,8 +117,9 @@ Lexer::Token Lexer::scanToken() {
   char c = Lexer::advance();
 
   auto res = isalpha(c)   ? makeToken(identifier().kind)
-             : isdigit(c) ? makeToken(number().kind)
-             : c == '"'   ? makeToken(String().kind)
+                          : c == '@'  ? makeToken(at_keywords[identifier().value])
+                          : isdigit(c) ? makeToken(number().kind)
+                          : c == '"'   ? makeToken(String().kind)
                           : makeToken(sc_dc_lookup(c));
 
   if (res.kind == TokenKind::UNKNOWN) {

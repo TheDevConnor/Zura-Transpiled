@@ -1,0 +1,23 @@
+Just get back what we once had
+
+DONE!!! Variables added to `-8(%rbp)` rather than arbitrarily on the stack
+
+Add in control flow to the codegen (done => if, for) (strill need => switch, while)
+Fix Functions so that they can return a usable value !!! - working on it (done)
+Add in struct, enums, and unions, member expr !!!
+Print integers using a native function
+
+Fix the issue where we can only lex up to a 32-bit value
+
+Maybe do pointers? (Yes, do pointers)
+   - Implement sockets (HTTP requests ??)
+   - Note for HTTP:
+      - $ man 2 socket
+      - Socket Syscall #: SYS_socket 41
+      - Socket Domain:    AF_INET (ip v4) 2
+      - Socket type:      SOCK_STREAM 1
+      - Bind Syscall #:   SYS_bind 49
+      - Listen Syscall #: SYS_listen 50
+      - Accept Syscall #: SYS_accept 43
+      - Read Syscall #:   SYS_read 0
+      

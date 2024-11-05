@@ -57,12 +57,17 @@ struct Parser::PStruct {
 
   Lexer::Token expect(PStruct *psr, TokenKind tk, std::string msg) {
     Lexer lexer;
-    bool res = current(psr).kind == tk;
-
-    if (!res) {
+    if (peek(psr).kind == TokenKind::END_OF_FILE) {
       ErrorClass::error(current(psr).line, current(psr).column, msg, "",
                         "Parser Error", psr->current_file, lexer, psr->tks, true, false,
-                        false, false, false);
+                        false, false, false, false);
+      ErrorClass::printError();
+      exit(1);
+    }
+    if (current(psr).kind != tk) {
+      ErrorClass::error(current(psr).line, current(psr).column, msg, "",
+                        "Parser Error", psr->current_file, lexer, psr->tks, true, false,
+                        false, false, false, false);
       return current(psr);
     }
 
@@ -126,11 +131,14 @@ Node::Expr *_prefix(PStruct *psr);
 Node::Expr *group(PStruct *psr);
 Node::Expr *array(PStruct *psr);
 Node::Expr *bool_expr(PStruct *psr);
+Node::Expr *cast_expr(PStruct *psr);
+Node::Expr *_postfix(PStruct *psr, Node::Expr *left, BindingPower bp);
 Node::Expr *binary(PStruct *psr, Node::Expr *left, BindingPower bp);
 Node::Expr *assign(PStruct *psr, Node::Expr *left, BindingPower bp);
 Node::Expr *parse_call(PStruct *psr, Node::Expr *left, BindingPower bp);
 Node::Expr *_ternary(PStruct *psr, Node::Expr *left, BindingPower bp);
 Node::Expr *_member(PStruct *psr, Node::Expr *left, BindingPower bp);
+Node::Expr *index(PStruct *psr, Node::Expr *left, BindingPower bp);
 Node::Expr *resolution(PStruct *psr, Node::Expr *left, BindingPower bp);
 
 // Stmt Functions
@@ -146,5 +154,8 @@ Node::Stmt *printStmt(PStruct *psr, std::string name);
 Node::Stmt *varStmt(PStruct *psr, std::string name);
 Node::Stmt *funStmt(PStruct *psr, std::string name);
 Node::Stmt *ifStmt(PStruct *psr, std::string name);
+Node::Stmt *templateStmt(PStruct *psr, std::string name);
+Node::Stmt *breakStmt(PStruct *psr, std::string name);
+Node::Stmt *continueStmt(PStruct *psr, std::string name);
 Node::Stmt *exprStmt(PStruct *psr);
 } // namespace Parser

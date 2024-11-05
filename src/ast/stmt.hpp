@@ -8,9 +8,10 @@
 
 class ProgramStmt : public Node::Stmt {
 public:
-  std::vector<Node::Stmt *> stmt;
+  std::vector<Node::Stmt *> stmt; // vector of stmts - the body
+  std::string inputPath; // yes this is actually useful trust me
 
-  ProgramStmt(std::vector<Node::Stmt *> stmt) : stmt(stmt) {
+  ProgramStmt(std::vector<Node::Stmt *> stmt, std::string path) : stmt(stmt), inputPath(path) {
     kind = NodeKind::ND_PROGRAM;
   }
 
@@ -162,8 +163,7 @@ public:
     }
   }
 };
-
-class fnStmt : public Node::Stmt {
+class FnStmt : public Node::Stmt {
 public:
   int line, pos;
   std::string name;
@@ -173,7 +173,7 @@ public:
   bool isMain = false;
   bool isEntry = false;
 
-  fnStmt(int line, int pos, std::string name,
+  FnStmt(int line, int pos, std::string name,
          std::vector<std::pair<std::string, Node::Type *>> params,
          Node::Type *returnType, Node::Stmt *block, bool isMain = false,
          bool isEntry = false)
@@ -184,7 +184,7 @@ public:
 
   void debug(int ident = 0) const override {
     Node::printIndent(ident);
-    std::cout << "fnStmt: \n";
+    std::cout << "FnStmt: \n";
     Node::printIndent(ident + 1);
     std::cout << "Name: " << name << "\n";
     Node::printIndent(ident + 1);
@@ -202,7 +202,7 @@ public:
     block->debug(ident + 1);
   }
 
-  ~fnStmt() {
+  ~FnStmt() {
     delete block;
     for (auto p : params) {
       delete p.second;
@@ -236,8 +236,8 @@ public:
     }
   }
 
-  ~ReturnStmt() { 
-    delete expr; 
+  ~ReturnStmt() {
+    delete expr;
     delete stmt;
   }
 };
@@ -365,15 +365,16 @@ public:
 class ForStmt : public Node::Stmt {
 public:
   int line, pos;
-  std::string varName;
+  std::string name;
   Node::Expr *forLoop;
+  Node::Expr *condition;
   Node::Expr *optional;
   Node::Stmt *block;
 
-  ForStmt(int line, int pos, std::string varName, Node::Expr *forLoop,
-          Node::Expr *optional, Node::Stmt *block)
-      : line(line), pos(pos), varName(varName), forLoop(forLoop),
-        optional(optional), block(block) {
+  ForStmt(int line, int pos, std::string name, Node::Expr *forLoop,
+          Node::Expr *condition, Node::Expr *optional, Node::Stmt *block)
+      : line(line), pos(pos), name(name), forLoop(forLoop),
+        condition(condition), optional(optional), block(block) {
     kind = NodeKind::ND_FOR_STMT;
   }
 
@@ -381,10 +382,11 @@ public:
     Node::printIndent(ident);
     std::cout << "ForStmt: \n";
     Node::printIndent(ident + 1);
-    std::cout << "VarName: " << varName << "\n";
-    Node::printIndent(ident + 1);
     std::cout << "ForLoop: \n";
     forLoop->debug(ident + 2);
+    Node::printIndent(ident + 1);
+    std::cout << "Condition: \n";
+    condition->debug(ident + 2);
     Node::printIndent(ident + 1);
     if (optional) {
       std::cout << "Optional: \n";
@@ -427,6 +429,30 @@ public:
   }
 };
 
+class TemplateStmt : public Node::Stmt {
+public:
+  std::vector<std::string> typenames;
+  int line, pos;
+
+  TemplateStmt(std::vector<std::string> typenames, int line, int pos)
+      : typenames(typenames), line(line), pos(pos) {
+    kind = NodeKind::ND_TEMPLATE_STMT;
+  }
+
+  void debug(int ident = 0) const override {
+    Node::printIndent(ident);
+    std::cout << "TemplateStmt: \n";
+    Node::printIndent(ident + 1);
+    std::cout << "Typenames: \n";
+    for (auto t : typenames) {
+      Node::printIndent(ident + 2);
+      std::cout << t << "\n";
+    }
+  }
+
+  ~TemplateStmt() {}
+};
+
 class ImportStmt : public Node::Stmt {
 public:
   int line, pos;
@@ -449,3 +475,30 @@ public:
   ~ImportStmt() { delete stmt; }
 };
 
+class BreakStmt : public Node::Stmt {
+public:
+  int line, pos;
+
+  BreakStmt(int line, int pos) : line(line), pos(pos) {
+    kind = NodeKind::ND_BREAK_STMT;
+  }
+
+  void debug(int ident = 0) const override {
+    Node::printIndent(ident);
+    std::cout << "BreakStmt\n";
+  }
+};
+
+class ContinueStmt : public Node::Stmt {
+public:
+  int line, pos;
+
+  ContinueStmt(int line, int pos) : line(line), pos(pos) {
+    kind = NodeKind::ND_CONTINUE_STMT;
+  }
+
+  void debug(int ident = 0) const override {
+    Node::printIndent(ident);
+    std::cout << "ContinueStmt\n";
+  }
+};

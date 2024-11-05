@@ -3,6 +3,7 @@
 *.c
 *.asm
 *.o
+*.s
 
 # Ignore Visual Studio Code files
 .vscode
@@ -15,6 +16,12 @@ zura
 /build*
 /release*
 /debug*
+/CMakeFiles*
+# Ignore CMake build files - for when using "cmake ." and then "make"
+CMakeCache.txt
+cmake_install.cmake
+Makefile
+compile_commands.json
 
 # Ignore log files
 *.log

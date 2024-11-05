@@ -8,7 +8,8 @@ set(CMAKE_CXX_STANDARD 20)
 set(ZURA_HEADER_FILES
     src/helper/error/error.hpp
     src/helper/flags.hpp
-    src/helper/color.hpp
+    src/helper/term_color/color.hpp
+    src/helper/math/math.hpp
 
     # Lexer Files
     src/lexer/lexer.hpp
@@ -26,14 +27,17 @@ set(ZURA_HEADER_FILES
     src/typeChecker/type.hpp
 
     # Code Gen Files
+    src/codegen/optimizer/optimize.hpp
+    src/codegen/optimizer/stringify.hpp
+    src/codegen/optimizer/instr.hpp
     src/codegen/gen.hpp
 
-    inc/update.hpp
     src/common.hpp
 )
 
 set(ZURA_SOURCE_FILES
     src/helper/error/error.cpp
+    src/helper/math/math.cpp
     src/helper/flags.cpp
     src/lexer/lexer.cpp
     src/lexer/maps.cpp
@@ -53,10 +57,12 @@ set(ZURA_SOURCE_FILES
     src/typeChecker/map.cpp
 
     # Code Gen Files
+    src/codegen/optimizer/optimize.cpp
     src/codegen/gen_expr.cpp
     src/codegen/gen_stmt.cpp
     src/codegen/gen_type.cpp
     src/codegen/genmap.cpp
+    src/codegen/helper.cpp
     src/codegen/gen.cpp
     
     src/main.cpp

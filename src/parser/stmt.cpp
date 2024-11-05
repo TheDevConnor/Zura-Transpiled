@@ -72,8 +72,6 @@ Node::Stmt *Parser::varStmt(PStruct *psr, std::string name) {
                      new ExprStmt(line, column, assignedValue));
 }
 
-// TODO: Implement the print stmt
-// dis("print %d", .{1});
 Node::Stmt *Parser::printStmt(PStruct *psr, std::string name) {
   auto line = psr->tks[psr->pos].line;
   auto column = psr->tks[psr->pos].column;
@@ -103,7 +101,7 @@ Node::Stmt *Parser::printStmt(PStruct *psr, std::string name) {
 Node::Stmt *Parser::constStmt(PStruct *psr, std::string name) {
   auto line = psr->tks[psr->pos].line;
   auto column = psr->tks[psr->pos].column;
-  
+
   psr->expect(psr, TokenKind::_CONST,
               "Expected a CONST keyword to start a const stmt");
   name = psr->expect(psr, TokenKind::IDENTIFIER,
@@ -153,8 +151,8 @@ Node::Stmt *Parser::funStmt(PStruct *psr, std::string name) {
               "Expected a SEMICOLON at the end of a function stmt");
 
   if (name == "main")
-    return new fnStmt(line, column, name, params, returnType, body, true, true);
-  return new fnStmt(line, column, name, params, returnType, body, false, false);
+    return new FnStmt(line, column, name, params, returnType, body, true, true);
+  return new FnStmt(line, column, name, params, returnType, body, false, false);
 }
 
 Node::Stmt *Parser::returnStmt(PStruct *psr, std::string name) {
@@ -164,7 +162,7 @@ Node::Stmt *Parser::returnStmt(PStruct *psr, std::string name) {
   psr->expect(psr, TokenKind::RETURN,
               "Expected a RETURN keyword to start a return stmt");
 
-  // if return 
+  // if return
   if (psr->current(psr).kind == TokenKind::IF) {
     auto if_return = ifStmt(psr, name);
     psr->expect(psr, TokenKind::SEMICOLON,
@@ -261,6 +259,7 @@ Node::Stmt *Parser::loopStmt(PStruct *psr, std::string name) {
 
   std::string varName;
   Node::Expr *forLoop;
+  Node::Expr *condition;
   Node::Expr *whileLoop;
   Node::Expr *opCondition;
   bool isForLoop = false;
@@ -268,45 +267,58 @@ Node::Stmt *Parser::loopStmt(PStruct *psr, std::string name) {
 
   while (psr->current(psr).kind != TokenKind::RIGHT_PAREN) {
     // First condition is the for loop condition
+    // loop (i = 0; i < 10) : (++1)
     // Second condition is the while loop condition
-    if (psr->peek(psr, 1).kind == TokenKind::IN) {
+    // loop (i < 10) : (++1)
+
+    // set the current token which is the variable name in the for loop
+    varName = psr->current(psr).value;
+
+    // we need to look two tokens ahead to determine if it is a for loop or a
+    // while loop
+    if (psr->peek(psr, 1).kind == TokenKind::EQUAL) {
       isForLoop = true;
-      varName =
-          psr->expect(
-                 psr, TokenKind::IDENTIFIER,
-                 "Expected an IDENTIFIER as a variable name in a for loop stmt")
-              .value;
-      psr->expect(psr, TokenKind::IN,
-                  "Expected an IN keyword to start a for loop stmt");
       forLoop = parseExpr(psr, BindingPower::defaultValue);
+
+      psr->expect(
+          psr, TokenKind::SEMICOLON,
+          "Expected a SEMICOLON after the for loop initializer in a loop stmt");
+
+      condition = parseExpr(psr, BindingPower::defaultValue);
+
     } else {
       whileLoop = parseExpr(psr, BindingPower::defaultValue);
     }
-  }
-  psr->expect(psr, TokenKind::RIGHT_PAREN,
-              "Expected a R_PAREN to end the condition in a loop stmt");
 
-  if (psr->current(psr).kind == TokenKind::COLON) {
-    isOptional = true;
-    psr->expect(psr, TokenKind::COLON,
-                "Expected a COLON to start the body of a loop stmt");
-    psr->expect(psr, TokenKind::LEFT_PAREN,
-                "Expected a L_PAREN to start the condition in a loop stmt");
-    opCondition = parseExpr(psr, BindingPower::defaultValue);
     psr->expect(psr, TokenKind::RIGHT_PAREN,
                 "Expected a R_PAREN to end the condition in a loop stmt");
-  }
 
-  auto body = parseStmt(psr, name);
+    if (psr->current(psr).kind == TokenKind::COLON) {
+      isOptional = true;
+      psr->expect(psr, TokenKind::COLON,
+                  "Expected a COLON to start the body of a loop stmt");
+      psr->expect(psr, TokenKind::LEFT_PAREN,
+                  "Expected a L_PAREN to start the condition in a loop stmt");
+      opCondition = parseExpr(psr, BindingPower::defaultValue);
+      psr->expect(psr, TokenKind::RIGHT_PAREN,
+                  "Expected a R_PAREN to end the condition in a loop stmt");
+    }
 
-  if (isOptional) {
+    auto body = parseStmt(psr, name);
+
+    if (isOptional) {
+      if (isForLoop)
+        return new ForStmt(line, column, varName, forLoop, condition,
+                           opCondition, body);
+      return new WhileStmt(line, column, whileLoop, opCondition, body);
+    }
     if (isForLoop)
-      return new ForStmt(line, column, varName, forLoop, opCondition, body);
-    return new WhileStmt(line, column, whileLoop, opCondition, body);
+      return new ForStmt(line, column, varName, forLoop, condition, nullptr,
+                         body);
+    return new WhileStmt(line, column, whileLoop, nullptr, body);
   }
-  if (isForLoop)
-    return new ForStmt(line, column, varName, forLoop, nullptr, body);
-  return new WhileStmt(line, column, whileLoop, nullptr, body);
+
+  return nullptr;
 }
 
 Node::Stmt *Parser::enumStmt(PStruct *psr, std::string name) {
@@ -335,6 +347,36 @@ Node::Stmt *Parser::enumStmt(PStruct *psr, std::string name) {
   return new EnumStmt(line, column, name, fields);
 }
 
+Node::Stmt *Parser::templateStmt(PStruct *psr, std::string name) {
+  // template <typealias T>
+  auto line = psr->tks[psr->pos].line;
+  auto column = psr->tks[psr->pos].column;
+
+  psr->expect(psr, TokenKind::TEMPLATE,
+              "Expected a TEMPLATE keyword to start a template stmt");
+
+  psr->expect(psr, TokenKind::LESS, "Expected a '<' to start a template stmt");
+
+  std::vector<std::string> typeParams;
+  while (psr->current(psr).kind != TokenKind::GREATER) {
+    psr->expect(
+        psr, TokenKind::TYPEALIAS,
+        "Expected a TYPEALIAS keyword as a type parameter in a template "
+        "stmt");
+    typeParams.push_back(psr->expect(psr, TokenKind::IDENTIFIER,
+                                     "Expected an IDENTIFIER as a type "
+                                     "parameter in a template stmt")
+                             .value);
+    if (psr->current(psr).kind == TokenKind::COMMA)
+      psr->expect(psr, TokenKind::COMMA,
+                  "Expected a COMMA after a type parameter in a template stmt");
+  }
+
+  psr->expect(psr, TokenKind::GREATER, "Expected a '>' to end a template stmt");
+
+  return new TemplateStmt(typeParams, line, column);
+}
+
 Node::Stmt *Parser::importStmt(PStruct *psr, std::string name) {
   auto line = psr->tks[psr->pos].line;
   auto column = psr->tks[psr->pos].column;
@@ -350,7 +392,7 @@ Node::Stmt *Parser::importStmt(PStruct *psr, std::string name) {
   if (result == nullptr) {
     ErrorClass::error(line, column, "Could not parse the file '" + path + "'",
                       "", "Parser Error", path.c_str(), lexer, psr->tks, true,
-                      false, false, false, false);
+                      false, false, false, false, false);
     return nullptr;
   }
 
@@ -358,4 +400,24 @@ Node::Stmt *Parser::importStmt(PStruct *psr, std::string name) {
               "Expected a SEMICOLON at the end of an import stmt");
 
   return new ImportStmt(line, column, path, result);
+}
+
+Node::Stmt *Parser::breakStmt(PStruct *psr, std::string name) {
+  auto line = psr->tks[psr->pos].line;
+  auto column = psr->tks[psr->pos].column;
+  psr->expect(psr, TokenKind::BREAK,
+              "Expected a BREAK keyword to start a break stmt");
+  psr->expect(psr, TokenKind::SEMICOLON,
+              "Expected a SEMICOLON at the end of a break stmt");
+  return new BreakStmt(line, column);
+}
+
+Node::Stmt *Parser::continueStmt(PStruct *psr, std::string name) {
+  auto line = psr->tks[psr->pos].line;
+  auto column = psr->tks[psr->pos].column;
+  psr->expect(psr, TokenKind::CONTINUE,
+              "Expected a CONTINUE keyword to start a continue stmt");
+  psr->expect(psr, TokenKind::SEMICOLON,
+              "Expected a SEMICOLON at the end of a continue stmt");
+  return new ContinueStmt(line, column);
 }

@@ -1,6 +1,4 @@
 #include "gen.hpp"
-#include "optimize.hpp"
-#include <cstddef>
 
 void codegen::visitExpr(Node::Expr *expr) {
   auto handler = lookup(exprHandlers, expr->kind);
@@ -9,374 +7,286 @@ void codegen::visitExpr(Node::Expr *expr) {
   }
 }
 
-void codegen::binary(Node::Expr *expr) {
-  auto binary = static_cast<BinaryExpr *>(expr); // segfau
-  bool isAdditive = (binary->op[0] == '+' || binary->op[0] == '-');
-
-  // ADD / MUL are different              ADD     MUL
-  std::string registerLhs = isAdditive ? "rbx" : "rax";
-  std::string registerRhs = isAdditive ? "rdx" : "rcx";
-  visitExpr(binary->lhs);
-  push(Instr{.var = PopInstr{.where = registerLhs}, .type = InstrType::Pop},
-       Section::Main);
-  stackSize--;
-  visitExpr(binary->rhs);
-  push(Instr{.var = PopInstr{.where = registerRhs}, .type = InstrType::Pop},
-       Section::Main);
-  stackSize--;
-
-  switch (binary->op[0]) {
-  case '+':
-    // push(Optimezer::Instr { .var = Comment { .comment = "Addition" }, .type =
-    // InstrType::Comment });
-    push(Instr{.var = AddInstr{.lhs = registerLhs, .rhs = registerRhs},
-               .type = InstrType::Add},
-         Section::Main);
-    push(Instr{.var = PushInstr{.what = registerLhs}, .type = InstrType::Push},
-         Section::Main);
-    stackSize++;
-    break;
-  case '-':
-    // push(Optimezer::Instr { .var = Comment { .comment = "Subtraction" },
-    // .type = InstrType::Comment });
-    push(Instr{.var = SubInstr{.lhs = registerLhs, .rhs = registerRhs},
-               .type = InstrType::Sub},
-         Section::Main);
-    push(Instr{.var = PushInstr{.what = registerLhs}, .type = InstrType::Push},
-         Section::Main);
-    stackSize++;
-    break;
-  case '*':
-    // push(Optimezer::Instr { .var = Comment { .comment = "Multiplication" },
-    // .type = InstrType::Comment }, true);
-    push(Instr{.var = MulInstr{.from = registerRhs}, .type = InstrType::Mul},
-         Section::Main);
-    break;
-  case '/':
-    // push(Optimezer::Instr { .var = Comment { .comment = "Division" }, .type =
-    // InstrType::Comment }) rdx is the upper-64 bits of the first param, so
-    // make sure we don't divide by something stupid
-    push(Instr{.var = XorInstr{.lhs = "rdx", .rhs = "rdx"},
-               .type = InstrType::Xor},
-         Section::Main);
-    push(Instr{.var = DivInstr{.from = registerRhs}, .type = InstrType::Div},
-         Section::Main);
-    push(Instr{.var = PushInstr{.what = registerLhs}, .type = InstrType::Push},
-         Section::Main);
-    stackSize++;
-    break;
-  case '%':
-    // push(Optimezer::Instr { .var = Comment { .comment = "Modulus" }, .type =
-    // InstrType::Comment });
-    push(Instr{.var = XorInstr{.lhs = "rdx", .rhs = "rdx"},
-               .type = InstrType::Xor},
-         Section::Main);
-    push(Instr{.var = DivInstr{.from = registerRhs}, .type = InstrType::Div},
-         Section::Main);
-    push(Instr{.var = MovInstr{.dest = registerLhs, .src = "rdx"},
-               .type = InstrType::Mov},
-         Section::Main);
-    push(Instr{.var = PushInstr{.what = registerLhs}, .type = InstrType::Push},
-         Section::Main);
-    stackSize++;
-    break;
-  // Comparisons
-  case '>':
-    // push(Optimezer::Instr { .var = Comment { .comment = "Greater Than" },
-    // .type = InstrType::Comment });
-    push(Instr{.var = CmpInstr{.lhs = registerLhs, .rhs = registerRhs},
-               .type = InstrType::Cmp},
-         Section::Main);
-    if (binary->op[1] == '=') {
-      push(Instr{.var = JumpInstr{.op = JumpCondition::GreaterEqual,
-                                  .label = "conditional" +
-                                           std::to_string(++conditionalCount)},
-                 .type = InstrType::Jmp},
-           Section::Main);
-    } else {
-      push(Instr{.var = JumpInstr{.op = JumpCondition::Greater,
-                                  .label = "conditional" +
-                                           std::to_string(++conditionalCount)},
-                 .type = InstrType::Jmp},
-           Section::Main);
-    }
-    pushCompAsExpr();
-    break;
-  case '<':
-    // push(Optimezer::Instr { .var = Comment { .comment = "Less Than" }, .type
-    // = InstrType::Comment });
-    push(Instr{.var = CmpInstr{.lhs = registerLhs, .rhs = registerRhs},
-               .type = InstrType::Cmp},
-         Section::Main);
-    if (binary->op[1] == '=') {
-      push(Instr{.var = JumpInstr{.op = JumpCondition::LessEqual,
-                                  .label = "conditional" +
-                                           std::to_string(++conditionalCount)},
-                 .type = InstrType::Jmp},
-           Section::Main);
-      pushCompAsExpr();
-      break;
-    }
-    push(Instr{.var = JumpInstr{.op = JumpCondition::Less,
-                                .label = "conditional" +
-                                         std::to_string(++conditionalCount)},
-               .type = InstrType::Jmp},
-         Section::Main);
-    pushCompAsExpr();
-    break;
-  case '=':
-    if (binary->op[1] == '=') {
-      push(Instr{.var = CmpInstr{.lhs = registerLhs, .rhs = registerRhs},
-                 .type = InstrType::Cmp},
-           Section::Main);
-      push(Instr{.var = JumpInstr{.op = JumpCondition::Equal,
-                                  .label = "conditional" +
-                                           std::to_string(++conditionalCount)},
-                 .type = InstrType::Jmp},
-           Section::Main);
-      pushCompAsExpr();
-      break;
-    }
-
-    // if its just one equal sign, then it is a assign expr
-    break;
-  case '!':
-    if (binary->op[1] == '=') {
-      // push(Optimezer::Instr { .var = Comment { .comment = "Not Equal" },
-      // .type = InstrType::Comment });
-      push(Instr{.var = CmpInstr{.lhs = registerLhs, .rhs = registerRhs},
-                 .type = InstrType::Cmp},
-           Section::Main);
-      push(Instr{.var = JumpInstr{.op = JumpCondition::NotEqual,
-                                  .label = "conditional" +
-                                           std::to_string(++conditionalCount)},
-                 .type = InstrType::Jmp},
-           Section::Main);
-      pushCompAsExpr();
-      break;
-    }
-
-    // unary NOT operation (visited elsewhere)
-    break;
-  default:
-    break;
-  }
-}
-
-void codegen::pushCompAsExpr() {
-  std::string preConditionalCount = std::to_string(conditionalCount);
-
-  // assume condition failed (we would have jumped past here if we didn't)
-  push(Instr{.var = PushInstr{.what = "0x0"}, .type = InstrType::Push},
-       Section::Main);
-  push(Instr{.var = JumpInstr{.op = JumpCondition::Unconditioned,
-                              .label = "main" + preConditionalCount},
-             .type = InstrType::Jmp},
-       Section::Main);
-
-  push(Instr{.var = Label{.name =
-                              "conditional" + std::to_string(conditionalCount)},
-             .type = InstrType::Label},
-       Section::Main);
-
-  push(Instr{.var = PushInstr{.what = "0x1"}, .type = InstrType::Push},
-       Section::Main);
-  push(Instr{.var = JumpInstr{.op = JumpCondition::Unconditioned,
-                              .label = "main" + preConditionalCount},
-             .type = InstrType::Jmp},
-       Section::Main);
-
-  push(Instr{.var = Label{.name = "main" + preConditionalCount},
-             .type = InstrType::Label},
-       Section::Main);
-  stackSize += 2;
-  conditionalCount++;
-  return;
-}
-
-void codegen::grouping(Node::Expr *expr) {
-  GroupExpr *grouping = static_cast<GroupExpr *>(expr);
-
-  visitExpr(grouping->expr);
-}
-
-void codegen::unary(Node::Expr *expr) {
-  auto unary = static_cast<UnaryExpr *>(expr);
-
-  visitExpr(unary->expr);
-  switch (unary->op[0]) {
-  case '-': // !NOTE: added in negatives but they are not working properly
-    push(Instr{.var = PopInstr{.where = "rax"}, .type = InstrType::Pop},
-         Section::Main);
-    stackSize--;
-    push(Instr{.var = NegInstr{.what = "rax"}, .type = InstrType::Neg},
-         Section::Main);
-    break;
-  case '!': // !NOTE: same as above
-    push(Instr{.var = PopInstr{.where = "rax"}, .type = InstrType::Pop},
-         Section::Main);
-    stackSize--;
-    push(Instr{.var = NotInstr{.what = "rax"}, .type = InstrType::Not},
-         Section::Main);
-    break;
-  default:
-    break;
-  }
-
-  push(Instr{.var = PushInstr{.what = "rax"}, .type = InstrType::Push},
-       Section::Main);
-}
-
-void codegen::call(Node::Expr *expr) {
-  auto call = static_cast<CallExpr *>(expr);
-
-  for (auto arg : call->args) {
-    visitExpr(arg);
-  }
-
-  std::string callee = static_cast<IdentExpr *>(call->callee)->name;
-
-  push(Instr{.var = Comment{.comment = "Call function '" + callee + "'"},
-             .type = InstrType::Comment},
-       Section::Main);
-  push(Instr{.var = CallInstr{.name = callee}, .type = InstrType::Call},
-       Section::Main);
-  stackSize -= call->args.size();
-  push(Instr{.var = PushInstr{.what = "rax"}, .type = InstrType::Push},
-       Section::Main);
-  stackSize++;
-}
-
-void codegen::ternary(Node::Expr *expr) {
-  auto ternary = static_cast<TernaryExpr *>(expr);
-  push(Instr{.var = Comment{.comment = "Ternary operation"},
-             .type = InstrType::Comment},
-       Section::Main);
-
-  std::string ternayCount = std::to_string(++conditionalCount);
-
-  visitExpr(ternary->condition);
-  push(Instr{.var = PopInstr{.where = "rax"}, .type = InstrType::Pop},
-       Section::Main);
-  stackSize--;
-
-  push(Instr{.var = CmpInstr{.lhs = "rax", .rhs = "0"}, .type = InstrType::Cmp},
-       Section::Main);
-  push(Instr{.var = JumpInstr{.op = JumpCondition::Equal,
-                              .label = "ternaryFalse" + ternayCount},
-             .type = InstrType::Jmp},
-       Section::Main);
-
-  visitExpr(ternary->lhs);
-  push(Instr{.var = JumpInstr{.op = JumpCondition::Unconditioned,
-                              .label = "ternaryEnd" + ternayCount},
-             .type = InstrType::Jmp},
-       Section::Main);
-  push(Instr{.var = Label{.name = "ternaryFalse" + ternayCount},
-             .type = InstrType::Label},
-       Section::Main);
-
-  visitExpr(ternary->rhs);
-
-  push(Instr{.var = Label{.name = "ternaryEnd" + ternayCount},
-             .type = InstrType::Label},
-       Section::Main);
-
-  stackSize++;
-}
-
+// A basic "fallback" type of expression that covers all 1-D, basic expr's
 void codegen::primary(Node::Expr *expr) {
+  // TODO: Implement the primary expression
   switch (expr->kind) {
-  case ND_NUMBER: {
-    auto number = static_cast<NumberExpr *>(expr);
-    auto res = (number->value == (int)number->value)
-                   ? std::to_string((int)number->value)
-                   : std::to_string(number->value);
-    push(Instr{.var = PushInstr{.what = res}, .type = InstrType::Push},
-         Section::Main);
-    stackSize++;
+  case NodeKind::ND_INT: {
+    auto e = static_cast<IntExpr *>(expr);
+    pushDebug(e->line);
+    pushRegister("$" + std::to_string(e->value));
     break;
   }
-  case ND_IDENT: {
-    auto ident = static_cast<IdentExpr *>(expr);
+  case NodeKind::ND_IDENT: {
+    auto e = static_cast<IdentExpr *>(expr);
+    std::string res = variableTable[e->name];
 
-    size_t offset = (stackSize - stackTable.at(ident->name)) * 8;
-    push(Instr{.var =
-                   Comment{.comment = "clone variable '" + ident->name + "'"}},
+    push(Instr{.var = Comment{.comment = "Retrieve identifier: '" + e->name + "' located at " + res},
+               .type = InstrType::Comment},
          Section::Main);
-    // dont bother doing "qword [rsp + 0]"
-    if (offset == 0) {
-      push(Instr{.var = PushInstr{.what = "qword [rsp]"},
-                 .type = InstrType::Push},
-           Section::Main);
-      stackSize++;
-    } else {
-      push(Instr{.var = PushInstr{.what = "qword [rsp + " +
-                                          std::to_string(offset) + "]"},
-                 .type = InstrType::Push},
-           Section::Main);
-      stackSize++;
-    }
+
+    pushDebug(e->line);
+
+    // Push the result (the retrieved data)
+    pushRegister(res);
     break;
   }
   case ND_STRING: {
     auto string = static_cast<StringExpr *>(expr);
     std::string label = "string" + std::to_string(stringCount++);
 
+    pushDebug(string->line);
     // Push the label onto the stack
-    push(Instr{.var = PushInstr{.what = label}, .type = InstrType::Push},
-         Section::Main);
-    stackSize++;
+    pushRegister("$" + label);
 
-    // Define the label for the string
+    // define the string in the data section
     push(Instr{.var = Label{.name = label}, .type = InstrType::Label},
-         Section::Data);
+         Section::ReadonlyData);
 
-    // Store the processed string
-    push(Instr{.var = DBInstr{.what = string->value + ", 00"},
-               .type = InstrType::DB}, // add NUL terminator
-         Section::Data);
-
+    // Push the string onto the data section
+    push(Instr{.var = AscizInstr{.what=string->value},
+               .type = InstrType::Asciz},
+         Section::ReadonlyData);
     break;
   }
-  case ND_BOOL: {
-    auto boolean = static_cast<BoolExpr *>(expr);
-    push(Instr{.var = PushInstr{.what = boolean->value ? "1" : "0"},
-               .type = InstrType::Push},
-         Section::Main);
-    stackSize++;
+  case ND_FLOAT: {
+    auto floating = static_cast<FloatExpr *>(expr);
+    std::string label = "float" + std::to_string(floatCount++);
+    pushDebug(floating->line);
+
+    // Push the label onto the stack
+    moveRegister("%xmm0", label + "(%rip)", DataSize::SS, DataSize::SS);
+    push(Instr{.var=PushInstr{.what="%xmm0",.whatSize=DataSize::SS},.type=InstrType::Push},Section::Main);
+
+    // define the string in the data section
+    push(Instr{.var = Label{.name = label}, .type = InstrType::Label},
+         Section::ReadonlyData);
+
+    // Push the string onto the data section
+    push(Instr{.var = DataSectionInstr{.bytesToDefine = DataSize::Dword /* long */, .what=std::to_string(convertFloatToInt(floating->value))},
+               .type = InstrType::DB},
+         Section::ReadonlyData);
     break;
   }
-  default:
-    break;
+  default: {
+    std::cerr
+        << "No fancy error for this, beg Connor... (Soviet Pancakes speaking)"
+        << std::endl;
+    std::cerr << "Primary expression type not implemented! (Type: NodeKind["
+              << (int)expr->kind << "])" << std::endl;
+    exit(-1);
+  }
   }
 }
 
-void codegen::assign(Node::Expr *expr) {
-  auto assignExpr = static_cast<AssignmentExpr *>(expr);
+// NOTE: Division is not working properly
+void codegen::binary(Node::Expr *expr) {
+  auto e = static_cast<BinaryExpr *>(expr);
+  bool isAddition = (e->op == "+" || e->op == "-");
 
-  auto assignee = static_cast<IdentExpr *>(assignExpr->assignee);
+  // Check if we have more than two operands in the expression
+  int depth = getExpressionDepth(e);
 
-  if (stackTable.empty()) {
-    // how do you handle errors?
-    std::cerr << "Variable '" + assignee->name +
-                     "' not predefined, cannot reassign"
-              << std::endl;
-    exit(EXIT_FAILURE); // c macro moment
+  std::string lhs_reg = (isAddition) ? "%rax" : (depth > 1) ? "%rbx" : "%rdi";
+  std::string rhs_reg = (isAddition) ? "%rdi" : (depth > 1) ? "%rcx" : "%rbx";
+
+  pushDebug(e->line);
+
+  visitExpr(e->lhs);
+  visitExpr(e->rhs);
+
+  // Perform the binary operation
+  std::string op = lookup(opMap, e->op);
+
+  SymbolType *lhsType = static_cast<SymbolType *>(e->lhs->asmType);
+  SymbolType *rhsType = static_cast<SymbolType *>(e->rhs->asmType);
+  if (lhsType->name == "str" || rhsType->name == "str") {
+    std::cerr << "excuse me you cant concat strings :(" << std::endl;
+    exit(-1);
   }
-  visitExpr(assignExpr->rhs);
-  int offset = (stackSize - stackTable.at(assignee->name)) - 1;
+  // 4.1 + 4.2 = addss instr
+  if (lhsType->name == "float" || rhsType->name == "float") {
+    lhs_reg = "%xmm0";
+    rhs_reg = "%xmm1";
+    // Pop the right hand side
+    popToRegister(rhs_reg);
 
-  if (offset == 0) {
-    // dont bother doing [ + 0]
-    push(Instr{.var = PopInstr{.where = "qword [rsp]"}, .type = InstrType::Pop},
+    // Pop the left hand side
+    popToRegister(lhs_reg);
+    // Perform the operation
+    if (op == "add") op = "addss";
+    if (op == "sub") op = "subss";
+    if (op == "mul" || op == "imul") op = "mulss";
+    if (op == "div") op = "divss";
+    // Ignore the others because nobody cares about them HAHAH
+    push(Instr{.var = BinaryInstr{.op = op, .src = rhs_reg, .dst = lhs_reg},
+               .type = InstrType::Binary},
          Section::Main);
-    stackSize--;
-    return;
+    // Push the result
+    push(Instr {
+      .var = PushInstr{.what = "%xmm0", .whatSize = DataSize::SS},
+      .type = InstrType::Push
+    }, Section::Main);
   }
-  push(Instr{.var = PopInstr{.where = "qword [rsp + " +
-                                      std::to_string(offset * 8) + "]"},
-             .type = InstrType::Pop},
+  // 4 + 4 = add instr
+  if (lhsType->name == "int" && rhsType->name == "int") {
+      // Pop the right hand side
+    popToRegister(rhs_reg);
+
+    // Pop the left hand side
+    popToRegister(lhs_reg);
+    // Use regular ones! You'll be fine.
+    // Modulo (op == mod) is division but push rdx instead
+    if (op == "mod") {
+      push(Instr{.var = MovInstr{.dest = "%rdx", .src = "%rax"},
+                 .type = InstrType::Mov},
+           Section::Main);
+    } else {
+      push(Instr{.var = BinaryInstr{.op = op, .src = rhs_reg, .dst = lhs_reg},
+                 .type = InstrType::Binary},
+           Section::Main);
+    }
+    // Push the result
+    pushRegister(lhs_reg);
+  }
+}
+
+void codegen::unary(Node::Expr *expr) {
+  auto e = static_cast<UnaryExpr *>(expr);
+  pushDebug(e->line); // DEBUG BABY! add stinky little .loc
+  visitExpr(e->expr);
+  // Its gonna be a pop guys
+  PushInstr instr = std::get<PushInstr>(text_section.at(text_section.size() - 1).var);
+  std::string whatWasPushed = instr.what;
+
+  text_section.pop_back();
+
+  if (e->op == "++" || e->op == "--") {
+    // Perform the operation
+    std::string res = (e->op == "++") ? "inc" : "dec";
+    // Dear code reader, i apologize
+    push(Instr {
+      .var = LinkerDirective{ .value = res + "q " + whatWasPushed + "\n\t" },
+      .type = InstrType::Linker   // Hey do you know why this infinatly loops? show asm
+    }, Section::Main);
+  }
+  // Push the result
+  pushRegister(whatWasPushed);
+}
+
+void codegen::cast(Node::Expr *expr) {
+  auto e = static_cast<CastExpr *>(expr);
+  SymbolType *toType = static_cast<SymbolType *>(e->castee_type);
+  SymbolType *fromType = static_cast<SymbolType *>(e->castee->asmType);
+  if (fromType->name == "str") {
+    std::cerr << "Explicitly casting from string is not allowed" << std::endl;
+    exit(-1);
+  }
+  pushDebug(e->line);
+  visitExpr(e->castee);
+  if (toType->name == "float") {
+    // We are casting into a float.
+    popToRegister("%rax"); // This actually doesnt matter but rax is fast and also our garbage disposal
+    // Perform the conversion
+    if (fromType->name == "int") {
+      push(Instr{.var = ConvertInstr{.convType = ConvertType::SI2SS, .from = "%rax", .to = "%xmm1"},
+                .type = InstrType::Convert},
+          Section::Main);
+      // push xmm0
+      push(Instr{.var=PushInstr{.what="%xmm0",.whatSize=DataSize::SS},.type=InstrType::Push},Section::Main);
+    }
+    if (fromType->name == "float") {
+      // Do nothing, it's already a float
+      // Optimizer will know that this redundant push/pop is, of course, redundant
+      pushRegister("%rax");
+    }
+  } else if (toType->name == "int") {
+    if (fromType->name == "int") {
+      // Do nothing, it's already an int
+      return;
+    }
+
+    if (fromType->name == "float") {
+      popToRegister("%xmm0");
+      // Perform the conversion (always truncate for now)
+      push(Instr{.var = ConvertInstr{.convType = ConvertType::TSS2SI, .from = "%xmm0", .to = "%rax"},
+                .type = InstrType::Convert},
+          Section::Main);
+      // push rax - its ok becasue rax holds an int now! it fits on our int-based stack! woohoo!!!!
+      pushRegister("%rax");
+    }
+  }
+}
+
+void codegen::grouping(Node::Expr *expr) {
+  auto e = static_cast<GroupExpr *>(expr);
+  // Visit the expression inside the grouping
+  pushDebug(e->line);
+  visitExpr(e->expr);
+}
+
+void codegen::call(Node::Expr *expr) {
+  auto e = static_cast<CallExpr *>(expr);
+  auto n = static_cast<IdentExpr *>(e->callee);
+  pushDebug(e->line);
+  // Push each argument one by one.
+  if (e->args.size() > argOrder.size()) {
+    std::cerr << "Too many arguments in call - consider reducing them or moving them to a globally defined space." << std::endl;
+    exit(-1);
+  }
+  for (int i = 0; i < e->args.size(); i++) {
+    // evaluate them
+    codegen::visitExpr(e->args.at(i));
+    popToRegister(argOrder[i]);
+  }
+  // Call the function
+  push(Instr{.var = CallInstr{.name = "usr_" + n->name},
+             .type = InstrType::Call,
+             .optimize = false},
        Section::Main);
-  stackSize--;
+  pushRegister("%rax");
+}
+
+void codegen::ternary(Node::Expr *expr) {
+  auto e = static_cast<TernaryExpr *>(expr);
+  std::cerr
+      << "No fancy error for this, beg Connor... (Soviet Pancakes speaking)"
+      << std::endl;
+  std::cerr << "Ternary expression not implemented!" << std::endl;
+  exit(-1);
+}
+
+void codegen::assign(Node::Expr *expr) {
+  auto e = static_cast<AssignmentExpr *>(expr);
+  auto lhs = static_cast<IdentExpr *>(e->assignee);
+  pushDebug(e->line);
+  visitExpr(e->rhs);
+  std::string res = variableTable[lhs->name];
+  popToRegister(res);
+  pushRegister(res); // Expressions return values!
+}
+
+void codegen::_arrayExpr(Node::Expr *expr) {
+  auto e = static_cast<ArrayExpr *>(expr);
+  std::cerr
+      << "No fancy error for this, beg Connor... (Soviet Pancakes speaking)"
+      << std::endl;
+  std::cerr << "Array expression not implemented! (Type: NodeKind["
+            << (int)e->type->kind << "])" << std::endl;
+  exit(-1);
+}
+
+void codegen::arrayElem(Node::Expr *expr) {
+  auto e = static_cast<IndexExpr *>(expr);
+  std::cerr
+      << "No fancy error for this, beg Connor... (Soviet Pancakes speaking)"
+      << std::endl;
+  std::cerr << "Array element not implemented! (LHS: NodeKind["
+            << (int)e->lhs->kind << "], RHS: NodeKind[" << (int)e->rhs->kind
+            << "])" << std::endl;
+  exit(-1);
+}
+
+void codegen::memberExpr(Node::Expr *expr) {
+  auto e = static_cast<MemberExpr *>(expr);
 }

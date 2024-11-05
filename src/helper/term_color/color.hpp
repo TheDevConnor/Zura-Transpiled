@@ -1,6 +1,7 @@
 #pragma once
 
 #include <string>
+#include <unordered_map>
 
 class Color {
 public:
@@ -18,29 +19,19 @@ public:
   }
 
 private:
+  std::unordered_map<C, std::string> colorMap = {
+      {RED, "\033[31m"},   {GREEN, "\033[32m"},   {BLUE, "\033[34m"},
+      {CYAN, "\033[36m"},  {MAGENTA, "\033[35m"}, {YELLOW, "\033[33m"},
+      {WHITE, "\033[37m"}, {BLACK, "\033[30m"},
+  };
+
   std::string colorCode(C color) {
-    switch (color) {
-    case RED:
-      return "\033[31m";
-    case GREEN:
-      return "\033[32m";
-    case BLUE:
-      return "\033[34m";
-    case CYAN:
-      return "\033[36m";
-    case MAGENTA:
-      return "\033[35m";
-    case YELLOW:
-      return "\033[33m";
-    case WHITE:
-      return "\033[37m";
-    case BLACK:
-      return "\033[30m";
-    default:
-      return "";
-    }
+    if (colorMap.find(color) != colorMap.end())
+      return colorMap[color];
+    return "";
   }
 
+  // Check to see if the terminal supports color
   bool terminal_supports_color() {
     FILE *pipe = popen("/bin/sh -c 'tput colors'", "r");
     if (!pipe)
