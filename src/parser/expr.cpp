@@ -43,7 +43,7 @@ Node::Expr *Parser::primary(PStruct *psr) {
   default:
     ErrorClass::error(psr->current(psr).line, psr->current(psr).column,
                       "Could not parse primary expression!", "", "Parser Error",
-                      "main.zu", lexer, psr->tks, true, false, false, false,
+                      node.current_file, lexer, psr->tks, true, false, false, false,
                       false, false);
     return nullptr;
   }

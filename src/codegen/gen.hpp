@@ -49,6 +49,7 @@ void symbolType(Node::Type *type);
 void arrayType(Node::Type *type);
 void pointerType(Node::Type *type);
 
+void importDecl(Node::Stmt *stmt);
 void structDecl(Node::Stmt *stmt);
 void enumDecl(Node::Stmt *stmt);
 void program(Node::Stmt *stmt);

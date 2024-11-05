@@ -1,0 +1,9 @@
+const power := fn(n: int, m: int) float {
+    have res: int = 1;
+
+    loop(i=0; i < m) : (i++) {
+        res = res * n;
+    }
+
+    return res;
+};

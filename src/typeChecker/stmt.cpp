@@ -1,3 +1,4 @@
+#include "../helper/error/error.hpp"
 #include "../ast/stmt.hpp"
 #include "../ast/types.hpp"
 #include "type.hpp"
@@ -261,6 +262,33 @@ void TypeChecker::visitWhile(Maps *map, Node::Stmt *stmt) {
   visitStmt(map, while_stmt->block);
 
   return_type = nullptr;
+}
+
+void TypeChecker::visitImport(Maps *map, Node::Stmt *stmt) {
+  auto import_stmt = static_cast<ImportStmt *>(stmt);
+  
+  // store the current file name
+  std::string file_name = node.current_file;
+  std::cout << "Current file name: " << file_name << std::endl;
+  node.current_file = import_stmt->name; // set the current file name to the import name
+  
+  // check if the import is already in the global table
+  auto res = map->global_symbol_table.find(import_stmt->name);
+  if (res != map->global_symbol_table.end()) {
+    std::string msg = "'" + import_stmt->name + "' is already defined in the "
+                      "global symbol table";
+    handlerError(import_stmt->line, import_stmt->pos, msg, "", "Symbol Table Error");
+  }
+
+  // type check the import
+  performCheck(import_stmt->stmt, false);
+
+  // add the import to the global table
+  map->declare(map->global_symbol_table, import_stmt->name, return_type.get(),
+               import_stmt->line, import_stmt->pos);
+
+  return_type = nullptr;
+  node.current_file = file_name; // reset the current file name
 }
 
 void TypeChecker::visitBreak(Maps *map, Node::Stmt *stmt) {

@@ -22,7 +22,7 @@ T Parser::lookup(PStruct *psr, const std::vector<std::pair<U, T>> &lu, U key) {
 
   if (it == lu.end()) {
     ErrorClass::error(0, 0, "No value found for key in Type maps", "",
-                      "Parser Error", psr->current_file, lexer, psr->tks, true,
+                      "Parser Error", node.current_file, lexer, psr->tks, true,
                       false, false, false, false, false);
   }
 
@@ -70,7 +70,7 @@ Node::Type *Parser::type_led(PStruct *psr, Node::Type *left, BindingPower bp) {
   } catch (std::exception &e) {
     ErrorClass::error(psr->current(psr).line, psr->current(psr).column,
                       "Error in type_led: " + std::string(e.what()), "",
-                      "Parser Error", psr->current_file, lexer, psr->tks, true,
+                      "Parser Error", node.current_file, lexer, psr->tks, true,
                       false, false, false, false, false);
     return nullptr;
   }

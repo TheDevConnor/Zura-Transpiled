@@ -21,6 +21,7 @@ Parser::PStruct *Parser::setupParser(PStruct *psr, Lexer *lex, Lexer::Token tk,
 
   std::unordered_map<std::string, std::string> errors = {};
   psr->current_file = current_file;
+  node.current_file = current_file;
   return new PStruct{psr->tks, psr->current_file, psr->pos};
 }
 

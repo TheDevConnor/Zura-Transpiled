@@ -408,3 +408,9 @@ void codegen::_continue(Node::Stmt *stmt) {
     exit(-1);
   }
 };
+
+void codegen::importDecl(Node::Stmt *stmt) {
+  auto s = static_cast<ImportStmt *>(stmt);
+  std::cerr << "Import statements are not implemented yet!" << std::endl;
+  exit(-1);
+};

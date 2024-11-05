@@ -75,7 +75,7 @@ public:
 
 inline bool needsReturn = false;
 
-void performCheck(Node::Stmt *stmt);
+void performCheck(Node::Stmt *stmt, bool isMain = true);
 void printTables(Maps *map);
 
 // !TypeChecker functions
@@ -105,6 +105,7 @@ void visitWhile(Maps *map, Node::Stmt *stmt);
 void visitFor(Maps *map, Node::Stmt *stmt);
 void visitBreak(Maps *map, Node::Stmt *stmt);
 void visitContinue(Maps *map, Node::Stmt *stmt);
+void visitImport(Maps *map, Node::Stmt *stmt);
 
 // !Expr functions
 void visitTemplateCall(Maps *map, Node::Expr *expr);  

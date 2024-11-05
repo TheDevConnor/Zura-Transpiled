@@ -28,6 +28,7 @@ std::vector<std::pair<NodeKind, TypeChecker::StmtNodeHandler>>
         {NodeKind::ND_FOR_STMT, visitFor},
         {NodeKind::ND_BREAK_STMT, visitBreak},
         {NodeKind::ND_CONTINUE_STMT, visitContinue},
+        {NodeKind::ND_IMPORT_STMT, visitImport},
 };
 
 std::vector<std::pair<NodeKind, TypeChecker::ExprNodeHandler>>

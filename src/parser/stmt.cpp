@@ -381,12 +381,16 @@ Node::Stmt *Parser::importStmt(PStruct *psr, std::string name) {
   auto line = psr->tks[psr->pos].line;
   auto column = psr->tks[psr->pos].column;
 
+
   psr->expect(psr, TokenKind::IMPORT,
               "Expected an IMPORT keyword to start an import stmt");
 
+  std::string current_file = node.current_file;
   auto path = psr->expect(psr, TokenKind::STRING,
                           "Expected a STRING as a path in an import stmt")
                   .value;
+  node.current_file = path;
+
   path = path.substr(1, path.size() - 2); // removes "" from the path
   auto result = parse(Flags::readFile(path.c_str()), path);
   if (result == nullptr) {
@@ -398,6 +402,8 @@ Node::Stmt *Parser::importStmt(PStruct *psr, std::string name) {
 
   psr->expect(psr, TokenKind::SEMICOLON,
               "Expected a SEMICOLON at the end of an import stmt");
+
+  node.current_file = current_file;
 
   return new ImportStmt(line, column, path, result);
 }

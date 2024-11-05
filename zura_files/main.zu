@@ -1,3 +1,5 @@
+import "zura_files/std/math.zu";
+
 const main := fn () int {
     have res: int = 0;
     have n: int = 10;
