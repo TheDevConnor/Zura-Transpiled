@@ -28,13 +28,13 @@ jobs:
           ls -R ./release
 
       - name: "Upload artifacts (Linux)"
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v4
         with:
           name: linux-artifacts
           path: ./release/zura
         
       - name: "Upload version file"
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v4
         with:
           name: version
           path: version.txt
@@ -46,13 +46,13 @@ jobs:
 
     steps:
       - name: "Download Linux artifacts"
-        uses: actions/download-artifact@v2
+        uses: actions/download-artifact@v4
         with:
           name: linux-artifacts
           path: ./linux-artifacts
 
       - name: "Download version file"
-        uses: actions/download-artifact@v2
+        uses: actions/download-artifact@v4
         with:
           name: version
           path: ./version
