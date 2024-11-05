@@ -68,7 +68,7 @@ void codegen::funcDecl(Node::Stmt *stmt) {
 
   push(Instr{.var = LinkerDirective{.value = "\n.type " + funcName + ", @function"},.type = InstrType::Linker},Section::Main);
   push(Instr{.var = Label{.name = funcName}, .type = InstrType::Label},Section::Main);
-  pushLinker(".L" + funcName + "_debug_start:\n", Section::Main);
+  if (debug) pushLinker(".L" + funcName + "_debug_start:\n", Section::Main);
   // push linker directive for the debug info (the line number)
   pushDebug(s->line);
   push(Instr{.var=LinkerDirective{.value=".cfi_startproc\n\t"},.type=InstrType::Linker},Section::Main);
@@ -97,8 +97,9 @@ void codegen::funcDecl(Node::Stmt *stmt) {
   codegen::visitStmt(s->block);
   stackSize = preStackSize;
   funcBlockStart = -1;
+
   // Function ends with ret so we can't really push any other instructions.
-  pushLinker(".L" + funcName + "_debug_end:\n", Section::Main);
+  if (debug) pushLinker(".L" + funcName + "_debug_end:\n", Section::Main);
 
   push(Instr{.var = LinkerDirective{.value = ".cfi_endproc\n"},.type = InstrType::Linker},Section::Main);
   push(Instr{.var = LinkerDirective{.value = ".size " + funcName + ", .-" + funcName + "\n\t"},
@@ -361,6 +362,10 @@ void codegen::forLoop(Node::Stmt *stmt) {
 
   // Set loop end label
   push(Instr{.var = Label{.name = postLoopLabel}, .type = InstrType::Label}, Section::Main);
+
+  // Pop the loop variable from the stack
+  variableTable.erase(assignee->name);
+  stackSize -= 8;
 };
 
 void codegen::whileLoop(Node::Stmt *stmt) {

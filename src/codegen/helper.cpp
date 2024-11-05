@@ -74,14 +74,6 @@ void codegen::processBinaryExpression(BinaryExpr *cond,
                                       const std::string &preconCount,
                                       const std::string &name, bool isLoop) {
   // TODO: Float comparisons
-  // ucomiss - Compare 2 floats
-  /*
-  ucomiss %xmm0, %xmm1
-  jp NAN
-  jb %xmm0 < %xmm1
-  ja %xmm0 > %xmm1
-  Yes, it's weird
-  */
   // Evaluate LHS first, store in %rax
   visitExpr(cond->lhs);
   popToRegister("%rax");
@@ -91,14 +83,33 @@ void codegen::processBinaryExpression(BinaryExpr *cond,
   popToRegister("%rbx");
 
   if (isLoop) {
-    // Perform comparison (this order ensures LHS < RHS works correctly)(loops)
-    push(Instr{.var = CmpInstr{.lhs = "%rbx", .rhs = "%rax"},
+    // Perform comparison (this order ensures LHS > RHS works correctly)(loops)
+    push(Instr{.var = CmpInstr{.lhs = "%rax", .rhs = "%rbx"},
                .type = InstrType::Cmp},
          Section::Main);
 
     // Jump based on the correct condition
     JumpCondition jmpCond = getJumpCondition(cond->op);
-    push(Instr{.var = JumpInstr{.op = jmpCond, .label = name},
+
+    // Recerse the condition for loops (e.g., for i = 0; i < 10; i++) to jump if i >= 10
+    switch (jmpCond) {
+      case JumpCondition::Less:
+        jmpCond = JumpCondition::GreaterEqual;
+        break;
+      case JumpCondition::LessEqual:
+        jmpCond = JumpCondition::Greater;
+        break;
+      case JumpCondition::Greater:
+        jmpCond = JumpCondition::LessEqual;
+        break;
+      case JumpCondition::GreaterEqual:
+        jmpCond = JumpCondition::Less;
+        break;
+      default:
+        break;
+      }
+
+    push(Instr{.var = JumpInstr{.op = jmpCond, .label = name },
                .type = InstrType::Jmp},
          Section::Main);
     return;
@@ -124,7 +135,6 @@ void codegen::handleExitSyscall() {
 }
 
 void codegen::handleReturnCleanup() {
-  // Assuming that the optimizer did its job, we should be safe to pop.
   popToRegister("%rbp");
 }
 
