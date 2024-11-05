@@ -88,7 +88,6 @@ void TypeChecker::visitFn(Maps *map, Node::Stmt *stmt) {
     std::string msg = "Function '" + fn_stmt->name + "' must return a '" +
                       type_to_string(fn_stmt->returnType) + "' but got '" +
                       type_to_string(return_type.get()) + "'";
-    std::cout << "In here" << std::endl;
     handlerError(fn_stmt->line, fn_stmt->pos, msg, "", "Type Error");
   }
 
@@ -269,7 +268,6 @@ void TypeChecker::visitImport(Maps *map, Node::Stmt *stmt) {
   
   // store the current file name
   std::string file_name = node.current_file;
-  std::cout << "Current file name: " << file_name << std::endl;
   node.current_file = import_stmt->name; // set the current file name to the import name
   
   // check if the import is already in the global table
