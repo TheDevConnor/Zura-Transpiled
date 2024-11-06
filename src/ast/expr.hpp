@@ -467,12 +467,6 @@ public:
               Node::Expr *rhs)
       : line(line), pos(pos), condition(condition), lhs(lhs), rhs(rhs) {
     kind = NodeKind::ND_TERNARY;
-    
-    if (lhs->asmType != rhs->asmType) {
-      std::cerr << "how do i check this ternary lmao" << std::endl;
-    } else {
-      asmType = lhs->asmType;
-    }
   }
 
   void debug(int ident = 0) const override {

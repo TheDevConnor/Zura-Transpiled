@@ -1,25 +1,7 @@
-import "zura_files/std/math.zu";
+# import "zura_files/std/math.zu";
 
 const main := fn () int {
-    have res: int = 0;
-    have n: int = 10;
-
-    loop(i=0; i < n) : (i++) {
-        loop(j=0; j < n) : (j++) {
-            have a: int = 0;
-            have b: int = 1;
-
-            if (i <= 1) res = i;
-
-            loop(k=2; k <= i) : (k++) {
-                have temp: int = a;
-                a = b;
-                b = temp + b;
-            }
-
-            res = b;
-        }
-    }
-
-    return res;
+    have res: int = 1;
+    res = (res < 0) ? 20 : 0;
+    return res; # 0
 };

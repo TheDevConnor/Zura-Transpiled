@@ -1,4 +1,5 @@
 #include "gen.hpp"
+#include "optimizer/instr.hpp"
 
 void codegen::visitExpr(Node::Expr *expr) {
   auto handler = lookup(exprHandlers, expr->kind);
@@ -97,6 +98,7 @@ void codegen::binary(Node::Expr *expr) {
 
   // Perform the binary operation
   std::string op = lookup(opMap, e->op);
+  op = (op == "setl" || op == "setle" || op == "setg" || op == "setge") ? "cmp" : op;
 
   SymbolType *lhsType = static_cast<SymbolType *>(e->lhs->asmType);
   SymbolType *rhsType = static_cast<SymbolType *>(e->rhs->asmType);
@@ -247,13 +249,35 @@ void codegen::call(Node::Expr *expr) {
   pushRegister("%rax");
 }
 
+// TODO: FIX this to evalueate correctly
 void codegen::ternary(Node::Expr *expr) {
   auto e = static_cast<TernaryExpr *>(expr);
-  std::cerr
-      << "No fancy error for this, beg Connor... (Soviet Pancakes speaking)"
-      << std::endl;
-  std::cerr << "Ternary expression not implemented!" << std::endl;
-  exit(-1);
+
+  int ternay = 0;
+  std::string ternayCount = std::to_string(ternay);
+
+  visitExpr(e->condition);
+  popToRegister("%rax");
+
+  push(Instr{.var = CmpInstr{.lhs = "%rax", .rhs = "$0"},
+             .type = InstrType::Cmp},Section::Main);
+  push(Instr{.var = JumpInstr{.op = JumpCondition::Equal,
+                              .label = "ternaryFalse" + ternayCount},
+             .type = InstrType::Jmp}, Section::Main);
+
+  visitExpr(e->lhs);
+
+  push(Instr{.var = JumpInstr{.op = JumpCondition::Unconditioned,
+                              .label = "ternaryEnd" + ternayCount},
+             .type = InstrType::Jmp},Section::Main);
+  push(Instr{.var = Label{.name = "ternaryFalse" + ternayCount},
+             .type = InstrType::Label},Section::Main);
+
+  visitExpr(e->rhs);
+
+  push(Instr{.var = Label{.name = "ternaryEnd" + ternayCount},
+             .type = InstrType::Label},Section::Main);
+  ternay++;
 }
 
 void codegen::assign(Node::Expr *expr) {

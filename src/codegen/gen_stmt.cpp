@@ -395,11 +395,11 @@ void codegen::_break(Node::Stmt *stmt) {
 
 void codegen::_continue(Node::Stmt *stmt) {
   auto s = static_cast<ContinueStmt *>(stmt);
-
+  
   push(Instr{.var = Comment{.comment = "continue statement"}, .type = InstrType::Comment}, Section::Main);
   pushDebug(s->line);
 
-  // Jump back to the start of the loop
+  // Jump to the start of the loop
   push(Instr{.var = JumpInstr{.op = JumpCondition::Unconditioned, .label = "loop_pre" + std::to_string(loopCount - 1)}, .type = InstrType::Jmp}, Section::Main);
 
   // Continue statements are only valid inside loops
