@@ -14,7 +14,7 @@ void codegen::primary(Node::Expr *expr) {
   switch (expr->kind) {
   case NodeKind::ND_INT: {
     auto e = static_cast<IntExpr *>(expr);
-    pushDebug(e->line);
+    pushDebug(e->line, expr->file_id, e->pos);
     pushRegister("$" + std::to_string(e->value));
     break;
   }
@@ -26,7 +26,7 @@ void codegen::primary(Node::Expr *expr) {
                .type = InstrType::Comment},
          Section::Main);
 
-    pushDebug(e->line);
+    pushDebug(e->line, expr->file_id, e->pos);
 
     // Push the result (the retrieved data)
     pushRegister(res);
@@ -36,7 +36,7 @@ void codegen::primary(Node::Expr *expr) {
     auto string = static_cast<StringExpr *>(expr);
     std::string label = "string" + std::to_string(stringCount++);
 
-    pushDebug(string->line);
+    pushDebug(string->line, expr->file_id, string->pos);
     // Push the label onto the stack
     pushRegister("$" + label);
 
@@ -53,7 +53,7 @@ void codegen::primary(Node::Expr *expr) {
   case ND_FLOAT: {
     auto floating = static_cast<FloatExpr *>(expr);
     std::string label = "float" + std::to_string(floatCount++);
-    pushDebug(floating->line);
+    pushDebug(floating->line, expr->file_id, floating->pos);
 
     // Push the label onto the stack
     moveRegister("%xmm0", label + "(%rip)", DataSize::SS, DataSize::SS);
@@ -91,7 +91,7 @@ void codegen::binary(Node::Expr *expr) {
   std::string lhs_reg = (isAddition) ? "%rax" : (depth > 1) ? "%rbx" : "%rdi";
   std::string rhs_reg = (isAddition) ? "%rdi" : (depth > 1) ? "%rcx" : "%rbx";
 
-  pushDebug(e->line);
+  pushDebug(e->line, expr->file_id, e->pos);
 
   visitExpr(e->lhs);
   visitExpr(e->rhs);
@@ -155,7 +155,7 @@ void codegen::binary(Node::Expr *expr) {
 
 void codegen::unary(Node::Expr *expr) {
   auto e = static_cast<UnaryExpr *>(expr);
-  pushDebug(e->line); // DEBUG BABY! add stinky little .loc
+  pushDebug(e->line, expr->file_id, e->pos);
   visitExpr(e->expr);
   // Its gonna be a pop guys
   PushInstr instr = std::get<PushInstr>(text_section.at(text_section.size() - 1).var);
@@ -184,7 +184,7 @@ void codegen::cast(Node::Expr *expr) {
     std::cerr << "Explicitly casting from string is not allowed" << std::endl;
     exit(-1);
   }
-  pushDebug(e->line);
+  pushDebug(e->line, expr->file_id, e->pos);
   visitExpr(e->castee);
   if (toType->name == "float") {
     // We are casting into a float.
@@ -223,20 +223,20 @@ void codegen::cast(Node::Expr *expr) {
 void codegen::grouping(Node::Expr *expr) {
   auto e = static_cast<GroupExpr *>(expr);
   // Visit the expression inside the grouping
-  pushDebug(e->line);
+  pushDebug(e->line, expr->file_id, e->pos);
   visitExpr(e->expr);
 }
 
 void codegen::call(Node::Expr *expr) {
   auto e = static_cast<CallExpr *>(expr);
   auto n = static_cast<IdentExpr *>(e->callee);
-  pushDebug(e->line);
+  pushDebug(e->line, expr->file_id, e->pos);
   // Push each argument one by one.
   if (e->args.size() > argOrder.size()) {
     std::cerr << "Too many arguments in call - consider reducing them or moving them to a globally defined space." << std::endl;
     exit(-1);
   }
-  for (int i = 0; i < e->args.size(); i++) {
+  for (size_t i = 0; i < e->args.size(); i++) {
     // evaluate them
     codegen::visitExpr(e->args.at(i));
     popToRegister(argOrder[i]);
@@ -251,6 +251,7 @@ void codegen::call(Node::Expr *expr) {
 
 // TODO: FIX this to evalueate correctly
 void codegen::ternary(Node::Expr *expr) {
+<<<<<<< HEAD
   auto e = static_cast<TernaryExpr *>(expr);
 
   int ternay = 0;
@@ -278,12 +279,20 @@ void codegen::ternary(Node::Expr *expr) {
   push(Instr{.var = Label{.name = "ternaryEnd" + ternayCount},
              .type = InstrType::Label},Section::Main);
   ternay++;
+=======
+  std::cerr
+      << "No fancy error for this, beg Connor... (Soviet Pancakes speaking)"
+      << std::endl;
+  std::cerr << "Ternary expression not implemented!" << std::endl;
+  exit(-1);
+  // auto e = static_cast<TernaryExpr *>(expr);
+>>>>>>> 0dbd398 (Fixed a bunch of warnings when -Wextra was enabled and FINALLY FIXED DWARF!!!!!!!!!!)
 }
 
 void codegen::assign(Node::Expr *expr) {
   auto e = static_cast<AssignmentExpr *>(expr);
   auto lhs = static_cast<IdentExpr *>(e->assignee);
-  pushDebug(e->line);
+  pushDebug(e->line, expr->file_id, e->pos);
   visitExpr(e->rhs);
   std::string res = variableTable[lhs->name];
   popToRegister(res);
@@ -309,8 +318,20 @@ void codegen::arrayElem(Node::Expr *expr) {
             << (int)e->lhs->kind << "], RHS: NodeKind[" << (int)e->rhs->kind
             << "])" << std::endl;
   exit(-1);
+  /*
+  pushDebug(e->line, expr->file_id, e->pos);
+  */
 }
 
 void codegen::memberExpr(Node::Expr *expr) {
   auto e = static_cast<MemberExpr *>(expr);
+  std::cerr
+      << "No fancy error for this, beg Connor... (Soviet Pancakes speaking)"
+      << std::endl;
+  std::cerr << "Member expression not implemented! (Type: NodeKind["
+            << (int)e->lhs->kind << "])" << std::endl;
+  exit(-1);
+  /*
+  pushDebug(e->line, expr->file_id, e->pos);
+  */
 }

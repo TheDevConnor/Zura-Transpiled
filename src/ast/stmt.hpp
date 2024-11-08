@@ -35,8 +35,9 @@ public:
   int line, pos;
   Node::Expr *expr;
 
-  ExprStmt(int line, int pos, Node::Expr *expr)
+  ExprStmt(int line, int pos, Node::Expr *expr, int file)
       : line(line), pos(pos), expr(expr) {
+    file_id = file;
     kind = NodeKind::ND_EXPR_STMT;
   }
 
@@ -55,8 +56,9 @@ public:
   std::string name;
   Node::Stmt *value;
 
-  ConstStmt(int line, int pos, std::string name, Node::Stmt *value)
+  ConstStmt(int line, int pos, std::string name, Node::Stmt *value, int file)
       : line(line), pos(pos), name(name), value(value) {
+    file_id = file;
     kind = NodeKind::ND_CONST_STMT;
   }
 
@@ -67,7 +69,7 @@ public:
     std::cout << "Name: " << name << "\n";
     Node::printIndent(ident + 1);
     std::cout << "Value: \n";
-    value->debug(ident + 2);
+    value->debug(ident + 1);
   }
 
   ~ConstStmt() { delete value; }
@@ -78,8 +80,9 @@ public:
   int line, pos;
   std::vector<Node::Stmt *> stmts;
 
-  BlockStmt(int line, int pos, std::vector<Node::Stmt *> stmts)
+  BlockStmt(int line, int pos, std::vector<Node::Stmt *> stmts, int file)
       : line(line), pos(pos), stmts(stmts) {
+    file_id = file;
     kind = NodeKind::ND_BLOCK_STMT;
   }
 
@@ -109,9 +112,10 @@ public:
   ExprStmt *expr;
 
   VarStmt(int line, int pos, bool isConst, std::string name, Node::Type *type,
-          ExprStmt *expr)
+          ExprStmt *expr, int file)
       : line(line), pos(pos), isConst(isConst), name(name), type(type),
         expr(expr) {
+    file_id = file;
     kind = NodeKind::ND_VAR_STMT;
   }
 
@@ -144,8 +148,9 @@ public:
   int line, pos;
   std::vector<Node::Expr *> args;
 
-  PrintStmt(int line, int pos, std::vector<Node::Expr *> args)
-      : line(line), pos(pos), args(args) {
+  PrintStmt(int line, int pos, std::vector<Node::Expr *> args, int file)
+      : line(line), pos(pos), args(std::move(args)) {
+    file_id = file;
     kind = NodeKind::ND_PRINT_STMT;
   }
 
@@ -176,9 +181,10 @@ public:
   FnStmt(int line, int pos, std::string name,
          std::vector<std::pair<std::string, Node::Type *>> params,
          Node::Type *returnType, Node::Stmt *block, bool isMain = false,
-         bool isEntry = false)
-      : line(line), pos(pos), name(name), params(params),
+         bool isEntry = false, int file = 0)
+      : line(line), pos(pos), name(name), params(std::move(params)),
         returnType(returnType), block(block), isMain(isMain), isEntry(isEntry) {
+    file_id = file;
     kind = NodeKind::ND_FN_STMT;
   }
 
@@ -215,10 +221,10 @@ class ReturnStmt : public Node::Stmt {
 public:
   int line, pos;
   Node::Expr *expr;
-  Node::Stmt *stmt;
 
-  ReturnStmt(int line, int pos, Node::Expr *expr, Node::Stmt *stmt = nullptr)
-      : line(line), pos(pos), expr(expr), stmt(stmt) {
+  ReturnStmt(int line, int pos, Node::Expr *expr, int file = 0)
+      : line(line), pos(pos), expr(expr) {
+    file_id = file;
     kind = NodeKind::ND_RETURN_STMT;
   }
 
@@ -226,10 +232,6 @@ public:
     Node::printIndent(ident);
     std::cout << "ReturnStmt: \n";
     Node::printIndent(ident + 1);
-    if (stmt) {
-      std::cout << "Stmt: \n";
-      stmt->debug(ident + 2);
-    }
     if (expr) {
       std::cout << "Expr: \n";
       expr->debug(ident + 2);
@@ -238,7 +240,6 @@ public:
 
   ~ReturnStmt() {
     delete expr;
-    delete stmt;
   }
 };
 
@@ -250,9 +251,10 @@ public:
   Node::Stmt *elseStmt;
 
   IfStmt(int line, int pos, Node::Expr *condition, Node::Stmt *thenStmt,
-         Node::Stmt *elseStmt)
+         Node::Stmt *elseStmt, int file)
       : line(line), pos(pos), condition(condition), thenStmt(thenStmt),
         elseStmt(elseStmt) {
+    file_id = file;
     kind = NodeKind::ND_IF_STMT;
   }
 
@@ -288,8 +290,9 @@ public:
 
   StructStmt(int line, int pos, std::string name,
              std::vector<std::pair<std::string, Node::Type *>> fields,
-             std::vector<Node::Stmt *> stmts)
+             std::vector<Node::Stmt *> stmts, int file)
       : line(line), pos(pos), name(name), fields(fields), stmts(stmts) {
+    file_id = file;
     kind = NodeKind::ND_STRUCT_STMT;
   }
 
@@ -333,9 +336,10 @@ public:
   Node::Stmt *block;
 
   WhileStmt(int line, int pos, Node::Expr *condition, Node::Expr *optional,
-            Node::Stmt *block)
-      : line(line), pos(pos), condition(condition), block(block),
-        optional(optional) {
+            Node::Stmt *block, int file)
+      : line(line), pos(pos), condition(condition), optional(optional),
+       block(block) {
+    file_id = file;
     kind = NodeKind::ND_WHILE_STMT;
   }
 
@@ -372,9 +376,10 @@ public:
   Node::Stmt *block;
 
   ForStmt(int line, int pos, std::string name, Node::Expr *forLoop,
-          Node::Expr *condition, Node::Expr *optional, Node::Stmt *block)
+          Node::Expr *condition, Node::Expr *optional, Node::Stmt *block, int file)
       : line(line), pos(pos), name(name), forLoop(forLoop),
         condition(condition), optional(optional), block(block) {
+    file_id = file;
     kind = NodeKind::ND_FOR_STMT;
   }
 
@@ -410,8 +415,9 @@ public:
   std::string name;
   std::vector<std::string> fields;
 
-  EnumStmt(int line, int pos, std::string name, std::vector<std::string> fields)
+  EnumStmt(int line, int pos, std::string name, std::vector<std::string> fields, int file)
       : line(line), pos(pos), name(name), fields(fields) {
+    file_id = file;
     kind = NodeKind::ND_ENUM_STMT;
   }
 
@@ -434,8 +440,9 @@ public:
   std::vector<std::string> typenames;
   int line, pos;
 
-  TemplateStmt(std::vector<std::string> typenames, int line, int pos)
+  TemplateStmt(std::vector<std::string> typenames, int line, int pos, int file)
       : typenames(typenames), line(line), pos(pos) {
+    file_id = file;
     kind = NodeKind::ND_TEMPLATE_STMT;
   }
 
@@ -459,8 +466,9 @@ public:
   std::string name;
   Node::Stmt *stmt;
 
-  ImportStmt(int line, int pos, std::string name, Node::Stmt *stmt)
+  ImportStmt(int line, int pos, std::string name, Node::Stmt *stmt, int file)
       : line(line), pos(pos), name(name), stmt(stmt) {
+    file_id = file;
     kind = NodeKind::ND_IMPORT_STMT;
   }
 
@@ -479,7 +487,8 @@ class BreakStmt : public Node::Stmt {
 public:
   int line, pos;
 
-  BreakStmt(int line, int pos) : line(line), pos(pos) {
+  BreakStmt(int line, int pos, int file) : line(line), pos(pos) {
+    file_id = file;
     kind = NodeKind::ND_BREAK_STMT;
   }
 
@@ -493,7 +502,8 @@ class ContinueStmt : public Node::Stmt {
 public:
   int line, pos;
 
-  ContinueStmt(int line, int pos) : line(line), pos(pos) {
+  ContinueStmt(int line, int pos, int file) : line(line), pos(pos) {
+    file_id = file;
     kind = NodeKind::ND_CONTINUE_STMT;
   }
 

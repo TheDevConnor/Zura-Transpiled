@@ -27,7 +27,7 @@ std::vector<Instr> Optimizer::optimizeInstrs(std::vector<Instr> &input) {
         return {};
 
     std::vector<Instr> firstPass;
-    Instr prev = {.type = InstrType::NONE};
+    Instr prev = {.var = {}, .type = InstrType::NONE};
 
     // Optimizes touching pairs
     /* asm
@@ -53,7 +53,7 @@ std::vector<Instr> Optimizer::optimizeInstrs(std::vector<Instr> &input) {
 // As the name says.
 void Optimizer::appendAndResetPrev(std::vector<Instr> *output, Instr &curr, Instr &prev) {
     output->push_back(curr);
-    prev = Instr {.type=InstrType::NONE};
+    prev = Instr {.var = {}, .type=InstrType::NONE};
 }
 
 // Checks if mov instructions are redundant
@@ -67,7 +67,7 @@ void Optimizer::processMov(std::vector<Instr> *output, Instr &prev, Instr &curr)
 
         if (isSameMov(prevAsMov, currAsMov) || isOppositeMov(prevAsMov, currAsMov)) {
             tryPop(output);
-            prev = Instr {.type=InstrType::NONE};
+            prev = Instr {.var = {}, .type=InstrType::NONE};
             return;
         }
     }
@@ -109,7 +109,7 @@ void Optimizer::simplifyPushPopPair(std::vector<Instr> *output, Instr &prev, Ins
     PopInstr currAsPop = std::get<PopInstr>(curr.var);
 
     if (prevAsPush.what == currAsPop.where && prevAsPush.whatSize == currAsPop.whereSize) {
-        prev = Instr {.type=InstrType::NONE};
+        prev = Instr {.var = {}, .type=InstrType::NONE};
         return;
     }
 
@@ -192,10 +192,10 @@ void Optimizer::simplifyPushPopPair(std::vector<Instr> *output, Instr &prev, Ins
 
 // Optimize pairs with a useless instruction in between
 void Optimizer::optimizeSpacedPairs(std::vector<Instr> &firstPass) {
-    Instr prev = {.type = InstrType::NONE};
+    Instr prev = {.var = {}, .type = InstrType::NONE};
     int prevIndex = 0;
 
-    for (int i = 0; i < firstPass.size(); ++i) {
+    for (size_t i = 0; i < firstPass.size(); ++i) {
         Instr &instr = firstPass[i];
 
         if (instr.type == InstrType::Push) {
@@ -218,7 +218,7 @@ void Optimizer::optimizeSpacedPairs(std::vector<Instr> &firstPass) {
             firstPass.insert(firstPass.begin() + prevIndex, newInstr);
 
             i = prevIndex;
-            prev = Instr {.type = InstrType::NONE};
+            prev = Instr {.var = {}, .type = InstrType::NONE};
         }
     }
 }

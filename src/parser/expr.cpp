@@ -1,4 +1,5 @@
 #include "../ast/expr.hpp"
+#include "../codegen/gen.hpp"
 #include "parser.hpp"
 
 #include <iostream>
@@ -29,16 +30,16 @@ Node::Expr *Parser::primary(PStruct *psr) {
 
   switch (psr->current(psr).kind) {
   case TokenKind::INT: {
-    return new IntExpr(line, column, std::stoi(psr->advance(psr).value));
+    return new IntExpr(line, column, std::stoll(psr->advance(psr).value), codegen::getFileID(psr->current_file));
   }
   case TokenKind::FLOAT: {
-    return new FloatExpr(line, column, std::stof(psr->advance(psr).value));
+    return new FloatExpr(line, column, std::stof(psr->advance(psr).value), codegen::getFileID(psr->current_file));
   }
   case TokenKind::IDENTIFIER: {
-    return new IdentExpr(line, column, psr->advance(psr).value, nullptr);
+    return new IdentExpr(line, column, psr->advance(psr).value, nullptr, codegen::getFileID(psr->current_file));
   }
   case TokenKind::STRING: {
-    return new StringExpr(line, column, psr->advance(psr).value);
+    return new StringExpr(line, column, psr->advance(psr).value, codegen::getFileID(psr->current_file));
   }
   default:
     ErrorClass::error(psr->current(psr).line, psr->current(psr).column,
@@ -59,7 +60,7 @@ Node::Expr *Parser::group(PStruct *psr) {
   psr->expect(psr, TokenKind::RIGHT_PAREN,
               "Expected R_Paran after a grouping expr!");
 
-  return new GroupExpr(line, column, expr);
+  return new GroupExpr(line, column, expr, codegen::getFileID(psr->current_file));
 }
 
 Node::Expr *Parser::unary(PStruct *psr) {
@@ -69,7 +70,7 @@ Node::Expr *Parser::unary(PStruct *psr) {
   auto op = psr->advance(psr);
   auto *right = parseExpr(psr, defaultValue);
 
-  return new UnaryExpr(line, column, right, op.value);
+  return new UnaryExpr(line, column, right, op.value, codegen::getFileID(psr->current_file));
 }
 
 Node::Expr *Parser::_prefix(PStruct *psr) {
@@ -79,7 +80,7 @@ Node::Expr *Parser::_prefix(PStruct *psr) {
   auto op = psr->advance(psr);
   auto *right = parseExpr(psr, defaultValue);
 
-  return new PrefixExpr(line, column, right, op.value);
+  return new PrefixExpr(line, column, right, op.value, codegen::getFileID(psr->current_file));
 }
 
 // update cast syntax to `@cast<type>(expr)`
@@ -102,7 +103,7 @@ Node::Expr *Parser::cast_expr(PStruct *psr) {
   psr->expect(psr, TokenKind::RIGHT_PAREN,
               "Expected a R_Paran to end a cast expr!");
 
-  return new CastExpr(line, column, castee, castee_type);
+  return new CastExpr(line, column, castee, castee_type, codegen::getFileID(psr->current_file));
 }
 
 Node::Expr *Parser::_postfix(PStruct *psr, Node::Expr *left, BindingPower bp) {
@@ -110,7 +111,7 @@ Node::Expr *Parser::_postfix(PStruct *psr, Node::Expr *left, BindingPower bp) {
   auto column = psr->tks[psr->pos].column;
 
   auto op = psr->advance(psr);
-  return new PostfixExpr(line, column, left, op.value);
+  return new PostfixExpr(line, column, left, op.value, codegen::getFileID(psr->current_file));
 }
 
 Node::Expr *Parser::array(PStruct *psr) {
@@ -131,7 +132,7 @@ Node::Expr *Parser::array(PStruct *psr) {
   psr->expect(psr, TokenKind::RIGHT_BRACKET,
               "Expected a R_Bracket to end an array expr!");
 
-  return new ArrayExpr(line, column, nullptr, elements);
+  return new ArrayExpr(line, column, nullptr, elements, codegen::getFileID(psr->current_file));
 }
 
 Node::Expr *Parser::binary(PStruct *psr, Node::Expr *left, BindingPower bp) {
@@ -142,7 +143,7 @@ Node::Expr *Parser::binary(PStruct *psr, Node::Expr *left, BindingPower bp) {
 
   auto *right = parseExpr(psr, bp);
 
-  return new BinaryExpr(line, column, left, right, op.value);
+  return new BinaryExpr(line, column, left, right, op.value, codegen::getFileID(psr->current_file));
 }
 
 //  # change a variable in the array
@@ -177,14 +178,14 @@ Node::Expr *Parser::index(PStruct *psr, Node::Expr *left, BindingPower bp) {
     // check if the next token is a right bracket to pop the last element
     if (psr->current(psr).kind == TokenKind::RIGHT_BRACKET) {
       psr->advance(psr);
-      return new PopExpr(line, column, left, nullptr);
+      return new PopExpr(line, column, left, nullptr, codegen::getFileID(psr->current_file));
     }
 
     index = parseExpr(psr, defaultValue);
 
     psr->expect(psr, TokenKind::RIGHT_BRACKET,
                 "Expected a R_Bracket to end an index expr!");
-    return new PopExpr(line, column, left, index);
+    return new PopExpr(line, column, left, index, codegen::getFileID(psr->current_file));
   }
   case TokenKind::RIGHT_ARROW: {
     psr->expect(psr, TokenKind::RIGHT_ARROW,
@@ -198,12 +199,12 @@ Node::Expr *Parser::index(PStruct *psr, Node::Expr *left, BindingPower bp) {
       auto *push_index = parseExpr(psr, defaultValue);
       psr->expect(psr, TokenKind::RIGHT_BRACKET,
                   "Expected a R_Bracket to end an index expr!");
-      return new PushExpr(line, column, left, index, push_index);
+      return new PushExpr(line, column, left, index, push_index, codegen::getFileID(psr->current_file));
     }
 
     psr->expect(psr, TokenKind::RIGHT_BRACKET,
                 "Expected a R_Bracket to end an index expr!");
-    return new PushExpr(line, column, left, index, nullptr);
+    return new PushExpr(line, column, left, index, nullptr, codegen::getFileID(psr->current_file));
   }
   default:
     // This is a normal index
@@ -214,7 +215,7 @@ Node::Expr *Parser::index(PStruct *psr, Node::Expr *left, BindingPower bp) {
   psr->expect(psr, TokenKind::RIGHT_BRACKET,
               "Expected a R_Bracket to end an index expr!");
 
-  return new IndexExpr(line, column, left, index);
+  return new IndexExpr(line, column, left, index, codegen::getFileID(psr->current_file));
 }
 
 Node::Expr *Parser::assign(PStruct *psr, Node::Expr *left, BindingPower bp) {
@@ -224,7 +225,7 @@ Node::Expr *Parser::assign(PStruct *psr, Node::Expr *left, BindingPower bp) {
   auto op = psr->advance(psr);
   auto *right = parseExpr(psr, defaultValue);
 
-  return new AssignmentExpr(line, column, left, op.value, right);
+  return new AssignmentExpr(line, column, left, op.value, right, codegen::getFileID(psr->current_file));
 }
 
 Node::Expr *Parser::parse_call(PStruct *psr, Node::Expr *left,
@@ -247,7 +248,7 @@ Node::Expr *Parser::parse_call(PStruct *psr, Node::Expr *left,
   psr->expect(psr, TokenKind::RIGHT_PAREN,
               "Expected a R_Paren to end a call expr!");
 
-  return new CallExpr(line, column, left, args);
+  return new CallExpr(line, column, left, args, codegen::getFileID(psr->current_file));
 }
 
 Node::Expr *Parser::_ternary(PStruct *psr, Node::Expr *left, BindingPower bp) {
@@ -261,7 +262,7 @@ Node::Expr *Parser::_ternary(PStruct *psr, Node::Expr *left, BindingPower bp) {
               "Expected a ':' to define the false value of a ternary Expr!");
   auto *false_expr = parseExpr(psr, defaultValue);
 
-  return new TernaryExpr(line, column, left, true_expr, false_expr);
+  return new TernaryExpr(line, column, left, true_expr, false_expr, codegen::getFileID(psr->current_file));
 }
 
 Node::Expr *Parser::_member(PStruct *psr, Node::Expr *left, BindingPower bp) {
@@ -270,7 +271,7 @@ Node::Expr *Parser::_member(PStruct *psr, Node::Expr *left, BindingPower bp) {
 
   auto op = psr->advance(psr); // This should be a DOT
   auto *right = parseExpr(psr, member);
-  return new MemberExpr(line, column, left, right);
+  return new MemberExpr(line, column, left, right, codegen::getFileID(psr->current_file));
 }
 
 Node::Expr *Parser::resolution(PStruct *psr, Node::Expr *left,
@@ -281,7 +282,7 @@ Node::Expr *Parser::resolution(PStruct *psr, Node::Expr *left,
   auto op = psr->advance(psr);
   auto *right = parseExpr(psr, member);
 
-  return new ResolutionExpr(line, column, left, right);
+  return new ResolutionExpr(line, column, left, right, codegen::getFileID(psr->current_file));
 }
 
 Node::Expr *Parser::bool_expr(PStruct *psr) {
@@ -290,5 +291,5 @@ Node::Expr *Parser::bool_expr(PStruct *psr) {
 
   auto res = (psr->advance(psr).value == "true") ? true : false;
 
-  return new BoolExpr(line, column, res);
+  return new BoolExpr(line, column, res, codegen::getFileID(psr->current_file));
 }

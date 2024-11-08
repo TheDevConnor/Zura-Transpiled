@@ -114,6 +114,8 @@ inline std::unordered_map<NativeASMFunc, bool> nativeFunctionsUsed = {};
 // Stack count, Variable count
 inline std::vector<std::pair<size_t, int64_t>> scopes = {};
 
+inline unsigned char loopDepth = 0;
+inline std::vector<std::string> fileIDs = {};
 inline bool isEntryPoint = false;
 inline size_t dieCount = 1; // Labels! Labels galore! Im not counting bytes, man! Let LD do it !!!
 inline size_t howBadIsRbp = 0;
@@ -129,6 +131,7 @@ inline size_t funcBlockStart = -1; // Set to "stackSize" on FuncDecl blocks, wil
 void push(Instr instr, Section section = Section::Main);
 void pushLinker(std::string val, Section section);
 
+int getFileID(const std::string &file);
 void pushCompAsExpr(); // assuming compexpr's will already do the "cmp" and "jmp", we will push 0x0 or 0x1 depending on the result
 
 inline const char* file_name;
@@ -142,7 +145,7 @@ inline static const std::vector<std::string> argOrder = {"%rsi","%rdx","%rcx","%
 void moveRegister(const std::string &dest, const std::string &src, DataSize dest_size, DataSize src_size);
 void popToRegister(const std::string &reg);
 void pushRegister(const std::string &reg);
-void pushDebug(int line);
+void pushDebug(int line, int file, int column = -1);
 void handleExitSyscall();
 void handleReturnCleanup();
 

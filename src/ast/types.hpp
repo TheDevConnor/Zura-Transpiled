@@ -11,12 +11,16 @@ public:
 
   SymbolType(std::string name) : name(name) { kind = NodeKind::ND_SYMBOL_TYPE; }
 
-  void debug(int ident = 0) const override { std::cout << name; }
+  void debug(int ident = 0) const override { 
+    std::cout << "Name: ";
+    Node::printIndent(ident + 1);
+    std::cout << name;
+  }
 };
 
 class ArrayType : public Node::Type {
 public:
-  Node::Type *underlying; // []int
+  Node::Type *underlying; // []int - 'int' is the underlying type
 
   ArrayType(Node::Type *underlying) : underlying(underlying) {
     kind = NodeKind::ND_ARRAY_TYPE;
@@ -24,7 +28,7 @@ public:
 
   void debug(int ident = 0) const override {
     std::cout << "[]";
-    underlying->debug();
+    underlying->debug(ident + 1);
   }
 
   ~ArrayType() { delete underlying; }
@@ -42,7 +46,7 @@ public:
 
   void debug(int ident = 0) const override {
     std::cout << pointer_type;
-    underlying->debug();
+    underlying->debug(ident + 1);
   }
 
   ~PointerType() { delete underlying; }

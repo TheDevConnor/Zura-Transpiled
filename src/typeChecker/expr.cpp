@@ -244,7 +244,6 @@ void TypeChecker::visitCall(Maps *map, Node::Expr *expr) {
     handlerError(call->line, call->pos, msg, "", "Type Error");
   }
 
-  // ew that was me
   for (int i = 0; i < call->args.size(); i++) {
     visitExpr(map, call->args[i]);
     if (type_to_string(return_type.get()) !=

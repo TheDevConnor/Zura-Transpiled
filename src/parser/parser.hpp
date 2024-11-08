@@ -39,7 +39,7 @@ inline Lexer lexer;
 struct Parser::PStruct {
   std::vector<Lexer::Token> tks;
   std::string current_file;
-  int pos = 0;
+  size_t pos = 0;
 
   Lexer::Token current(PStruct *psr) { return psr->tks[psr->pos]; }
 

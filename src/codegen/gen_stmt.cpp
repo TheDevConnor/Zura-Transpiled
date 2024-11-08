@@ -33,6 +33,7 @@ void codegen::program(Node::Stmt *stmt) {
 void codegen::constDecl(Node::Stmt *stmt) {
   auto s = static_cast<ConstStmt *>(stmt);
   // TODO: Make ConstDecl's function like constant (immutable) variables
+  pushDebug(s->line, stmt->file_id, s->pos);
   codegen::visitStmt(s->value);
 };
 
@@ -46,31 +47,31 @@ void codegen::funcDecl(Node::Stmt *stmt) {
 
   // WOO YEAH BABY DEBUG TIME
 
+  std::string dieLabel = ".Ldie" + std::to_string(dieCount++);
   if (debug) {
     SymbolType *st = static_cast<SymbolType *>(s->returnType);
     std::string asmName = st->name;
-    pushLinker(".uleb128 0x3\n"
-              ".byte 0x4\n" // DW_AT_external
-              ".long .L" + funcName + "_string\n"
+    pushLinker(".uleb128 0x2\n"
+              ".long " + dieLabel + "_string\n"
               ".byte 0x0\n" // File index 0 - no other file includes allowed (yet)
               ".byte " + std::to_string(s->line) + "\n" // Line number
+              ".byte " + std::to_string(s->pos) + "\n" // Line column
               ".long .L" + asmName + "_debug_type\n" // Return type (DW_AT_type)
-              ".quad .L" + funcName + "_debug_start\n" // Low pc
-              ".quad .L" + funcName + "_debug_end - .L" + funcName + "_debug_start\n"
-              ".uleb128 0x1\n" // 1 byte is gonna follow
+              ".quad " + dieLabel + "_debug_start\n" // Low pc
+              ".quad " + dieLabel + "_debug_end - " + dieLabel + "_debug_start\n" // high pc
+              ".uleb128 0x01\n" // 1 byte is gonna follow
               ".byte 0x9c\n"
-              // No call all calls ??
-              // Look, I'm not dealing with siblings right now
+              ".long .L" + asmName + "_debug_type\n" // idk bro dont ask why this is sibling type
               , Section::DIE);
 
-    pushLinker(".L" + funcName + "_string: .string \"" + funcName + "\"\n", Section::DIEString);
+    pushLinker(dieLabel + "_string: .string \"" + funcName + "\"\n", Section::DIEString);
+    push(Instr {.var = Label {.name = dieLabel + "_debug_start" }, .type = InstrType::Label }, Section::Main);
   }
 
   push(Instr{.var = LinkerDirective{.value = "\n.type " + funcName + ", @function"},.type = InstrType::Linker},Section::Main);
   push(Instr{.var = Label{.name = funcName}, .type = InstrType::Label},Section::Main);
-  if (debug) pushLinker(".L" + funcName + "_debug_start:\n", Section::Main);
   // push linker directive for the debug info (the line number)
-  pushDebug(s->line);
+  pushDebug(s->line, stmt->file_id, s->pos);
   push(Instr{.var=LinkerDirective{.value=".cfi_startproc\n\t"},.type=InstrType::Linker},Section::Main);
 
   stackSize = 0;
@@ -89,7 +90,7 @@ void codegen::funcDecl(Node::Stmt *stmt) {
   funcBlockStart = stackSize;
 
   // Function args
-  for (int i = 0; i < s->params.size(); i++) {
+  for (size_t i = 0; i < s->params.size(); i++) {
     // TODO: REPLACE THIS IMMEDIATELY!
     variableTable.insert({s->params.at(i).first, argOrder.at(i)});
   }
@@ -99,7 +100,7 @@ void codegen::funcDecl(Node::Stmt *stmt) {
   funcBlockStart = -1;
 
   // Function ends with ret so we can't really push any other instructions.
-  if (debug) pushLinker(".L" + funcName + "_debug_end:\n", Section::Main);
+  if (debug) pushLinker(dieLabel + "_debug_end:\n", Section::Main);
 
   push(Instr{.var = LinkerDirective{.value = ".cfi_endproc\n"},.type = InstrType::Linker},Section::Main);
   push(Instr{.var = LinkerDirective{.value = ".size " + funcName + ", .-" + funcName + "\n\t"},
@@ -113,7 +114,7 @@ void codegen::varDecl(Node::Stmt *stmt) {
               .type = InstrType::Comment},Section::Main);
 
   // push another .loc
-  pushDebug(s->line);
+  pushDebug(s->line, stmt->file_id, s->pos);
 
   // (the i = 4 part)
   // Evaluate the initializer expression, if present
@@ -136,14 +137,15 @@ void codegen::varDecl(Node::Stmt *stmt) {
   SymbolType *st = static_cast<SymbolType *>(s->expr->expr->asmType);
   std::string asmName = st->name;
 
-  pushLinker(".uleb128 0x2\n"
+  pushLinker(".uleb128 0x3\n"
             ".long " + dieLabel + "_string\n"
-            ".byte 0x0\n" // File index 0 - no other file includes allowed (yet)
+            ".byte " + std::to_string(s->file_id) + "\n" // File index
             ".byte " + std::to_string(s->line) + "\n" // Line number
-            ".long .L" + asmName + "_debug_type\n"
-            ".uleb128 0x02\n" // Length of data in location definition
-            ".byte 0x91\n" // DW_OP_fbreg
-            ".sleb128 " + std::to_string(whereBytes) + "\n" // Offset of bytes - the 'x' from above
+            ".byte " + std::to_string(s->pos) + "\n" // Line column
+            ".long .L" + asmName + "_debug_type\n" // Type - point to the DIE of the DW_TAG_base_type
+            ".uleb128 0x02\n" // Length of data in location definition - 2 bytes long
+            ".byte 0x91\n" // DW_OP_fbreg (first byte)
+            ".sleb128 " + std::to_string(whereBytes) + "\n" // Offset of bytes - eg -20(%rbp), this is -20. (second byte)
   , Section::DIE);
 
   // DIE String pointer
@@ -160,7 +162,7 @@ void codegen::block(Node::Stmt *stmt) {
   auto preVS = variableCount;
   scopes.push_back(std::pair(preSS, preVS));
   // push a .loc
-  pushDebug(s->line);
+  pushDebug(s->line, stmt->file_id, s->pos);
   for (Node::Stmt *stm : s->stmts) {
     codegen::visitStmt(stm);
   }
@@ -174,7 +176,7 @@ void codegen::ifStmt(Node::Stmt *stmt) {
   std::string preconCount = std::to_string(conditionalCount++);
 
   push(Instr{.var = Comment{.comment = "if statement"}, .type = InstrType::Comment}, Section::Main);
-  pushDebug(s->line);
+  pushDebug(s->line, stmt->file_id, s->pos);
 
   BinaryExpr *cond = nullptr;
   if (s->condition->kind == ND_GROUP) {
@@ -189,22 +191,22 @@ void codegen::ifStmt(Node::Stmt *stmt) {
     visitExpr(s->condition);
     popToRegister("%ecx");
     push(Instr{.var = CmpInstr{.lhs = "%ecx", .rhs = "$0"}, .type = InstrType::Cmp}, Section::Main);
-    push(Instr{.var = JumpInstr{.op = JumpCondition::NotZero, .label = "conditional" + preconCount}, .type = InstrType::Jmp}, Section::Main);
+    push(Instr{.var = JumpInstr{.op = JumpCondition::NotZero, .label = ".Lconditional" + preconCount}, .type = InstrType::Jmp}, Section::Main);
   } else {
     // Process binary expression
-    processBinaryExpression(cond, preconCount, "conditional");
+    processBinaryExpression(cond, preconCount, ".Lconditional");
   }
 
   // Jump to "main" label if condition is false (fall through)
-  std::string elseLabel = "else" + preconCount;
+  std::string elseLabel = ".Lelse" + preconCount;
   push(Instr{.var = JumpInstr{.op = JumpCondition::Unconditioned, .label = elseLabel}, .type = InstrType::Jmp}, Section::Main);
 
   // True condition block: label and code for 'thenStmt'
-  push(Instr{.var = Label{.name = "conditional" + preconCount}, .type = InstrType::Label}, Section::Main);
+  push(Instr{.var = Label{.name = ".Lconditional" + preconCount}, .type = InstrType::Label}, Section::Main);
   visitStmt(s->thenStmt);
 
   // After executing 'thenStmt', jump to the end to avoid executing 'elseStmt'
-  std::string endLabel = "main" + preconCount;
+  std::string endLabel = ".Lmain" + preconCount;
   push(Instr{.var = JumpInstr{.op = JumpCondition::Unconditioned, .label = endLabel},.type = InstrType::Jmp}, Section::Main);
 
   // False condition block (else case): label and code for 'elseStmt'
@@ -235,19 +237,19 @@ void codegen::enumDecl(Node::Stmt *stmt) {
 }
 
 void codegen::structDecl(Node::Stmt *stmt) {
-  auto s = static_cast<StructStmt *>(stmt);
-
   std::cerr << "Structs are not implemented yet!" << std::endl;
   exit(-1);
+
+  // auto s = static_cast<StructStmt *>(stmt);
 }
 
 
 void codegen::print(Node::Stmt *stmt) {
   auto print = static_cast<PrintStmt *>(stmt);
 
-  push(Instr{.var = Comment{.comment = "print stmt"}}, Section::Main);
+  push(Instr{.var = Comment{.comment = "print stmt"}, .type = InstrType::Comment}, Section::Main);
   nativeFunctionsUsed[NativeASMFunc::strlen] = true;
-  pushDebug(print->line);
+  pushDebug(print->line, stmt->file_id);
 
   for (auto &arg : print->args) {
     std::string argType = static_cast<SymbolType *>(arg->asmType)->name;
@@ -264,17 +266,17 @@ void codegen::print(Node::Stmt *stmt) {
       moveRegister("%rdi", "$1", DataSize::Qword, DataSize::Qword);
 
       // Make syscall to write
-      push(Instr{.var = Syscall({.name = "SYS_WRITE"}), .type = InstrType::Syscall}, Section::Main);
+      push(Instr{.var = Syscall{.name = "SYS_WRITE"}, .type = InstrType::Syscall}, Section::Main);
       break;
     } else if (argType == "int") {
       nativeFunctionsUsed[NativeASMFunc::itoa] = true;
       visitExpr(arg);
       popToRegister("%rax");
-      push(Instr{.var = CallInstr{.name = "native_itoa"}}, Section::Main); // Convert int to string
+      push(Instr{.var = CallInstr{.name = "native_itoa"}, .type = InstrType::Call}, Section::Main); // Convert int to string
       
       // Now we have the integer string in %rax (assuming %rax holds the pointer to the result)
       moveRegister("%rsi", "%rax", DataSize::Qword, DataSize::Qword);
-      push(Instr{.var = CallInstr{.name = "native_strlen"}}, Section::Main);
+      push(Instr{.var = CallInstr{.name = "native_strlen"}, .type = InstrType::Call}, Section::Main);
       moveRegister("%rdx", "%rax", DataSize::Qword, DataSize::Qword); // Length of number string
       
       // syscall id for write on x86 is 1
@@ -305,7 +307,7 @@ void codegen::print(Node::Stmt *stmt) {
 void codegen::_return(Node::Stmt *stmt) {
   auto returnStmt = static_cast<ReturnStmt *>(stmt);
 
-  pushDebug(returnStmt->line);
+  pushDebug(returnStmt->line, stmt->file_id, returnStmt->pos);
   // Generate return value for the function
   codegen::visitExpr(returnStmt->expr);
 
@@ -322,14 +324,15 @@ void codegen::_return(Node::Stmt *stmt) {
 
 void codegen::forLoop(Node::Stmt *stmt) {
   auto s = static_cast<ForStmt *>(stmt);
+  loopDepth++;
 
   std::string preconCount = std::to_string(conditionalCount++);
 
   push(Instr{.var = Comment{.comment = "for loop"}, .type = InstrType::Comment}, Section::Main);
 
   // Create unique labels for the loop start and end
-  std::string preLoopLabel = "loop_pre" + std::to_string(loopCount);
-  std::string postLoopLabel = "loop_post" + std::to_string(loopCount++);
+  std::string preLoopLabel = ".Lloop_pre" + std::to_string(loopCount);
+  std::string postLoopLabel = ".Lloop_post" + std::to_string(loopCount++);
   
   // Declare the loop variable
   auto assign = static_cast<AssignmentExpr *>(s->forLoop);
@@ -338,7 +341,7 @@ void codegen::forLoop(Node::Stmt *stmt) {
   push(Instr{.var = Comment{.comment = "For loop variable declaration"}, .type = InstrType::Comment}, Section::Main);
 
   variableTable.insert({assignee->name, std::to_string(-8 * variableCount++) + "(%rbp)"}); // Track the variable in the stack table
-  pushDebug(s->line);
+  pushDebug(s->line, stmt->file_id, s->pos);
   visitExpr(assign);  // Process the initial loop assignment (e.g., i = 0)
   // Remove the last instruction!! Its a push and thats bad!
   text_section.pop_back();
@@ -365,29 +368,36 @@ void codegen::forLoop(Node::Stmt *stmt) {
 
   // Pop the loop variable from the stack
   variableTable.erase(assignee->name);
-  stackSize -= 8;
+  
+  loopDepth--;
 };
 
 void codegen::whileLoop(Node::Stmt *stmt) {
-  auto s = static_cast<WhileStmt *>(stmt);
   std::cerr
       << "No fancy error for this, beg Connor... (Soviet Pancakes speaking)"
       << std::endl;
   std::cerr << "While loops not implemented!" << std::endl;
   exit(-1);
+  /*
+  auto s = static_cast<WhileStmt *>(stmt);
+  loopDepth++;
+  pushDebug(s->line, stmt->file_id, s->pos);
+  // Do something
+  loopDepth--;
+  */
 };
 
 void codegen::_break(Node::Stmt *stmt) {
   auto s = static_cast<BreakStmt *>(stmt);
   
   push(Instr{.var = Comment{.comment = "break statement"}, .type = InstrType::Comment}, Section::Main);
-  pushDebug(s->line);
+  pushDebug(s->line, stmt->file_id, s->pos);
 
   // Jump to the end of the loop
-  push(Instr{.var = JumpInstr{.op = JumpCondition::Unconditioned, .label = "loop_post" + std::to_string(loopCount - 1)}, .type = InstrType::Jmp}, Section::Main);
+  push(Instr{.var = JumpInstr{.op = JumpCondition::Unconditioned, .label = ".Lloop_post" + std::to_string(loopCount - 1)}, .type = InstrType::Jmp}, Section::Main);
 
   // Break statements are only valid inside loops
-  if (loopCount == 0) {
+  if (loopDepth < 1) {
     std::cerr << "Error: Break statement outside of loop" << std::endl;
     exit(-1);
   }
@@ -397,20 +407,20 @@ void codegen::_continue(Node::Stmt *stmt) {
   auto s = static_cast<ContinueStmt *>(stmt);
   
   push(Instr{.var = Comment{.comment = "continue statement"}, .type = InstrType::Comment}, Section::Main);
-  pushDebug(s->line);
+  pushDebug(s->line, stmt->file_id, s->pos);
 
-  // Jump to the start of the loop
-  push(Instr{.var = JumpInstr{.op = JumpCondition::Unconditioned, .label = "loop_pre" + std::to_string(loopCount - 1)}, .type = InstrType::Jmp}, Section::Main);
+  // Jump back to the start of the loop
+  push(Instr{.var = JumpInstr{.op = JumpCondition::Unconditioned, .label = ".Lloop_pre" + std::to_string(loopCount - 1)}, .type = InstrType::Jmp}, Section::Main);
 
   // Continue statements are only valid inside loops
-  if (loopCount == 0) {
+  if (loopDepth < 1) {
     std::cerr << "Error: Continue statement outside of loop" << std::endl;
     exit(-1);
   }
 };
 
 void codegen::importDecl(Node::Stmt *stmt) {
-  auto s = static_cast<ImportStmt *>(stmt);
   std::cerr << "Import statements are not implemented yet!" << std::endl;
   exit(-1);
+  // auto s = static_cast<ImportStmt *>(stmt);
 };

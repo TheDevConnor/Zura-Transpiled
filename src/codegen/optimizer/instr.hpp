@@ -107,7 +107,9 @@ struct Syscall {
   std::string name;
 };
 
-struct Ret {};
+struct Ret {
+  std::string fromWhere;
+};
 
 struct Comment {
   std::string comment;

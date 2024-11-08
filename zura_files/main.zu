@@ -1,7 +1,6 @@
-# import "zura_files/std/math.zu";
+# import "zura_files/std/math.zu"; # Lmao connor the typechecker didnt like it
 
 const main := fn () int {
-    have res: int = 1;
-    res = (res < 0) ? 20 : 0;
-    return res; # 0
+  have x: int = 185;
+  return x;
 };

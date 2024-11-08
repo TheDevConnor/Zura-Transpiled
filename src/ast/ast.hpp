@@ -8,53 +8,53 @@
 
 enum NodeKind {
   // Expressions
-  ND_INT,
-  ND_FLOAT,
-  ND_IDENT,
-  ND_STRING,
-  ND_BINARY,
-  ND_UNARY,
-  ND_PREFIX,
-  ND_POSTFIX,
-  ND_GROUP,
-  ND_ARRAY,
-  ND_INDEX,
-  ND_POP,
-  ND_PUSH,
-  ND_CALL,
-  ND_TEMPLATE_CALL,
-  ND_ASSIGN,
-  ND_TERNARY,
-  ND_MEMBER,
-  ND_RESOLUTION, // ::
-  ND_BOOL,
-  ND_CAST,
+  ND_INT, // 123
+  ND_FLOAT, // 12.3
+  ND_IDENT, // x
+  ND_STRING, // "hello"
+  ND_BINARY, // 12 + 34
+  ND_UNARY, // !true
+  ND_PREFIX, // ++x
+  ND_POSTFIX, // x++
+  ND_GROUP, // (x + 12)
+  ND_ARRAY, // [x, 12]
+  ND_INDEX, // x[12]
+  ND_POP, // x.pop
+  ND_PUSH, // x.push
+  ND_CALL, // x()
+  ND_TEMPLATE_CALL, // x<12.3>()
+  ND_ASSIGN, // x = 12
+  ND_TERNARY, // x == 12 ? .. : ..
+  ND_MEMBER, // x.y
+  ND_RESOLUTION, // x::y
+  ND_BOOL, // true
+  ND_CAST, // @cast<int>(12.3)
 
   // Statements
-  ND_EXPR_STMT,
-  ND_VAR_STMT,
-  ND_CONST_STMT,
-  ND_BLOCK_STMT,
-  ND_FN_STMT,
-  ND_PROGRAM,
-  ND_RETURN_STMT,
-  ND_IF_STMT,
-  ND_STRUCT_STMT,
-  ND_WHILE_STMT,
-  ND_FOR_STMT,
-  ND_PRINT_STMT,
-  ND_ENUM_STMT,
-  ND_IMPORT_STMT,
-  ND_TEMPLATE_STMT,
-  ND_BREAK_STMT,
-  ND_CONTINUE_STMT,
+  ND_EXPR_STMT, // x = 12
+  ND_VAR_STMT, // have x := 12
+  ND_CONST_STMT, // const x := 12
+  ND_BLOCK_STMT, // { x = 12 }
+  ND_FN_STMT, // const x := fn () int {}
+  ND_PROGRAM, // { .. x = 12; fn (); }
+  ND_RETURN_STMT, // return 12
+  ND_IF_STMT, // if (x) { return 12 } 
+  ND_STRUCT_STMT, // struct x { val = 12 }
+  ND_WHILE_STMT, // loop (x) { ... }
+  ND_FOR_STMT, // loop (x = 1, x < 10) { ... }
+  ND_PRINT_STMT, // dis(x)
+  ND_ENUM_STMT, // enum x {}
+  ND_IMPORT_STMT, // import "x"
+  ND_TEMPLATE_STMT, // template <T> fn () T {}
+  ND_BREAK_STMT,  // break
+  ND_CONTINUE_STMT, // continue
 
   // Types
-  ND_SYMBOL_TYPE,
-  ND_ARRAY_TYPE,
-  ND_POINTER_TYPE,
-  ND_CALLABLE_TYPE,
-  ND_FUNCTION_TYPE,
+  ND_SYMBOL_TYPE, // int
+  ND_ARRAY_TYPE, // []int
+  ND_POINTER_TYPE, // *int
+  ND_CALLABLE_TYPE, // Idk honestly
+  ND_FUNCTION_TYPE, // fn (int) int
 };
 
 class Node {
@@ -73,6 +73,7 @@ public:
   
   struct Expr {
     NodeKind kind;
+    int file_id;
     Type *asmType;
     virtual void debug(int ident = 0) const = 0;
     virtual ~Expr() = default;
@@ -80,6 +81,7 @@ public:
 
   struct Stmt {
     NodeKind kind;
+    int file_id;
     virtual void debug(int ident = 0) const = 0;
     virtual ~Stmt() = default;
   };

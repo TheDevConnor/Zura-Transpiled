@@ -83,12 +83,16 @@ void FlagConfig::runBuild(int argc, char **argv) {
         if (buildConditions[i](argv[1])) {
             if (i == 3) { // clean
                 std::string remove = "rm *.s *.o";
-                std::system(remove.c_str());
+                int exitCode = std::system(remove.c_str());
+                if (exitCode && !Flags::quiet) {
+                  // If non-zero (error)
+                  std::cout << "No files to clean." << std::endl;
+                }
                 return;
             }
             if (i == 0) { // build
                 if (argc < 3) {
-                    std::cout << "No file specified" << std::endl;
+                    std::cerr << "No file specified" << std::endl;
                     Exit(ExitValue::BUILD_ERROR);
                 }
 
@@ -141,8 +145,7 @@ int main(int argc, char **argv) {
     if (!Flags::quiet) {
         Flags::updateProgressBar(1.0);
         std::cout << std::endl;
-    }
-    if (!Flags::quiet) {
+        
         auto totalDurationMS = std::chrono::duration_cast<std::chrono::milliseconds>(endTime - startTime).count();
         auto totalDurationUS = std::chrono::duration_cast<std::chrono::microseconds>(endTime - startTime).count();
         std::cout << "Total time: " << totalDurationMS << "ms (" << totalDurationUS << "µs)" << std::endl;

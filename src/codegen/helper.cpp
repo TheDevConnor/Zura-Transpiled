@@ -3,6 +3,9 @@
 #include "optimizer/instr.hpp"
 #include <fstream>
 
+/*
+ * Haha, connor mispelled this
+*/
 void codegen::handlerError(int line, int pos, std::string msg,
                            std::string typeOfError) {
   Lexer lexer; // dummy lexer
@@ -11,12 +14,24 @@ void codegen::handlerError(int line, int pos, std::string msg,
                     false, false, true);
 }
 
+/*
+ * @brief Appends a pushq instruction to the text section, using {reg} as the register to push
+ * 
+ * Also look at {@link popToRegister}
+ * @param reg The register to push
+*/
 void codegen::pushRegister(const std::string &reg) {
   push(Instr{.var = PushInstr{.what = reg}, .type = InstrType::Push},
        Section::Main);
   stackSize++;
 }
 
+/*
+ * @brief Appends a popq instruction to the text section, using {reg} as the register to pop to
+ * 
+ * Also look at {@link pushRegister}
+ * @param reg The register to pop to
+*/
 void codegen::popToRegister(const std::string &reg) {
   push(Instr{.var = PopInstr({.where = reg}), .type = InstrType::Pop},
        Section::Main);
@@ -37,7 +52,8 @@ void codegen::pushLinker(std::string val, Section section) {
   push(Instr {
     .var = LinkerDirective {
       .value = val
-    }
+    },
+    .type = InstrType::Linker
   }, section);
 }
 
@@ -208,10 +224,29 @@ void codegen::push(Instr instr, Section section) {
   }
 }
 
-void codegen::pushDebug(int line) {
-  if (debug)
-    push(Instr{.var = LinkerDirective{.value = ".loc 0 " +
-                                               std::to_string(line) + "\n\t"},
-               .type = InstrType::Linker},
-         Section::Main);
+// Add 1
+int codegen::getFileID(const std::string &file) {
+  for (int i = 0; i < fileIDs.size(); i++) {
+    if (fileIDs[i] == file) {
+      return i;
+    }
+  }
+  fileIDs.push_back(file);
+  return fileIDs.size() - 1;
+}
+
+void codegen::pushDebug(int line, int file, int column) {
+  // If not in debug mode, this funciton will pretty much be a massive nop.
+  if (!debug) return;
+  if (column != -1) {
+    push(Instr{.var = LinkerDirective{.value = ".loc " + std::to_string(file) + " " +
+                                                std::to_string(line) + " " + std::to_string(column) + "\n\t"},
+                .type = InstrType::Linker},
+          Section::Main);
+  } else {
+    push(Instr{.var = LinkerDirective{.value = ".loc " + std::to_string(file) + " " +
+                                                std::to_string(line) + "\n\t"},
+                .type = InstrType::Linker},
+          Section::Main);
+  }
 }

@@ -4,6 +4,8 @@ project(zura)
 
 set(CMAKE_CXX_STANDARD 20)
 
+add_compile_options(-fmax-errors=1 -Wno-error -Wno-fatal-errors -Wno-pedantic -Wno-all -Wno-extra)
+
 # Specify header and source files
 set(ZURA_HEADER_FILES
     src/helper/error/error.hpp

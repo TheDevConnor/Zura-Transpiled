@@ -1,6 +1,7 @@
 #include "../ast/stmt.hpp"
 #include "../ast/ast.hpp"
 #include "../helper/flags.hpp"
+#include "../codegen/gen.hpp"
 #include "parser.hpp"
 
 Node::Stmt *Parser::parseStmt(PStruct *psr, std::string name) {
@@ -19,7 +20,7 @@ Node::Stmt *Parser::exprStmt(PStruct *psr) {
   auto *expr = parseExpr(psr, BindingPower::defaultValue);
   psr->expect(psr, TokenKind::SEMICOLON,
               "Expected a SEMICOLON at the end of a expr stmt!");
-  return new ExprStmt(line, column, expr);
+  return new ExprStmt(line, column, expr, codegen::getFileID(psr->current_file));
 }
 
 Node::Stmt *Parser::blockStmt(PStruct *psr, std::string name) {
@@ -36,7 +37,7 @@ Node::Stmt *Parser::blockStmt(PStruct *psr, std::string name) {
 
   psr->expect(psr, TokenKind::RIGHT_BRACE,
               "Expected a R_BRACE to end a block stmt");
-  return new BlockStmt(line, column, stmts);
+  return new BlockStmt(line, column, stmts, codegen::getFileID(psr->current_file));
 }
 
 Node::Stmt *Parser::varStmt(PStruct *psr, std::string name) {
@@ -59,7 +60,7 @@ Node::Stmt *Parser::varStmt(PStruct *psr, std::string name) {
   if (psr->current(psr).kind == TokenKind::SEMICOLON) {
     psr->expect(psr, TokenKind::SEMICOLON,
                 "Expected a SEMICOLON at the end of a var stmt");
-    return new VarStmt(line, column, isConst, name, varType, nullptr);
+    return new VarStmt(line, column, isConst, name, varType, nullptr, codegen::getFileID(psr->current_file));
   }
 
   psr->expect(psr, TokenKind::EQUAL,
@@ -67,9 +68,9 @@ Node::Stmt *Parser::varStmt(PStruct *psr, std::string name) {
   auto assignedValue = parseExpr(psr, BindingPower::defaultValue);
   psr->expect(psr, TokenKind::SEMICOLON,
               "Expected a SEMICOLON at the end of a var stmt");
-
+  int currFileID = codegen::getFileID(psr->current_file);
   return new VarStmt(line, column, isConst, name, varType,
-                     new ExprStmt(line, column, assignedValue));
+                     new ExprStmt(line, column, assignedValue, currFileID), currFileID);
 }
 
 Node::Stmt *Parser::printStmt(PStruct *psr, std::string name) {
@@ -95,7 +96,7 @@ Node::Stmt *Parser::printStmt(PStruct *psr, std::string name) {
   psr->expect(psr, TokenKind::SEMICOLON,
               "Expected a SEMICOLON at the end of a print stmt");
 
-  return new PrintStmt(line, column, args);
+  return new PrintStmt(line, column, args, codegen::getFileID(psr->current_file));
 }
 
 Node::Stmt *Parser::constStmt(PStruct *psr, std::string name) {
@@ -113,7 +114,7 @@ Node::Stmt *Parser::constStmt(PStruct *psr, std::string name) {
 
   auto value = parseStmt(psr, name);
 
-  return new ConstStmt(line, column, name, value);
+  return new ConstStmt(line, column, name, value, codegen::getFileID(psr->current_file));
 }
 
 Node::Stmt *Parser::funStmt(PStruct *psr, std::string name) {
@@ -151,8 +152,8 @@ Node::Stmt *Parser::funStmt(PStruct *psr, std::string name) {
               "Expected a SEMICOLON at the end of a function stmt");
 
   if (name == "main")
-    return new FnStmt(line, column, name, params, returnType, body, true, true);
-  return new FnStmt(line, column, name, params, returnType, body, false, false);
+    return new FnStmt(line, column, name, params, returnType, body, true, true, codegen::getFileID(psr->current_file));
+  return new FnStmt(line, column, name, params, returnType, body, false, false, codegen::getFileID(psr->current_file));
 }
 
 Node::Stmt *Parser::returnStmt(PStruct *psr, std::string name) {
@@ -162,18 +163,10 @@ Node::Stmt *Parser::returnStmt(PStruct *psr, std::string name) {
   psr->expect(psr, TokenKind::RETURN,
               "Expected a RETURN keyword to start a return stmt");
 
-  // if return
-  if (psr->current(psr).kind == TokenKind::IF) {
-    auto if_return = ifStmt(psr, name);
-    psr->expect(psr, TokenKind::SEMICOLON,
-                "Expected a SEMICOLON at the end of a return stmt");
-    return new ReturnStmt(line, column, nullptr, if_return);
-  }
-
   auto expr = parseExpr(psr, BindingPower::defaultValue);
   psr->expect(psr, TokenKind::SEMICOLON,
               "Expected a SEMICOLON at the end of a return stmt");
-  return new ReturnStmt(line, column, expr);
+  return new ReturnStmt(line, column, expr, codegen::getFileID(psr->current_file));
 }
 
 Node::Stmt *Parser::ifStmt(PStruct *psr, std::string name) {
@@ -192,7 +185,7 @@ Node::Stmt *Parser::ifStmt(PStruct *psr, std::string name) {
     elseStmt = parseStmt(psr, name);
   }
 
-  return new IfStmt(line, column, condition, thenStmt, elseStmt);
+  return new IfStmt(line, column, condition, thenStmt, elseStmt, codegen::getFileID(psr->current_file));
 }
 
 Node::Stmt *Parser::structStmt(PStruct *psr, std::string name) {
@@ -243,8 +236,8 @@ Node::Stmt *Parser::structStmt(PStruct *psr, std::string name) {
               "Expected a SEMICOLON at the end of a struct stmt");
 
   if (stmts.size() > 0)
-    return new StructStmt(line, column, name, fields, stmts);
-  return new StructStmt(line, column, name, fields, {});
+    return new StructStmt(line, column, name, fields, stmts, codegen::getFileID(psr->current_file));
+  return new StructStmt(line, column, name, fields, {}, codegen::getFileID(psr->current_file));
 }
 
 Node::Stmt *Parser::loopStmt(PStruct *psr, std::string name) {
@@ -309,13 +302,13 @@ Node::Stmt *Parser::loopStmt(PStruct *psr, std::string name) {
     if (isOptional) {
       if (isForLoop)
         return new ForStmt(line, column, varName, forLoop, condition,
-                           opCondition, body);
-      return new WhileStmt(line, column, whileLoop, opCondition, body);
+                           opCondition, body, codegen::getFileID(psr->current_file));
+      return new WhileStmt(line, column, whileLoop, opCondition, body, codegen::getFileID(psr->current_file));
     }
     if (isForLoop)
       return new ForStmt(line, column, varName, forLoop, condition, nullptr,
-                         body);
-    return new WhileStmt(line, column, whileLoop, nullptr, body);
+                         body, codegen::getFileID(psr->current_file));
+    return new WhileStmt(line, column, whileLoop, nullptr, body, codegen::getFileID(psr->current_file));
   }
 
   return nullptr;
@@ -344,7 +337,7 @@ Node::Stmt *Parser::enumStmt(PStruct *psr, std::string name) {
   psr->expect(psr, TokenKind::SEMICOLON,
               "Expected a SEMICOLON at the end of an enum stmt");
 
-  return new EnumStmt(line, column, name, fields);
+  return new EnumStmt(line, column, name, fields, codegen::getFileID(psr->current_file));
 }
 
 Node::Stmt *Parser::templateStmt(PStruct *psr, std::string name) {
@@ -374,7 +367,7 @@ Node::Stmt *Parser::templateStmt(PStruct *psr, std::string name) {
 
   psr->expect(psr, TokenKind::GREATER, "Expected a '>' to end a template stmt");
 
-  return new TemplateStmt(typeParams, line, column);
+  return new TemplateStmt(typeParams, line, column, codegen::getFileID(psr->current_file));
 }
 
 Node::Stmt *Parser::importStmt(PStruct *psr, std::string name) {
@@ -405,7 +398,7 @@ Node::Stmt *Parser::importStmt(PStruct *psr, std::string name) {
 
   node.current_file = current_file;
 
-  return new ImportStmt(line, column, path, result);
+  return new ImportStmt(line, column, path, result, codegen::getFileID(psr->current_file));
 }
 
 Node::Stmt *Parser::breakStmt(PStruct *psr, std::string name) {
@@ -415,7 +408,7 @@ Node::Stmt *Parser::breakStmt(PStruct *psr, std::string name) {
               "Expected a BREAK keyword to start a break stmt");
   psr->expect(psr, TokenKind::SEMICOLON,
               "Expected a SEMICOLON at the end of a break stmt");
-  return new BreakStmt(line, column);
+  return new BreakStmt(line, column, codegen::getFileID(psr->current_file));
 }
 
 Node::Stmt *Parser::continueStmt(PStruct *psr, std::string name) {
@@ -425,5 +418,5 @@ Node::Stmt *Parser::continueStmt(PStruct *psr, std::string name) {
               "Expected a CONTINUE keyword to start a continue stmt");
   psr->expect(psr, TokenKind::SEMICOLON,
               "Expected a SEMICOLON at the end of a continue stmt");
-  return new ContinueStmt(line, column);
+  return new ContinueStmt(line, column, codegen::getFileID(psr->current_file));
 }
