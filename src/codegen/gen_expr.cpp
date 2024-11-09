@@ -296,9 +296,8 @@ void codegen::externalCall(Node::Expr *expr) {
     popToRegister(argOrder[i]);
   }
   // Call the function
-  push(Instr{.var = CallInstr{.name = e->name},
-             .type = InstrType::Call,
-             .optimize = false},
+  push(Instr{.var = CallInstr{.name = e->name + "@PLT"},
+             .type = InstrType::Call},
        Section::Main);
   pushRegister("%rax");
 }

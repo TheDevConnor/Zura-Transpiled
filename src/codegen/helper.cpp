@@ -33,7 +33,7 @@ void codegen::pushRegister(const std::string &reg) {
  * @param reg The register to pop to
 */
 void codegen::popToRegister(const std::string &reg) {
-  push(Instr{.var = PopInstr({.where = reg}), .type = InstrType::Pop},
+  push(Instr{.var = PopInstr{.where = reg}, .type = InstrType::Pop},
        Section::Main);
   stackSize--;
 }
@@ -144,14 +144,17 @@ void codegen::processBinaryExpression(BinaryExpr *cond,
 }
 
 void codegen::handleExitSyscall() {
-  moveRegister("%rdi", "%rax", DataSize::Qword, DataSize::Qword);
+  popToRegister("%rdi");
   moveRegister("%rax", "$60", DataSize::Qword, DataSize::Qword);
   push(Instr{.var = Syscall{.name = "SYS_EXIT"}, .type = InstrType::Syscall},
        Section::Main);
 }
 
 void codegen::handleReturnCleanup() {
+  popToRegister("%rax");
+  moveRegister("%rsp", "%rbp", DataSize::Qword, DataSize::Qword);
   popToRegister("%rbp");
+  push(Instr{.var = Ret{}, .type = InstrType::Ret}, Section::Main);
 }
 
 int codegen::convertFloatToInt(float input) {

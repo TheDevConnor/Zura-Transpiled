@@ -11,4 +11,5 @@ const XOpenDisplay := fn (name: str) int {
 
 const XCloseDisplay := fn (display: int) void {
   @call<XCloseDisplay>(display);
+  return;
 };

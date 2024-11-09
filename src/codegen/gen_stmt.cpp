@@ -316,18 +316,15 @@ void codegen::_return(Node::Stmt *stmt) {
   auto returnStmt = static_cast<ReturnStmt *>(stmt);
 
   pushDebug(returnStmt->line, stmt->file_id, returnStmt->pos);
-  // Generate return value for the function
-  codegen::visitExpr(returnStmt->expr);
-
-  // Store the return value in the RAX register
-  popToRegister("%rax");
-
-   if (isEntryPoint) {
-     handleExitSyscall();
-   } else {
-     handleReturnCleanup();
-     push(Instr{.var = Ret{}, .type = InstrType::Ret}, Section::Main);
-   }
+  if (returnStmt->expr != nullptr) {
+    // Generate return value for the function
+    codegen::visitExpr(returnStmt->expr);
+  }
+  if (isEntryPoint) {
+    handleExitSyscall();
+  } else {
+    handleReturnCleanup();
+  }
 }
 
 void codegen::forLoop(Node::Stmt *stmt) {
