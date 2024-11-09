@@ -14,7 +14,8 @@ void codegen::initMaps() {
       {ND_PRINT_STMT, print},        {ND_WHILE_STMT, whileLoop},
       {ND_FOR_STMT, forLoop},        {ND_BREAK_STMT, _break},
       {ND_CONTINUE_STMT, _continue}, {ND_STRUCT_STMT, structDecl},
-      {ND_ENUM_STMT, enumDecl}, {ND_IMPORT_STMT, importDecl}
+      {ND_ENUM_STMT, enumDecl},      {ND_IMPORT_STMT, importDecl},
+      {ND_LINK_STMT, linkFile},      {ND_EXTERN_STMT, externName},
   };
   exprHandlers = {
       {ND_BINARY, binary},   {ND_UNARY, unary},      {ND_CALL, call},

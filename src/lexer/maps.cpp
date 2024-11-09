@@ -53,7 +53,7 @@ void Lexer::initMap() {
   at_keywords = {
       {"@template", TokenKind::TEMPLATE}, {"@cast", TokenKind::CAST},
       {"@import", TokenKind::IMPORT},     {"@link", TokenKind::LINK},
-      {"@extern", TokenKind::EXTERN},
+      {"@extern", TokenKind::EXTERN},     {"@call", TokenKind::CALL}
   };
 
   keywords = {
@@ -164,6 +164,18 @@ void Lexer::initMap() {
       {TokenKind::TYPE, "TYPE"},
       {TokenKind::EXIT, "EXIT"},
       {TokenKind::CAST, "CAST"},
+      {TokenKind::CALL, "CALL"},
+      {TokenKind::LINK, "LINK"},
+      {TokenKind::EXTERN, "EXTERN"},
+      {TokenKind::ERROR_, "ERROR_"},
+      {TokenKind::UNKNOWN, "UNKNOWN"},
+      {TokenKind::END_OF_FILE, "END_OF_FILE"},
+      {TokenKind::TEMPLATE, "TEMPLATE"},
+      {TokenKind::TYPEALIAS, "TYPEALIAS"},
+      {TokenKind::PUB, "PUB"},
+      {TokenKind::PRIV, "PRIV"},
+      {TokenKind::BREAK, "BREAK"},
+      {TokenKind::CONTINUE, "CONTINUE"},
   };
 }
 

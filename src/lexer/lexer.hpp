@@ -84,6 +84,7 @@ enum TokenKind {
   BREAK, 
   CONTINUE,
   CAST,
+  CALL, // Call extern'd functions.
   LINK,
   EXTERN,
 

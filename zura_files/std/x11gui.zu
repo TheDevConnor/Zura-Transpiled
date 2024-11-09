@@ -1,0 +1,9 @@
+@link "X11";
+
+# Create display
+@extern "XOpenDisplay";
+
+# Returns pointer to display, which pointers are 64-bit and so are ints.
+const XOpenDisplay := fn (name: str) int {
+  return @call<XOpenDisplay>(name);
+};

@@ -5,10 +5,11 @@ void Optimizer::optimizePair(std::vector<Instr> *output, Instr &prev, Instr &cur
         appendAndResetPrev(output, curr, prev);
         return;
     }
-
-    // A temporary change - might add future compiler options to re-enable this later
-    if (curr.type == InstrType::Comment)
-        return;
+    
+    if (curr.type == InstrType::Comment) {
+      output->push_back(curr);
+      return; // We don't need to simplify this, or even calculate it's "prev".
+    }
 
     if (curr.type == InstrType::Mov) {
         processMov(output, prev, curr);
@@ -95,12 +96,12 @@ void Optimizer::processOppositePair(std::vector<Instr> *output, Instr &prev, Ins
 }
 
 void Optimizer::simplifyDebug(std::vector<Instr> *output, Instr &curr) {
-    LinkerDirective currAsLinker = std::get<LinkerDirective>(curr.var);
-    if (currAsLinker.value.find(".loc") == std::string::npos) return output->push_back(curr);
-    int currDebugLine = std::stoi(currAsLinker.value.substr(7));
-    if (currDebugLine == previousDebugLine) return;
-    previousDebugLine = currDebugLine;
-    output->push_back(curr);
+  LinkerDirective currAsLinker = std::get<LinkerDirective>(curr.var);
+  if (currAsLinker.value.find(".loc") == std::string::npos) return output->push_back(curr);
+  int currDebugLine = std::stoi(currAsLinker.value.substr(7));
+  if (currDebugLine == previousDebugLine) return;
+  previousDebugLine = currDebugLine;
+  output->push_back(curr);
 }
 
 // Turn push/pops into mov's or xor's

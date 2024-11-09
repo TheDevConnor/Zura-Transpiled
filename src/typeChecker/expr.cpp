@@ -19,14 +19,20 @@ void TypeChecker::visitTemplateCall(Maps *map, Node::Expr *expr) {
   handlerError(template_call->line, template_call->pos, msg, "", "Type Error");
 }
 
+void TypeChecker::visitExternalCall(Maps *map, Node::Expr *expr) {
+  auto external_call = static_cast<ExternalCall *>(expr);
+
+  return_type = std::make_shared<SymbolType>("unknown"); // Unknown type, imagine that this is cast to like int or whatever
+};
+
 void TypeChecker::visitInt(Maps *map, Node::Expr *expr) {
   auto integer = static_cast<IntExpr *>(expr);
 
-  // check if the integer is within the range of an i32 int
-  if (integer->value > std::numeric_limits<int>::max() ||
-      integer->value < std::numeric_limits<int>::min()) {
+  // check if the integer is within the range of an i64 int
+  if (integer->value > std::numeric_limits<signed long long int>::max() ||
+      integer->value < std::numeric_limits<signed long long int>::min()) {
     std::string msg = "Integer '" + std::to_string(integer->value) +
-                      "' is out of range for an 'int' which is 32 bits";
+                      "' is out of range for an 'int' which is 64 bits";
     handlerError(integer->line, integer->pos, msg, "", "Type Error");
   }
 

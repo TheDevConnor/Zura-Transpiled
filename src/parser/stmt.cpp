@@ -3,6 +3,7 @@
 #include "../helper/flags.hpp"
 #include "../codegen/gen.hpp"
 #include "parser.hpp"
+#include <filesystem>
 
 Node::Stmt *Parser::parseStmt(PStruct *psr, std::string name) {
   auto stmt_it = stmt(psr, name);
@@ -385,9 +386,18 @@ Node::Stmt *Parser::importStmt(PStruct *psr, std::string name) {
   node.current_file = path;
 
   path = path.substr(1, path.size() - 2); // removes "" from the path
-  auto result = parse(Flags::readFile(path.c_str()), path);
+
+  // Make an absolute path to the imported file
+  // that is relative to the file that called it
+  // ie: if the file that called it is in /home/user/file1
+  // and the imported file is in /home/user/std/file2
+  // the absolute path will be /home/user/std/file2
+  std::filesystem::path absolutePath = std::filesystem::absolute(
+    std::filesystem::path(current_file).parent_path() / path);
+  auto fileContent = Flags::readFile(absolutePath.string().c_str());
+  auto result = parse(fileContent, absolutePath);
   if (result == nullptr) {
-    ErrorClass::error(line, column, "Could not parse the file '" + path + "'",
+    ErrorClass::error(line, column, "Could not parse the imported file '" + path + "'",
                       "", "Parser Error", path.c_str(), lexer, psr->tks, true,
                       false, false, false, false, false);
     return nullptr;
@@ -411,6 +421,8 @@ Node::Stmt *Parser::linkStmt(PStruct *psr, std::string name) {
   std::string path = psr->expect(psr, TokenKind::STRING,
                                  "Expected a STRING as a path in a link stmt")
                          .value;
+  path.erase(path.begin()); // Erase initial "
+  path.erase(path.end() - 1); // Erase final "
   psr->expect(psr, TokenKind::SEMICOLON, "Expected a SEMICOLON at the end of a link stmt");
   return new LinkStmt(line, column, path, codegen::getFileID(psr->current_file));
 }
@@ -425,6 +437,8 @@ Node::Stmt *Parser::externStmt(PStruct *psr, std::string name) {
   std::string path = psr->expect(psr, TokenKind::STRING,
                                  "Expected a STRING as a path in an extern stmt")
                          .value;
+  path.erase(path.begin()); // Erase initial "
+  path.erase(path.end() - 1); // Erase final "
   psr->expect(psr, TokenKind::SEMICOLON, "Expected a SEMICOLON at the end of an extern stmt");
   return new ExternStmt(line, column, path, codegen::getFileID(psr->current_file));
 }

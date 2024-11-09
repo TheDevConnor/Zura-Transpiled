@@ -8,6 +8,7 @@
 #include <string>
 #include <unordered_map>
 #include <vector>
+#include <set>
 
 namespace codegen {
 
@@ -65,6 +66,8 @@ void expr(Node::Stmt *stmt);
 void _break(Node::Stmt *stmt);
 void _continue(Node::Stmt *stmt);
 void _return(Node::Stmt *stmt);
+void linkFile(Node::Stmt *stmt);
+void externName(Node::Stmt *stmt);
 
 void _arrayExpr(Node::Expr *expr);
 void arrayElem(Node::Expr *expr);
@@ -80,9 +83,11 @@ void memberExpr(Node::Expr *expr);
 
 int convertFloatToInt(float input); // Float input. Crazy, right?
 
-// assembly
+inline std::set<std::string> linkedFiles = {};
+inline std::set<std::string> externalNames = {}; // Make sure that when external functions are called, we run "call 'ExternalName'" rather than "call 'usr_FuncName'"/
+
 enum class 
-Section { // BRUH its 10:13 ok ibrb // Connor brb grabing some ice cream
+Section {
     // section .text
     Main, // main function
     Head, // user functions

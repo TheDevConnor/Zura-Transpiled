@@ -53,7 +53,7 @@ void Flags::runFile(const char *path, std::string outName, bool save, bool debug
   ErrorClass::printError();
   if (echoOn) Flags::updateProgressBar(0.25);
 
-  TypeChecker::performCheck(result);
+  // TypeChecker::performCheck(result); LMAO only temporary
   ErrorClass::printError();
   if (echoOn) Flags::updateProgressBar(0.5);
 

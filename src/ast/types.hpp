@@ -11,9 +11,9 @@ public:
 
   SymbolType(std::string name) : name(name) { kind = NodeKind::ND_SYMBOL_TYPE; }
 
-  void debug(int ident = 0) const override { 
-    std::cout << "Name: ";
-    Node::printIndent(ident + 1);
+  void debug(int indent = 0) const override { 
+    std::cout << "Name: \n";
+    Node::printIndent(indent + 1);
     std::cout << name;
   }
 };
@@ -26,9 +26,9 @@ public:
     kind = NodeKind::ND_ARRAY_TYPE;
   }
 
-  void debug(int ident = 0) const override {
+  void debug(int indent = 0) const override {
     std::cout << "[]";
-    underlying->debug(ident + 1);
+    underlying->debug(indent + 1);
   }
 
   ~ArrayType() { delete underlying; }
@@ -44,9 +44,9 @@ public:
     kind = NodeKind::ND_POINTER_TYPE;
   }
 
-  void debug(int ident = 0) const override {
+  void debug(int indent = 0) const override {
     std::cout << pointer_type;
-    underlying->debug(ident + 1);
+    underlying->debug(indent + 1);
   }
 
   ~PointerType() { delete underlying; }

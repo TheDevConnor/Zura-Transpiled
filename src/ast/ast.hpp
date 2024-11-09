@@ -29,6 +29,7 @@ enum NodeKind {
   ND_RESOLUTION, // x::y
   ND_BOOL, // true
   ND_CAST, // @cast<int>(12.3)
+  ND_EXTERNAL_CALL, // @call<LinkedFunction>(12);
 
   // Statements
   ND_EXPR_STMT, // x = 12

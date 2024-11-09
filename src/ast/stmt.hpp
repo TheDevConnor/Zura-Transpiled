@@ -15,11 +15,11 @@ public:
     kind = NodeKind::ND_PROGRAM;
   }
 
-  void debug(int ident = 0) const override {
-    Node::printIndent(ident);
+  void debug(int indent = 0) const override {
+    Node::printIndent(indent);
     std::cout << "ProgramStmt: \n";
     for (auto s : stmt) {
-      s->debug(ident + 1);
+      s->debug(indent + 1);
     }
   }
 
@@ -41,10 +41,10 @@ public:
     kind = NodeKind::ND_EXPR_STMT;
   }
 
-  void debug(int ident = 0) const override {
-    Node::printIndent(ident);
+  void debug(int indent = 0) const override {
+    Node::printIndent(indent);
     std::cout << "ExprStmt: \n";
-    expr->debug(ident + 1);
+    expr->debug(indent + 1);
   }
 
   ~ExprStmt() { delete expr; }
@@ -62,14 +62,14 @@ public:
     kind = NodeKind::ND_CONST_STMT;
   }
 
-  void debug(int ident = 0) const override {
-    Node::printIndent(ident);
+  void debug(int indent = 0) const override {
+    Node::printIndent(indent);
     std::cout << "ConstStmt: \n";
-    Node::printIndent(ident + 1);
+    Node::printIndent(indent + 1);
     std::cout << "Name: " << name << "\n";
-    Node::printIndent(ident + 1);
+    Node::printIndent(indent + 1);
     std::cout << "Value: \n";
-    value->debug(ident + 1);
+    value->debug(indent + 1);
   }
 
   ~ConstStmt() { delete value; }
@@ -86,13 +86,13 @@ public:
     kind = NodeKind::ND_BLOCK_STMT;
   }
 
-  void debug(int ident = 0) const override {
-    Node::printIndent(ident);
+  void debug(int indent = 0) const override {
+    Node::printIndent(indent);
     std::cout << "BlockStmt: \n";
     for (auto s : stmts) {
-      s->debug(ident + 1);
+      s->debug(indent + 1);
     }
-    Node::printIndent(ident);
+    Node::printIndent(indent);
     std::cout << "End of BlockStmt\n";
   }
 
@@ -119,21 +119,22 @@ public:
     kind = NodeKind::ND_VAR_STMT;
   }
 
-  void debug(int ident = 0) const override {
-    Node::printIndent(ident);
+  void debug(int indent = 0) const override {
+    Node::printIndent(indent);
     std::cout << "VarStmt: \n";
-    Node::printIndent(ident + 1);
+    Node::printIndent(indent + 1);
     std::cout << "IsConst: " << isConst << "\n";
-    Node::printIndent(ident + 1);
+    Node::printIndent(indent + 1);
     std::cout << "Name: " << name << "\n";
-    Node::printIndent(ident + 1);
-    std::cout << "Type: ";
-    type->debug(ident + 2);
+    Node::printIndent(indent + 1);
+    std::cout << "Type: \n";
+    Node::printIndent(indent + 2);
+    type->debug(indent + 2);
     std::cout << "\n";
     if (expr) {
-      Node::printIndent(ident + 1);
+      Node::printIndent(indent + 1);
       std::cout << "Expr: \n";
-      expr->debug(ident + 2);
+      expr->debug(indent + 2);
     }
   }
 
@@ -154,11 +155,11 @@ public:
     kind = NodeKind::ND_PRINT_STMT;
   }
 
-  void debug(int ident = 0) const override {
-    Node::printIndent(ident);
+  void debug(int indent = 0) const override {
+    Node::printIndent(indent);
     std::cout << "PrintStmt: \n";
     for (auto a : args) {
-      a->debug(ident + 1);
+      a->debug(indent + 1);
     }
   }
 
@@ -188,24 +189,28 @@ public:
     kind = NodeKind::ND_FN_STMT;
   }
 
-  void debug(int ident = 0) const override {
-    Node::printIndent(ident);
+  void debug(int indent = 0) const override {
+    Node::printIndent(indent);
     std::cout << "FnStmt: \n";
-    Node::printIndent(ident + 1);
+    Node::printIndent(indent + 1);
     std::cout << "Name: " << name << "\n";
-    Node::printIndent(ident + 1);
+    Node::printIndent(indent + 1);
     std::cout << "Params: \n";
     for (auto p : params) {
-      Node::printIndent(ident + 2);
-      std::cout << "Name: " << p.first << ", Type: ";
-      p.second->debug(ident + 2);
+      Node::printIndent(indent + 2);
+      std::cout << "Name: " << p.first << "\n";
+      Node::printIndent(indent + 3);
+      std::cout << "Type: \n";
+      Node::printIndent(indent + 4);
+      p.second->debug(indent + 4);
       std::cout << "\n";
     }
-    Node::printIndent(ident + 1);
-    std::cout << "ReturnType: ";
-    returnType->debug(ident);
+    Node::printIndent(indent + 1);
+    std::cout << "ReturnType: \n";
+    Node::printIndent(indent + 2);
+    returnType->debug(indent + 2);
     std::cout << "\n";
-    block->debug(ident + 1);
+    block->debug(indent + 1);
   }
 
   ~FnStmt() {
@@ -228,13 +233,13 @@ public:
     kind = NodeKind::ND_RETURN_STMT;
   }
 
-  void debug(int ident = 0) const override {
-    Node::printIndent(ident);
+  void debug(int indent = 0) const override {
+    Node::printIndent(indent);
     std::cout << "ReturnStmt: \n";
-    Node::printIndent(ident + 1);
+    Node::printIndent(indent + 1);
     if (expr) {
       std::cout << "Expr: \n";
-      expr->debug(ident + 2);
+      expr->debug(indent + 2);
     }
   }
 
@@ -258,19 +263,19 @@ public:
     kind = NodeKind::ND_IF_STMT;
   }
 
-  void debug(int ident = 0) const override {
-    Node::printIndent(ident);
+  void debug(int indent = 0) const override {
+    Node::printIndent(indent);
     std::cout << "IfStmt: \n";
-    Node::printIndent(ident + 1);
+    Node::printIndent(indent + 1);
     std::cout << "Condition: \n";
-    condition->debug(ident + 2);
-    Node::printIndent(ident + 1);
+    condition->debug(indent + 2);
+    Node::printIndent(indent + 1);
     std::cout << "ThenStmt: \n";
-    thenStmt->debug(ident + 2);
+    thenStmt->debug(indent + 2);
     if (elseStmt) {
-      Node::printIndent(ident + 1);
+      Node::printIndent(indent + 1);
       std::cout << "ElseStmt: \n";
-      elseStmt->debug(ident + 2);
+      elseStmt->debug(indent + 2);
     }
   }
 
@@ -296,24 +301,24 @@ public:
     kind = NodeKind::ND_STRUCT_STMT;
   }
 
-  void debug(int ident = 0) const override {
-    Node::printIndent(ident);
+  void debug(int indent = 0) const override {
+    Node::printIndent(indent);
     std::cout << "StructStmt: \n";
-    Node::printIndent(ident + 1);
+    Node::printIndent(indent + 1);
     std::cout << "Name: " << name << "\n";
-    Node::printIndent(ident + 1);
+    Node::printIndent(indent + 1);
     std::cout << "Fields: \n";
     for (auto f : fields) {
-      Node::printIndent(ident + 2);
+      Node::printIndent(indent + 2);
       std::cout << "Name: " << f.first << ", Type: ";
-      f.second->debug(ident + 2);
+      f.second->debug(indent + 2);
       std::cout << "\n";
     }
     if (stmts.size() > 0) {
-      Node::printIndent(ident + 1);
+      Node::printIndent(indent + 1);
       std::cout << "Stmts: \n";
       for (auto s : stmts) {
-        s->debug(ident + 2);
+        s->debug(indent + 2);
       }
     }
   }
@@ -343,20 +348,20 @@ public:
     kind = NodeKind::ND_WHILE_STMT;
   }
 
-  void debug(int ident = 0) const override {
-    Node::printIndent(ident);
+  void debug(int indent = 0) const override {
+    Node::printIndent(indent);
     std::cout << "WhileStmt: \n";
-    Node::printIndent(ident + 1);
+    Node::printIndent(indent + 1);
     std::cout << "Condition: \n";
-    condition->debug(ident + 2);
-    Node::printIndent(ident + 1);
+    condition->debug(indent + 2);
+    Node::printIndent(indent + 1);
     if (optional) {
       std::cout << "Optional: \n";
-      optional->debug(ident + 2);
-      Node::printIndent(ident + 1);
+      optional->debug(indent + 2);
+      Node::printIndent(indent + 1);
     }
     std::cout << "Block: \n";
-    block->debug(ident + 2);
+    block->debug(indent + 2);
   }
 
   ~WhileStmt() {
@@ -383,23 +388,23 @@ public:
     kind = NodeKind::ND_FOR_STMT;
   }
 
-  void debug(int ident = 0) const override {
-    Node::printIndent(ident);
+  void debug(int indent = 0) const override {
+    Node::printIndent(indent);
     std::cout << "ForStmt: \n";
-    Node::printIndent(ident + 1);
+    Node::printIndent(indent + 1);
     std::cout << "ForLoop: \n";
-    forLoop->debug(ident + 2);
-    Node::printIndent(ident + 1);
+    forLoop->debug(indent + 2);
+    Node::printIndent(indent + 1);
     std::cout << "Condition: \n";
-    condition->debug(ident + 2);
-    Node::printIndent(ident + 1);
+    condition->debug(indent + 2);
+    Node::printIndent(indent + 1);
     if (optional) {
       std::cout << "Optional: \n";
-      optional->debug(ident + 2);
-      Node::printIndent(ident + 1);
+      optional->debug(indent + 2);
+      Node::printIndent(indent + 1);
     }
     std::cout << "Block: \n";
-    block->debug(ident + 2);
+    block->debug(indent + 2);
   }
 
   ~ForStmt() {
@@ -421,15 +426,15 @@ public:
     kind = NodeKind::ND_ENUM_STMT;
   }
 
-  void debug(int ident = 0) const override {
-    Node::printIndent(ident);
+  void debug(int indent = 0) const override {
+    Node::printIndent(indent);
     std::cout << "EnumStmt: \n";
-    Node::printIndent(ident + 1);
+    Node::printIndent(indent + 1);
     std::cout << "Name: " << name << "\n";
-    Node::printIndent(ident + 1);
+    Node::printIndent(indent + 1);
     std::cout << "Fields: \n";
     for (auto f : fields) {
-      Node::printIndent(ident + 2);
+      Node::printIndent(indent + 2);
       std::cout << f << "\n";
     }
   }
@@ -446,13 +451,13 @@ public:
     kind = NodeKind::ND_TEMPLATE_STMT;
   }
 
-  void debug(int ident = 0) const override {
-    Node::printIndent(ident);
+  void debug(int indent = 0) const override {
+    Node::printIndent(indent);
     std::cout << "TemplateStmt: \n";
-    Node::printIndent(ident + 1);
+    Node::printIndent(indent + 1);
     std::cout << "Typenames: \n";
     for (auto t : typenames) {
-      Node::printIndent(ident + 2);
+      Node::printIndent(indent + 2);
       std::cout << t << "\n";
     }
   }
@@ -472,12 +477,12 @@ public:
     kind = NodeKind::ND_IMPORT_STMT;
   }
 
-  void debug(int ident = 0) const override {
-    Node::printIndent(ident);
+  void debug(int indent = 0) const override {
+    Node::printIndent(indent);
     std::cout << "ImportStmt: \n";
-    Node::printIndent(ident + 1);
+    Node::printIndent(indent + 1);
     std::cout << "Name: " << name << "\n";
-    stmt->debug(ident + 1);
+    stmt->debug(indent + 1);
   }
 
   ~ImportStmt() { delete stmt; }
@@ -494,10 +499,10 @@ public:
     kind = NodeKind::ND_LINK_STMT;
   }
 
-  void debug(int ident = 0) const override {
-    Node::printIndent(ident);
+  void debug(int indent = 0) const override {
+    Node::printIndent(indent);
     std::cout << "LinkStmt: \n";
-    Node::printIndent(ident + 1);
+    Node::printIndent(indent + 1);
     std::cout << "Name: " << name << "\n";
   }
 };
@@ -513,10 +518,10 @@ public:
     kind = NodeKind::ND_EXTERN_STMT;
   }
 
-  void debug(int ident = 0) const override {
-    Node::printIndent(ident);
+  void debug(int indent = 0) const override {
+    Node::printIndent(indent);
     std::cout << "ExternStmt: \n";
-    Node::printIndent(ident + 1);
+    Node::printIndent(indent + 1);
     std::cout << "Name: " << name << "\n";
   }
 };
@@ -530,8 +535,8 @@ public:
     kind = NodeKind::ND_BREAK_STMT;
   }
 
-  void debug(int ident = 0) const override {
-    Node::printIndent(ident);
+  void debug(int indent = 0) const override {
+    Node::printIndent(indent);
     std::cout << "BreakStmt\n";
   }
 };
@@ -545,8 +550,8 @@ public:
     kind = NodeKind::ND_CONTINUE_STMT;
   }
 
-  void debug(int ident = 0) const override {
-    Node::printIndent(ident);
+  void debug(int indent = 0) const override {
+    Node::printIndent(indent);
     std::cout << "ContinueStmt\n";
   }
 };

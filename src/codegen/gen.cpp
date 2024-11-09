@@ -27,7 +27,7 @@ void codegen::gen(Node::Stmt *stmt, bool isSaved, std::string output_filename,
   // absolute path of directory
   std::string input_dir = input_path.parent_path().string();
   std::string input_file = input_path.filename().string();
-  stmt->debug();
+  // stmt->debug();
   visitStmt(stmt);
 
   // Make 2 passes of optimization
@@ -149,7 +149,7 @@ void codegen::gen(Node::Stmt *stmt, bool isSaved, std::string output_filename,
             "\n"
             "\n.uleb128 0x1" // Compilation unit name
             "\n.long .Ldebug_producer_string" // Producer - command or program that created this stinky assembly code
-            "\n.byte 0x8042" // Language (C)
+            "\n.byte 0x8042" // Custom Language (ZU) - not standardized in DWARF so we're allowed ot use it for "custom" purposes
             "\n.long .Ldebug_file_string" // Filename
             "\n.long .Ldebug_file_dir" // Filepath
             "\n.quad .Ltext0" // Low PC (beginning of .text)
@@ -173,81 +173,81 @@ void codegen::gen(Node::Stmt *stmt, bool isSaved, std::string output_filename,
     file << ".Ldebug_end:\n";
     file << ".section .debug_abbrev,\"\",@progbits\n";
     file << ".Ldebug_abbrev:\n";
-    file << "\n.uleb128 0x1"
-            "\n.uleb128 0x11"
-            "\n.byte	0x1"
-            "\n.uleb128 0x25"
-            "\n.uleb128 0xe"
-            "\n.uleb128 0x13"
-            "\n.uleb128 0xb"
-            "\n.uleb128 0x3"
-            "\n.uleb128 0x1f"
-            "\n.uleb128 0x1b"
-            "\n.uleb128 0x1f"
-            "\n.uleb128 0x11"
-            "\n.uleb128 0x1"
-            "\n.uleb128 0x12"
-            "\n.uleb128 0x7"
-            "\n.uleb128 0x10"
-            "\n.uleb128 0x17"
+    file << "\n.uleb128 0x1" // Index label
+            "\n.uleb128 0x11" // DW_TAG_compile_unit
+            "\n.byte	0x1" // Has children
+            "\n.uleb128 0x25" // DW_AT_producer
+            "\n.uleb128 0xe" // DW_FORM_strp
+            "\n.uleb128 0x13" // DW_AT_language
+            "\n.uleb128 0xb" // DW_FORM_data1
+            "\n.uleb128 0x3" // DW_AT_name
+            "\n.uleb128 0x1f" // DW_FORM_line_strp
+            "\n.uleb128 0x1b" // DW_AT_comp_dir
+            "\n.uleb128 0x1f" // DW_FORM_line_strp
+            "\n.uleb128 0x11" // DW_AT_low_pc
+            "\n.uleb128 0x1" // DW_FORM_addr
+            "\n.uleb128 0x12" // DW_AT_high_pc
+            "\n.uleb128 0x7" // DW_FORM_data8
+            "\n.uleb128 0x10" // DW_AT_stmt_list
+            "\n.uleb128 0x17" // DW_FORM_sec_offset
+            "\n.byte	0" // End of attributes list
             "\n.byte	0"
+            "\n.uleb128 0x2" // Index label
+            "\n.uleb128 0x2e" // DW_TAG_subprogram
+            "\n.byte	0x1" // Has children
+            "\n.uleb128 0x3f" // DW_AT_external
+            "\n.uleb128 0x19" // DW_FORM_flag_present
+            "\n.uleb128 0x3" // DW_AT_name
+            "\n.uleb128 0xe" // DW_FORM_strp
+            "\n.uleb128 0x3a" // DW_AT_decl_file
+            "\n.uleb128 0xb" // DW_FORM_data1
+            "\n.uleb128 0x3b" // DW_AT_decl_line
+            "\n.uleb128 0xb" // DW_FORM_data1
+            "\n.uleb128 0x39" // DW_AT_decl_column
+            "\n.uleb128 0xb" // DW_FORM_data1
+            "\n.uleb128 0x49" // DW_AT_type
+            "\n.uleb128 0x13" // DW_FORM_ref4
+            "\n.uleb128 0x11" // DW_AT_low_pc
+            "\n.uleb128 0x1" // DW_FORM_addr
+            "\n.uleb128 0x12" // DW_AT_high_pc
+            "\n.uleb128 0x7" // DW_FORM_data8
+            "\n.uleb128 0x40" // DW_AT_frame_base
+            "\n.uleb128 0x18" // DW_FORM_exprloc
+            "\n.uleb128 0x7a" // DW_AT_call_all_calls
+            "\n.uleb128 0x19" // DW_FORM_flag_present
+            "\n.uleb128 0x1" // DW_AT_sibling
+            "\n.uleb128 0x13" // DW_FORM_ref4
+            "\n.byte	0" // End of attributes list
             "\n.byte	0"
-            "\n.uleb128 0x2"
-            "\n.uleb128 0x2e"
-            "\n.byte	0x1"
-            "\n.uleb128 0x3f"
-            "\n.uleb128 0x19"
-            "\n.uleb128 0x3"
-            "\n.uleb128 0xe"
-            "\n.uleb128 0x3a"
-            "\n.uleb128 0xb"
-            "\n.uleb128 0x3b"
-            "\n.uleb128 0xb"
-            "\n.uleb128 0x39"
-            "\n.uleb128 0xb"
-            "\n.uleb128 0x49"
-            "\n.uleb128 0x13"
-            "\n.uleb128 0x11"
-            "\n.uleb128 0x1"
-            "\n.uleb128 0x12"
-            "\n.uleb128 0x7"
-            "\n.uleb128 0x40"
-            "\n.uleb128 0x18"
-            "\n.uleb128 0x7a"
-            "\n.uleb128 0x19"
-            "\n.uleb128 0x1"
-            "\n.uleb128 0x13"
-            "\n.byte	0"
-            "\n.byte	0"
-            "\n.uleb128 0x3"
-            "\n.uleb128 0x34"
-            "\n.byte	0"
-            "\n.uleb128 0x3"
-            "\n.uleb128 0xe"
-            "\n.uleb128 0x3a"
-            "\n.uleb128 0xb"
-            "\n.uleb128 0x3b"
-            "\n.uleb128 0xb"
-            "\n.uleb128 0x39"
-            "\n.uleb128 0xb"
-            "\n.uleb128 0x49"
-            "\n.uleb128 0x13"
-            "\n.uleb128 0x2"
-            "\n.uleb128 0x18"
-            "\n.byte	0"
+            "\n.uleb128 0x3" // Index label
+            "\n.uleb128 0x34" // DW_TAG_variable
+            "\n.byte	0" // No children
+            "\n.uleb128 0x3" // DW_AT_name
+            "\n.uleb128 0xe" // DW_FORM_strp
+            "\n.uleb128 0x3a" // DW_AT_decl_file
+            "\n.uleb128 0xb" // DW_FORM_data1
+            "\n.uleb128 0x3b" // DW_AT_decl_line
+            "\n.uleb128 0xb" // DW_FORM_data1
+            "\n.uleb128 0x39" // DW_AT_decl_column
+            "\n.uleb128 0xb" // DW_FORM_data1
+            "\n.uleb128 0x49" // DW_AT_type
+            "\n.uleb128 0x13" // DW_FORM_ref4
+            "\n.uleb128 0x2" // DW_AT_location
+            "\n.uleb128 0x18" // DW_FORM_exprloc
+            "\n.byte	0" // End of attributes list
             "\n.byte	0"
             "\n.uleb128 0x4" // Index label
             "\n.uleb128 0x24" // DW_TAG_base_type
-            "\n.byte	0" // NO children
+            "\n.byte	0" // No children
             "\n.uleb128 0xb" // DW_AT_byte_size
             "\n.uleb128 0xb" // DW_FORM_data1 (1 byte)
             "\n.uleb128 0x3e" // DW_AT_encoding
             "\n.uleb128 0xb" // DW_FORM_data1 (1 byte)
             "\n.uleb128 0x3" // DW_AT_name
             "\n.uleb128 0x8" // DW_FORM_string
+            "\n.byte	0" // End of attributes list
             "\n.byte	0"
-            "\n.byte	0"
-            "\n.byte	0";
+            "\n.byte	0"; // End of abbreviations (I don't think this final byte is necessary)
     
     file << Stringifier::stringifyInstrs(diea_section);
     file << "\n.byte 00\n"; // End of abbreviations
@@ -295,9 +295,13 @@ void codegen::gen(Node::Stmt *stmt, bool isSaved, std::string output_filename,
   // Compile, but do not link main.o
   std::string assembler = // "Dont include standard libraries"
       (isDebug)
-        ? "gcc -g -no-pie " + output_filename + ".s -o " + output_filename
-        : "gcc -no-pie " + output_filename + ".s -o " + output_filename;
+        ? "gcc -g -nostdlib -no-pie " + output_filename + ".s -o " + output_filename
+        : "gcc -nostdlib -no-pie " + output_filename + ".s -o " + output_filename;
   std::string assembler_log = output_filename + "_assembler.log";
+  // loop over linkedFiles set and link them with gcc
+  for (auto &linkedFile : linkedFiles) {
+    assembler += " -l" + linkedFile;
+  }
   if (!execute_command(assembler, assembler_log))
     return;
   

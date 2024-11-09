@@ -18,8 +18,8 @@ public:
     this->asmType = new SymbolType("int");
   }
 
-  void debug(int ident = 0) const override {
-    Node::printIndent(ident);
+  void debug(int indent = 0) const override {
+    Node::printIndent(indent);
     std::cout << "IntExpr: " << value << "\n";
   }
 };
@@ -36,9 +36,48 @@ public:
     this->asmType = new SymbolType("float");
   }
 
-  void debug(int ident = 0) const override {
-    Node::printIndent(ident);
+  void debug(int indent = 0) const override {
+    Node::printIndent(indent);
     std::cout << "FloatExpr: " << value << "\n";
+  }
+};
+
+class ExternalCall : public Node::Expr {
+public:
+  int line, pos;
+  std::string name;
+  std::vector<Node::Expr *> args;
+
+  // Technically, these can return things. However, we can't know them
+  // because they are, of course, external.
+  // Their return types should be defined in public documentation
+  // and it is the user's responsibility to know what they are.
+
+  // EX: printf returns an int, but since that's part of the Cstdlib,
+  // we don't know that.
+
+  ExternalCall(int line, int pos, std::string name, std::vector<Node::Expr *> args, 
+                int file)
+      : line(line), pos(pos), name(name),  args(args) {
+    kind = NodeKind::ND_EXTERNAL_CALL;
+    file_id = file;
+    asmType = new SymbolType("unknown");
+  }
+
+  void debug(int indent = 0) const override {
+    Node::printIndent(indent);
+    std::cout << "ExternalCall: " << name << "\n";
+    Node::printIndent(indent + 1);
+    std::cout << "Arguments: \n";
+    for (auto arg : args) {
+      arg->debug(indent + 2);
+    }
+  }
+
+  ~ExternalCall() {
+    for (auto arg : args) {
+      delete arg;
+    }
   }
 };
 
@@ -55,13 +94,14 @@ public:
     // Let type be redefined in typecheck (shhh)
   }
 
-  void debug(int ident = 0) const override {
-    Node::printIndent(ident);
+  void debug(int indent = 0) const override {
+    Node::printIndent(indent);
     std::cout << "IdentExpr: " << name << "\n";
     if (type != nullptr) {
-      Node::printIndent(ident + 1);
-      std::cout << "Type: ";
-      type->debug(ident + 1);
+      Node::printIndent(indent + 1);
+      std::cout << "Type: \n";
+      Node::printIndent(indent + 2);
+      type->debug(indent + 2);
     }
   }
 };
@@ -78,8 +118,8 @@ public:
     this->asmType = new SymbolType("str");
   }
 
-  void debug(int ident = 0) const override {
-    Node::printIndent(ident);
+  void debug(int indent = 0) const override {
+    Node::printIndent(indent);
     std::cout << "StringExpr: " << value << "\n";
   }
 };
@@ -128,13 +168,13 @@ public:
     // Assigning ASMType should be typechecker's problem, where it is supposed to be
   }
 
-  void debug(int ident = 0) const override {
-    Node::printIndent(ident);
+  void debug(int indent = 0) const override {
+    Node::printIndent(indent);
     std::cout << "BinaryExpr: \n";
-    lhs->debug(ident + 1);
-    Node::printIndent(ident + 1);
+    lhs->debug(indent + 1);
+    Node::printIndent(indent + 1);
     std::cout << op << "\n";
-    rhs->debug(ident + 1);
+    rhs->debug(indent + 1);
   }
 
   ~BinaryExpr() {
@@ -160,12 +200,12 @@ public:
     asmType = exprType;
   }
 
-  void debug(int ident = 0) const override {
-    Node::printIndent(ident);
+  void debug(int indent = 0) const override {
+    Node::printIndent(indent);
     std::cout << "UnaryExpr: \n";
-    Node::printIndent(ident + 1);
+    Node::printIndent(indent + 1);
     std::cout << op << "\n";
-    expr->debug(ident + 1);
+    expr->debug(indent + 1);
   }
 
   ~UnaryExpr() { delete expr; }
@@ -183,12 +223,12 @@ public:
     asmType = expr->asmType;
   }
 
-  void debug(int ident = 0) const override {
-    Node::printIndent(ident);
+  void debug(int indent = 0) const override {
+    Node::printIndent(indent);
     std::cout << "PrefixExpr: \n";
-    Node::printIndent(ident + 1);
+    Node::printIndent(indent + 1);
     std::cout << op << "\n";
-    expr->debug(ident + 1);
+    expr->debug(indent + 1);
   }
 
   ~PrefixExpr() { delete expr; }
@@ -206,11 +246,11 @@ public:
     asmType = expr->asmType;
   }
 
-  void debug(int ident = 0) const override {
-    Node::printIndent(ident);
+  void debug(int indent = 0) const override {
+    Node::printIndent(indent);
     std::cout << "PostfixExpr: \n";
-    expr->debug(ident + 1);
-    Node::printIndent(ident + 1);
+    expr->debug(indent + 1);
+    Node::printIndent(indent + 1);
     std::cout << op << "\n";
   }
 
@@ -229,10 +269,10 @@ public:
     asmType = expr->asmType;
   }
 
-  void debug(int ident = 0) const override {
-    Node::printIndent(ident);
+  void debug(int indent = 0) const override {
+    Node::printIndent(indent);
     std::cout << "GroupExpr: \n";
-    expr->debug(ident + 1);
+    expr->debug(indent + 1);
   }
 
   ~GroupExpr() { delete expr; }
@@ -252,11 +292,11 @@ public:
     asmType = type;
   }
 
-  void debug(int ident = 0) const override {
-    Node::printIndent(ident);
+  void debug(int indent = 0) const override {
+    Node::printIndent(indent);
     std::cout << "ArrayExpr: \n";
     for (auto elem : elements) {
-      elem->debug(ident + 1);
+      elem->debug(indent + 1);
     }
   }
 
@@ -280,15 +320,15 @@ public:
     asmType = lhs->asmType;
   }
 
-  void debug(int ident = 0) const override {
-    Node::printIndent(ident);
+  void debug(int indent = 0) const override {
+    Node::printIndent(indent);
     std::cout << "IndexExpr: \n";
-    Node::printIndent(ident + 1);
+    Node::printIndent(indent + 1);
     std::cout << "LHS: \n";
-    lhs->debug(ident + 2);
-    Node::printIndent(ident + 1);
+    lhs->debug(indent + 2);
+    Node::printIndent(indent + 1);
     std::cout << "RHS: \n";
-    rhs->debug(ident + 2);
+    rhs->debug(indent + 2);
   }
 
   ~IndexExpr() {
@@ -310,19 +350,19 @@ public:
     asmType = lhs->asmType;
   }
 
-  void debug(int ident = 0) const override {
-    Node::printIndent(ident);
+  void debug(int indent = 0) const override {
+    Node::printIndent(indent);
     std::cout << "PopExpr: \n";
-    Node::printIndent(ident + 1);
+    Node::printIndent(indent + 1);
     std::cout << "LHS: \n";
-    lhs->debug(ident + 2);
-    Node::printIndent(ident + 1);
+    lhs->debug(indent + 2);
+    Node::printIndent(indent + 1);
     if (rhs == nullptr) {
       std::cout << "Pop the last element\n";
       return;
     }
     std::cout << "RHS: \n";
-    rhs->debug(ident + 2);
+    rhs->debug(indent + 2);
   }
 
   ~PopExpr() {
@@ -346,19 +386,19 @@ public:
     file_id = file;
   }
 
-  void debug(int ident = 0) const override {
-    Node::printIndent(ident);
+  void debug(int indent = 0) const override {
+    Node::printIndent(indent);
     std::cout << "PushExpr: \n";
-    Node::printIndent(ident + 1);
+    Node::printIndent(indent + 1);
     std::cout << "LHS: \n";
-    lhs->debug(ident + 2);
-    Node::printIndent(ident + 1);
+    lhs->debug(indent + 2);
+    Node::printIndent(indent + 1);
     std::cout << "RHS: \n";
-    rhs->debug(ident + 2);
+    rhs->debug(indent + 2);
     if (index != nullptr) {
-      Node::printIndent(ident + 1);
+      Node::printIndent(indent + 1);
       std::cout << "Index: \n";
-      index->debug(ident + 2);
+      index->debug(indent + 2);
     }
   }
 
@@ -382,17 +422,17 @@ public:
     asmType = rhs->asmType;
   }
 
-  void debug(int ident = 0) const override {
-    Node::printIndent(ident);
+  void debug(int indent = 0) const override {
+    Node::printIndent(indent);
     std::cout << "AssignmentExpr: \n";
-    Node::printIndent(ident + 1);
+    Node::printIndent(indent + 1);
     std::cout << "Assignee: \n";
-    assignee->debug(ident + 2);
-    Node::printIndent(ident + 1);
+    assignee->debug(indent + 2);
+    Node::printIndent(indent + 1);
     std::cout << "Operator: " << op << "\n";
-    Node::printIndent(ident + 1);
+    Node::printIndent(indent + 1);
     std::cout << "RHS: \n";
-    rhs->debug(ident + 2);
+    rhs->debug(indent + 2);
   }
 
   ~AssignmentExpr() {
@@ -415,16 +455,16 @@ public:
     // Let typecheck fill out the function return
   }
 
-  void debug(int ident = 0) const override {
-    Node::printIndent(ident);
+  void debug(int indent = 0) const override {
+    Node::printIndent(indent);
     std::cout << "CallExpr: \n";
-    Node::printIndent(ident + 1);
+    Node::printIndent(indent + 1);
     std::cout << "Callee: \n";
-    callee->debug(ident + 2);
-    Node::printIndent(ident + 1);
+    callee->debug(indent + 2);
+    Node::printIndent(indent + 1);
     std::cout << "Arguments: \n";
     for (auto arg : args) {
-      arg->debug(ident + 2);
+      arg->debug(indent + 2);
     }
   }
 
@@ -451,19 +491,19 @@ public:
     // what the fuck
   }
 
-  void debug(int ident = 0) const override {
-    Node::printIndent(ident);
+  void debug(int indent = 0) const override {
+    Node::printIndent(indent);
     std::cout << "TemplateCallExpr: \n";
-    Node::printIndent(ident + 1);
+    Node::printIndent(indent + 1);
     std::cout << "Callee: \n";
-    callee->debug(ident + 2);
-    Node::printIndent(ident + 1);
+    callee->debug(indent + 2);
+    Node::printIndent(indent + 1);
     std::cout << "Template Type: ";
-    template_type->debug(ident + 2);
+    template_type->debug(indent + 2);
     std::cout << std::endl;
-    Node::printIndent(ident + 1);
+    Node::printIndent(indent + 1);
     std::cout << "Arguments: \n";
-    args->debug(ident + 2);
+    args->debug(indent + 2);
   }
 
   ~TemplateCallExpr() {
@@ -487,18 +527,18 @@ public:
     kind = NodeKind::ND_TERNARY;
   }
 
-  void debug(int ident = 0) const override {
-    Node::printIndent(ident);
+  void debug(int indent = 0) const override {
+    Node::printIndent(indent);
     std::cout << "TernaryExpr: \n";
-    Node::printIndent(ident + 1);
+    Node::printIndent(indent + 1);
     std::cout << "Condition: \n";
-    condition->debug(ident + 2);
-    Node::printIndent(ident + 1);
+    condition->debug(indent + 2);
+    Node::printIndent(indent + 1);
     std::cout << "LHS: \n";
-    lhs->debug(ident + 2);
-    Node::printIndent(ident + 1);
+    lhs->debug(indent + 2);
+    Node::printIndent(indent + 1);
     std::cout << "RHS: \n";
-    rhs->debug(ident + 2);
+    rhs->debug(indent + 2);
   }
 
   ~TernaryExpr() {
@@ -521,15 +561,15 @@ public:
     // type check whatever the rhs is supposed to be
   }
 
-  void debug(int ident = 0) const override {
-    Node::printIndent(ident);
+  void debug(int indent = 0) const override {
+    Node::printIndent(indent);
     std::cout << "MemberExpr: \n";
-    Node::printIndent(ident + 1);
+    Node::printIndent(indent + 1);
     std::cout << "LHS: \n";
-    lhs->debug(ident + 2);
-    Node::printIndent(ident + 1);
+    lhs->debug(indent + 2);
+    Node::printIndent(indent + 1);
     std::cout << "RHS: \n";
-    rhs->debug(ident + 2);
+    rhs->debug(indent + 2);
   }
 
   ~MemberExpr() {
@@ -551,15 +591,15 @@ public:
     std::cerr << "excuse me lets like not do the .. thing ok?" << std::endl;
   }
 
-  void debug(int ident = 0) const override {
-    Node::printIndent(ident);
+  void debug(int indent = 0) const override {
+    Node::printIndent(indent);
     std::cout << "ResolutionExpr: \n";
-    Node::printIndent(ident + 1);
+    Node::printIndent(indent + 1);
     std::cout << "LHS: \n";
-    lhs->debug(ident + 2);
-    Node::printIndent(ident + 1);
+    lhs->debug(indent + 2);
+    Node::printIndent(indent + 1);
     std::cout << "RHS: \n";
-    rhs->debug(ident + 2);
+    rhs->debug(indent + 2);
   }
 
   ~ResolutionExpr() {
@@ -579,10 +619,10 @@ public:
     asmType = new SymbolType("bool");
   }
 
-  void debug(int ident = 0) const override {
-    Node::printIndent(ident);
+  void debug(int indent = 0) const override {
+    Node::printIndent(indent);
     std::cout << "BoolStmt: \n";
-    Node::printIndent(ident + 1);
+    Node::printIndent(indent + 1);
     std::cout << "Value: " << value << "\n";
   }
 };

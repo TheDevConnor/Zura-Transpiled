@@ -265,6 +265,43 @@ Node::Expr *Parser::_ternary(PStruct *psr, Node::Expr *left, BindingPower bp) {
   return new TernaryExpr(line, column, left, true_expr, false_expr, codegen::getFileID(psr->current_file));
 }
 
+
+// @call<NativeFunctionName>(fnuctionArgs);
+// differnt than functionName();
+Node::Expr *Parser::externalCall(PStruct *psr) {
+  auto line = psr->tks[psr->pos].line;
+  auto column = psr->tks[psr->pos].column;
+
+  psr->expect(psr, TokenKind::CALL,
+              "Expected a CALL keyword to start a call stmt");
+  
+  psr->expect(psr, TokenKind::LESS,
+              "Expected a LESS to start call function name");
+  
+  std::string funcName = psr->expect(psr, TokenKind::IDENTIFIER,
+              "Expected an IDENTIFIER as a function name in a call stmt")
+            .value;
+
+  psr->expect(psr, TokenKind::GREATER,
+              "Expected a GREATER to end call function name");
+  
+  psr->expect(psr, TokenKind::LEFT_PAREN,
+              "Expected a LEFT_PAREN to start call function arguments");
+  
+  std::vector<Node::Expr *> args;
+  while (psr->current(psr).kind != TokenKind::RIGHT_PAREN) {
+    args.push_back(parseExpr(psr, BindingPower::defaultValue));
+    if (psr->current(psr).kind == TokenKind::COMMA)
+      psr->expect(psr, TokenKind::COMMA,
+                  "Expected a COMMA after an arguement in a call stmt");
+  }
+
+  psr->expect(psr, TokenKind::RIGHT_PAREN,
+              "Expected a RIGHT_PAREN to end call function arguments");
+
+  return new ExternalCall(line, column, funcName, args, codegen::getFileID(psr->current_file));
+};
+
 Node::Expr *Parser::_member(PStruct *psr, Node::Expr *left, BindingPower bp) {
   auto line = psr->tks[psr->pos].line;
   auto column = psr->tks[psr->pos].column;

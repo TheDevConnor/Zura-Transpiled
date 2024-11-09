@@ -1,9 +1,6 @@
-@import "zura_files/std/math.zu"; # Lmao connor the typechecker didnt like it
-
-@link "math";
-@extern "usr_math";
+@import "std/x11gui.zu";
 
 const main := fn () int {
-  have x: int = 185;
-  return x;
+  have dpy: int = XOpenDisplay("Hello, World!");
+  return 69;
 };

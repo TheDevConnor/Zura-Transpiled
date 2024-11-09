@@ -422,7 +422,40 @@ void codegen::_continue(Node::Stmt *stmt) {
 };
 
 void codegen::importDecl(Node::Stmt *stmt) {
-  std::cerr << "Import statements are not implemented yet!" << std::endl;
-  exit(-1);
-  // auto s = static_cast<ImportStmt *>(stmt);
+  // Lex, parse, and generate code for the imported file
+  // Keep track of its imports to ensure there are no circular dependencies.
+  
+  auto s = static_cast<ImportStmt *>(stmt);
+  push(Instr{.var = Comment{.comment = "Import file '" + s->name + "'."}, .type = InstrType::Comment}, Section::Main);
+  codegen::program(s->stmt);
 };
+
+void codegen::linkFile(Node::Stmt *stmt) {
+  auto s = static_cast<LinkStmt *>(stmt);
+  if (linkedFiles.contains(s->name)) {
+    // It's not the end of the world.
+    std::cout << "Warning: File '" << s->name << "' already @link'd." << std::endl;
+  } else {
+    linkedFiles.insert(s->name);
+  }
+}
+
+void codegen::externName(Node::Stmt *stmt) {
+  auto s = static_cast<ExternStmt *>(stmt);
+  push(Instr{.var = Comment{.comment = "Extern name '" + s->name + "'."}, .type = InstrType::Comment}, Section::Main);
+  // Push the extern directive to the front of the section
+  if (externalNames.contains(s->name)) {
+    std::cout << "Error: Name '" << s->name << "' already @extern'd." << std::endl;
+  } else {
+    text_section.emplace(text_section.begin(), Instr{.var = LinkerDirective{.value = ".extern " + s->name + "\n"}, .type = InstrType::Linker});
+    text_section.emplace(text_section.begin(), Instr{.var = LinkerDirective{ // NOTE: I'm not sure if this .loc will be registered properly.
+      .value = 
+        ".loc " + std::to_string(s->file_id) + 
+        " " + std::to_string(s->line) + 
+        " " + std::to_string(s->pos) + 
+        "\n\t"},
+     .type = InstrType::Linker});
+    text_section.emplace(text_section.begin(), Instr{.var = Comment{.comment = "Include external function name '" + s->name + "'."}, .type = InstrType::Comment});
+    externalNames.insert(s->name);
+  }
+}
