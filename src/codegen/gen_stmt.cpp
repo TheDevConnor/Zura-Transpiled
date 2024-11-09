@@ -326,6 +326,7 @@ void codegen::_return(Node::Stmt *stmt) {
       popToRegister("%rax");
       handleReturnCleanup();
     }
+    return;
   }
   if (isEntryPoint) {
     moveRegister("%rax", "$0", DataSize::Qword, DataSize::Qword);
