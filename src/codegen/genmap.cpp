@@ -18,12 +18,12 @@ void codegen::initMaps() {
       {ND_LINK_STMT, linkFile},      {ND_EXTERN_STMT, externName},
   };
   exprHandlers = {
-      {ND_BINARY, binary},   {ND_UNARY, unary},      {ND_CALL, call},
-      {ND_TERNARY, ternary}, {ND_INT, primary},      {ND_FLOAT, primary},
-      {ND_IDENT, primary},   {ND_STRING, primary},   {ND_BOOL, primary},
-      {ND_GROUP, grouping},  {ND_ASSIGN, assign},    {ND_PREFIX, unary},
-      {ND_POSTFIX, unary},   {ND_ARRAY, _arrayExpr}, {ND_INDEX, arrayElem},
-      {ND_CAST, cast}, {ND_MEMBER, memberExpr}
+      {ND_BINARY, binary},   {ND_UNARY, unary},       {ND_CALL, call},
+      {ND_TERNARY, ternary}, {ND_INT, primary},       {ND_FLOAT, primary},
+      {ND_IDENT, primary},   {ND_STRING, primary},    {ND_BOOL, primary},
+      {ND_GROUP, grouping},  {ND_ASSIGN, assign},     {ND_PREFIX, unary},
+      {ND_POSTFIX, unary},   {ND_ARRAY, _arrayExpr},  {ND_INDEX, arrayElem},
+      {ND_CAST, cast},       {ND_MEMBER, memberExpr}, {ND_EXTERNAL_CALL, externalCall},
   };
   opMap = {
       {"+", "add"}, {"-", "sub"}, 

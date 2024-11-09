@@ -2,5 +2,7 @@
 
 const main := fn () int {
   have dpy: int = XOpenDisplay("Hello, World!");
+
+  XCloseDisplay(dpy);
   return 69;
 };

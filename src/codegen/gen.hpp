@@ -80,6 +80,7 @@ void assign(Node::Expr *expr);
 void primary(Node::Expr *expr);
 void cast(Node::Expr *expr);
 void memberExpr(Node::Expr *expr);
+void externalCall(Node::Expr *expr);
 
 int convertFloatToInt(float input); // Float input. Crazy, right?
 
@@ -144,7 +145,8 @@ inline const char* file_name;
 inline bool debug = false;
 
 // Function argument order
-inline static const std::vector<std::string> argOrder = {"%rsi","%rdx","%rcx","%r8","%r9"};
+inline static const std::vector<std::string> argOrder = {"%rdi", "%rsi", "%rdx", "%rcx", "%r8", "%r9"};
+
 
 // Helper function to pop the value from the stack to a register
 void moveRegister(const std::string &dest, const std::string &src, DataSize dest_size, DataSize src_size);

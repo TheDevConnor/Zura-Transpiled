@@ -280,6 +280,29 @@ void codegen::ternary(Node::Expr *expr) {
   ternay++;
 }
 
+void codegen::externalCall(Node::Expr *expr) {
+  // Basically like a normal function call
+  // ... Minus the "usr_" prefix
+  auto e = static_cast<ExternalCall *>(expr);
+  pushDebug(e->line, expr->file_id, e->pos);
+  // Push each argument one by one.
+  if (e->args.size() > argOrder.size()) {
+    std::cerr << "Too many arguments in call - consider reducing them or moving them to a globally defined space." << std::endl;
+    exit(-1);
+  }
+  for (size_t i = 0; i < e->args.size(); i++) {
+    // evaluate them
+    codegen::visitExpr(e->args.at(i));
+    popToRegister(argOrder[i]);
+  }
+  // Call the function
+  push(Instr{.var = CallInstr{.name = e->name},
+             .type = InstrType::Call,
+             .optimize = false},
+       Section::Main);
+  pushRegister("%rax");
+}
+
 void codegen::assign(Node::Expr *expr) {
   auto e = static_cast<AssignmentExpr *>(expr);
   auto lhs = static_cast<IdentExpr *>(e->assignee);

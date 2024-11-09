@@ -96,6 +96,12 @@ void codegen::funcDecl(Node::Stmt *stmt) {
   }
 
   codegen::visitStmt(s->block);
+  // Check if last instruction was a "RET"
+  if (text_section.back().type != InstrType::Ret) {
+    // Push a ret anyway
+    // Otherwise we SEGFAULTT
+    push(Instr{.var = Ret{.fromWhere=funcName},.type = InstrType::Ret},Section::Main);
+  }
   stackSize = preStackSize;
   funcBlockStart = -1;
 
@@ -448,7 +454,7 @@ void codegen::externName(Node::Stmt *stmt) {
     std::cout << "Error: Name '" << s->name << "' already @extern'd." << std::endl;
   } else {
     text_section.emplace(text_section.begin(), Instr{.var = LinkerDirective{.value = ".extern " + s->name + "\n"}, .type = InstrType::Linker});
-    text_section.emplace(text_section.begin(), Instr{.var = LinkerDirective{ // NOTE: I'm not sure if this .loc will be registered properly.
+    if (debug) text_section.emplace(text_section.begin(), Instr{.var = LinkerDirective{ // NOTE: I'm not sure if this .loc will be registered properly.
       .value = 
         ".loc " + std::to_string(s->file_id) + 
         " " + std::to_string(s->line) + 
