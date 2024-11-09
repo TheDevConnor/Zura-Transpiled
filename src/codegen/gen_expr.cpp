@@ -251,7 +251,6 @@ void codegen::call(Node::Expr *expr) {
 
 // TODO: FIX this to evalueate correctly
 void codegen::ternary(Node::Expr *expr) {
-<<<<<<< HEAD
   auto e = static_cast<TernaryExpr *>(expr);
 
   int ternay = 0;
@@ -279,14 +278,6 @@ void codegen::ternary(Node::Expr *expr) {
   push(Instr{.var = Label{.name = "ternaryEnd" + ternayCount},
              .type = InstrType::Label},Section::Main);
   ternay++;
-=======
-  std::cerr
-      << "No fancy error for this, beg Connor... (Soviet Pancakes speaking)"
-      << std::endl;
-  std::cerr << "Ternary expression not implemented!" << std::endl;
-  exit(-1);
-  // auto e = static_cast<TernaryExpr *>(expr);
->>>>>>> 0dbd398 (Fixed a bunch of warnings when -Wextra was enabled and FINALLY FIXED DWARF!!!!!!!!!!)
 }
 
 void codegen::assign(Node::Expr *expr) {

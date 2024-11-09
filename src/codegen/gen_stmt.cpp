@@ -145,7 +145,9 @@ void codegen::varDecl(Node::Stmt *stmt) {
             ".long .L" + asmName + "_debug_type\n" // Type - point to the DIE of the DW_TAG_base_type
             ".uleb128 0x02\n" // Length of data in location definition - 2 bytes long
             ".byte 0x91\n" // DW_OP_fbreg (first byte)
-            ".sleb128 " + std::to_string(whereBytes) + "\n" // Offset of bytes - eg -20(%rbp), this is -20. (second byte)
+
+            // Isn't the loc supposed to be this anyway? It's very strange.
+            ".sleb128 " + std::to_string(whereBytes - 16) + "\n"
   , Section::DIE);
 
   // DIE String pointer
