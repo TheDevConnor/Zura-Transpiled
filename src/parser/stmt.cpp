@@ -401,6 +401,34 @@ Node::Stmt *Parser::importStmt(PStruct *psr, std::string name) {
   return new ImportStmt(line, column, path, result, codegen::getFileID(psr->current_file));
 }
 
+Node::Stmt *Parser::linkStmt(PStruct *psr, std::string name) {
+  auto line = psr->tks[psr->pos].line;
+  auto column = psr->tks[psr->pos].column;
+
+  // @link "path";
+  psr->expect(psr, TokenKind::LINK,
+              "Expected a LINK keyword to start a link stmt");
+  std::string path = psr->expect(psr, TokenKind::STRING,
+                                 "Expected a STRING as a path in a link stmt")
+                         .value;
+  psr->expect(psr, TokenKind::SEMICOLON, "Expected a SEMICOLON at the end of a link stmt");
+  return new LinkStmt(line, column, path, codegen::getFileID(psr->current_file));
+}
+
+Node::Stmt *Parser::externStmt(PStruct *psr, std::string name) {
+  auto line = psr->tks[psr->pos].line;
+  auto column = psr->tks[psr->pos].column;
+
+  // @extern "C";
+  psr->expect(psr, TokenKind::EXTERN,
+              "Expected an EXTERN keyword to start an extern stmt");
+  std::string path = psr->expect(psr, TokenKind::STRING,
+                                 "Expected a STRING as a path in an extern stmt")
+                         .value;
+  psr->expect(psr, TokenKind::SEMICOLON, "Expected a SEMICOLON at the end of an extern stmt");
+  return new ExternStmt(line, column, path, codegen::getFileID(psr->current_file));
+}
+
 Node::Stmt *Parser::breakStmt(PStruct *psr, std::string name) {
   auto line = psr->tks[psr->pos].line;
   auto column = psr->tks[psr->pos].column;

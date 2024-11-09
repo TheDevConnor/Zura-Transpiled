@@ -48,6 +48,8 @@ enum NodeKind {
   ND_TEMPLATE_STMT, // template <T> fn () T {}
   ND_BREAK_STMT,  // break
   ND_CONTINUE_STMT, // continue
+  ND_LINK_STMT, // link "x"
+  ND_EXTERN_STMT, // extern "C"
 
   // Types
   ND_SYMBOL_TYPE, // int

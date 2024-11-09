@@ -52,6 +52,8 @@ void Lexer::initMap() {
 
   at_keywords = {
       {"@template", TokenKind::TEMPLATE}, {"@cast", TokenKind::CAST},
+      {"@import", TokenKind::IMPORT},     {"@link", TokenKind::LINK},
+      {"@extern", TokenKind::EXTERN},
   };
 
   keywords = {

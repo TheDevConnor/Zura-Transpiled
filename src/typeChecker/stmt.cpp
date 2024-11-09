@@ -284,6 +284,14 @@ void TypeChecker::visitImport(Maps *map, Node::Stmt *stmt) {
   node.current_file = file_name; // reset the current file name
 }
 
+void TypeChecker::visitLink(Maps *map, Node::Stmt *stmt) {
+  // nothing to do here
+}
+
+void TypeChecker::visitExtern(Maps *map, Node::Stmt *stmt) {
+  // nothing to do here
+}
+
 void TypeChecker::visitBreak(Maps *map, Node::Stmt *stmt) {
   // nothing to do here
 }

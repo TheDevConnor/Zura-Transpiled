@@ -84,6 +84,8 @@ enum TokenKind {
   BREAK, 
   CONTINUE,
   CAST,
+  LINK,
+  EXTERN,
 
   // Error
   ERROR_,

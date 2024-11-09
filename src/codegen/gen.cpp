@@ -27,7 +27,7 @@ void codegen::gen(Node::Stmt *stmt, bool isSaved, std::string output_filename,
   // absolute path of directory
   std::string input_dir = input_path.parent_path().string();
   std::string input_file = input_path.filename().string();
-  // stmt->debug();
+  stmt->debug();
   visitStmt(stmt);
 
   // Make 2 passes of optimization

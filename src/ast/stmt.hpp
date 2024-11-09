@@ -483,6 +483,44 @@ public:
   ~ImportStmt() { delete stmt; }
 };
 
+class LinkStmt : public Node::Stmt {
+public:
+  int line, pos;
+  std::string name;
+
+  LinkStmt(int line, int pos, std::string name, int file)
+      : line(line), pos(pos), name(name) {
+    file_id = file;
+    kind = NodeKind::ND_LINK_STMT;
+  }
+
+  void debug(int ident = 0) const override {
+    Node::printIndent(ident);
+    std::cout << "LinkStmt: \n";
+    Node::printIndent(ident + 1);
+    std::cout << "Name: " << name << "\n";
+  }
+};
+
+class ExternStmt : public Node::Stmt {
+public:
+  int line, pos;
+  std::string name;
+
+  ExternStmt(int line, int pos, std::string name, int file)
+      : line(line), pos(pos), name(name) {
+    file_id = file;
+    kind = NodeKind::ND_EXTERN_STMT;
+  }
+
+  void debug(int ident = 0) const override {
+    Node::printIndent(ident);
+    std::cout << "ExternStmt: \n";
+    Node::printIndent(ident + 1);
+    std::cout << "Name: " << name << "\n";
+  }
+};
+
 class BreakStmt : public Node::Stmt {
 public:
   int line, pos;

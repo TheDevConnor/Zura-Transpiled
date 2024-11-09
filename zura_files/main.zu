@@ -1,4 +1,7 @@
-# import "zura_files/std/math.zu"; # Lmao connor the typechecker didnt like it
+@import "zura_files/std/math.zu"; # Lmao connor the typechecker didnt like it
+
+@link "math";
+@extern "usr_math";
 
 const main := fn () int {
   have x: int = 185;

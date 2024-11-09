@@ -106,6 +106,8 @@ void visitFor(Maps *map, Node::Stmt *stmt);
 void visitBreak(Maps *map, Node::Stmt *stmt);
 void visitContinue(Maps *map, Node::Stmt *stmt);
 void visitImport(Maps *map, Node::Stmt *stmt);
+void visitLink(Maps *map, Node::Stmt *stmt);
+void visitExtern(Maps *map, Node::Stmt *stmt);
 
 // !Expr functions
 void visitTemplateCall(Maps *map, Node::Expr *expr);  
