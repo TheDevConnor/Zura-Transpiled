@@ -319,11 +319,19 @@ void codegen::_return(Node::Stmt *stmt) {
   if (returnStmt->expr != nullptr) {
     // Generate return value for the function
     codegen::visitExpr(returnStmt->expr);
+    if (isEntryPoint) {
+      popToRegister("%rdi");
+      handleExitSyscall();
+    } else {
+      popToRegister("%rax");
+      handleReturnCleanup();
+    }
   }
   if (isEntryPoint) {
+    moveRegister("%rax", "$0", DataSize::Qword, DataSize::Qword);
     handleExitSyscall();
   } else {
-    handleReturnCleanup();
+    handleReturnCleanup(); // We don't care about rax! We're exiting. We already know that nothing is being returned therefore we know that this is ok.
   }
 }
 

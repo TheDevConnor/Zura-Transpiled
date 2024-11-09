@@ -144,14 +144,12 @@ void codegen::processBinaryExpression(BinaryExpr *cond,
 }
 
 void codegen::handleExitSyscall() {
-  popToRegister("%rdi");
   moveRegister("%rax", "$60", DataSize::Qword, DataSize::Qword);
   push(Instr{.var = Syscall{.name = "SYS_EXIT"}, .type = InstrType::Syscall},
        Section::Main);
 }
 
 void codegen::handleReturnCleanup() {
-  popToRegister("%rax");
   moveRegister("%rsp", "%rbp", DataSize::Qword, DataSize::Qword);
   popToRegister("%rbp");
   push(Instr{.var = Ret{}, .type = InstrType::Ret}, Section::Main);
