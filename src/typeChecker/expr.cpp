@@ -243,6 +243,11 @@ void TypeChecker::visitCall(Maps *map, Node::Expr *expr) {
   auto name = static_cast<IdentExpr *>(call->callee);
   std::pair<TypeChecker::Maps::NameTypePair, std::vector<TypeChecker::Maps::NameTypePair>> fn = Maps::lookup_fn(map, name->name, call->line, call->pos);
 
+  if (fn.first.first == "") {
+    std::string msg = "Function '" + name->name + "' is not defined";
+    handlerError(call->line, call->pos, msg, "", "Type Error");
+  }
+
   if (fn.second.size() != call->args.size()) {
     std::string msg = "Function '" + name->name + "' expects " +
                       std::to_string(fn.second.size()) + " arguments but got " +
@@ -250,7 +255,7 @@ void TypeChecker::visitCall(Maps *map, Node::Expr *expr) {
     handlerError(call->line, call->pos, msg, "", "Type Error");
   }
 
-  for (int i = 0; i < call->args.size(); i++) {
+  for (size_t i = 0; i < call->args.size(); i++) {
     visitExpr(map, call->args[i]);
     if (type_to_string(return_type.get()) !=
         type_to_string(fn.second[i].second)) {

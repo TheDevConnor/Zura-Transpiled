@@ -280,6 +280,9 @@ void TypeChecker::visitImport(Maps *map, Node::Stmt *stmt) {
   map->declare(map->global_symbol_table, import_stmt->name, return_type.get(),
                import_stmt->line, import_stmt->pos);
 
+  // type check the import
+  visitStmt(map, import_stmt->stmt);
+
   return_type = nullptr;
   node.current_file = file_name; // reset the current file name
 }
