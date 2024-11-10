@@ -241,7 +241,7 @@ void TypeChecker::visitCall(Maps *map, Node::Expr *expr) {
   auto call = static_cast<CallExpr *>(expr);
 
   auto name = static_cast<IdentExpr *>(call->callee);
-  auto fn = Maps::lookup_fn(map, name->name, call->line, call->pos);
+  std::pair<TypeChecker::Maps::NameTypePair, std::vector<TypeChecker::Maps::NameTypePair>> fn = Maps::lookup_fn(map, name->name, call->line, call->pos);
 
   if (fn.second.size() != call->args.size()) {
     std::string msg = "Function '" + name->name + "' expects " +
@@ -333,26 +333,6 @@ void TypeChecker::visitCast(Maps *map, Node::Expr *expr) {
   // Cast the generic expression to a CastExpr
   auto cast = static_cast<CastExpr *>(expr);
 
-  // Cast the cast expression's target (castee) to an IdentExpr to get the
-  // variable name
-  visitIdent(map, cast->castee);
-  cast->castee->asmType = return_type.get();
-  auto cast_ident = static_cast<IdentExpr *>(cast->castee);
-
-  // Find the variable in the local symbol table and global symbol table
-  auto var = (map->local_symbol_table.find(cast_ident->name) != nullptr)
-                 ? map->local_symbol_table.find(cast_ident->name)
-                 : map->global_symbol_table.find(cast_ident->name);
-
-  if (var != nullptr) {
-    // Variable was found; update its type
-    var->second = cast->castee_type;
-  } else {
-    // Variable was not found in the symbol table
-    std::string msg =
-        cast_ident->name + " not found in the symbol table for casting";
-    handlerError(cast->line, cast->pos, msg, "", "Symbol Table Error");
-  }
   expr->asmType = cast->castee_type;
   return_type = std::make_shared<SymbolType>(type_to_string(cast->castee_type));
 }

@@ -2,6 +2,7 @@
 #include "../ast/ast.hpp"
 #include "../helper/flags.hpp"
 #include "../codegen/gen.hpp"
+#include "../typeChecker/type.hpp"
 #include "parser.hpp"
 #include <filesystem>
 
@@ -405,6 +406,8 @@ Node::Stmt *Parser::importStmt(PStruct *psr, std::string name) {
                       false, false, false, false, false);
     return nullptr;
   }
+  // Typecheck the imported file
+  TypeChecker::performCheck(result, false);
 
   psr->expect(psr, TokenKind::SEMICOLON,
               "Expected a SEMICOLON at the end of an import stmt");

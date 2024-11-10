@@ -15,7 +15,7 @@ using namespace std;
 
 void Flags::updateProgressBar(double progress) {
     const int barWidth = 50;
-    std::cout << "[";
+    std::cout << "\033[2K\r[";
     int pos = barWidth * progress;
     for (int i = 0; i < barWidth; ++i) {
         if (i < pos) std::cout << "=";
@@ -23,7 +23,6 @@ void Flags::updateProgressBar(double progress) {
         else std::cout << " ";
     }
     std::cout << "] " << int(progress * 100.0) << " %\r";
-    std::cout.flush();
 }
 
 char *Flags::readFile(const char *path) {
@@ -53,7 +52,7 @@ void Flags::runFile(const char *path, std::string outName, bool save, bool debug
   ErrorClass::printError();
   if (echoOn) Flags::updateProgressBar(0.25);
 
-  // TypeChecker::performCheck(result); LMAO only temporary
+  TypeChecker::performCheck(result);
   ErrorClass::printError();
   if (echoOn) Flags::updateProgressBar(0.5);
 

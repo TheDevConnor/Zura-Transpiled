@@ -180,6 +180,11 @@ void codegen::cast(Node::Expr *expr) {
   auto e = static_cast<CastExpr *>(expr);
   SymbolType *toType = static_cast<SymbolType *>(e->castee_type);
   SymbolType *fromType = static_cast<SymbolType *>(e->castee->asmType);
+
+  if (fromType->name == "unknown") {
+    return; // We can't cast it, but we can't error, either. Assume its type is ok already.
+  }
+
   if (fromType->name == "str") {
     std::cerr << "Explicitly casting from string is not allowed" << std::endl;
     exit(-1);

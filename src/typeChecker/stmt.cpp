@@ -184,6 +184,9 @@ void TypeChecker::visitPrint(Maps *map, Node::Stmt *stmt) {
 
 void TypeChecker::visitReturn(Maps *map, Node::Stmt *stmt) {
   auto return_stmt = static_cast<ReturnStmt *>(stmt);
+  if (return_stmt->expr == nullptr) {
+    return;
+  }
   needsReturn = true;
 
   visitExpr(map, return_stmt->expr);
@@ -272,9 +275,6 @@ void TypeChecker::visitImport(Maps *map, Node::Stmt *stmt) {
                       "global symbol table";
     handlerError(import_stmt->line, import_stmt->pos, msg, "", "Symbol Table Error");
   }
-
-  // type check the import
-  performCheck(import_stmt->stmt, false);
 
   // add the import to the global table
   map->declare(map->global_symbol_table, import_stmt->name, return_type.get(),

@@ -116,6 +116,7 @@ std::string ErrorClass::error(int line, int pos, const std::string &msg,
 void ErrorClass::printError() {
   if (!errors.empty() || !typeErros.empty()) {
     if (!errors.empty()) {
+      std::cout << "\r\033[2K"; // Clear the line and move to start -- overwrite previous garbage
       std::cout << "Total number of Errors: "
                 << col.color(std::to_string(errors.size()), Color::RED, true,
                              false)
@@ -125,6 +126,7 @@ void ErrorClass::printError() {
       }
     }
     if (!typeErros.empty()) {
+      std::cout << "\033[2K"; // Clear the line
       std::cout << "Total number of Type Errors: "
                 << col.color(std::to_string(typeErros.size()), Color::RED, true,
                              false)
