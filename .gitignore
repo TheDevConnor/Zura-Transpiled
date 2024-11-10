@@ -1,9 +1,11 @@
 # Ignore executable and object files
 *.exe
-*.c
 *.asm
 *.o
 *.s
+
+# I, personally, put C files into the test to compare the output assembly.
+test/*
 
 # Ignore Visual Studio Code files
 .vscode

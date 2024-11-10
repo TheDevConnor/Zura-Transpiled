@@ -51,18 +51,30 @@ void codegen::funcDecl(Node::Stmt *stmt) {
   if (debug) {
     SymbolType *st = static_cast<SymbolType *>(s->returnType);
     std::string asmName = st->name;
-    pushLinker(".uleb128 0x2\n"
-              ".long " + dieLabel + "_string\n"
-              ".byte 0x0\n" // File index 0 - no other file includes allowed (yet)
-              ".byte " + std::to_string(s->line) + "\n" // Line number
-              ".byte " + std::to_string(s->pos) + "\n" // Line column
-              ".long .L" + asmName + "_debug_type\n" // Return type (DW_AT_type)
-              ".quad " + dieLabel + "_debug_start\n" // Low pc
-              ".quad " + dieLabel + "_debug_end - " + dieLabel + "_debug_start\n" // high pc
-              ".uleb128 0x01\n" // 1 byte is gonna follow
-              ".byte 0x9c\n"
-              ".long .L" + asmName + "_debug_type\n" // idk bro dont ask why this is sibling type
-              , Section::DIE);
+    if (st->name == "void") {
+      pushLinker(".uleb128 0x6\n"
+                ".long " + dieLabel + "_string\n"
+                ".byte " + std::to_string(s->file_id) + // File ID
+                "\n.byte " + std::to_string(s->line) + "\n" // Line number
+                ".byte " + std::to_string(s->pos) + "\n" // Line column
+                ".quad " + dieLabel + "_debug_start\n" // Low pc
+                ".quad " + dieLabel + "_debug_end - " + dieLabel + "_debug_start\n" // high pc
+                ".uleb128 0x01\n" // 1 byte is gonna follow
+                ".byte 0x9c\n"
+                , Section::DIE);
+    } else {
+      pushLinker(".uleb128 0x2\n"
+                ".long " + dieLabel + "_string\n"
+                ".byte " + std::to_string(s->file_id) + // File ID
+                "\n.byte " + std::to_string(s->line) + "\n" // Line number
+                ".byte " + std::to_string(s->pos) + "\n" // Line column
+                ".long .L" + asmName + "_debug_type\n" // Return type (DW_AT_type)
+                ".quad " + dieLabel + "_debug_start\n" // Low pc
+                ".quad " + dieLabel + "_debug_end - " + dieLabel + "_debug_start\n" // high pc
+                ".uleb128 0x01\n" // 1 byte is gonna follow
+                ".byte 0x9c\n"
+                , Section::DIE);
+    }
 
     pushLinker(dieLabel + "_string: .string \"" + funcName + "\"\n", Section::DIEString);
     push(Instr {.var = Label {.name = dieLabel + "_debug_start" }, .type = InstrType::Label }, Section::Main);
@@ -106,7 +118,10 @@ void codegen::funcDecl(Node::Stmt *stmt) {
   funcBlockStart = -1;
 
   // Function ends with ret so we can't really push any other instructions.
-  if (debug) pushLinker(dieLabel + "_debug_end:\n", Section::Main);
+  if (debug) {
+    pushLinker(dieLabel + "_debug_end:\n", Section::Main);
+    pushLinker(".byte 0\n", Section::DIE); // End of children
+  }
 
   push(Instr{.var = LinkerDirective{.value = ".cfi_endproc\n"},.type = InstrType::Linker},Section::Main);
   push(Instr{.var = LinkerDirective{.value = ".size " + funcName + ", .-" + funcName + "\n\t"},

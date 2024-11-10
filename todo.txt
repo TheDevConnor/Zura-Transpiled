@@ -2,7 +2,8 @@ Add in control flow to the codegen (done => if, for) (strill need => switch, whi
 Add in struct, enums, and unions, member expr !!!
 Print integers using a native function
 
-I think i fixed this like 4 pushes ago i dont remember lol !!! Fix the issue where we can only lex up to a 32-bit value
+Fix XOpenDisplay@PLT call segfault - Honestly, I think this is an issue with Xlib, rather than Zura.
+Still needs looking into, though.
 
 Maybe do pointers? (Yes, do pointers)
    - Implement sockets (HTTP requests ??)

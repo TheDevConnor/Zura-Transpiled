@@ -58,18 +58,19 @@ void codegen::gen(Node::Stmt *stmt, bool isSaved, std::string output_filename,
 
   // This one defines the file the whole assembly is related to
   if (debug)
-    file << ".file \"" << filename << "\"\n";
+    // Get name of filename - do not include its directory
+    file << ".file \"" << input_file << "\"\n";
   file << ".text\n";
   file << ".globl main\n";
   if (debug) {
     for (size_t i = 0; i < fileIDs.size(); i++) {
       // Get the absolute path of the fileID path, which is relative to the path of the input file
-      std::filesystem::path fileID_path = std::filesystem::absolute(std::filesystem::relative(fileIDs.at(i), input_dir));
+      std::filesystem::path fileID_path = std::filesystem::absolute(std::filesystem::path(fileIDs.at(i)));
       std::string fileID_path_dir = fileID_path.parent_path().string();
       std::string fileID_path_file = fileID_path.filename().string();
       file << ".file " << i << " \"" + fileID_path_dir + "\" \"" + fileID_path_file + "\"\n";
     }
-    file << ".Ltext0:\n";
+    file << ".Ltext0:\n.weak .Ltext0\n";
   }
   file << Stringifier::stringifyInstrs(text_section);
   if (nativeFunctionsUsed.size() > 0) file << "\n# zura functions\n";
@@ -120,6 +121,8 @@ void codegen::gen(Node::Stmt *stmt, bool isSaved, std::string output_filename,
           "  ret\n"
           ".size native_itoa, .-native_itoa\n";
   }
+  if (debug) 
+    file << ".Ldebug_text0:\n";
   if (head_section.size() > 0) {
     file << "\n# non-main user functions" << std::endl;
     file << Stringifier::stringifyInstrs(head_section);
@@ -138,10 +141,10 @@ void codegen::gen(Node::Stmt *stmt, bool isSaved, std::string output_filename,
   // DWARF debug yayy
   if (debug) {
     // Debug symbols should be included
-    file << ".Ldebug_text0:\n";
 	  file << ".section	.debug_info,\"\",@progbits\n\t";
     file << "\n.long .Ldebug_end - .Ldebug_info" // Length of the debug info header 
             "\n.Ldebug_info:" // NOTE: ^^^^ This long tag right here requires the EXCLUSION of those 4 bytes there
+            "\n.weak .Ldebug_info"
             "\n.word 0x5" // DWARF version 5
             "\n.byte 0x1" // Unit-type DW_UT_compile
             "\n.byte 0x8" // 8-bytes registers (64-bit os)
@@ -153,7 +156,7 @@ void codegen::gen(Node::Stmt *stmt, bool isSaved, std::string output_filename,
             "\n.long .Ldebug_file_string" // Filename
             "\n.long .Ldebug_file_dir" // Filepath
             "\n.quad .Ltext0" // Low PC (beginning of .text)
-            "\n.quad .Ldebug_text0-.Ltext0" // High PC (end of .text)
+            "\n.quad .Ldebug_text0 - .Ltext0" // High PC (end of .text)
             "\n.long .Ldebug_line0"
             "\n";
     // Attributes or whatever that follow
@@ -163,13 +166,21 @@ void codegen::gen(Node::Stmt *stmt, bool isSaved, std::string output_filename,
             ".byte 8\n" // 8 bytes
             ".byte 5\n" // DW_ATE_signed - basically signed int
             ".string \"int\"\n";
-    file << ".byte 0\n" // Important somehow
-            ".Lfloat_debug_type:\n"
+    file << ".Lfloat_debug_type:\n"
             ".uleb128 4\n"
             ".byte 4\n"
             ".byte 4\n"
-            ".string \"float\"\n"
-            ".byte 0\n";
+            ".string \"float\"\n";
+    file << ".Lstr_debug_type:\n"
+            ".uleb128 5\n" // Index label
+            ".byte 8\n" // 8 bytes (pointers are 8 bytes in x64)
+            ".long .Lchar_debug_type\n"; // char*
+    file << ".Lchar_debug_type:\n"
+            ".uleb128 4\n" // Index label
+            ".byte 1\n" // 1 byte
+            ".byte 8\n" // DW_ATE_signed
+            ".string \"char\"\n";
+    file << ".byte 0\n"; // End of the children of the compilation unit
     file << ".Ldebug_end:\n";
     file << ".section .debug_abbrev,\"\",@progbits\n";
     file << ".Ldebug_abbrev:\n";
@@ -215,8 +226,6 @@ void codegen::gen(Node::Stmt *stmt, bool isSaved, std::string output_filename,
             "\n.uleb128 0x18" // DW_FORM_exprloc
             "\n.uleb128 0x7a" // DW_AT_call_all_calls
             "\n.uleb128 0x19" // DW_FORM_flag_present
-            "\n.uleb128 0x1" // DW_AT_sibling
-            "\n.uleb128 0x13" // DW_FORM_ref4
             "\n.byte	0" // End of attributes list
             "\n.byte	0"
             "\n.uleb128 0x3" // Index label
@@ -247,10 +256,43 @@ void codegen::gen(Node::Stmt *stmt, bool isSaved, std::string output_filename,
             "\n.uleb128 0x8" // DW_FORM_string
             "\n.byte	0" // End of attributes list
             "\n.byte	0"
-            "\n.byte	0"; // End of abbreviations (I don't think this final byte is necessary)
-    
-    file << Stringifier::stringifyInstrs(diea_section);
-    file << "\n.byte 00\n"; // End of abbreviations
+            "\n.uleb128 0x5" // Index label
+            "\n.uleb128 0xF" // DW_TAG_pointer_type
+            "\n.byte 0" // No children
+            "\n.uleb128 0xB" // DW_AT_byte_size
+            "\n.uleb128 0xb" // DW_FORM_data1
+            "\n.uleb128 0x49" // DW_AT_type
+            "\n.uleb128 0x13" // DW_FORM_ref4
+            "\n.byte 0"
+            "\n.byte 0"
+             // Void function (no 'type' attribute)
+            "\n.uleb128 0x6" // Index label
+            "\n.uleb128 0x2e" // DW_TAG_subprogram
+            "\n.byte	0x1" // Has children
+            "\n.uleb128 0x3f" // DW_AT_external
+            "\n.uleb128 0x19" // DW_FORM_flag_present
+            "\n.uleb128 0x3" // DW_AT_name
+            "\n.uleb128 0xe" // DW_FORM_strp
+            "\n.uleb128 0x3a" // DW_AT_decl_file
+            "\n.uleb128 0xb" // DW_FORM_data1
+            "\n.uleb128 0x3b" // DW_AT_decl_line
+            "\n.uleb128 0xb" // DW_FORM_data1
+            "\n.uleb128 0x39" // DW_AT_decl_column
+            "\n.uleb128 0xb" // DW_FORM_data1
+            "\n.uleb128 0x11" // DW_AT_low_pc
+            "\n.uleb128 0x1" // DW_FORM_addr
+            "\n.uleb128 0x12" // DW_AT_high_pc
+            "\n.uleb128 0x7" // DW_FORM_data8
+            "\n.uleb128 0x40" // DW_AT_frame_base
+            "\n.uleb128 0x18" // DW_FORM_exprloc
+            "\n.uleb128 0x7a" // DW_AT_call_all_calls
+            "\n.uleb128 0x19" // DW_FORM_flag_present
+            // These bytes signal the end of the DIE abbreviations, by making
+            // a null entry with NULL tag, no children, and no attributes.
+            "\n.byte 0" // End of all children
+            "\n.byte 0" // NULL Tag
+            "\n.byte 0" // No more children
+            "\n.byte 0\n"; // No more attributes
     
     // Still not done
     // Aranges
@@ -295,8 +337,8 @@ void codegen::gen(Node::Stmt *stmt, bool isSaved, std::string output_filename,
   // Compile, but do not link main.o
   std::string assembler = // "Dont include standard libraries"
       (isDebug)
-        ? "gcc -g -nostdlib -no-pie " + output_filename + ".s -o " + output_filename
-        : "gcc -nostdlib -no-pie " + output_filename + ".s -o " + output_filename;
+        ? "gcc -g -e main -nostdlib -no-pie " + output_filename + ".s -o " + output_filename
+        : "gcc -e main -nostdlib -no-pie " + output_filename + ".s -o " + output_filename;
   std::string assembler_log = output_filename + "_assembler.log";
   // loop over linkedFiles set and link them with gcc
   for (auto &linkedFile : linkedFiles) {
