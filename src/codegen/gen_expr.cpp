@@ -38,7 +38,7 @@ void codegen::primary(Node::Expr *expr) {
 
     pushDebug(string->line, expr->file_id, string->pos);
     // Push the label onto the stack
-    pushRegister("$" + label);
+    pushRegister(label + "(%rip)");
 
     // define the string in the data section
     push(Instr{.var = Label{.name = label}, .type = InstrType::Label},

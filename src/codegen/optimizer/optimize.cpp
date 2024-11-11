@@ -13,8 +13,8 @@ void Optimizer::optimizePair(std::vector<Instr> *output, Instr &prev, Instr &cur
 
     if (curr.type == InstrType::Mov) {
         processMov(output, prev, curr);
-    } else if (curr.type == InstrType::Linker) {
-        simplifyDebug(output, curr);
+    } else if (curr.type == InstrType::Linker && prev.type == InstrType::Linker) {
+        simplifyDebug(output, prev, curr);
     } else if (prev.type == opposites.at(curr.type)) {
         processOppositePair(output, prev, curr);
     } else {
@@ -95,13 +95,16 @@ void Optimizer::processOppositePair(std::vector<Instr> *output, Instr &prev, Ins
     }
 }
 
-void Optimizer::simplifyDebug(std::vector<Instr> *output, Instr &curr) {
-  LinkerDirective currAsLinker = std::get<LinkerDirective>(curr.var);
-  if (currAsLinker.value.find(".loc") == std::string::npos) return output->push_back(curr);
-  int currDebugLine = std::stoi(currAsLinker.value.substr(7));
-  if (currDebugLine == previousDebugLine) return;
-  previousDebugLine = currDebugLine;
-  output->push_back(curr);
+void Optimizer::simplifyDebug(std::vector<Instr> *output, Instr &prev, Instr &curr) {
+  LinkerDirective prevL = std::get<LinkerDirective>(prev.var);
+  LinkerDirective currL = std::get<LinkerDirective>(curr.var);
+  // Keep both of them if one of them is not a .loc
+  if (prevL.value.find(".loc") == std::string::npos || currL.value.find(".loc") == std::string::npos) {
+    output->push_back(curr);
+    return;
+  }
+  // otherwise just push the second loc
+  output->pop_back();
 }
 
 // Turn push/pops into mov's or xor's
@@ -120,8 +123,8 @@ void Optimizer::simplifyPushPopPair(std::vector<Instr> *output, Instr &prev, Ins
         // movq %rdx, (%rbx)
         // I hate that this is the solution, Intel go fix your stinky x86
         Instr newInstr = {
-            .var = MovInstr{.dest = "%r13", .src = prevAsPush.what, .destSize = DataSize::Qword, .srcSize = prevAsPush.whatSize},
-            .type = InstrType::Mov
+            .var = LeaInstr{.size = DataSize::Qword, .dest = "%r13", .src = prevAsPush.what},
+            .type = InstrType::Lea
         };
         prev = newInstr;
         output->push_back(newInstr);

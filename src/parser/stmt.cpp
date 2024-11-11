@@ -72,7 +72,7 @@ Node::Stmt *Parser::varStmt(PStruct *psr, std::string name) {
               "Expected a SEMICOLON at the end of a var stmt");
   int currFileID = codegen::getFileID(psr->current_file);
   return new VarStmt(line, column, isConst, name, varType,
-                     new ExprStmt(line, column, assignedValue, currFileID), currFileID);
+                     assignedValue, currFileID);
 }
 
 Node::Stmt *Parser::printStmt(PStruct *psr, std::string name) {

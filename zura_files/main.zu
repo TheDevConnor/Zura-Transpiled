@@ -1,10 +1,14 @@
-@import "std/x11gui.zu";
+# @import "std/x11gui.zu";
 const main := fn () int {
-  have dpy: int =
-    XOpenDisplay("Help me, World!");
+  have stinky: int = 415;
 
-  XCloseDisplay(dpy);
+  stinky = 913;
+
+
+  # have haha: str = "Help, World!";
+  # have dpy: int =
+  #   XOpenDisplay(haha);
+
+  # XCloseDisplay(dpy);
   return 69;
 };
-
-

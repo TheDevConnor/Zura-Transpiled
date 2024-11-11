@@ -116,7 +116,54 @@ inline std::vector<Instr> diea_section = {}; // DIE abbreviation (defines attrib
 inline std::vector<Instr> dies_section = {}; // Dwarf Information Entries strings, referenced from DIE's
 
 inline std::unordered_map<NativeASMFunc, bool> nativeFunctionsUsed = {};
+namespace dwarf {
+enum class DIEAbbrev {
+  Buffer, // 0
+  // Compilation unit - always emitted
+  // Subprogram (main function should always exist)
+  CompileUnit, // 1
+  FunctionNoParams,
+  FunctionNoParamsVoid,
+  FunctionWithParams,
+  FunctionWithParamsVoid,
 
+  // Function parameter
+  FunctionParam, // aka "Formal Parameter" psssh what garbage bro lmao
+
+  // Variable declaration
+  Variable,
+
+  // Types
+  Type, // EX: char
+  PointerType, // EX: * -> char (reference to 'char')
+  // Void type is not included because it will not be included by function declarations
+};
+inline std::set<DIEAbbrev> dieAbbrevsUsed = {};
+void useAbbrev(DIEAbbrev abbrev);
+bool isUsed(DIEAbbrev abbrev);
+std::string generateAbbreviations();
+
+
+inline static const std::unordered_map<std::string, int> argOP_regs = {
+  {"%rax", 0},
+  {"%rdx", 1},
+  {"%rcx", 2},
+  {"%rbx", 3},
+  {"%rsi", 4},
+  {"%rdi", 5},
+  {"%rbp", 6},
+  {"%rsp", 7},
+  {"%r8", 8},
+  {"%r9", 9},
+  {"%r10", 1},
+  {"%r11", 1},
+  {"%r12", 1},
+  {"%r13", 1},
+  {"%r14", 1},
+  {"%r15", 1},
+  {"%rip", 1}
+};
+}
 // Stack count, Variable count
 inline std::vector<std::pair<size_t, int64_t>> scopes = {};
 

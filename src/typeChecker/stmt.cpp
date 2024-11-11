@@ -161,7 +161,7 @@ void TypeChecker::visitVar(Maps *map, Node::Stmt *stmt) {
   if (var_stmt->expr == nullptr) {
     return;
   }
-  visitStmt(map, var_stmt->expr);
+  visitExpr(map, var_stmt->expr);
 
   if (return_type != nullptr) {
     if (type_to_string(return_type.get()) != type_to_string(var_stmt->type)) {

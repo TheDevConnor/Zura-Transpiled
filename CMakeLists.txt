@@ -66,6 +66,7 @@ set(ZURA_SOURCE_FILES
     src/codegen/genmap.cpp
     src/codegen/helper.cpp
     src/codegen/gen.cpp
+    src/codegen/dwarf.cpp
     
     src/main.cpp
 )

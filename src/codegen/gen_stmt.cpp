@@ -51,31 +51,64 @@ void codegen::funcDecl(Node::Stmt *stmt) {
   if (debug) {
     SymbolType *st = static_cast<SymbolType *>(s->returnType);
     std::string asmName = st->name;
-    if (st->name == "void") {
-      pushLinker(".uleb128 0x6\n"
-                ".long " + dieLabel + "_string\n"
-                ".byte " + std::to_string(s->file_id) + // File ID
-                "\n.byte " + std::to_string(s->line) + "\n" // Line number
-                ".byte " + std::to_string(s->pos) + "\n" // Line column
-                ".quad " + dieLabel + "_debug_start\n" // Low pc
-                ".quad " + dieLabel + "_debug_end - " + dieLabel + "_debug_start\n" // high pc
-                ".uleb128 0x01\n" // 1 byte is gonna follow
-                ".byte 0x9c\n"
-                , Section::DIE);
+    if (s->params.size() > 0) {
+      dwarf::useAbbrev(dwarf::DIEAbbrev::FunctionParam); // Formal parameter
+      if (st->name == "void") {
+        dwarf::useAbbrev(dwarf::DIEAbbrev::FunctionWithParamsVoid);
+        pushLinker(".uleb128 " + std::to_string((int)dwarf::DIEAbbrev::FunctionWithParamsVoid) +
+                  "\n.long " + dieLabel + "_string\n"
+                  ".byte " + std::to_string(s->file_id) + // File ID
+                  "\n.byte " + std::to_string(s->line) + "\n" // Line number
+                  ".byte " + std::to_string(s->pos) + "\n" // Line column
+                  ".quad " + dieLabel + "_debug_start\n" // Low pc
+                  ".quad " + dieLabel + "_debug_end - " + dieLabel + "_debug_start\n" // high pc
+                  ".uleb128 0x01\n" // 1 byte is gonna follow
+                  ".byte 0x9c\n"
+                  , Section::DIE);
+      } else {
+        dwarf::useAbbrev(dwarf::DIEAbbrev::Type);
+        dwarf::useAbbrev(dwarf::DIEAbbrev::FunctionWithParams);
+        pushLinker(".uleb128 " + std::to_string((int)dwarf::DIEAbbrev::FunctionWithParams) +
+                  "\n.long " + dieLabel + "_string\n"
+                  ".byte " + std::to_string(s->file_id) + // File ID
+                  "\n.byte " + std::to_string(s->line) + "\n" // Line number
+                  ".byte " + std::to_string(s->pos) + "\n" // Line column
+                  ".long .L" + asmName + "_debug_type\n" // Return type (DW_AT_type)
+                  ".quad " + dieLabel + "_debug_start\n" // Low pc
+                  ".quad " + dieLabel + "_debug_end - " + dieLabel + "_debug_start\n" // high pc
+                  ".uleb128 0x01\n" // 1 byte is gonna follow
+                  ".byte 0x9c\n"
+                  , Section::DIE);
+      }
     } else {
-      pushLinker(".uleb128 0x2\n"
-                ".long " + dieLabel + "_string\n"
-                ".byte " + std::to_string(s->file_id) + // File ID
-                "\n.byte " + std::to_string(s->line) + "\n" // Line number
-                ".byte " + std::to_string(s->pos) + "\n" // Line column
-                ".long .L" + asmName + "_debug_type\n" // Return type (DW_AT_type)
-                ".quad " + dieLabel + "_debug_start\n" // Low pc
-                ".quad " + dieLabel + "_debug_end - " + dieLabel + "_debug_start\n" // high pc
-                ".uleb128 0x01\n" // 1 byte is gonna follow
-                ".byte 0x9c\n"
-                , Section::DIE);
+      if (st->name == "void") {
+        dwarf::useAbbrev(dwarf::DIEAbbrev::FunctionNoParamsVoid);
+        pushLinker(".uleb128 " + std::to_string((int)dwarf::DIEAbbrev::FunctionNoParamsVoid) +
+                  "\n.long " + dieLabel + "_string\n"
+                  ".byte " + std::to_string(s->file_id) + // File ID
+                  "\n.byte " + std::to_string(s->line) + "\n" // Line number
+                  ".byte " + std::to_string(s->pos) + "\n" // Line column
+                  ".quad " + dieLabel + "_debug_start\n" // Low pc
+                  ".quad " + dieLabel + "_debug_end - " + dieLabel + "_debug_start\n" // high pc
+                  ".uleb128 0x01\n" // 1 byte is gonna follow
+                  ".byte 0x9c\n"
+                  , Section::DIE);
+      } else {
+        dwarf::useAbbrev(dwarf::DIEAbbrev::Type);
+        dwarf::useAbbrev(dwarf::DIEAbbrev::FunctionNoParams);
+        pushLinker(".uleb128 " + std::to_string((int)dwarf::DIEAbbrev::FunctionNoParams) +
+                  "\n.long " + dieLabel + "_string\n"
+                  ".byte " + std::to_string(s->file_id) + // File ID
+                  "\n.byte " + std::to_string(s->line) + "\n" // Line number
+                  ".byte " + std::to_string(s->pos) + "\n" // Line column
+                  ".long .L" + asmName + "_debug_type\n" // Return type (DW_AT_type)
+                  ".quad " + dieLabel + "_debug_start\n" // Low pc
+                  ".quad " + dieLabel + "_debug_end - " + dieLabel + "_debug_start\n" // high pc
+                  ".uleb128 0x01\n" // 1 byte is gonna follow
+                  ".byte 0x9c\n"
+                  , Section::DIE);
+      }
     }
-
     pushLinker(dieLabel + "_string: .string \"" + funcName + "\"\n", Section::DIEString);
     push(Instr {.var = Label {.name = dieLabel + "_debug_start" }, .type = InstrType::Label }, Section::Main);
   }
@@ -98,13 +131,24 @@ void codegen::funcDecl(Node::Stmt *stmt) {
     .type = InstrType::Mov},
   Section::Main);
   push(Instr{.var=LinkerDirective{.value=".cfi_def_cfa_register 6\n\t"},.type=InstrType::Linker},Section::Main);
-  stackSize++; // Increase for the push of rbp
-  funcBlockStart = stackSize;
 
   // Function args
   for (size_t i = 0; i < s->params.size(); i++) {
     // TODO: REPLACE THIS IMMEDIATELY!
     variableTable.insert({s->params.at(i).first, argOrder.at(i)});
+
+    if (debug) {
+      SymbolType *st = static_cast<SymbolType *>(s->params.at(i).second);
+      pushLinker("\n.uleb128 " + std::to_string((int)dwarf::DIEAbbrev::FunctionParam) +
+                 "\n.byte " + std::to_string(s->file_id) +
+                 "\n.byte " + std::to_string(s->line) +
+                 "\n.byte " + std::to_string(s->pos) +
+                 "\n.long .L" + st->name + "_debug_type\n" +
+                 "\n.uleb128 0x1" // 1 byte is gonna follow
+                 "\n.byte " + std::to_string(dwarf::argOP_regs.at(argOrder.at(i)) + 80) + "\n"
+                 "\n"
+      , Section::DIE);
+    }
   }
 
   codegen::visitStmt(s->block);
@@ -114,8 +158,6 @@ void codegen::funcDecl(Node::Stmt *stmt) {
     // Otherwise we SEGFAULTT
     push(Instr{.var = Ret{.fromWhere=funcName},.type = InstrType::Ret},Section::Main);
   }
-  stackSize = preStackSize;
-  funcBlockStart = -1;
 
   // Function ends with ret so we can't really push any other instructions.
   if (debug) {
@@ -137,15 +179,15 @@ void codegen::varDecl(Node::Stmt *stmt) {
   // push another .loc
   pushDebug(s->line, stmt->file_id, s->pos);
 
-  // (the i = 4 part)
-  // Evaluate the initializer expression, if present
-  if (s->expr) {
-    visitExpr(static_cast<ExprStmt *>(s->expr)->expr);
-  }
-
-  int whereBytes = variableCount++ * -8;
+  int whereBytes = (variableCount++) * -8;
   std::string where = std::to_string(whereBytes) + "(%rbp)";
-  popToRegister(where);
+  if (s->expr != nullptr) {
+    visitExpr(s->expr);
+    popToRegister(where);
+  } else {
+    // SUbtract from the stack pointer
+    push(Instr{.var = SubInstr{.lhs = "%rsp", .rhs = "$8"}, .type = InstrType::Sub}, Section::Main);
+  }
   // Update the symbol table with the variable's position
   variableTable.insert({s->name, where});
 
@@ -155,11 +197,12 @@ void codegen::varDecl(Node::Stmt *stmt) {
   // Push DWARF DIE for variable declaration!!!!!
   if (!debug) return;
   std::string dieLabel = ".Ldie" + std::to_string(dieCount);
-  SymbolType *st = static_cast<SymbolType *>(s->expr->expr->asmType);
+  SymbolType *st = static_cast<SymbolType *>(s->expr->asmType);
   std::string asmName = st->name;
-
-  pushLinker(".uleb128 0x3\n"
-            ".long " + dieLabel + "_string\n"
+  dwarf::useAbbrev(dwarf::DIEAbbrev::Variable);
+  dwarf::useAbbrev(dwarf::DIEAbbrev::Type);
+  pushLinker(".uleb128 " + std::to_string((int)dwarf::DIEAbbrev::Variable) +
+            "\n.long " + dieLabel + "_string\n"
             ".byte " + std::to_string(s->file_id) + "\n" // File index
             ".byte " + std::to_string(s->line) + "\n" // Line number
             ".byte " + std::to_string(s->pos) + "\n" // Line column
@@ -167,7 +210,6 @@ void codegen::varDecl(Node::Stmt *stmt) {
             ".uleb128 0x02\n" // Length of data in location definition - 2 bytes long
             ".byte 0x91\n" // DW_OP_fbreg (first byte)
 
-            // Isn't the loc supposed to be this anyway? It's very strange.
             ".sleb128 " + std::to_string(whereBytes - 16) + "\n"
   , Section::DIE);
 
@@ -189,9 +231,9 @@ void codegen::block(Node::Stmt *stmt) {
   for (Node::Stmt *stm : s->stmts) {
     codegen::visitStmt(stm);
   }
+  stackSize = scopes.at(scopes.size() - 1).first;
+  variableCount = scopes.at(scopes.size() - 1).second;
   scopes.pop_back();
-  stackSize = preSS;
-  variableCount = preVS;
 };
 
 void codegen::ifStmt(Node::Stmt *stmt) {

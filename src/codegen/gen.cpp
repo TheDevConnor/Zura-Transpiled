@@ -150,7 +150,7 @@ void codegen::gen(Node::Stmt *stmt, bool isSaved, std::string output_filename,
             "\n.byte 0x8" // 8-bytes registers (64-bit os)
             "\n.long .Ldebug_abbrev"
             "\n"
-            "\n.uleb128 0x1" // Compilation unit name
+            "\n.uleb128 " + std::to_string((int)dwarf::DIEAbbrev::CompileUnit) + // Compilation unit name
             "\n.long .Ldebug_producer_string" // Producer - command or program that created this stinky assembly code
             "\n.byte 0x8042" // Custom Language (ZU) - not standardized in DWARF so we're allowed ot use it for "custom" purposes
             "\n.long .Ldebug_file_string" // Filename
@@ -161,138 +161,36 @@ void codegen::gen(Node::Stmt *stmt, bool isSaved, std::string output_filename,
             "\n";
     // Attributes or whatever that follow
     file << Stringifier::stringifyInstrs(die_section) << "\n";
+    if (dwarf::isUsed(dwarf::DIEAbbrev::Type)) {
     file << ".Lint_debug_type:\n"
-            ".uleb128 4\n"
-            ".byte 8\n" // 8 bytes
+            ".uleb128 " + std::to_string((int)dwarf::DIEAbbrev::Type) +
+            "\n.byte 8\n" // 8 bytes
             ".byte 5\n" // DW_ATE_signed - basically signed int
             ".string \"int\"\n";
     file << ".Lfloat_debug_type:\n"
-            ".uleb128 4\n"
-            ".byte 4\n"
+            ".uleb128 " + std::to_string((int)dwarf::DIEAbbrev::Type) +
+            "\n.byte 4\n"
             ".byte 4\n"
             ".string \"float\"\n";
+    // Str type is a pointer type
+    // Might as well just let it in.
+    dwarf::useAbbrev(dwarf::DIEAbbrev::PointerType);
     file << ".Lstr_debug_type:\n"
-            ".uleb128 5\n" // Index label
-            ".byte 8\n" // 8 bytes (pointers are 8 bytes in x64)
+            ".uleb128 " + std::to_string((int)dwarf::DIEAbbrev::PointerType) +
+            "\n.byte 8\n" // 8 bytes (pointers are 8 bytes in x64)
             ".long .Lchar_debug_type\n"; // char*
     file << ".Lchar_debug_type:\n"
-            ".uleb128 4\n" // Index label
-            ".byte 1\n" // 1 byte
-            ".byte 8\n" // DW_ATE_signed
+            ".uleb128 " + std::to_string((int)dwarf::DIEAbbrev::Type) +
+            "\n.byte 1\n" // 1 byte
+            ".byte 6\n" // DW_ATE_signed
             ".string \"char\"\n";
-    file << ".byte 0\n"; // End of the children of the compilation unit
+    }
+    file << "\n.byte 0\n"; // End of compile unit's children
     file << ".Ldebug_end:\n";
     file << ".section .debug_abbrev,\"\",@progbits\n";
     file << ".Ldebug_abbrev:\n";
-    file << "\n.uleb128 0x1" // Index label
-            "\n.uleb128 0x11" // DW_TAG_compile_unit
-            "\n.byte	0x1" // Has children
-            "\n.uleb128 0x25" // DW_AT_producer
-            "\n.uleb128 0xe" // DW_FORM_strp
-            "\n.uleb128 0x13" // DW_AT_language
-            "\n.uleb128 0xb" // DW_FORM_data1
-            "\n.uleb128 0x3" // DW_AT_name
-            "\n.uleb128 0x1f" // DW_FORM_line_strp
-            "\n.uleb128 0x1b" // DW_AT_comp_dir
-            "\n.uleb128 0x1f" // DW_FORM_line_strp
-            "\n.uleb128 0x11" // DW_AT_low_pc
-            "\n.uleb128 0x1" // DW_FORM_addr
-            "\n.uleb128 0x12" // DW_AT_high_pc
-            "\n.uleb128 0x7" // DW_FORM_data8
-            "\n.uleb128 0x10" // DW_AT_stmt_list
-            "\n.uleb128 0x17" // DW_FORM_sec_offset
-            "\n.byte	0" // End of attributes list
-            "\n.byte	0"
-            "\n.uleb128 0x2" // Index label
-            "\n.uleb128 0x2e" // DW_TAG_subprogram
-            "\n.byte	0x1" // Has children
-            "\n.uleb128 0x3f" // DW_AT_external
-            "\n.uleb128 0x19" // DW_FORM_flag_present
-            "\n.uleb128 0x3" // DW_AT_name
-            "\n.uleb128 0xe" // DW_FORM_strp
-            "\n.uleb128 0x3a" // DW_AT_decl_file
-            "\n.uleb128 0xb" // DW_FORM_data1
-            "\n.uleb128 0x3b" // DW_AT_decl_line
-            "\n.uleb128 0xb" // DW_FORM_data1
-            "\n.uleb128 0x39" // DW_AT_decl_column
-            "\n.uleb128 0xb" // DW_FORM_data1
-            "\n.uleb128 0x49" // DW_AT_type
-            "\n.uleb128 0x13" // DW_FORM_ref4
-            "\n.uleb128 0x11" // DW_AT_low_pc
-            "\n.uleb128 0x1" // DW_FORM_addr
-            "\n.uleb128 0x12" // DW_AT_high_pc
-            "\n.uleb128 0x7" // DW_FORM_data8
-            "\n.uleb128 0x40" // DW_AT_frame_base
-            "\n.uleb128 0x18" // DW_FORM_exprloc
-            "\n.uleb128 0x7a" // DW_AT_call_all_calls
-            "\n.uleb128 0x19" // DW_FORM_flag_present
-            "\n.byte	0" // End of attributes list
-            "\n.byte	0"
-            "\n.uleb128 0x3" // Index label
-            "\n.uleb128 0x34" // DW_TAG_variable
-            "\n.byte	0" // No children
-            "\n.uleb128 0x3" // DW_AT_name
-            "\n.uleb128 0xe" // DW_FORM_strp
-            "\n.uleb128 0x3a" // DW_AT_decl_file
-            "\n.uleb128 0xb" // DW_FORM_data1
-            "\n.uleb128 0x3b" // DW_AT_decl_line
-            "\n.uleb128 0xb" // DW_FORM_data1
-            "\n.uleb128 0x39" // DW_AT_decl_column
-            "\n.uleb128 0xb" // DW_FORM_data1
-            "\n.uleb128 0x49" // DW_AT_type
-            "\n.uleb128 0x13" // DW_FORM_ref4
-            "\n.uleb128 0x2" // DW_AT_location
-            "\n.uleb128 0x18" // DW_FORM_exprloc
-            "\n.byte	0" // End of attributes list
-            "\n.byte	0"
-            "\n.uleb128 0x4" // Index label
-            "\n.uleb128 0x24" // DW_TAG_base_type
-            "\n.byte	0" // No children
-            "\n.uleb128 0xb" // DW_AT_byte_size
-            "\n.uleb128 0xb" // DW_FORM_data1 (1 byte)
-            "\n.uleb128 0x3e" // DW_AT_encoding
-            "\n.uleb128 0xb" // DW_FORM_data1 (1 byte)
-            "\n.uleb128 0x3" // DW_AT_name
-            "\n.uleb128 0x8" // DW_FORM_string
-            "\n.byte	0" // End of attributes list
-            "\n.byte	0"
-            "\n.uleb128 0x5" // Index label
-            "\n.uleb128 0xF" // DW_TAG_pointer_type
-            "\n.byte 0" // No children
-            "\n.uleb128 0xB" // DW_AT_byte_size
-            "\n.uleb128 0xb" // DW_FORM_data1
-            "\n.uleb128 0x49" // DW_AT_type
-            "\n.uleb128 0x13" // DW_FORM_ref4
-            "\n.byte 0"
-            "\n.byte 0"
-             // Void function (no 'type' attribute)
-            "\n.uleb128 0x6" // Index label
-            "\n.uleb128 0x2e" // DW_TAG_subprogram
-            "\n.byte	0x1" // Has children
-            "\n.uleb128 0x3f" // DW_AT_external
-            "\n.uleb128 0x19" // DW_FORM_flag_present
-            "\n.uleb128 0x3" // DW_AT_name
-            "\n.uleb128 0xe" // DW_FORM_strp
-            "\n.uleb128 0x3a" // DW_AT_decl_file
-            "\n.uleb128 0xb" // DW_FORM_data1
-            "\n.uleb128 0x3b" // DW_AT_decl_line
-            "\n.uleb128 0xb" // DW_FORM_data1
-            "\n.uleb128 0x39" // DW_AT_decl_column
-            "\n.uleb128 0xb" // DW_FORM_data1
-            "\n.uleb128 0x11" // DW_AT_low_pc
-            "\n.uleb128 0x1" // DW_FORM_addr
-            "\n.uleb128 0x12" // DW_AT_high_pc
-            "\n.uleb128 0x7" // DW_FORM_data8
-            "\n.uleb128 0x40" // DW_AT_frame_base
-            "\n.uleb128 0x18" // DW_FORM_exprloc
-            "\n.uleb128 0x7a" // DW_AT_call_all_calls
-            "\n.uleb128 0x19" // DW_FORM_flag_present
-            // These bytes signal the end of the DIE abbreviations, by making
-            // a null entry with NULL tag, no children, and no attributes.
-            "\n.byte 0" // End of all children
-            "\n.byte 0" // NULL Tag
-            "\n.byte 0" // No more children
-            "\n.byte 0\n"; // No more attributes
+    dwarf::useAbbrev(dwarf::DIEAbbrev::CompileUnit); // required
+    file << dwarf::generateAbbreviations();
     
     // Still not done
     // Aranges

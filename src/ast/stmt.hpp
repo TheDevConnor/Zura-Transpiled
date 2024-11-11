@@ -109,10 +109,10 @@ public:
   bool isConst;
   std::string name;
   Node::Type *type;
-  ExprStmt *expr;
+  Node::Expr *expr;
 
   VarStmt(int line, int pos, bool isConst, std::string name, Node::Type *type,
-          ExprStmt *expr, int file)
+          Node::Expr *expr, int file)
       : line(line), pos(pos), isConst(isConst), name(name), type(type),
         expr(expr) {
     file_id = file;
