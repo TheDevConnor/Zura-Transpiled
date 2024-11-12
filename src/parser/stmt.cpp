@@ -5,6 +5,7 @@
 #include "../typeChecker/type.hpp"
 #include "parser.hpp"
 #include <filesystem>
+#include <vector>
 
 Node::Stmt *Parser::parseStmt(PStruct *psr, std::string name) {
   auto stmt_it = stmt(psr, name);
@@ -437,16 +438,38 @@ Node::Stmt *Parser::externStmt(PStruct *psr, std::string name) {
   auto line = psr->tks[psr->pos].line;
   auto column = psr->tks[psr->pos].column;
 
-  // @extern "C";
+  std::vector<std::string> externs;
+
+  // @extern <"", "", "">; or @extern "C";
   psr->expect(psr, TokenKind::EXTERN,
               "Expected an EXTERN keyword to start an extern stmt");
+  if (psr->current(psr).kind == TokenKind::LESS) {
+    psr->expect(psr, TokenKind::LESS,
+                "Expected a LESS to start an extern stmt");
+    while (psr->current(psr).kind != TokenKind::GREATER) {
+      auto path = psr->expect(psr, TokenKind::STRING,
+                              "Expected a STRING as a path in an extern stmt")
+                      .value;
+      path.erase(path.begin()); // Erase initial "
+      path.erase(path.end() - 1); // Erase final "
+      externs.push_back(path); 
+      if (psr->current(psr).kind == TokenKind::COMMA)
+        psr->expect(psr, TokenKind::COMMA,
+                    "Expected a COMMA after a path in an extern stmt");
+    }
+    psr->expect(psr, TokenKind::GREATER,
+                "Expected a GREATER to end an extern stmt");
+    psr->expect(psr, TokenKind::SEMICOLON,
+                "Expected a SEMICOLON at the end of an extern stmt");
+    return new ExternStmt(line, column, "", externs, codegen::getFileID(psr->current_file));
+  }
   std::string path = psr->expect(psr, TokenKind::STRING,
                                  "Expected a STRING as a path in an extern stmt")
                          .value;
   path.erase(path.begin()); // Erase initial "
   path.erase(path.end() - 1); // Erase final "
   psr->expect(psr, TokenKind::SEMICOLON, "Expected a SEMICOLON at the end of an extern stmt");
-  return new ExternStmt(line, column, path, codegen::getFileID(psr->current_file));
+  return new ExternStmt(line, column, path, externs, codegen::getFileID(psr->current_file));
 }
 
 Node::Stmt *Parser::breakStmt(PStruct *psr, std::string name) {

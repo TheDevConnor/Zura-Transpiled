@@ -511,9 +511,10 @@ class ExternStmt : public Node::Stmt {
 public:
   int line, pos;
   std::string name;
+  std::vector<std::string> externs;
 
-  ExternStmt(int line, int pos, std::string name, int file)
-      : line(line), pos(pos), name(name) {
+  ExternStmt(int line, int pos, std::string name, std::vector<std::string> externs, int file)
+      : line(line), pos(pos), name(name), externs(externs) {
     file_id = file;
     kind = NodeKind::ND_EXTERN_STMT;
   }
@@ -522,7 +523,15 @@ public:
     Node::printIndent(indent);
     std::cout << "ExternStmt: \n";
     Node::printIndent(indent + 1);
-    std::cout << "Name: " << name << "\n";
+    if (externs.size() > 0) {
+      std::cout << "Externs: \n";
+      for (auto e : externs) {
+        Node::printIndent(indent + 2);
+        std::cout << e << "\n";
+      }
+    } else {
+      std::cout << "Name: " << name << "\n";
+    }
   }
 };
 

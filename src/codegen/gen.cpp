@@ -192,22 +192,8 @@ void codegen::gen(Node::Stmt *stmt, bool isSaved, std::string output_filename,
     dwarf::useAbbrev(dwarf::DIEAbbrev::CompileUnit); // required
     file << dwarf::generateAbbreviations();
     
-    // Still not done
-    // Aranges
-    file << ".section .debug_aranges,\"\",@progbits\n";
-    file << ".Ldebug_aranges:\n"
-            ".long .Ldebug_aranges_end - 4 - .Ldebug_aranges\n" // length of the aranges
-            ".value 0x5\n" // DWARF ver (5)
-            ".long .Ldebug_text0\n"
-            ".byte 0x8\n" // 8-byte addresses
-            ".byte 0x0\n" // x86-64 typically has "flat" (0x0) memory model
-            ".value 0\n"
-            ".value 0\n"
-            ".quad .Ltext0\n"
-            ".quad .Ldebug_text0-.Ltext0\n"
-            ".quad 0\n"
-            ".quad 0\n" // End of aranges
-            ".Ldebug_aranges_end:\n";
+    // I dont think the debug_aranges section is totally required
+    // so im not wasting brainpower on it
 
     // debug_line
     file << ".section .debug_line,\"\",@progbits\n";

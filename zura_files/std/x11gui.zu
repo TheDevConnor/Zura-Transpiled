@@ -1,8 +1,10 @@
 @link "X11";
 
 # Create display
-@extern "XOpenDisplay";
-@extern "XCloseDisplay";
+# @extern "XOpenDisplay";
+# @extern "XCloseDisplay";
+
+@extern <"XOpenDisplay", "XCloseDisplay">;
 
 const XCloseDisplay := fn (display: int) void {
   @call<XCloseDisplay>(display);

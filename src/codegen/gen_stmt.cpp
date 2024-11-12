@@ -395,15 +395,14 @@ void codegen::_return(Node::Stmt *stmt) {
 
 void codegen::forLoop(Node::Stmt *stmt) {
   auto s = static_cast<ForStmt *>(stmt);
-  loopDepth++;
 
   std::string preconCount = std::to_string(conditionalCount++);
 
   push(Instr{.var = Comment{.comment = "for loop"}, .type = InstrType::Comment}, Section::Main);
 
   // Create unique labels for the loop start and end
-  std::string preLoopLabel = ".Lloop_pre" + std::to_string(loopCount);
-  std::string postLoopLabel = ".Lloop_post" + std::to_string(loopCount++);
+  std::string preLoopLabel = "loop_pre" + std::to_string(loopCount);
+  std::string postLoopLabel = "loop_post" + std::to_string(loopCount++);
   
   // Declare the loop variable
   auto assign = static_cast<AssignmentExpr *>(s->forLoop);
@@ -439,8 +438,7 @@ void codegen::forLoop(Node::Stmt *stmt) {
 
   // Pop the loop variable from the stack
   variableTable.erase(assignee->name);
-  
-  loopDepth--;
+  stackSize -= 8;
 };
 
 void codegen::whileLoop(Node::Stmt *stmt) {
@@ -501,7 +499,7 @@ void codegen::importDecl(Node::Stmt *stmt) {
 
 void codegen::linkFile(Node::Stmt *stmt) {
   auto s = static_cast<LinkStmt *>(stmt);
-  if (linkedFiles.contains(s->name)) {
+  if (linkedFiles.find(s->name) != linkedFiles.end()) {
     // It's not the end of the world.
     std::cout << "Warning: File '" << s->name << "' already @link'd." << std::endl;
   } else {
@@ -513,18 +511,27 @@ void codegen::externName(Node::Stmt *stmt) {
   auto s = static_cast<ExternStmt *>(stmt);
   push(Instr{.var = Comment{.comment = "Extern name '" + s->name + "'."}, .type = InstrType::Comment}, Section::Main);
   // Push the extern directive to the front of the section
-  if (externalNames.contains(s->name)) {
+  if (externalNames.find(s->name) != externalNames.end()) { 
     std::cout << "Error: Name '" << s->name << "' already @extern'd." << std::endl;
+    return;
+  } 
+  // i did, it works we don't touch now lmao
+  if (s->externs.size() > 0) {
+    for (auto &ext : s->externs) {
+      text_section.emplace(text_section.begin(), Instr{.var = LinkerDirective{.value = ".extern " + ext + "\n"}, .type = InstrType::Linker});
+      externalNames.insert(ext);
+    }
   } else {
     text_section.emplace(text_section.begin(), Instr{.var = LinkerDirective{.value = ".extern " + s->name + "\n"}, .type = InstrType::Linker});
-    if (debug) text_section.emplace(text_section.begin(), Instr{.var = LinkerDirective{ // NOTE: I'm not sure if this .loc will be registered properly.
-      .value = 
-        ".loc " + std::to_string(s->file_id) + 
-        " " + std::to_string(s->line) + 
-        " " + std::to_string(s->pos) + 
-        "\n\t"},
-     .type = InstrType::Linker});
-    text_section.emplace(text_section.begin(), Instr{.var = Comment{.comment = "Include external function name '" + s->name + "'."}, .type = InstrType::Comment});
     externalNames.insert(s->name);
   }
+  if (debug) text_section.emplace(text_section.begin(), Instr{.var = LinkerDirective{ // NOTE: I'm not sure if this .loc will be registered properly.
+    .value = 
+      ".loc " + std::to_string(s->file_id) + 
+      " " + std::to_string(s->line) + 
+      " " + std::to_string(s->pos) + 
+      "\n\t"},
+    .type = InstrType::Linker});
+  text_section.emplace(text_section.begin(), Instr{.var = Comment{.comment = "Include external function name '" + s->name + "'."}, .type = InstrType::Comment});
+  externalNames.insert(s->name);
 }

@@ -113,22 +113,22 @@ std::string codegen::dwarf::generateAbbreviations() {
         break;
       }
       case DIEAbbrev::Variable: {
-        abbreviations += "\n.uleb128 " + std::to_string((int)a) +
-                         "\n.uleb128 0x34 # TAG_variable"
-                         "\n.byte 0 # No children"
-                         "\n.uleb128 0x3 # AT_name"
-                         "\n.uleb128 0xe # FORM_strp"
-                         "\n.uleb128 0x3a # AT_decl_file"
-                         "\n.uleb128 0xb # FORM_data1"
-                         "\n.uleb128 0x3b # AT_decl_line"
-                         "\n.uleb128 0xb # FORM_data1"
-                         "\n.uleb128 0x39 # AT_decl_column"
-                         "\n.uleb128 0xb # FORM_data1"
-                         "\n.uleb128 0x49 # AT_type"
-                         "\n.uleb128 0x13 # FORM_ref4"
-                         "\n.uleb128 0x2 # AT_location"
-                         "\n.uleb128 0x18 # FORM_exprloc"
-                         "\n";
+        abbreviations += 	"\n.uleb128 " + std::to_string((int)a) +
+                          "\n.uleb128 0x34 # TAG_variable"
+                          "\n.byte	0 # No chidlren"
+                          "\n.uleb128 0x3 # Name"
+                          "\n.uleb128 0xe # FORM_strp"
+                          "\n.uleb128 0x3a # AT_decl_file"
+                          "\n.uleb128 0xb # FORM_data1"
+                          "\n.uleb128 0x3b # AT_decl_line"
+                          "\n.uleb128 0xb # FORM_data1"
+                          "\n.uleb128 0x39 # AT_decl_column"
+                          "\n.uleb128 0xb # FORM_data1"
+                          "\n.uleb128 0x49 # AT_type"
+                          "\n.uleb128 0x13 # FORM_ref4"
+                          "\n.uleb128 0x2 # AT_location"
+                          "\n.uleb128 0x18 # FORM_exprloc"
+                          "\n";
         break;
       }
       case DIEAbbrev::Type: {
@@ -187,7 +187,7 @@ std::string codegen::dwarf::generateAbbreviations() {
                          "\n.byte 0x49 # AT_type"
                          "\n.byte 0x13 # FORM_ref4"
                          "\n.byte 0x2 # AT_location"
-                         "\n.byte 0x18 # FORM_exprloc";
+                         "\n.byte 0x18 # FORM_exprloc"
                          "\n";
 
         break;
@@ -207,5 +207,5 @@ void codegen::dwarf::useAbbrev(codegen::dwarf::DIEAbbrev a) {
 };
 
 bool codegen::dwarf::isUsed(codegen::dwarf::DIEAbbrev a) {
-  return dieAbbrevsUsed.contains(a);
+  return dieAbbrevsUsed.find(a) != dieAbbrevsUsed.end();
 };
