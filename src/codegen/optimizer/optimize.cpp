@@ -96,15 +96,21 @@ void Optimizer::processOppositePair(std::vector<Instr> *output, Instr &prev, Ins
 }
 
 void Optimizer::simplifyDebug(std::vector<Instr> *output, Instr &prev, Instr &curr) {
-  LinkerDirective prevL = std::get<LinkerDirective>(prev.var);
-  LinkerDirective currL = std::get<LinkerDirective>(curr.var);
-  // Keep both of them if one of them is not a .loc
-  if (prevL.value.find(".loc") == std::string::npos || currL.value.find(".loc") == std::string::npos) {
-    output->push_back(curr);
-    return;
-  }
-  // otherwise just push the second loc
-  output->pop_back();
+  // LinkerDirective prevL = std::get<LinkerDirective>(prev.var);
+  // LinkerDirective currL = std::get<LinkerDirective>(curr.var);
+  // // Keep both of them if one of them is not a .loc
+  // if (prevL.value.find(".loc") == std::string::npos || currL.value.find(".loc") == std::string::npos) {
+  //   output->push_back(curr);
+  //   return;
+  // }
+  // // otherwise just push the second loc
+  // output->pop_back();
+
+  // That stuff above didn't really work
+  // when using "next" in the debugger CLI.
+  // It works like this and optimizations?
+  // ... Who cares, right?
+  output->push_back(curr);
 }
 
 // Turn push/pops into mov's or xor's

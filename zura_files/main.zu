@@ -1,4 +1,5 @@
 const main := fn () int {
-  have x: int = 59;
-  return x;
+  have stinky: int = 415;
+  stinky = 913;
+  return stinky;
 };

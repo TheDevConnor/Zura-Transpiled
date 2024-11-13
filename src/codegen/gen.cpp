@@ -61,7 +61,7 @@ void codegen::gen(Node::Stmt *stmt, bool isSaved, std::string output_filename,
     // Get name of filename - do not include its directory
     file << ".file \"" << input_file << "\"\n";
   file << ".text\n";
-  file << ".globl main\n";
+  file << ".globl _start\n";
   if (debug) {
     for (size_t i = 0; i < fileIDs.size(); i++) {
       // Get the absolute path of the fileID path, which is relative to the path of the input file
@@ -72,6 +72,11 @@ void codegen::gen(Node::Stmt *stmt, bool isSaved, std::string output_filename,
     }
     file << ".Ltext0:\n.weak .Ltext0\n";
   }
+  file << "_start:\n"
+          "  call main\n"
+          "  xorq %rdi, %rdi\n"
+          "  movq $60, %rax\n"
+          "  syscall\n";
   file << Stringifier::stringifyInstrs(text_section);
   if (nativeFunctionsUsed.size() > 0) file << "\n# zura functions\n";
   if (nativeFunctionsUsed[NativeASMFunc::strlen] == true) {
@@ -151,10 +156,10 @@ void codegen::gen(Node::Stmt *stmt, bool isSaved, std::string output_filename,
             "\n.long .Ldebug_abbrev"
             "\n"
             "\n.uleb128 " + std::to_string((int)dwarf::DIEAbbrev::CompileUnit) + // Compilation unit name
-            "\n.long .Ldebug_producer_string" // Producer - command or program that created this stinky assembly code
+            "\n.long .Ldebug_producer_string - .Ldebug_str_start" // Producer - command or program that created this stinky assembly code
             "\n.byte 0x8042" // Custom Language (ZU) - not standardized in DWARF so we're allowed ot use it for "custom" purposes
-            "\n.long .Ldebug_file_string" // Filename
-            "\n.long .Ldebug_file_dir" // Filepath
+            "\n.long .Ldebug_file_string - .Ldebug_line_str_start" // Filename
+            "\n.long .Ldebug_file_dir - .Ldebug_line_str_start" // Filepath
             "\n.quad .Ltext0" // Low PC (beginning of .text)
             "\n.quad .Ldebug_text0 - .Ltext0" // High PC (end of .text)
             "\n.long .Ldebug_line0"
@@ -162,7 +167,7 @@ void codegen::gen(Node::Stmt *stmt, bool isSaved, std::string output_filename,
     // Attributes or whatever that follow
     file << Stringifier::stringifyInstrs(die_section) << "\n";
     if (dwarf::isUsed(dwarf::DIEAbbrev::Type)) {
-    file << ".Lint_debug_type:\n"
+      file << ".Lint_debug_type:\n"
             ".uleb128 " + std::to_string((int)dwarf::DIEAbbrev::Type) +
             "\n.byte 8\n" // 8 bytes
             ".byte 5\n" // DW_ATE_signed - basically signed int
@@ -201,6 +206,7 @@ void codegen::gen(Node::Stmt *stmt, bool isSaved, std::string output_filename,
     // TODO
     // debug_str
     file << ".section .debug_str,\"MS\",@progbits,1\n"
+            ".Ldebug_str_start:\n"
             ".Ldebug_producer_string: .string \"Zura compiler " + ZuraVersion + "\"\n";
     file << Stringifier::stringifyInstrs(dies_section) << "\n";
     // debug_line_str
@@ -208,6 +214,7 @@ void codegen::gen(Node::Stmt *stmt, bool isSaved, std::string output_filename,
     std::string fileName = fileRelPath.substr(fileRelPath.find_last_of("/") + 1);
     std::string fileDir = fileRelPath.substr(0, fileRelPath.find_last_of("/"));
     file << ".section .debug_line_str,\"MS\",@progbits,1\n"
+            ".Ldebug_line_str_start:\n"
             ".Ldebug_file_string: .string \"" << fileName << "\"\n"
             ".Ldebug_file_dir: .string \"" << fileDir << "\"\n";
   }
@@ -221,8 +228,8 @@ void codegen::gen(Node::Stmt *stmt, bool isSaved, std::string output_filename,
   // Compile, but do not link main.o
   std::string assembler = // "Dont include standard libraries"
       (isDebug)
-        ? "gcc -g -e main -nostdlib -no-pie " + output_filename + ".s -o " + output_filename
-        : "gcc -e main -nostdlib -no-pie " + output_filename + ".s -o " + output_filename;
+        ? "gcc -g -e _start -nostdlib -nostartfiles -no-pie " + output_filename + ".s -o " + output_filename
+        : "gcc -e _start -nostdlib -nostartfiles -no-pie " + output_filename + ".s -o " + output_filename;
   std::string assembler_log = output_filename + "_assembler.log";
   // loop over linkedFiles set and link them with gcc
   for (auto &linkedFile : linkedFiles) {

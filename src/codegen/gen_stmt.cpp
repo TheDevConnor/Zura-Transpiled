@@ -112,7 +112,7 @@ void codegen::funcDecl(Node::Stmt *stmt) {
     pushLinker(dieLabel + "_string: .string \"" + funcName + "\"\n", Section::DIEString);
     push(Instr {.var = Label {.name = dieLabel + "_debug_start" }, .type = InstrType::Label }, Section::Main);
   }
-
+  
   push(Instr{.var = LinkerDirective{.value = "\n.type " + funcName + ", @function"},.type = InstrType::Linker},Section::Main);
   push(Instr{.var = Label{.name = funcName}, .type = InstrType::Label},Section::Main);
   // push linker directive for the debug info (the line number)
