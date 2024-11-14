@@ -64,7 +64,7 @@ void codegen::primary(Node::Expr *expr) {
          Section::ReadonlyData);
 
     // Push the string onto the data section
-    push(Instr{.var = DataSectionInstr{.bytesToDefine = DataSize::Dword /* long */, .what=std::to_string(convertFloatToInt(floating->value))},
+    push(Instr{.var = DataSectionInstr{.bytesToDefine = DataSize::Dword /* long, aka 32-bits */, .what=std::to_string(convertFloatToInt(floating->value))},
                .type = InstrType::DB},
          Section::ReadonlyData);
     break;

@@ -192,6 +192,23 @@ std::string codegen::dwarf::generateAbbreviations() {
 
         break;
       };
+      case DIEAbbrev::LexicalBlock: {
+        abbreviations += "\n.uleb128 " + std::to_string((int)a) +
+                         "\n.uleb128 0x0b # TAG_lexical_block"
+                          "\n.byte 1 # Yes, absolutely children!"
+                          "\n.uleb128 0x3a # AT_decl_file"
+                          "\n.uleb128 0xb # FORM_data1"
+                          "\n.uleb128 0x3b # AT_decl_line"
+                          "\n.uleb128 0xb # FORM_data1"
+                          "\n.uleb128 0x39 # AT_decl_column"
+                          "\n.uleb128 0xb # FORM_data1"
+                          "\n.uleb128 0x11 # AT_low_pc"
+                          "\n.uleb128 0x1 # FORM_addr"
+                          "\n.uleb128 0x12 # AT_high_pc"
+                          "\n.uleb128 0x7 # FORM_data8"
+                         "\n";
+        break;
+      }
       default:
         abbreviations += "ERROR HERE! UNIMPLEMENTED";
         break;

@@ -226,11 +226,26 @@ void codegen::block(Node::Stmt *stmt) {
   auto preSS = stackSize;
   auto preVS = variableCount;
   scopes.push_back(std::pair(preSS, preVS));
+  // AHHHH DWARF STUFF ::SOB::::::::::
   // push a .loc
   pushDebug(s->line, stmt->file_id, s->pos);
+  // gotta love the ++i operator bro :D
+  // if this was i++, we'd be fucking dead!!!!!!! YIPEEEE
+  size_t thisDieCount = dieCount++;
+  if (debug) push(Instr{.var = Label{.name = ".Ldie" + std::to_string(thisDieCount) + "_begin"}, .type = InstrType::Label}, Section::Main);
+  dwarf::useAbbrev(dwarf::DIEAbbrev::LexicalBlock);
+  pushLinker(".uleb128 " + std::to_string((int)dwarf::DIEAbbrev::LexicalBlock) +
+             "\n.byte " + std::to_string(s->file_id) + // File ID
+             "\n.byte " + std::to_string(s->line) + // Line number
+             "\n.byte " + std::to_string(s->pos) + // Column number
+             "\n.long .Ldie" + std::to_string(thisDieCount) + "_begin" // Low pc
+             "\n.quad .Ldie" + std::to_string(thisDieCount) + "_end - .Ldie" + std::to_string(thisDieCount) + "_begin\n" // High pc
+  , Section::DIE);
   for (Node::Stmt *stm : s->stmts) {
     codegen::visitStmt(stm);
   }
+  pushLinker(".byte 0\n", Section::DIE); // End of children nodes of the scope
+  if (debug) push(Instr{.var = Label{.name = ".Ldie" + std::to_string(thisDieCount) + "_end"}, .type = InstrType::Label}, Section::Main);
   stackSize = scopes.at(scopes.size() - 1).first;
   variableCount = scopes.at(scopes.size() - 1).second;
   scopes.pop_back();

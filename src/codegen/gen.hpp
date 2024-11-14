@@ -123,7 +123,7 @@ enum class DIEAbbrev {
   // Subprogram (main function should always exist)
   CompileUnit, // 1
 
-
+  // Function types
   FunctionNoParams,
   FunctionNoParamsVoid,
   FunctionWithParams,
@@ -134,6 +134,10 @@ enum class DIEAbbrev {
 
   // Variable declaration
   Variable,
+
+  // Block (AKA scope), like while and for, if, etc. Function blocks are different.
+  // (... Inline scopes when?)
+  LexicalBlock,
 
   // Types
   Type, // EX: char
