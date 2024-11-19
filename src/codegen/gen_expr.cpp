@@ -1,10 +1,13 @@
 #include "gen.hpp"
 #include "optimizer/instr.hpp"
+#include "optimizer/compiler.hpp"
 
 void codegen::visitExpr(Node::Expr *expr) {
-  auto handler = lookup(exprHandlers, expr->kind);
+  // Optimize the expression before we handle it!
+  auto realExpr = CompileOptimizer::optimizeExpr(expr);
+  auto handler = lookup(exprHandlers, realExpr->kind);
   if (handler) {
-    handler(expr);
+    handler(realExpr);
   }
 }
 
@@ -67,6 +70,12 @@ void codegen::primary(Node::Expr *expr) {
     push(Instr{.var = DataSectionInstr{.bytesToDefine = DataSize::Dword /* long, aka 32-bits */, .what=std::to_string(convertFloatToInt(floating->value))},
                .type = InstrType::DB},
          Section::ReadonlyData);
+    break;
+  }
+  case ND_BOOL: {
+    BoolExpr *boolExpr = static_cast<BoolExpr *>(expr);
+    // Technically just an int but SHHHHHHHH.............................
+    pushRegister("$" + std::to_string((int)boolExpr->value));
     break;
   }
   default: {

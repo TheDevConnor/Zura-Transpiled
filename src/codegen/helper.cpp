@@ -121,6 +121,12 @@ void codegen::processBinaryExpression(BinaryExpr *cond,
       case JumpCondition::GreaterEqual:
         jmpCond = JumpCondition::Less;
         break;
+      case JumpCondition::NotEqual:
+        jmpCond = JumpCondition::Equal;
+        break;
+      case JumpCondition::Equal:
+        jmpCond = JumpCondition::NotEqual;
+        break;
       default:
         break;
       }

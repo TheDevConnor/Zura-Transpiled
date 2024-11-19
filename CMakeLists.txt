@@ -31,6 +31,7 @@ set(ZURA_HEADER_FILES
     # Code Gen Files
     src/codegen/optimizer/optimize.hpp
     src/codegen/optimizer/stringify.hpp
+    src/codegen/optimizer/compiler.hpp
     src/codegen/optimizer/instr.hpp
     src/codegen/gen.hpp
 
@@ -60,6 +61,7 @@ set(ZURA_SOURCE_FILES
 
     # Code Gen Files
     src/codegen/optimizer/optimize.cpp
+    src/codegen/optimizer/compiler.cpp
     src/codegen/gen_expr.cpp
     src/codegen/gen_stmt.cpp
     src/codegen/gen_type.cpp

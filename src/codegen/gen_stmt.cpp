@@ -1,11 +1,14 @@
 #include "gen.hpp"
 #include "optimizer/instr.hpp"
+#include "optimizer/compiler.hpp"
 #include <sys/cdefs.h>
 
 void codegen::visitStmt(Node::Stmt *stmt) {
-  auto handler = lookup(stmtHandlers, stmt->kind);
+  // compiler optimize the statement
+  auto realStmt = CompileOptimizer::optimizeStmt(stmt);
+  auto handler = lookup(stmtHandlers, realStmt->kind);
   if (handler) {
-    handler(stmt);
+    handler(realStmt);
   }
 }
 
@@ -269,8 +272,11 @@ void codegen::ifStmt(Node::Stmt *stmt) {
   if (!cond) {
     // Handle non-binary conditions
     visitExpr(s->condition);
-    popToRegister("%ecx");
-    push(Instr{.var = CmpInstr{.lhs = "%ecx", .rhs = "$0"}, .type = InstrType::Cmp}, Section::Main);
+    popToRegister("%rcx");
+    pushLinker("testq %rcx, %rcx\n\t", Section::Main);
+    // Jump-if-zero only works when the zero flag is set.
+    // ZF is only set when using "test" rather than "cmp", which affects
+    // totally different flags for some reason.
     push(Instr{.var = JumpInstr{.op = JumpCondition::NotZero, .label = ".Lconditional" + preconCount}, .type = InstrType::Jmp}, Section::Main);
   } else {
     // Process binary expression
