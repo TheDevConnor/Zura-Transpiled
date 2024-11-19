@@ -80,76 +80,58 @@ void codegen::primary(Node::Expr *expr) {
   }
 }
 
-// NOTE: Division is not working properly
 void codegen::binary(Node::Expr *expr) {
   auto e = static_cast<BinaryExpr *>(expr);
-  bool isAddition = (e->op == "+" || e->op == "-");
-
-  // Check if we have more than two operands in the expression
-  int depth = getExpressionDepth(e);
-
-  std::string lhs_reg = (isAddition) ? "%rax" : (depth > 1) ? "%rbx" : "%rdi";
-  std::string rhs_reg = (isAddition) ? "%rdi" : (depth > 1) ? "%rcx" : "%rbx";
-
   pushDebug(e->line, expr->file_id, e->pos);
+  SymbolType *returnType = static_cast<SymbolType *>(e->asmType);
 
-  visitExpr(e->lhs);
-  visitExpr(e->rhs);
+  if (returnType->name == "int") {
+    // Evaluate LHS first, result will be pushed directly by VisitExpr
+    visitExpr(e->lhs);
 
-  // Perform the binary operation
-  std::string op = lookup(opMap, e->op);
-  op = (op == "setl" || op == "setle" || op == "setg" || op == "setge") ? "cmp" : op;
+    // Evaluate RHS second, result will be pushed directly by VisitExpr
+    visitExpr(e->rhs);
 
-  SymbolType *lhsType = static_cast<SymbolType *>(e->lhs->asmType);
-  SymbolType *rhsType = static_cast<SymbolType *>(e->rhs->asmType);
-  if (lhsType->name == "str" || rhsType->name == "str") {
-    std::cerr << "excuse me you cant concat strings :(" << std::endl;
-    exit(-1);
-  }
-  // 4.1 + 4.2 = addss instr
-  if (lhsType->name == "float" || rhsType->name == "float") {
-    lhs_reg = "%xmm0";
-    rhs_reg = "%xmm1";
-    // Pop the right hand side
-    popToRegister(rhs_reg);
+    // Pop operands in order: RHS first, then LHS
+    popToRegister("%rbx"); // Pop RHS into RBX
+    popToRegister("%rax"); // Pop LHS into RAX
 
-    // Pop the left hand side
-    popToRegister(lhs_reg);
     // Perform the operation
-    if (op == "add") op = "addss";
-    if (op == "sub") op = "subss";
-    if (op == "mul" || op == "imul") op = "mulss";
-    if (op == "div") op = "divss";
-    // Ignore the others because nobody cares about them HAHAH
-    push(Instr{.var = BinaryInstr{.op = op, .src = rhs_reg, .dst = lhs_reg},
-               .type = InstrType::Binary},
-         Section::Main);
-    // Push the result
-    push(Instr {
-      .var = PushInstr{.what = "%xmm0", .whatSize = DataSize::SS},
-      .type = InstrType::Push
-    }, Section::Main);
-  }
-  // 4 + 4 = add instr
-  if (lhsType->name == "int" && rhsType->name == "int") {
-      // Pop the right hand side
-    popToRegister(rhs_reg);
-
-    // Pop the left hand side
-    popToRegister(lhs_reg);
-    // Use regular ones! You'll be fine.
-    // Modulo (op == mod) is division but push rdx instead
-    if (op == "mod") {
-      push(Instr{.var = MovInstr{.dest = "%rdx", .src = "%rax"},
-                 .type = InstrType::Mov},
-           Section::Main);
+    std::string op = lookup(opMap, e->op);
+    if (op == "idiv" || op == "div" || op == "mod") {
+      // Division requires special handling
+      push(Instr {.var = DivInstr{.from = "%rbx"}, .type = InstrType::Div}, Section::Main);
+      if (op == "mod")
+        pushRegister("%rdx"); // Push remainder
+      else
+        pushRegister("%rax"); // Push result
     } else {
-      push(Instr{.var = BinaryInstr{.op = op, .src = rhs_reg, .dst = lhs_reg},
+      // General binary operations
+      push(Instr{.var = BinaryInstr{.op = op, .src = "%rbx", .dst = "%rax"},
                  .type = InstrType::Binary},
            Section::Main);
+      pushRegister("%rax"); // Push the result
     }
-    // Push the result
-    pushRegister(lhs_reg);
+    return; // Done
+  } 
+  else if (returnType->name == "float") {
+    // Similar logic for floats
+    visitExpr(e->lhs); // Push result of LHS to stack
+    visitExpr(e->rhs); // Push result of RHS to stack
+
+    popToRegister("%xmm1"); // Pop RHS into XMM1
+    popToRegister("%xmm0"); // Pop LHS into XMM0
+
+    std::string op;
+    if (e->op == "+") op = "addss";
+    if (e->op == "-") op = "subss";
+    if (e->op == "*") op = "mulss";
+    if (e->op == "/") op = "divss";
+
+    push(Instr{.var = BinaryInstr{.op = op, .src = "%xmm1", .dst = "%xmm0"},
+               .type = InstrType::Binary},
+         Section::Main);
+    pushRegister("%xmm0"); 
   }
 }
 

@@ -1,5 +1,3 @@
 const main := fn () int {
-  have stinky: int = 415;
-  stinky = 913;
-  return stinky;
+  return 38 + 4 * 13 / 2; # 64
 };

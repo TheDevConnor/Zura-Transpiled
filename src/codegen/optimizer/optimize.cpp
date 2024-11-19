@@ -201,6 +201,7 @@ void Optimizer::simplifyPushPopPair(std::vector<Instr> *output, Instr &prev, Ins
 }
 
 // Optimize pairs with a useless instruction in between
+// Ok look, I fed the previous code into chatgpt until it gave me something good. Don't judge me!
 void Optimizer::optimizeSpacedPairs(std::vector<Instr> &firstPass) {
     Instr prev = {.var = {}, .type = InstrType::NONE};
     int prevIndex = 0;
@@ -216,22 +217,47 @@ void Optimizer::optimizeSpacedPairs(std::vector<Instr> &firstPass) {
         } else if (prev.type == InstrType::Push && instr.type == InstrType::Pop) {
             PopInstr pop = std::get<PopInstr>(instr.var);
             PushInstr push = std::get<PushInstr>(prev.var);
-            if (shouldIgnorePushPop(pop.where)) continue;
 
-            firstPass.erase(firstPass.begin() + prevIndex);
-            firstPass.erase(firstPass.begin() + i - 1);
-            
-            Instr newInstr = {
-                .var = MovInstr{.dest = pop.where, .src = push.what, .destSize = pop.whereSize, .srcSize = push.whatSize},
-                .type = InstrType::Mov
-            };
-            firstPass.insert(firstPass.begin() + prevIndex, newInstr);
+            // Only replace push/pop with mov if no intermediate instructions
+            // are modifying the registers involved.
+            bool canOptimize = true;
 
-            i = prevIndex;
-            prev = Instr {.var = {}, .type = InstrType::NONE};
+            // Check if the registers involved are used in any subsequent calculations
+            for (size_t j = prevIndex + 1; j < i; ++j) {
+                Instr &midInstr = firstPass[j];
+                // If any register is used in a calculation, we shouldn't optimize
+                if (midInstr.type == InstrType::Mov) {
+                    MovInstr mov = std::get<MovInstr>(midInstr.var);
+                    if (mov.dest == push.what || mov.src == push.what || 
+                        mov.dest == pop.where || mov.src == pop.where) {
+                        canOptimize = false;
+                        break;
+                    }
+                }
+            }
+
+            if (canOptimize) {
+                firstPass.erase(firstPass.begin() + prevIndex);
+                firstPass.erase(firstPass.begin() + i - 1);
+
+                Instr newInstr = {
+                    .var = MovInstr{.dest = pop.where, .src = push.what, .destSize = pop.whereSize, .srcSize = push.whatSize},
+                    .type = InstrType::Mov
+                };
+                firstPass.insert(firstPass.begin() + prevIndex, newInstr);
+
+                // Skip over the new mov instruction and reset prev
+                i = prevIndex;
+                prev = Instr {.var = {}, .type = InstrType::NONE};
+            } else {
+                // If optimization isn't possible, just continue
+                prev = instr;
+            }
         }
     }
 }
+
+
 
 // Normal code compiled from user's zura will never affect the stack registers
 // They will be affected when it is ABSOLUTELY necessary (for exanple, function scopes)
