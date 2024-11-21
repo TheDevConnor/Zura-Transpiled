@@ -19,14 +19,19 @@ Node::Stmt *CompileOptimizer::optimizeIfStmt(IfStmt *stmt) {
   if (realConditionExpr->kind == ND_BOOL) {
     // Bool literals? why would the dev ever wanna do this anyway?
     // Who cares, man!!
-    bool value = static_cast<BoolExpr *>(stmt->condition)->value;
-    if (value)
+    bool value = static_cast<BoolExpr *>(realConditionExpr)->value;
+    if (value) {
       return optimizeStmt(stmt->thenStmt);
-    else
+    }
+    if (stmt->elseStmt != nullptr) {
       return optimizeStmt(stmt->elseStmt);
+    } else {
+      return nullptr;
+    }
   }
   
   // That's realistically the only optimization possible.
+  // That and jump tables. I'm scared of those!
   return stmt;
 };
 

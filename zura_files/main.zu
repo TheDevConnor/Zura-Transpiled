@@ -1,7 +1,7 @@
 const main := fn () int {
-  if (15863 > 9175) {
-    return 81;
-  } else {
+  if (8518 < 4) {
     return 9;
+  } else {
+    return 1;
   }
 };
