@@ -46,15 +46,15 @@ void TypeChecker::visitFn(Maps *map, Node::Stmt *stmt) {
   auto fn_stmt = static_cast<FnStmt *>(stmt);
 
   // add the function name and params the to the local table
-  map->declare(map->local_symbol_table, fn_stmt->name, fn_stmt->returnType,
-               fn_stmt->line, fn_stmt->pos);
+  declare(map->local_symbol_table, fn_stmt->name, fn_stmt->returnType,
+          fn_stmt->line, fn_stmt->pos);
   for (auto &param : fn_stmt->params) {
-    map->declare(map->local_symbol_table, param.first, param.second,
-                 fn_stmt->line, fn_stmt->pos);
+    declare(map->local_symbol_table, param.first, param.second, fn_stmt->line,
+            fn_stmt->pos);
   }
-
-  map->declare_fn(map, fn_stmt->name, {fn_stmt->name, fn_stmt->returnType},
-                  fn_stmt->params, fn_stmt->line, fn_stmt->pos);
+  
+  declare_fn(map, {fn_stmt->name, fn_stmt->returnType},
+                 fn_stmt->params, fn_stmt->line, fn_stmt->pos);
 
   visitStmt(map, fn_stmt->block);
 
@@ -66,7 +66,7 @@ void TypeChecker::visitFn(Maps *map, Node::Stmt *stmt) {
 
   if (type_to_string(fn_stmt->returnType) == "void") {
     // also add the function name to the global table and function table
-    map->declare(map->global_symbol_table, fn_stmt->name, fn_stmt->returnType,
+    declare(map->global_symbol_table, fn_stmt->name, fn_stmt->returnType,
                  fn_stmt->line, fn_stmt->pos);
 
     return_type = nullptr;
@@ -92,7 +92,7 @@ void TypeChecker::visitFn(Maps *map, Node::Stmt *stmt) {
   }
 
   // also add the function name to the global table and function table
-  map->declare(map->global_symbol_table, fn_stmt->name, fn_stmt->returnType,
+  declare(map->global_symbol_table, fn_stmt->name, fn_stmt->returnType,
                fn_stmt->line, fn_stmt->pos);
 
   return_type = nullptr;
@@ -115,16 +115,16 @@ void TypeChecker::visitStruct(Maps *map, Node::Stmt *stmt) {
 
   // Add the struct fields to the local table of the struct
   for (auto &field : struct_stmt->fields) {
-    map->declare(map->local_symbol_table, field.first, field.second,
+    declare(map->local_symbol_table, field.first, field.second,
                  struct_stmt->line, struct_stmt->pos);
   }
 
   // Add the struct to the global table
-  map->declare(map->global_symbol_table, struct_stmt->name, struct_type,
+  declare(map->global_symbol_table, struct_stmt->name, struct_type,
                struct_stmt->line, struct_stmt->pos);
 
   // Add the struct to the function table
-  map->declare_fn(map, struct_stmt->name, {struct_stmt->name, struct_type},
+  declare_fn(map,{struct_stmt->name, struct_type},
                   struct_stmt->fields, struct_stmt->line, struct_stmt->pos);
 
   return_type = nullptr;
@@ -154,7 +154,7 @@ void TypeChecker::visitIf(Maps *map, Node::Stmt *stmt) {
 void TypeChecker::visitVar(Maps *map, Node::Stmt *stmt) {
   auto var_stmt = static_cast<VarStmt *>(stmt);
 
-  map->declare(map->local_symbol_table, var_stmt->name, var_stmt->type,
+  declare(map->local_symbol_table, var_stmt->name, var_stmt->type,
                var_stmt->line, var_stmt->pos);
 
   // check if the variable is initialized
@@ -194,18 +194,8 @@ void TypeChecker::visitReturn(Maps *map, Node::Stmt *stmt) {
 
 void TypeChecker::visitTemplateStmt(Maps *map, Node::Stmt *stmt) {
   auto templateStmt = static_cast<TemplateStmt *>(stmt);
-
-  // create a new type for the template which is an any type
-  // auto type = new SymbolType("any");
-  Node::Type *type = nullptr;
-
-  // add the template to the global table
-  for (auto &name : templateStmt->typenames) {
-    type = new SymbolType(name);
-    map->declare_fn(map, name, {name, type}, {}, templateStmt->line,
-                    templateStmt->pos);
-  }
-
+  // template <typename T>
+  std::cout << "Not yet Implemented! Templates" << std::endl;
   return_type = nullptr;
 }
 
@@ -215,7 +205,7 @@ void TypeChecker::visitFor(Maps *map, Node::Stmt *stmt) {
   // first we add the varName to the local table
   // the type of the for loop is the type of the for loop
   auto type = new SymbolType("int");
-  map->declare(map->local_symbol_table, for_stmt->name,
+  declare(map->local_symbol_table, for_stmt->name,
                static_cast<Node::Type *>(type), for_stmt->line, for_stmt->pos);
 
   // now we visit the for loop and assign the type to the return type
@@ -277,7 +267,7 @@ void TypeChecker::visitImport(Maps *map, Node::Stmt *stmt) {
   }
 
   // add the import to the global table
-  map->declare(map->global_symbol_table, import_stmt->name, return_type.get(),
+  declare(map->global_symbol_table, import_stmt->name, return_type.get(),
                import_stmt->line, import_stmt->pos);
 
   // type check the import

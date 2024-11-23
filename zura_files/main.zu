@@ -1,7 +1,13 @@
+const Add := fn (a: int, b: int) int {
+  a = a++;
+  return a + b;
+};
+
 const main := fn () int {
+  have x: int = 81;
   if (15863 > 9175) {
-    return 81;
+    return y + "1";
   } else {
-    return 9;
+    return add(1, 2);
   }
 };

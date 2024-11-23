@@ -58,6 +58,7 @@ set(ZURA_SOURCE_FILES
     src/typeChecker/stmt.cpp
     src/typeChecker/type.cpp
     src/typeChecker/map.cpp
+    src/typeChecker/helper.cpp
 
     # Code Gen Files
     src/codegen/optimizer/optimize.cpp

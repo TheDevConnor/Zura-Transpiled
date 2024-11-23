@@ -3,10 +3,10 @@
 #include "../ast/types.hpp"
 #include "../ast/ast.hpp"
 #include <memory>
-#include <sstream>
 
 #include <limits>
 #include <optional>
+#include <string>
 
 void TypeChecker::visitExpr(Maps *map, Node::Expr *expr) {
   ExprAstLookup(expr, map);
@@ -62,91 +62,59 @@ void TypeChecker::visitIdent(Maps *map, Node::Expr *expr) {
   auto ident = static_cast<IdentExpr *>(expr);
   Node::Type *res = nullptr;
 
-  if (map->local_symbol_table.find(ident->name) !=
-      map->local_symbol_table.end()) {
-    res = map->local_symbol_table[ident->name];
-  } else if (map->global_symbol_table.find(ident->name) !=
-             map->global_symbol_table.end()) {
-    res = map->global_symbol_table[ident->name];
+  res = lookup(map->local_symbol_table, ident->name, ident->line, ident->pos, "local symbol table");
+  if (res == nullptr) {
+    res = lookup(map->global_symbol_table, ident->name, ident->line, ident->pos, "global symbol table");
   }
 
   // check if we found something in the local symbol table if not return error
   // of 'did you mean'
-  if (type_to_string(res) == "unknown") {
-    std::vector<std::string> stackKeys;
-    for (auto const &[key, _] : map->local_symbol_table) {
-      stackKeys.push_back(key);
-    }
-    std::optional<std::string> closest =
-        string_distance(stackKeys, ident->name, 3);
-    if (closest.has_value()) {
-      std::string msg = "Undefined variable '" + ident->name + "'";
-      std::string note = "Did you mean '" + closest.value() + "'?";
-      handlerError(ident->line, ident->pos, msg, note, "Symbol Table Error");
-    }
+  if (res == nullptr) {
+    for (auto const &[key, _] : map->local_symbol_table)
+      map->stackKeys.push_back(key);
+    std::optional<std::string> closest = string_distance(map->stackKeys, ident->name, 3);
+
+    std::string msg = "Undefined variable '" + ident->name + "'" + " did you mean '" + closest.value() + "'?";
+    handlerError(ident->line, ident->pos, msg, "", "Symbol Table Error");
+    res = new SymbolType("unknown"); // return unknown type
   }
 
   // update the ast-node (IdentExpr) to hold the type of the identifier as a
   // property
   ident->type = ident->asmType = res;
   return_type = std::make_shared<SymbolType>(type_to_string(res));
-
 }
 
 void TypeChecker::visitBinary(Maps *map, Node::Expr *expr) {
-  auto binary = static_cast<BinaryExpr *>(expr);
-  visitExpr(map, binary->lhs);
-  auto lhs = return_type;
-  visitExpr(map, binary->rhs);
-  auto rhs = return_type;
+    auto binary = static_cast<BinaryExpr *>(expr);
 
-  // validate the types of the lhs and rhs
-  if (lhs == nullptr || rhs == nullptr) {
-    return_type = std::make_shared<SymbolType>("unknown");
-    expr->asmType = return_type.get();
-    return;
-  }
+    visitExpr(map, binary->lhs);
+    auto lhs = checkReturnType(binary->lhs, "unknown");
+    visitExpr(map, binary->rhs);
+    auto rhs = checkReturnType(binary->rhs, "unknown");
 
-  // check if the op is of type bool aka +, -, *, /
-  std::vector<std::string> math_ops = {"+", "-", "*", "/", "%", "^"};
-  if (std::find(math_ops.begin(), math_ops.end(), binary->op) !=
-      math_ops.end()) {
-    if (type_to_string(lhs.get()) != type_to_string(rhs.get())) {
-      std::string msg = "Binary operation '" + binary->op +
-                        "' requires both sides to be the same type";
-      handlerError(binary->line, binary->pos, msg, "", "Type Error");
+    if (!checkTypeMatch(lhs, rhs, binary->op, binary->line, binary->pos)) {
+        return_type = std::make_shared<SymbolType>("unknown");
+        return;
     }
-    return_type = lhs;
-    expr->asmType = return_type.get();
-    return;
-  }
 
-  // check if the op is of type bool aka >, <, >=, <=, ==, !=
-  std::vector<std::string> bool_ops = {">", "<", ">=", "<=", "==", "!="};
-  if (std::find(bool_ops.begin(), bool_ops.end(), binary->op) !=
-      bool_ops.end()) {
-    if (type_to_string(lhs.get()) != type_to_string(rhs.get())) {
-      std::string msg = "Binary operation '" + binary->op +
-                        "' requires both sides to be of type '" +
-                        type_to_string(lhs.get()) + "' but got '" +
-                        type_to_string(rhs.get()) + "'";
-      handlerError(binary->line, binary->pos, msg, "", "Type Error");
+    if (map->mathOps.find(binary->op) != map->mathOps.end()) {
+        return_type = lhs;
+    } else if (map->boolOps.find(binary->op) != map->boolOps.end()) {
+        return_type = std::make_shared<SymbolType>("bool");
+    } else {
+        std::string msg = "Unsupported binary operator: " + binary->op;
+        handlerError(binary->line, binary->pos, msg, "", "Type Error");
     }
-    return_type = std::make_shared<SymbolType>("bool");
+
     expr->asmType = return_type.get();
-    return;
-  }
 }
 
 void TypeChecker::visitUnary(Maps *map, Node::Expr *expr) {
   auto unary = static_cast<UnaryExpr *>(expr);
   visitExpr(map, unary->expr);
 
-  if (return_type == nullptr) {
-    return_type = std::make_shared<SymbolType>("unknown");
-    expr->asmType = return_type.get();
-    return;
-  }
+  return_type = checkReturnType(expr, "unknown");
 
   if (unary->op == "-" && type_to_string(return_type.get()) != "int") {
     std::string msg = "Unary operation '" + unary->op +
@@ -241,16 +209,16 @@ void TypeChecker::visitCall(Maps *map, Node::Expr *expr) {
   auto call = static_cast<CallExpr *>(expr);
 
   auto name = static_cast<IdentExpr *>(call->callee);
-  std::pair<TypeChecker::Maps::NameTypePair, std::vector<TypeChecker::Maps::NameTypePair>> fn = Maps::lookup_fn(map, name->name, call->line, call->pos);
+  auto fn = lookup_fn(map, name->name, call->line, call->pos);
 
-  if (fn.first.first == "") {
-    std::string msg = "Function '" + name->name + "' is not defined";
-    handlerError(call->line, call->pos, msg, "", "Type Error");
+  if (fn.size() == 0) {
+    return; // return early if the function is not found to avoid segfault on
+            // fn[0]
   }
 
-  if (fn.second.size() != call->args.size()) {
+  if (fn[0].second.size() != call->args.size()) {
     std::string msg = "Function '" + name->name + "' expects " +
-                      std::to_string(fn.second.size()) + " arguments but got " +
+                      std::to_string(fn[0].second.size()) + " arguments but got " +
                       std::to_string(call->args.size());
     handlerError(call->line, call->pos, msg, "", "Type Error");
   }
@@ -258,17 +226,17 @@ void TypeChecker::visitCall(Maps *map, Node::Expr *expr) {
   for (size_t i = 0; i < call->args.size(); i++) {
     visitExpr(map, call->args[i]);
     if (type_to_string(return_type.get()) !=
-        type_to_string(fn.second[i].second)) {
+        type_to_string(fn[i].second[i].second)) {
       std::string msg = "Function '" + name->name + "' expects argument '" +
-                        fn.second[i].first + "' to be of type '" +
-                        type_to_string(fn.second[i].second) + "' but got '" +
+                        fn[i].second[i].first + "' to be of type '" +
+                        type_to_string(fn[i].second[i].second) + "' but got '" +
                         type_to_string(return_type.get()) + "'";
       handlerError(call->line, call->pos, msg, "", "Type Error");
     }
   }
 
-  expr->asmType = fn.first.second;
-  return_type = std::make_shared<SymbolType>(type_to_string(fn.first.second));
+  expr->asmType = fn[0].first.second;
+  return_type = std::make_shared<SymbolType>(type_to_string(fn[0].first.second));
 }
 
 void TypeChecker::visitMember(Maps *map, Node::Expr *expr) {

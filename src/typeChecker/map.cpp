@@ -74,52 +74,55 @@ Node::Expr *TypeChecker::ExprAstLookup(Node::Expr *node, Maps *maps) {
   return node;
 }
 
-void TypeChecker::Maps::declare_fn(
-    Maps *map, std::string name, const Maps::NameTypePair &pair,
-    std::vector<std::pair<std::string, Node::Type *>> paramTypes, int line,
-    int pos) {
-  // check if the function is already defined      
+void TypeChecker::declare_fn(Maps *maps, const std::pair<std::string, Node::Type *> &pair,
+                std::vector<std::pair<std::string, Node::Type *>> paramTypes,
+                int line, int pos) {
+
+  // check if the function is already defined
   auto res = std::find_if(
-      map->function_table.begin(), map->function_table.end(),
-      [&name](const std::pair<NameTypePair,
-                              std::vector<std::pair<std::string, Node::Type *>>>
-                  &pair) { return pair.first.first == name; });
-  if (res != map->function_table.end()) {
-    std::string msg = "'" + name + "' is already defined in the function table";
-    handlerError(line, pos, msg, "", "Function Table Error");
+      maps->function_table.begin(), maps->function_table.end(),
+      [&pair](const auto &fn) { return fn.first.first == pair.first; });
+
+  if (res != maps->function_table.end()) {
+    std::string msg = "Function '" + pair.first + "' is already defined";
+    handlerError(line, pos, msg, "", "Symbol Table Error");
   }
 
-  if (name == "main") {
-    foundMain = true;
+  if (pair.first == "main") {
+    if (foundMain) {
+      std::string msg = "Main function is already defined";
+      handlerError(line, pos, msg, "", "Symbol Table Error");
+    }
     if (type_to_string(pair.second) != "int") {
       std::string msg = "Main function must return an int";
-      handlerError(line, pos, msg, "", "Function Table Error");
+      handlerError(line, pos, msg, "", "Symbol Table Error");
     }
     if (paramTypes.size() != 0) {
       std::string msg = "Main function must not have any parameters";
-      handlerError(line, pos, msg, "", "Function Table Error");
+      handlerError(line, pos, msg, "", "Symbol Table Error");
     }
-    map->function_table.push_back({pair, paramTypes});
+    maps->function_table.push_back({pair, paramTypes});
+    foundMain = true;
     return;
   }
 
-  map->function_table.push_back({pair, paramTypes});
+  // add the function to the function table
+  maps->function_table.push_back({pair, paramTypes});
 }
 
-std::pair<TypeChecker::Maps::NameTypePair,
-          std::vector<std::pair<std::string, Node::Type *>>>
-TypeChecker::Maps::lookup_fn(Maps *map, std::string name, int line, int pos) {
-  auto res = std::find_if(
-      map->function_table.begin(), map->function_table.end(),
-      [&name](const std::pair<NameTypePair,
-                              std::vector<std::pair<std::string, Node::Type *>>>
-                  &pair) { return pair.first.first == name; });
-  if (res != map->function_table.end())
-    return *res;
+std::vector<std::pair<std::pair<std::string, Node::Type *>,
+                      std::vector<std::pair<std::string, Node::Type *>>>>
+TypeChecker::lookup_fn(Maps *maps, std::string name, int line, int pos) {
+  auto res =
+      std::find_if(maps->function_table.begin(), maps->function_table.end(),
+                   [&name](const auto &fn) { return fn.first.first == name; });
 
-  std::string msg = "'" + name + "' is not defined in the function table";
-  handlerError(line, pos, msg, "", "Function Table Error");
-  return {{name, new SymbolType("unknown")}, {}};
+  if (res != maps->function_table.end())
+    return { *res };
+
+  std::string msg = "Function '" + name + "' is not defined";
+  handlerError(line, pos, msg, "", "Symbol Table Error");
+  return {};
 }
 
 void TypeChecker::printTables(Maps *map) {

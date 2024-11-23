@@ -14,67 +14,82 @@
 #include <vector>
 
 namespace TypeChecker {
-inline bool foundMain = false;
-std::string type_to_string(Node::Type *type);
-inline std::shared_ptr<Node::Type> return_type = nullptr;
 void handlerError(int line, int pos, std::string msg, std::string note,
                   std::string typeOfError);
 
 struct Maps {
 public:
-  // !Symbol Table functions
-  using NameTypePair = std::pair<std::string, Node::Type *>;
-
-  std::unordered_map<std::string, Node::Type *> global_symbol_table;
-  std::unordered_map<std::string, Node::Type *> local_symbol_table;
-  /// fn_name (fn_name, fn_return type) ->  { param name, param type }
-  std::vector<std::pair<NameTypePair,
+  std::unordered_map<std::string, Node::Type *> global_symbol_table = {};
+  std::unordered_map<std::string, Node::Type *> local_symbol_table = {};
+  /// (fn_name, fn_return type) ->  { param name, param type }
+  std::vector<std::pair<std::pair<std::string, Node::Type *>,
                         std::vector<std::pair<std::string, Node::Type *>>>>
-      function_table;
+      function_table = {};
+  /// Array content table
+  std::vector<Node::Type *> array_table = {};
+  /// Template Table
+  std::unordered_map<std::string, Node::Type *> template_table = {};
+  std::vector<std::string> stackKeys;
 
-  // Template Table
-  std::unordered_map<std::string, Node::Type *> template_table;
-
-  // Array content table
-  std::vector<Node::Type *> array_table;
-
-  template <typename T, typename U>
-  static void declare(std::unordered_map<T, U> &tables, std::string name,
-                      U value, int line, int pos) {
-    auto res = (tables.find(name) != tables.end()) ? tables[name] : nullptr;
-    if (res != nullptr) {
-      std::string msg = "'" + name + "' is already defined as an '" +
-                        type_to_string(res) + "' in the symbol table";
-      handlerError(line, pos, msg, "", "Symbol Table Error");
-      return;
-    }
-    tables[name] = value;
-  }
-
-  template <typename T, typename U>
-  static Node::Type *lookup(std::unordered_map<T, U> &tables, std::string name,
-                            int line, int pos, std::string tableType) {
-    auto res = (tables.find(name) != tables.end()) ? tables[name] : nullptr;
-    if (res != nullptr)
-      return res;
-
-    std::string msg = "'" + name + "' is not defined in the " + tableType;
-    handlerError(line, pos, msg, "", "Symbol Table Error");
-    return new SymbolType("unknown");
-  }
-
-  static void
-  declare_fn(Maps *maps, std::string name, const Maps::NameTypePair &pair,
-             std::vector<std::pair<std::string, Node::Type *>> paramTypes,
-             int line, int pos);
-
-  static std::pair<NameTypePair,
-                   std::vector<std::pair<std::string, Node::Type *>>>
-  lookup_fn(Maps *maps, std::string name, int line, int pos);
+  enum class MathOp { Add, Subtract, Multiply, Divide, Modulo, Power };
+  const std::unordered_map<std::string, MathOp> mathOps = {
+      {"+", MathOp::Add},    {"-", MathOp::Subtract}, {"*", MathOp::Multiply},
+      {"/", MathOp::Divide}, {"%", MathOp::Modulo},   {"^", MathOp::Power}};
+  enum class BoolOp { Greater, Less, GreaterEqual, LessEqual, Equal, NotEqual };
+  const std::unordered_map<std::string, BoolOp> boolOps = {
+      {">", BoolOp::Greater},       {"<", BoolOp::Less},
+      {">=", BoolOp::GreaterEqual}, {"<=", BoolOp::LessEqual},
+      {"==", BoolOp::Equal},        {"!=", BoolOp::NotEqual}};
+  enum class UnaryOP { Negate, Not, Increment, Decrement };
+  const std::unordered_map<std::string, UnaryOP> unaryOps = {
+      {"-", UnaryOP::Negate}, {"!", UnaryOP::Not},
+      {"++", UnaryOP::Increment}, {"--", UnaryOP::Decrement}};
 };
 
+std::string type_to_string(Node::Type *type);
+
+template <typename T, typename U>
+static void declare(std::unordered_map<T, U> &tables, std::string name, U value,
+                    int line, int pos) {
+  auto res = (tables.find(name) != tables.end()) ? tables[name] : nullptr;
+  if (res != nullptr) {
+    std::string msg = "'" + name + "' is already defined as an '" +
+                      type_to_string(res) + "' in the symbol table";
+    handlerError(line, pos, msg, "", "Symbol Table Error");
+    return;
+  }
+  tables[name] = value;
+}
+
+template <typename T, typename U>
+static Node::Type *lookup(std::unordered_map<T, U> &tables, std::string name,
+                          int line, int pos, std::string tableType) {
+  auto res = (tables.find(name) != tables.end()) ? tables[name] : nullptr;
+  if (res != nullptr)
+    return res;
+
+  std::string msg = "'" + name + "' is not defined in the " + tableType;
+  handlerError(line, pos, msg, "", "Symbol Table Error");
+  return new SymbolType("unknown");
+}
+
+void declare_fn(Maps *maps, const std::pair<std::string, Node::Type *> &pair,
+                std::vector<std::pair<std::string, Node::Type *>> paramTypes,
+                int line, int pos);
+std::vector<std::pair<std::pair<std::string, Node::Type *>,
+                      std::vector<std::pair<std::string, Node::Type *>>>>
+lookup_fn(Maps *maps, std::string name, int line, int pos);
+
+inline bool foundMain = false;
 inline bool needsReturn = false;
 
+inline std::shared_ptr<Node::Type> return_type = nullptr;
+
+std::shared_ptr<SymbolType> checkReturnType(Node::Expr *expr,
+                                            const std::string &defaultType);
+bool checkTypeMatch(const std::shared_ptr<SymbolType> &lhs,
+                    const std::shared_ptr<SymbolType> &rhs,
+                    const std::string &operation, int line, int pos);
 void performCheck(Node::Stmt *stmt, bool isMain = true);
 void printTables(Maps *map);
 
@@ -110,7 +125,7 @@ void visitLink(Maps *map, Node::Stmt *stmt);
 void visitExtern(Maps *map, Node::Stmt *stmt);
 
 // !Expr functions
-void visitTemplateCall(Maps *map, Node::Expr *expr);  
+void visitTemplateCall(Maps *map, Node::Expr *expr);
 void visitExpr(Maps *map, Node::Expr *expr);
 void visitInt(Maps *map, Node::Expr *expr);
 void visitFloat(Maps *map, Node::Expr *expr);
