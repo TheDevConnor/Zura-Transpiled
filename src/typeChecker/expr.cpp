@@ -23,6 +23,7 @@ void TypeChecker::visitExternalCall(Maps *map, Node::Expr *expr) {
   auto external_call = static_cast<ExternalCall *>(expr);
 
   return_type = std::make_shared<SymbolType>("unknown"); // Unknown type, imagine that this is cast to like int or whatever
+  expr->asmType = return_type.get();
 };
 
 void TypeChecker::visitInt(Maps *map, Node::Expr *expr) {
@@ -37,6 +38,7 @@ void TypeChecker::visitInt(Maps *map, Node::Expr *expr) {
   }
 
   return_type = std::make_shared<SymbolType>("int");
+  expr->asmType = return_type.get();
 }
 
 void TypeChecker::visitFloat(Maps *map, Node::Expr *expr) {
@@ -51,11 +53,13 @@ void TypeChecker::visitFloat(Maps *map, Node::Expr *expr) {
   }
 
   return_type = std::make_shared<SymbolType>("float");
+  expr->asmType = return_type.get();
 }
 
 void TypeChecker::visitString(Maps *map, Node::Expr *expr) {
   auto string = static_cast<StringExpr *>(expr);
   return_type = std::make_shared<SymbolType>("str");
+  expr->asmType = return_type.get();
 }
 
 void TypeChecker::visitIdent(Maps *map, Node::Expr *expr) {
@@ -82,7 +86,7 @@ void TypeChecker::visitIdent(Maps *map, Node::Expr *expr) {
 
   // update the ast-node (IdentExpr) to hold the type of the identifier as a
   // property
-  ident->type = ident->asmType = res;
+  ident->type = expr->asmType = res;
   return_type = std::make_shared<SymbolType>(type_to_string(res));
 }
 
@@ -96,19 +100,23 @@ void TypeChecker::visitBinary(Maps *map, Node::Expr *expr) {
 
     if (!checkTypeMatch(lhs, rhs, binary->op, binary->line, binary->pos)) {
         return_type = std::make_shared<SymbolType>("unknown");
+        expr->asmType = return_type.get();
         return;
     }
 
     if (map->mathOps.find(binary->op) != map->mathOps.end()) {
-        return_type = lhs;
+      return_type = lhs;
+      expr->asmType = lhs.get();
     } else if (map->boolOps.find(binary->op) != map->boolOps.end()) {
-        return_type = std::make_shared<SymbolType>("bool");
+      return_type = std::make_shared<SymbolType>("bool");
+      expr->asmType = return_type.get();
     } else {
-        std::string msg = "Unsupported binary operator: " + binary->op;
-        handlerError(binary->line, binary->pos, msg, "", "Type Error");
+      std::string msg = "Unsupported binary operator: " + binary->op;
+      handlerError(binary->line, binary->pos, msg, "", "Type Error");
+      return_type = std::make_shared<SymbolType>("unknown");
+      expr->asmType = return_type.get();
     }
 
-    expr->asmType = return_type.get();
 }
 
 void TypeChecker::visitUnary(Maps *map, Node::Expr *expr) {
@@ -154,6 +162,7 @@ void TypeChecker::visitGrouping(Maps *map, Node::Expr *expr) {
 void TypeChecker::visitBool(Maps *map, Node::Expr *expr) {
   auto boolean = static_cast<BoolExpr *>(expr);
   return_type = std::make_shared<SymbolType>("bool");
+  expr->asmType = return_type.get();
 }
 
 void TypeChecker::visitTernary(Maps *map, Node::Expr *expr) {
@@ -182,6 +191,7 @@ void TypeChecker::visitTernary(Maps *map, Node::Expr *expr) {
   }
 
   return_type = lhs;
+  expr->asmType = lhs.get();
 }
 
 void TypeChecker::visitAssign(Maps *map, Node::Expr *expr) {
@@ -204,6 +214,7 @@ void TypeChecker::visitAssign(Maps *map, Node::Expr *expr) {
   }
 
   return_type = lhs;
+  expr->asmType = lhs.get();
 }
 
 void TypeChecker::visitCall(Maps *map, Node::Expr *expr) {
@@ -283,7 +294,8 @@ void TypeChecker::visitArray(Maps *map, Node::Expr *expr) {
     }
   }
   return_type =
-      std::make_shared<SymbolType>("[]" + type_to_string(map->array_table[0]));
+      std::make_shared<ArrayType>(map->array_table[0]);
+  expr->asmType = return_type.get();
 
   // clear the array table
   map->array_table.clear();

@@ -4,8 +4,9 @@
 
 void codegen::visitExpr(Node::Expr *expr) {
   // Optimize the expression before we handle it!
-  auto realExpr = CompileOptimizer::optimizeExpr(expr);
-  auto handler = lookup(exprHandlers, realExpr->kind);
+  // Node::Expr *realExpr = CompileOptimizer::optimizeExpr(expr);
+  Node::Expr *realExpr = expr;
+  ExprHandler handler = lookup(exprHandlers, realExpr->kind);
   if (handler) {
     handler(realExpr);
   }

@@ -45,51 +45,49 @@ Node::Expr *CompileOptimizer::optimizeExpr(Node::Expr *expr) {
 
 Node::Expr *CompileOptimizer::optimizeBinary(BinaryExpr *expr) {
   // Check if int
-  SymbolType *exprType = static_cast<SymbolType *>(expr->asmType);
-  if (exprType->name == "int" || exprType->name == "bool") {
-    // Check if both sides are literals
-    Node::Expr *lhs = CompileOptimizer::optimizeExpr(expr->lhs); // If the lhs is a binExpr, that will be optimized too!!
-    Node::Expr *rhs = CompileOptimizer::optimizeExpr(expr->rhs);
-    std::string op = expr->op;
-    if (lhs->kind == ND_INT && rhs->kind == ND_INT) {
-      int lhsVal = static_cast<IntExpr *>(lhs)->value;
-      int rhsVal = static_cast<IntExpr *>(rhs)->value;
-      // Check if the operation is a comparison (||, &&, ==, !=, <, >, <=, >=)
-      if (boolOperations.contains(op)) {
-        // Evaluate the expression
-        bool result = false;
-        if (op == "||") result = lhsVal || rhsVal;
-        if (op == "&&") result = lhsVal && rhsVal;
-        if (op == "==") result = lhsVal == rhsVal;
-        if (op == "!=") result = lhsVal != rhsVal;
-        if (op == "<") result = lhsVal < rhsVal;
-        if (op == ">") result = lhsVal > rhsVal;
-        if (op == "<=") result = lhsVal <= rhsVal;
-        if (op == ">=") result = lhsVal >= rhsVal;
-        return new BoolExpr(expr->line, expr->pos, result, expr->file_id);
-      } else if (intOperations.contains(op)) {
-        long long result = 0;
-        if (op == "+") result = lhsVal + rhsVal;
-        if (op == "-") result = lhsVal - rhsVal;
-        if (op == "*") result = lhsVal * rhsVal;
-        if (op == "/") result = lhsVal / rhsVal;
-        if (op == "%") result = lhsVal % rhsVal;
-        if (op == "&") result = lhsVal & rhsVal;
-        if (op == "|") result = lhsVal | rhsVal;
-        if (op == "^") result = lhsVal ^ rhsVal;
-        if (op == "<<") result = lhsVal << rhsVal;
-        if (op == ">>") result = lhsVal >> rhsVal;
-        return new IntExpr(expr->line, expr->pos, result, expr->file_id);
-      } else {
-        return expr;
-      }
-    }
-    if (rhs->kind == ND_INT && op == "/") {
-      int rhsVal = static_cast<IntExpr *>(rhs)->value;
-      if (rhsVal == 2) {
-        return new BinaryExpr(expr->line, expr->pos, lhs, rhs, ">>", expr->file_id);
-      }
+  Node::Expr *lhs = CompileOptimizer::optimizeExpr(expr->lhs); // If the lhs is a binExpr, that will be optimized too!!
+  Node::Expr *rhs = CompileOptimizer::optimizeExpr(expr->rhs);
+  std::string op = expr->op;
+  if (lhs->kind == ND_INT && rhs->kind == ND_INT) {
+    int lhsVal = static_cast<IntExpr *>(lhs)->value;
+    int rhsVal = static_cast<IntExpr *>(rhs)->value;
+    // Check if the operation is a comparison (||, &&, ==, !=, <, >, <=, >=)
+    if (boolOperations.contains(op)) {
+      // Evaluate the expression
+      bool result = false;
+      if (op == "||") result = lhsVal || rhsVal;
+      if (op == "&&") result = lhsVal && rhsVal;
+      if (op == "==") result = lhsVal == rhsVal;
+      if (op == "!=") result = lhsVal != rhsVal;
+      if (op == "<") result = lhsVal < rhsVal;
+      if (op == ">") result = lhsVal > rhsVal;
+      if (op == "<=") result = lhsVal <= rhsVal;
+      if (op == ">=") result = lhsVal >= rhsVal;
+      return new BoolExpr(expr->line, expr->pos, result, expr->file_id);
+    } else if (intOperations.contains(op)) {
+      long long result = 0;
+      if (op == "+") result = lhsVal + rhsVal;
+      if (op == "-") result = lhsVal - rhsVal;
+      if (op == "*") result = lhsVal * rhsVal;
+      if (op == "/") result = lhsVal / rhsVal;
+      if (op == "%") result = lhsVal % rhsVal;
+      if (op == "&") result = lhsVal & rhsVal;
+      if (op == "|") result = lhsVal | rhsVal;
+      if (op == "^") result = lhsVal ^ rhsVal;
+      if (op == "<<") result = lhsVal << rhsVal;
+      if (op == ">>") result = lhsVal >> rhsVal;
+      return new IntExpr(expr->line, expr->pos, result, expr->file_id);
+    } else {
       return expr;
     }
   }
+  if (lhs->kind == ND_INT && op == "/") {
+    int rhsVal = static_cast<IntExpr *>(rhs)->value;
+    if (rhsVal == 2) {
+      return new BinaryExpr(expr->line, expr->pos, lhs, rhs, ">>", expr->file_id);
+    }
+    return expr;
+  }
+
+  return expr;
 };
