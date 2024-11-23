@@ -117,8 +117,9 @@ TypeChecker::lookup_fn(Maps *maps, std::string name, int line, int pos) {
       std::find_if(maps->function_table.begin(), maps->function_table.end(),
                    [&name](const auto &fn) { return fn.first.first == name; });
 
-  if (res != maps->function_table.end())
+  if (res != maps->function_table.end()) {
     return { *res };
+  }
 
   std::string msg = "Function '" + name + "' is not defined";
   handlerError(line, pos, msg, "", "Symbol Table Error");

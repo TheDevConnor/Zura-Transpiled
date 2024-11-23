@@ -211,33 +211,43 @@ void TypeChecker::visitCall(Maps *map, Node::Expr *expr) {
 
   auto name = static_cast<IdentExpr *>(call->callee);
   auto fn = lookup_fn(map, name->name, call->line, call->pos);
-
+  
   if (fn.size() == 0) {
-    return; // return early if the function is not found to avoid segfault on
-            // fn[0]
+    return;
   }
 
-  if (fn[0].second.size() != call->args.size()) {
-    std::string msg = "Function '" + name->name + "' expects " +
-                      std::to_string(fn[0].second.size()) + " arguments but got " +
+  if (fn.size() > 1) {
+    std::string msg = "Function '" + name->name + "' is overloaded";
+    handlerError(call->line, call->pos, msg, "", "Type Error");
+    return_type = std::make_shared<SymbolType>("unknown");
+    return;
+  }
+
+  auto [fn_name, fn_params] = fn[0];
+  if (fn_params.size() != call->args.size()) {
+    std::string msg = "Function '" + name->name + "' requires " +
+                      std::to_string(fn_params.size()) + " arguments but got " +
                       std::to_string(call->args.size());
     handlerError(call->line, call->pos, msg, "", "Type Error");
+    return_type = std::make_shared<SymbolType>("unknown");
+    return;
   }
 
   for (size_t i = 0; i < call->args.size(); i++) {
     visitExpr(map, call->args[i]);
-    if (type_to_string(return_type.get()) !=
-        type_to_string(fn[i].second[i].second)) {
-      std::string msg = "Function '" + name->name + "' expects argument '" +
-                        fn[i].second[i].first + "' to be of type '" +
-                        type_to_string(fn[i].second[i].second) + "' but got '" +
+    if (type_to_string(return_type.get()) != type_to_string(fn_params[i].second)) {
+      std::string msg = "Function '" + name->name + "' requires argument '" +
+                        fn_params[i].first + "' to be of type '" +
+                        type_to_string(fn_params[i].second) + "' but got '" +
                         type_to_string(return_type.get()) + "'";
       handlerError(call->line, call->pos, msg, "", "Type Error");
+      return_type = std::make_shared<SymbolType>("unknown");
+      return;
     }
   }
 
-  expr->asmType = fn[0].first.second;
-  return_type = std::make_shared<SymbolType>(type_to_string(fn[0].first.second));
+  return_type = std::make_shared<SymbolType>(type_to_string(fn_params[0].second));
+  expr->asmType = return_type.get();
 }
 
 void TypeChecker::visitMember(Maps *map, Node::Expr *expr) {

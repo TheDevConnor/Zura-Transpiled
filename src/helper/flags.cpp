@@ -58,11 +58,11 @@ void Flags::runFile(const char *path, std::string outName, bool save, bool debug
   if (echoOn) Flags::updateProgressBar(0.5);
 
   // Compiler optimize the AST!
-  // result = CompileOptimizer::optimizeStmt(result);
-  // if (echoOn) Flags::updateProgressBar(0.75);
+  result = CompileOptimizer::optimizeStmt(result);
+  if (echoOn) Flags::updateProgressBar(0.75);
 
-  // codegen::gen(result, save, outName, path, debug);
-  // ErrorClass::printError();
+  codegen::gen(result, save, outName, path, debug);
+  ErrorClass::printError();
   if (echoOn) Flags::updateProgressBar(1.0); // We're done!
 
   delete[] source;
