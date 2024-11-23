@@ -75,7 +75,7 @@ void TypeChecker::visitIdent(Maps *map, Node::Expr *expr) {
       map->stackKeys.push_back(key);
     std::optional<std::string> closest = string_distance(map->stackKeys, ident->name, 3);
 
-    std::string msg = "Undefined variable '" + ident->name + "'" + " did you mean '" + closest.value() + "'?";
+    std::string msg = "Undefined variable '" + ident->name + "' did you mean '" + closest.value() + "'?";
     handlerError(ident->line, ident->pos, msg, "", "Symbol Table Error");
     res = new SymbolType("unknown"); // return unknown type
   }
