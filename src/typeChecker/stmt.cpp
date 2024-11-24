@@ -11,16 +11,16 @@ void TypeChecker::visitStmt(Maps *map, Node::Stmt *stmt) {
 }
 
 void TypeChecker::visitExprStmt(Maps *map, Node::Stmt *stmt) {
-  auto expr_stmt = static_cast<ExprStmt *>(stmt);
+  ExprStmt *expr_stmt = static_cast<ExprStmt *>(stmt);
   visitExpr(map, expr_stmt->expr);
 }
 
 void TypeChecker::visitProgram(Maps *map, Node::Stmt *stmt) {
-  auto program_stmt = static_cast<ProgramStmt *>(stmt);
-  for (auto &stmt : program_stmt->stmt) {
+  ProgramStmt *program_stmt = static_cast<ProgramStmt *>(stmt);
+  for (Node::Stmt *stmt : program_stmt->stmt) {
     // check for a global variable declaration
     if (stmt->kind == NodeKind::ND_VAR_STMT) {
-      auto var = static_cast<VarStmt *>(stmt);
+      VarStmt *var = static_cast<VarStmt *>(stmt);
       if (var->expr) {
         visitStmt(map, var);
       }
@@ -38,17 +38,17 @@ void TypeChecker::visitProgram(Maps *map, Node::Stmt *stmt) {
 }
 
 void TypeChecker::visitConst(Maps *map, Node::Stmt *stmt) {
-  auto const_stmt = static_cast<ConstStmt *>(stmt);
+  ConstStmt *const_stmt = static_cast<ConstStmt *>(stmt);
   visitStmt(map, const_stmt->value);
 }
 
 void TypeChecker::visitFn(Maps *map, Node::Stmt *stmt) {
-  auto fn_stmt = static_cast<FnStmt *>(stmt);
+  FnStmt *fn_stmt = static_cast<FnStmt *>(stmt);
 
   // add the function name and params the to the local table
   declare(map->local_symbol_table, fn_stmt->name, fn_stmt->returnType,
           fn_stmt->line, fn_stmt->pos);
-  for (auto &param : fn_stmt->params) {
+  for (std::pair<std::string, Node::Type *> &param : fn_stmt->params) {
     declare(map->local_symbol_table, param.first, param.second, fn_stmt->line,
             fn_stmt->pos);
   }
@@ -101,20 +101,20 @@ void TypeChecker::visitFn(Maps *map, Node::Stmt *stmt) {
 }
 
 void TypeChecker::visitBlock(Maps *map, Node::Stmt *stmt) {
-  auto block_stmt = static_cast<BlockStmt *>(stmt);
-  for (auto &stmt : block_stmt->stmts) {
+  BlockStmt *block_stmt = static_cast<BlockStmt *>(stmt);
+  for (Node::Stmt *stmt : block_stmt->stmts) {
     visitStmt(map, stmt);
   }
 }
 
 void TypeChecker::visitStruct(Maps *map, Node::Stmt *stmt) {
-  auto struct_stmt = static_cast<StructStmt *>(stmt);
+  StructStmt *struct_stmt = static_cast<StructStmt *>(stmt);
 
   // Declare the struct name as a type and add it to the global table
   Node::Type *struct_type = new SymbolType(struct_stmt->name);
 
   // Add the struct fields to the local table of the struct
-  for (auto &field : struct_stmt->fields) {
+  for (std::pair<std::string, Node::Type *> &field : struct_stmt->fields) {
     declare(map->local_symbol_table, field.first, field.second,
                  struct_stmt->line, struct_stmt->pos);
   }
@@ -132,13 +132,13 @@ void TypeChecker::visitStruct(Maps *map, Node::Stmt *stmt) {
 }
 
 void TypeChecker::visitEnum(Maps *map, Node::Stmt *stmt) {
-  auto enum_stmt = static_cast<EnumStmt *>(stmt);
+  EnumStmt *enum_stmt = static_cast<EnumStmt *>(stmt);
   // TODO: Implement the enum
   std::cerr << "Enums are not implemented yet in the TypeChecker!" << std::endl;
 }
 
 void TypeChecker::visitIf(Maps *map, Node::Stmt *stmt) {
-  auto if_stmt = static_cast<IfStmt *>(stmt);
+  IfStmt *if_stmt = static_cast<IfStmt *>(stmt);
   visitExpr(map, if_stmt->condition);
   if (type_to_string(return_type.get()) != "bool") {
     std::string msg = "If condition must be a 'bool' but got '" +
@@ -152,7 +152,7 @@ void TypeChecker::visitIf(Maps *map, Node::Stmt *stmt) {
 }
 
 void TypeChecker::visitVar(Maps *map, Node::Stmt *stmt) {
-  auto var_stmt = static_cast<VarStmt *>(stmt);
+  VarStmt *var_stmt = static_cast<VarStmt *>(stmt);
 
   declare(map->local_symbol_table, var_stmt->name, var_stmt->type,
                var_stmt->line, var_stmt->pos);
@@ -176,14 +176,14 @@ void TypeChecker::visitVar(Maps *map, Node::Stmt *stmt) {
 }
 
 void TypeChecker::visitPrint(Maps *map, Node::Stmt *stmt) {
-  auto print_stmt = static_cast<PrintStmt *>(stmt);
-  for (auto &expr : print_stmt->args) {
+  PrintStmt *print_stmt = static_cast<PrintStmt *>(stmt);
+  for (Node::Expr *expr : print_stmt->args) {
     visitExpr(map, expr);
   }
 }
 
 void TypeChecker::visitReturn(Maps *map, Node::Stmt *stmt) {
-  auto return_stmt = static_cast<ReturnStmt *>(stmt);
+  ReturnStmt *return_stmt = static_cast<ReturnStmt *>(stmt);
   if (return_stmt->expr == nullptr) {
     return;
   }
@@ -193,18 +193,18 @@ void TypeChecker::visitReturn(Maps *map, Node::Stmt *stmt) {
 }
 
 void TypeChecker::visitTemplateStmt(Maps *map, Node::Stmt *stmt) {
-  auto templateStmt = static_cast<TemplateStmt *>(stmt);
+  TemplateStmt *templateStmt = static_cast<TemplateStmt *>(stmt);
   // template <typename T>
   std::cout << "Not yet Implemented! Templates" << std::endl;
   return_type = nullptr;
 }
 
 void TypeChecker::visitFor(Maps *map, Node::Stmt *stmt) {
-  auto for_stmt = static_cast<ForStmt *>(stmt);
+  ForStmt *for_stmt = static_cast<ForStmt *>(stmt);
 
   // first we add the varName to the local table
   // the type of the for loop is the type of the for loop
-  auto type = new SymbolType("int");
+  SymbolType *type = new SymbolType("int");
   declare(map->local_symbol_table, for_stmt->name,
                static_cast<Node::Type *>(type), for_stmt->line, for_stmt->pos);
 
@@ -234,7 +234,7 @@ void TypeChecker::visitFor(Maps *map, Node::Stmt *stmt) {
 }
 
 void TypeChecker::visitWhile(Maps *map, Node::Stmt *stmt) {
-  auto while_stmt = static_cast<WhileStmt *>(stmt);
+  WhileStmt *while_stmt = static_cast<WhileStmt *>(stmt);
 
   // check the condition of the while loop
   visitExpr(map, while_stmt->condition);
@@ -252,14 +252,14 @@ void TypeChecker::visitWhile(Maps *map, Node::Stmt *stmt) {
 }
 
 void TypeChecker::visitImport(Maps *map, Node::Stmt *stmt) {
-  auto import_stmt = static_cast<ImportStmt *>(stmt);
+  ImportStmt *import_stmt = static_cast<ImportStmt *>(stmt);
   
   // store the current file name
   std::string file_name = node.current_file;
   node.current_file = import_stmt->name; // set the current file name to the import name
   
   // check if the import is already in the global table
-  auto res = map->global_symbol_table.find(import_stmt->name);
+  std::unordered_map<std::string, Node::Type *>::iterator res = map->global_symbol_table.find(import_stmt->name);
   if (res != map->global_symbol_table.end()) {
     std::string msg = "'" + import_stmt->name + "' is already defined in the "
                       "global symbol table";

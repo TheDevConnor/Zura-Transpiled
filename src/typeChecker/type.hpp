@@ -51,7 +51,7 @@ std::string type_to_string(Node::Type *type);
 template <typename T, typename U>
 static void declare(std::unordered_map<T, U> &tables, std::string name, U value,
                     int line, int pos) {
-  auto res = (tables.find(name) != tables.end()) ? tables[name] : nullptr;
+  std::unordered_map<T, U>::iterator res = (tables.find(name) != tables.end()) ? tables[name] : nullptr;
   if (res != nullptr) {
     std::string msg = "'" + name + "' is already defined as an '" +
                       type_to_string(res) + "' in the symbol table";
@@ -64,7 +64,7 @@ static void declare(std::unordered_map<T, U> &tables, std::string name, U value,
 template <typename T, typename U>
 static Node::Type *lookup(std::unordered_map<T, U> &tables, std::string name,
                           int line, int pos, std::string tableType) {
-  auto res = (tables.find(name) != tables.end()) ? tables[name] : nullptr;
+  std::unordered_map<T, U>::iterator res = (tables.find(name) != tables.end()) ? tables[name] : nullptr;
   if (res != nullptr)
     return res;
 
@@ -76,9 +76,11 @@ static Node::Type *lookup(std::unordered_map<T, U> &tables, std::string name,
 void declare_fn(Maps *maps, const std::pair<std::string, Node::Type *> &pair,
                 std::vector<std::pair<std::string, Node::Type *>> paramTypes,
                 int line, int pos);
-std::vector<std::pair<std::pair<std::string, Node::Type *>,
-                      std::vector<std::pair<std::string, Node::Type *>>>>
-lookup_fn(Maps *maps, std::string name, int line, int pos);
+
+using Fn = std::pair<std::pair<std::string, Node::Type *>,
+                                       std::vector<std::pair<std::string, Node::Type *>>>;
+using FnVector = std::vector<Fn>;
+FnVector lookup_fn(Maps *maps, std::string name, int line, int pos);
 
 inline bool foundMain = false;
 inline bool needsReturn = false;

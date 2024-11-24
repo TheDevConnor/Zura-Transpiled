@@ -17,13 +17,13 @@ void codegen::primary(Node::Expr *expr) {
   // TODO: Implement the primary expression
   switch (expr->kind) {
   case NodeKind::ND_INT: {
-    auto e = static_cast<IntExpr *>(expr);
+    IntExpr *e = static_cast<IntExpr *>(expr);
     pushDebug(e->line, expr->file_id, e->pos);
     pushRegister("$" + std::to_string(e->value));
     break;
   }
   case NodeKind::ND_IDENT: {
-    auto e = static_cast<IdentExpr *>(expr);
+    IdentExpr *e = static_cast<IdentExpr *>(expr);
     std::string res = variableTable[e->name];
 
     push(Instr{.var = Comment{.comment = "Retrieve identifier: '" + e->name + "' located at " + res},
@@ -37,7 +37,7 @@ void codegen::primary(Node::Expr *expr) {
     break;
   }
   case ND_STRING: {
-    auto string = static_cast<StringExpr *>(expr);
+    StringExpr *string = static_cast<StringExpr *>(expr);
     std::string label = "string" + std::to_string(stringCount++);
 
     pushDebug(string->line, expr->file_id, string->pos);
@@ -55,7 +55,7 @@ void codegen::primary(Node::Expr *expr) {
     break;
   }
   case ND_FLOAT: {
-    auto floating = static_cast<FloatExpr *>(expr);
+    FloatExpr *floating = static_cast<FloatExpr *>(expr);
     std::string label = "float" + std::to_string(floatCount++);
     pushDebug(floating->line, expr->file_id, floating->pos);
 
@@ -91,7 +91,7 @@ void codegen::primary(Node::Expr *expr) {
 }
 
 void codegen::binary(Node::Expr *expr) {
-  auto e = static_cast<BinaryExpr *>(expr);
+  BinaryExpr *e = static_cast<BinaryExpr *>(expr);
   pushDebug(e->line, expr->file_id, e->pos);
   SymbolType *returnType = static_cast<SymbolType *>(e->asmType);
 
@@ -146,7 +146,7 @@ void codegen::binary(Node::Expr *expr) {
 }
 
 void codegen::unary(Node::Expr *expr) {
-  auto e = static_cast<UnaryExpr *>(expr);
+  UnaryExpr *e = static_cast<UnaryExpr *>(expr);
   pushDebug(e->line, expr->file_id, e->pos);
   visitExpr(e->expr);
   // Its gonna be a pop guys
@@ -169,7 +169,7 @@ void codegen::unary(Node::Expr *expr) {
 }
 
 void codegen::cast(Node::Expr *expr) {
-  auto e = static_cast<CastExpr *>(expr);
+  CastExpr *e = static_cast<CastExpr *>(expr);
   SymbolType *toType = static_cast<SymbolType *>(e->castee_type);
   SymbolType *fromType = static_cast<SymbolType *>(e->castee->asmType);
 
@@ -217,15 +217,15 @@ void codegen::cast(Node::Expr *expr) {
 }
 
 void codegen::grouping(Node::Expr *expr) {
-  auto e = static_cast<GroupExpr *>(expr);
+  GroupExpr *e = static_cast<GroupExpr *>(expr);
   // Visit the expression inside the grouping
   pushDebug(e->line, expr->file_id, e->pos);
   visitExpr(e->expr);
 }
 
 void codegen::call(Node::Expr *expr) {
-  auto e = static_cast<CallExpr *>(expr);
-  auto n = static_cast<IdentExpr *>(e->callee);
+  CallExpr *e = static_cast<CallExpr *>(expr);
+  IdentExpr *n = static_cast<IdentExpr *>(e->callee);
   pushDebug(e->line, expr->file_id, e->pos);
   // Push each argument one by one.
   if (e->args.size() > argOrder.size()) {
@@ -247,7 +247,7 @@ void codegen::call(Node::Expr *expr) {
 
 // TODO: FIX this to evalueate correctly
 void codegen::ternary(Node::Expr *expr) {
-  auto e = static_cast<TernaryExpr *>(expr);
+  TernaryExpr *e = static_cast<TernaryExpr *>(expr);
 
   int ternay = 0;
   std::string ternayCount = std::to_string(ternay);
@@ -279,7 +279,7 @@ void codegen::ternary(Node::Expr *expr) {
 void codegen::externalCall(Node::Expr *expr) {
   // Basically like a normal function call
   // ... Minus the "usr_" prefix
-  auto e = static_cast<ExternalCall *>(expr);
+  ExternalCall *e = static_cast<ExternalCall *>(expr);
   pushDebug(e->line, expr->file_id, e->pos);
   // Push each argument one by one.
   if (e->args.size() > argOrder.size()) {
@@ -299,8 +299,8 @@ void codegen::externalCall(Node::Expr *expr) {
 }
 
 void codegen::assign(Node::Expr *expr) {
-  auto e = static_cast<AssignmentExpr *>(expr);
-  auto lhs = static_cast<IdentExpr *>(e->assignee);
+  AssignmentExpr *e = static_cast<AssignmentExpr *>(expr);
+  IdentExpr *lhs = static_cast<IdentExpr *>(e->assignee);
   pushDebug(e->line, expr->file_id, e->pos);
   visitExpr(e->rhs);
   std::string res = variableTable[lhs->name];
@@ -309,7 +309,7 @@ void codegen::assign(Node::Expr *expr) {
 }
 
 void codegen::_arrayExpr(Node::Expr *expr) {
-  auto e = static_cast<ArrayExpr *>(expr);
+  ArrayExpr *e = static_cast<ArrayExpr *>(expr);
   std::cerr
       << "No fancy error for this, beg Connor... (Soviet Pancakes speaking)"
       << std::endl;
@@ -319,7 +319,7 @@ void codegen::_arrayExpr(Node::Expr *expr) {
 }
 
 void codegen::arrayElem(Node::Expr *expr) {
-  auto e = static_cast<IndexExpr *>(expr);
+  IndexExpr *e = static_cast<IndexExpr *>(expr);
   std::cerr
       << "No fancy error for this, beg Connor... (Soviet Pancakes speaking)"
       << std::endl;
@@ -333,7 +333,7 @@ void codegen::arrayElem(Node::Expr *expr) {
 }
 
 void codegen::memberExpr(Node::Expr *expr) {
-  auto e = static_cast<MemberExpr *>(expr);
+  MemberExpr *e = static_cast<MemberExpr *>(expr);
   std::cerr
       << "No fancy error for this, beg Connor... (Soviet Pancakes speaking)"
       << std::endl;

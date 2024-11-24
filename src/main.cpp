@@ -134,20 +134,20 @@ int main(int argc, char **argv) {
     // TODO: Ensure this file can be stored somewhere actually secure, like system files or in a .zurarc file
 
     get_version("version.txt");  // Update ZuraVersion
-    auto startTime = std::chrono::high_resolution_clock::now();
+    std::chrono::time_point startTime = std::chrono::high_resolution_clock::now();
 
     if (!Flags::quiet) FlagConfig::print(argc, argv);
-    // auto midTime = std::chrono::high_resolution_clock::now();
+    // std::chrono::time_point midTime = std::chrono::high_resolution_clock::now();
 
     FlagConfig::runBuild(argc, argv);
-    auto endTime = std::chrono::high_resolution_clock::now();
+    std::chrono::time_point endTime = std::chrono::high_resolution_clock::now();
 
     if (!Flags::quiet) {
         Flags::updateProgressBar(1.0);
         std::cout << std::endl;
         
-        auto totalDurationMS = std::chrono::duration_cast<std::chrono::milliseconds>(endTime - startTime).count();
-        auto totalDurationUS = std::chrono::duration_cast<std::chrono::microseconds>(endTime - startTime).count();
+        int64_t totalDurationMS = std::chrono::duration_cast<std::chrono::milliseconds>(endTime - startTime).count();
+        int64_t totalDurationUS = std::chrono::duration_cast<std::chrono::microseconds>(endTime - startTime).count();
         std::cout << "Total time: " << totalDurationMS << "ms (" << totalDurationUS << "µs)" << std::endl;
     }
 

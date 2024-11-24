@@ -57,7 +57,7 @@ std::vector<std::pair<NodeKind, TypeChecker::ExprNodeHandler>>
 };
 
 Node::Stmt *TypeChecker::StmtAstLookup(Node::Stmt *node, Maps *maps) {
-  auto res = std::find_if(stmts.begin(), stmts.end(), [&](auto &stmtHandler) {
+  std::vector<std::pair<NodeKind, TypeChecker::StmtNodeHandler>>::iterator res = std::find_if(stmts.begin(), stmts.end(), [&](std::pair<NodeKind, TypeChecker::StmtNodeHandler> &stmtHandler) {
     return node->kind == stmtHandler.first;
   });
   if (res != stmts.end())
@@ -66,7 +66,7 @@ Node::Stmt *TypeChecker::StmtAstLookup(Node::Stmt *node, Maps *maps) {
 }
 
 Node::Expr *TypeChecker::ExprAstLookup(Node::Expr *node, Maps *maps) {
-  auto res = std::find_if(exprs.begin(), exprs.end(), [&](auto &exprHandler) {
+  std::vector<std::pair<NodeKind, TypeChecker::ExprNodeHandler>>::iterator res = std::find_if(exprs.begin(), exprs.end(), [&](std::pair<NodeKind, TypeChecker::ExprNodeHandler> &exprHandler) {
     return node->kind == exprHandler.first;
   });
   if (res != exprs.end())
@@ -79,9 +79,9 @@ void TypeChecker::declare_fn(Maps *maps, const std::pair<std::string, Node::Type
                 int line, int pos) {
 
   // check if the function is already defined
-  auto res = std::find_if(
+  TypeChecker::FnVector::iterator res = std::find_if(
       maps->function_table.begin(), maps->function_table.end(),
-      [&pair](const auto &fn) { return fn.first.first == pair.first; });
+      [&pair](const Fn &fn) { return fn.first.first == pair.first; });
 
   if (res != maps->function_table.end()) {
     std::string msg = "Function '" + pair.first + "' is already defined";
@@ -110,12 +110,10 @@ void TypeChecker::declare_fn(Maps *maps, const std::pair<std::string, Node::Type
   maps->function_table.push_back({pair, paramTypes});
 }
 
-std::vector<std::pair<std::pair<std::string, Node::Type *>,
-                      std::vector<std::pair<std::string, Node::Type *>>>>
-TypeChecker::lookup_fn(Maps *maps, std::string name, int line, int pos) {
-  auto res =
+FnVector TypeChecker::lookup_fn(Maps *maps, std::string name, int line, int pos) {
+  FnVector::iterator res =
       std::find_if(maps->function_table.begin(), maps->function_table.end(),
-                   [&name](const auto &fn) { return fn.first.first == name; });
+                   [&name](const Fn &fn) { return fn.first.first == name; });
 
   if (res != maps->function_table.end()) {
     return { *res };
@@ -128,22 +126,22 @@ TypeChecker::lookup_fn(Maps *maps, std::string name, int line, int pos) {
 
 void TypeChecker::printTables(Maps *map) {
   std::cout << "Global Table" << std::endl;
-  for (auto &pair : map->global_symbol_table) {
+  for (std::pair<const std::string, Node::Type *> &pair : map->global_symbol_table) {
     std::cout << "\t" << pair.first << " : " << type_to_string(pair.second)
               << std::endl;
   }
 
   std::cout << "Local Table" << std::endl;
-  for (auto &pair : map->local_symbol_table) {
+  for (std::pair<const std::string, Node::Type *> &pair : map->local_symbol_table) {
     std::cout << "\t" << pair.first << " : " << type_to_string(pair.second)
               << std::endl;
   }
 
   std::cout << "Function Table" << std::endl;
-  for (auto &pair : map->function_table) {
+  for (Fn &pair : map->function_table) {
     std::cout << "\t" << pair.first.first << " : "
               << type_to_string(pair.first.second) << std::endl;
-    for (auto &param : pair.second) {
+    for (std::pair<std::string, Node::Type *> &param : pair.second) {
       std::cout << "\t\t" << param.first << " : "
                 << type_to_string(param.second) << std::endl;
     }

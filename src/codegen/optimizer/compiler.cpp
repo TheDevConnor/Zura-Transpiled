@@ -14,7 +14,7 @@ Node::Stmt *CompileOptimizer::optimizeStmt(Node::Stmt *stmt) {
 }
 
 Node::Stmt *CompileOptimizer::optimizeIfStmt(IfStmt *stmt) {
-  auto realConditionExpr = optimizeExpr(stmt->condition);
+  Node::Expr *realConditionExpr = optimizeExpr(stmt->condition);
   // If the condition is a bool literal..
   if (realConditionExpr->kind == ND_BOOL) {
     // Bool literals? why would the dev ever wanna do this anyway?

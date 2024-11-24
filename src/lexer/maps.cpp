@@ -180,27 +180,27 @@ void Lexer::initMap() {
 }
 
 const char *Lexer::tokenToString(TokenKind kind) {
-  auto it = tokenToStringMap.find(kind);
+  std::unordered_map<TokenKind, const char *>::iterator it = tokenToStringMap.find(kind);
   if (it != tokenToStringMap.end())
     return it->second;
   return "Unknown";
 }
 
 TokenKind Lexer::checkIdentMap(std::string identifier) {
-  auto it = keywords.find(identifier);
+  std::unordered_map<std::string, TokenKind>::iterator it = keywords.find(identifier);
   if (it != keywords.end())
     return it->second;
   return TokenKind::IDENTIFIER;
 }
 
 TokenKind Lexer::sc_dc_lookup(char c) {
-  auto dc = dcMap.find(std::string(1, c) + std::string(1, peek()));
+  std::unordered_map<std::string, TokenKind>::iterator dc = dcMap.find(std::string(1, c) + std::string(1, peek()));
   if (dc != dcMap.end()) {
     advance();
     return dc->second;
   }
 
-  auto sc = scMap.find(c);
+  std::unordered_map<char, TokenKind>::iterator sc = scMap.find(c);
   if (sc != scMap.end())
     return sc->second;
 

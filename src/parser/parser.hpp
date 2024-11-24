@@ -44,7 +44,7 @@ struct Parser::PStruct {
   Lexer::Token current(PStruct *psr) { return psr->tks[psr->pos]; }
 
   Lexer::Token advance(PStruct *psr) {
-    auto tk = current(psr);
+    Lexer::Token tk = current(psr);
     psr->pos++;
     return tk;
   }

@@ -69,16 +69,13 @@ public:
     std::cout << "ExternalCall: " << name << "\n";
     Node::printIndent(indent + 1);
     std::cout << "Arguments: \n";
-    for (auto arg : args) {
+    for (Node::Expr *arg : args) {
       arg->debug(indent + 2);
     }
   }
 
-  ~ExternalCall() {
-    for (auto arg : args) {
-      delete arg;
-    }
-  }
+  ~ExternalCall() = default;
+    // rule of threes bro
 };
 
 class IdentExpr : public Node::Expr {
@@ -147,10 +144,7 @@ public:
     std::cout << std::endl;
   }
 
-  ~CastExpr() {
-    delete castee;
-    delete castee_type;
-  }
+  ~CastExpr() = default; // rule of threes
 };
 
 class BinaryExpr : public Node::Expr {
@@ -177,10 +171,7 @@ public:
     rhs->debug(indent + 1);
   }
 
-  ~BinaryExpr() {
-    delete lhs;
-    delete rhs;
-  }
+  ~BinaryExpr() = default; // rule of threes
 };
 
 class UnaryExpr : public Node::Expr {
@@ -208,7 +199,7 @@ public:
     expr->debug(indent + 1);
   }
 
-  ~UnaryExpr() { delete expr; }
+  ~UnaryExpr() = default; // rule of threes
 };
 class PrefixExpr : public Node::Expr {
 public:
@@ -231,7 +222,7 @@ public:
     expr->debug(indent + 1);
   }
 
-  ~PrefixExpr() { delete expr; }
+  ~PrefixExpr() = default; // rule of threes
 };
 class PostfixExpr : public Node::Expr {
 public:
@@ -254,7 +245,7 @@ public:
     std::cout << op << "\n";
   }
 
-  ~PostfixExpr() { delete expr; }
+  ~PostfixExpr() = default; // rule of threes
 };
 
 class GroupExpr : public Node::Expr {
@@ -275,7 +266,7 @@ public:
     expr->debug(indent + 1);
   }
 
-  ~GroupExpr() { delete expr; }
+  ~GroupExpr() = default; // rule of threes
 };
 
 class ArrayExpr : public Node::Expr {
@@ -295,16 +286,12 @@ public:
   void debug(int indent = 0) const override {
     Node::printIndent(indent);
     std::cout << "ArrayExpr: \n";
-    for (auto elem : elements) {
+    for (Node::Expr *elem : elements) {
       elem->debug(indent + 1);
     }
   }
 
-  ~ArrayExpr() {
-    for (auto elem : elements) {
-      delete elem;
-    }
-  }
+  ~ArrayExpr() = default; // rule of threes
 };
 
 class IndexExpr : public Node::Expr {
@@ -331,10 +318,7 @@ public:
     rhs->debug(indent + 2);
   }
 
-  ~IndexExpr() {
-    delete lhs;
-    delete rhs;
-  }
+  ~IndexExpr() = default; // rule of threes
 };
 
 class PopExpr : public Node::Expr {
@@ -365,10 +349,7 @@ public:
     rhs->debug(indent + 2);
   }
 
-  ~PopExpr() {
-    delete lhs;
-    delete rhs;
-  }
+  ~PopExpr() = default; // rule of threes
 };
 
 class PushExpr : public Node::Expr {
@@ -402,10 +383,7 @@ public:
     }
   }
 
-  ~PushExpr() {
-    delete lhs;
-    delete rhs;
-  }
+  ~PushExpr() = default; // rule of threes
 };
 
 class AssignmentExpr : public Node::Expr {
@@ -435,10 +413,7 @@ public:
     rhs->debug(indent + 2);
   }
 
-  ~AssignmentExpr() {
-    delete assignee;
-    delete rhs;
-  }
+  ~AssignmentExpr() = default; // rule of threes
 };
 
 class CallExpr : public Node::Expr {
@@ -463,17 +438,12 @@ public:
     callee->debug(indent + 2);
     Node::printIndent(indent + 1);
     std::cout << "Arguments: \n";
-    for (auto arg : args) {
+    for (Node::Expr *arg : args) {
       arg->debug(indent + 2);
     }
   }
 
-  ~CallExpr() {
-    delete callee;
-    for (auto arg : args) {
-      delete arg;
-    }
-  }
+  ~CallExpr() = default; // rule of threes
 };
 
 class TemplateCallExpr : public Node::Expr {
@@ -506,11 +476,7 @@ public:
     args->debug(indent + 2);
   }
 
-  ~TemplateCallExpr() {
-    delete callee;
-    delete template_type;
-    delete args;
-  }
+  ~TemplateCallExpr() = default; // rule of threes
 };
 
 class TernaryExpr : public Node::Expr {
@@ -541,11 +507,7 @@ public:
     rhs->debug(indent + 2);
   }
 
-  ~TernaryExpr() {
-    delete condition;
-    delete lhs;
-    delete rhs;
-  }
+  ~TernaryExpr() = default; // rule of threes
 };
 
 class MemberExpr : public Node::Expr {
@@ -572,10 +534,7 @@ public:
     rhs->debug(indent + 2);
   }
 
-  ~MemberExpr() {
-    delete lhs;
-    delete rhs;
-  }
+  ~MemberExpr() = default; // rule of threes
 };
 
 class ResolutionExpr : public Node::Expr {
@@ -602,10 +561,7 @@ public:
     rhs->debug(indent + 2);
   }
 
-  ~ResolutionExpr() {
-    delete lhs;
-    delete rhs;
-  }
+  ~ResolutionExpr() = default; // rule of threes
 };
 
 class BoolExpr : public Node::Expr {

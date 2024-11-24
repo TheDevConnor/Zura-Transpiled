@@ -15,7 +15,7 @@
  * @return The parsed expression node.
  */
 Node::Expr *Parser::parseExpr(PStruct *psr, BindingPower bp) {
-  auto *left = nud(psr);
+  Node::Expr *left = nud(psr);
 
   while (getBP(psr->current(psr).kind) > bp) {
     left = led(psr, left, getBP(psr->current(psr).kind));
@@ -25,8 +25,8 @@ Node::Expr *Parser::parseExpr(PStruct *psr, BindingPower bp) {
 }
 
 Node::Expr *Parser::primary(PStruct *psr) {
-  auto line = psr->tks[psr->pos].line;
-  auto column = psr->tks[psr->pos].column;
+  int line = psr->tks[psr->pos].line;
+  int column = psr->tks[psr->pos].column;
 
   switch (psr->current(psr).kind) {
   case TokenKind::INT: {
@@ -51,12 +51,12 @@ Node::Expr *Parser::primary(PStruct *psr) {
 }
 
 Node::Expr *Parser::group(PStruct *psr) {
-  auto line = psr->tks[psr->pos].line;
-  auto column = psr->tks[psr->pos].column;
+  int line = psr->tks[psr->pos].line;
+  int column = psr->tks[psr->pos].column;
 
   psr->expect(psr, TokenKind::LEFT_PAREN,
               "Expected L_Paran before a grouping expr!");
-  auto *expr = parseExpr(psr, defaultValue);
+  Node::Expr *expr = parseExpr(psr, defaultValue);
   psr->expect(psr, TokenKind::RIGHT_PAREN,
               "Expected R_Paran after a grouping expr!");
 
@@ -64,29 +64,29 @@ Node::Expr *Parser::group(PStruct *psr) {
 }
 
 Node::Expr *Parser::unary(PStruct *psr) {
-  auto line = psr->tks[psr->pos].line;
-  auto column = psr->tks[psr->pos].column;
+  int line = psr->tks[psr->pos].line;
+  int column = psr->tks[psr->pos].column;
 
-  auto op = psr->advance(psr);
-  auto *right = parseExpr(psr, defaultValue);
+  Lexer::Token op = psr->advance(psr);
+  Node::Expr *right = parseExpr(psr, defaultValue);
 
   return new UnaryExpr(line, column, right, op.value, codegen::getFileID(psr->current_file));
 }
 
 Node::Expr *Parser::_prefix(PStruct *psr) {
-  auto line = psr->tks[psr->pos].line;
-  auto column = psr->tks[psr->pos].column;
+  int line = psr->tks[psr->pos].line;
+  int column = psr->tks[psr->pos].column;
 
-  auto op = psr->advance(psr);
-  auto *right = parseExpr(psr, defaultValue);
+  Lexer::Token op = psr->advance(psr);
+  Node::Expr *right = parseExpr(psr, defaultValue);
 
   return new PrefixExpr(line, column, right, op.value, codegen::getFileID(psr->current_file));
 }
 
 // update cast syntax to `@cast<type>(expr)`
 Node::Expr *Parser::cast_expr(PStruct *psr) {
-  auto line = psr->tks[psr->pos].line;
-  auto column = psr->tks[psr->pos].column;
+  int line = psr->tks[psr->pos].line;
+  int column = psr->tks[psr->pos].column;
 
   psr->expect(psr, CAST, "expected 'CAST' keyword!");
 
@@ -107,16 +107,16 @@ Node::Expr *Parser::cast_expr(PStruct *psr) {
 }
 
 Node::Expr *Parser::_postfix(PStruct *psr, Node::Expr *left, BindingPower bp) {
-  auto line = psr->tks[psr->pos].line;
-  auto column = psr->tks[psr->pos].column;
+  int line = psr->tks[psr->pos].line;
+  int column = psr->tks[psr->pos].column;
 
-  auto op = psr->advance(psr);
+  Lexer::Token op = psr->advance(psr);
   return new PostfixExpr(line, column, left, op.value, codegen::getFileID(psr->current_file));
 }
 
 Node::Expr *Parser::array(PStruct *psr) {
-  auto line = psr->tks[psr->pos].line;
-  auto column = psr->tks[psr->pos].column;
+  int line = psr->tks[psr->pos].line;
+  int column = psr->tks[psr->pos].column;
 
   psr->expect(psr, TokenKind::LEFT_BRACKET,
               "Expected a L_Bracket to start an array expr!");
@@ -136,12 +136,12 @@ Node::Expr *Parser::array(PStruct *psr) {
 }
 
 Node::Expr *Parser::binary(PStruct *psr, Node::Expr *left, BindingPower bp) {
-  auto line = psr->tks[psr->pos].line;
-  auto column = psr->tks[psr->pos].column;
+  int line = psr->tks[psr->pos].line;
+  int column = psr->tks[psr->pos].column;
 
-  auto op = psr->advance(psr);
+  Lexer::Token op = psr->advance(psr);
 
-  auto *right = parseExpr(psr, bp);
+  Node::Expr *right = parseExpr(psr, bp);
 
   return new BinaryExpr(line, column, left, right, op.value, codegen::getFileID(psr->current_file));
 }
@@ -162,8 +162,8 @@ Node::Expr *Parser::binary(PStruct *psr, Node::Expr *left, BindingPower bp) {
 // x[<-]; # b = 6, x = [1, 2, 7, 4, 5]
 
 Node::Expr *Parser::index(PStruct *psr, Node::Expr *left, BindingPower bp) {
-  auto line = psr->tks[psr->pos].line;
-  auto column = psr->tks[psr->pos].column;
+  int line = psr->tks[psr->pos].line;
+  int column = psr->tks[psr->pos].column;
 
   psr->expect(psr, TokenKind::LEFT_BRACKET,
               "Expected a L_Bracket to start an index expr!");
@@ -196,7 +196,7 @@ Node::Expr *Parser::index(PStruct *psr, Node::Expr *left, BindingPower bp) {
     if (psr->current(psr).kind == TokenKind::AT) {
       psr->expect(psr, TokenKind::AT,
                   "Expected an AT to specify an index for a push operation!");
-      auto *push_index = parseExpr(psr, defaultValue);
+      Node::Expr *push_index = parseExpr(psr, defaultValue);
       psr->expect(psr, TokenKind::RIGHT_BRACKET,
                   "Expected a R_Bracket to end an index expr!");
       return new PushExpr(line, column, left, index, push_index, codegen::getFileID(psr->current_file));
@@ -219,19 +219,19 @@ Node::Expr *Parser::index(PStruct *psr, Node::Expr *left, BindingPower bp) {
 }
 
 Node::Expr *Parser::assign(PStruct *psr, Node::Expr *left, BindingPower bp) {
-  auto line = psr->tks[psr->pos].line;
-  auto column = psr->tks[psr->pos].column;
+  int line = psr->tks[psr->pos].line;
+  int column = psr->tks[psr->pos].column;
 
-  auto op = psr->advance(psr);
-  auto *right = parseExpr(psr, defaultValue);
+  Lexer::Token op = psr->advance(psr);
+  Node::Expr *right = parseExpr(psr, defaultValue);
 
   return new AssignmentExpr(line, column, left, op.value, right, codegen::getFileID(psr->current_file));
 }
 
 Node::Expr *Parser::parse_call(PStruct *psr, Node::Expr *left,
                                BindingPower bp) {
-  auto line = psr->tks[psr->pos].line;
-  auto column = psr->tks[psr->pos].column;
+  int line = psr->tks[psr->pos].line;
+  int column = psr->tks[psr->pos].column;
 
   psr->expect(psr, TokenKind::LEFT_PAREN,
               "Expected a L_Paran to start a call expr!");
@@ -252,15 +252,15 @@ Node::Expr *Parser::parse_call(PStruct *psr, Node::Expr *left,
 }
 
 Node::Expr *Parser::_ternary(PStruct *psr, Node::Expr *left, BindingPower bp) {
-  auto line = psr->tks[psr->pos].line;
-  auto column = psr->tks[psr->pos].column;
+  int line = psr->tks[psr->pos].line;
+  int column = psr->tks[psr->pos].column;
 
   psr->expect(psr, TokenKind::QUESTION,
               "Expected a '?' to define the true value of an ternary expr!");
-  auto *true_expr = parseExpr(psr, defaultValue);
+  Node::Expr *true_expr = parseExpr(psr, defaultValue);
   psr->expect(psr, TokenKind::COLON,
               "Expected a ':' to define the false value of a ternary Expr!");
-  auto *false_expr = parseExpr(psr, defaultValue);
+  Node::Expr *false_expr = parseExpr(psr, defaultValue);
 
   return new TernaryExpr(line, column, left, true_expr, false_expr, codegen::getFileID(psr->current_file));
 }
@@ -269,8 +269,8 @@ Node::Expr *Parser::_ternary(PStruct *psr, Node::Expr *left, BindingPower bp) {
 // @call<NativeFunctionName>(fnuctionArgs);
 // differnt than functionName();
 Node::Expr *Parser::externalCall(PStruct *psr) {
-  auto line = psr->tks[psr->pos].line;
-  auto column = psr->tks[psr->pos].column;
+  int line = psr->tks[psr->pos].line;
+  int column = psr->tks[psr->pos].column;
 
   psr->expect(psr, TokenKind::CALL,
               "Expected a CALL keyword to start a call stmt");
@@ -303,30 +303,30 @@ Node::Expr *Parser::externalCall(PStruct *psr) {
 };
 
 Node::Expr *Parser::_member(PStruct *psr, Node::Expr *left, BindingPower bp) {
-  auto line = psr->tks[psr->pos].line;
-  auto column = psr->tks[psr->pos].column;
+  int line = psr->tks[psr->pos].line;
+  int column = psr->tks[psr->pos].column;
 
-  auto op = psr->advance(psr); // This should be a DOT
-  auto *right = parseExpr(psr, member);
+  Lexer::Token op = psr->advance(psr); // This should be a DOT
+  Node::Expr *right = parseExpr(psr, member);
   return new MemberExpr(line, column, left, right, codegen::getFileID(psr->current_file));
 }
 
 Node::Expr *Parser::resolution(PStruct *psr, Node::Expr *left,
                                BindingPower bp) {
-  auto line = psr->tks[psr->pos].line;
-  auto column = psr->tks[psr->pos].column;
+  int line = psr->tks[psr->pos].line;
+  int column = psr->tks[psr->pos].column;
 
-  auto op = psr->advance(psr);
-  auto *right = parseExpr(psr, member);
+  Lexer::Token op = psr->advance(psr);
+  Node::Expr *right = parseExpr(psr, member);
 
   return new ResolutionExpr(line, column, left, right, codegen::getFileID(psr->current_file));
 }
 
 Node::Expr *Parser::bool_expr(PStruct *psr) {
-  auto line = psr->tks[psr->pos].line;
-  auto column = psr->tks[psr->pos].column;
+  int line = psr->tks[psr->pos].line;
+  int column = psr->tks[psr->pos].column;
 
-  auto res = (psr->advance(psr).value == "true") ? true : false;
+  bool res = (psr->advance(psr).value == "true") ? true : false;
 
   return new BoolExpr(line, column, res, codegen::getFileID(psr->current_file));
 }

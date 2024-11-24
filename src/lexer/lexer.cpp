@@ -98,7 +98,7 @@ Lexer::Token Lexer::identifier() {
 void Lexer::skipWhitespace() {
   for (;;) {
     char c = peek();
-    auto it = whiteSpaceMap.find(c);
+    std::unordered_map<char, Lexer::WhiteSpaceFunction>::iterator it = whiteSpaceMap.find(c);
     if (it != whiteSpaceMap.end()) {
       it->second(*this);
     } else
@@ -116,7 +116,7 @@ Lexer::Token Lexer::scanToken() {
 
   char c = Lexer::advance();
 
-  auto res = isalpha(c)   ? makeToken(identifier().kind)
+  Token res = isalpha(c)   ? makeToken(identifier().kind)
                           : c == '@'  ? makeToken(at_keywords[identifier().value])
                           : isdigit(c) ? makeToken(number().kind)
                           : c == '"'   ? makeToken(String().kind)
