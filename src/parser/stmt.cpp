@@ -44,10 +44,10 @@ Node::Stmt *Parser::blockStmt(PStruct *psr, std::string name) {
 }
 
 Node::Stmt *Parser::varStmt(PStruct *psr, std::string name) {
-  auto line = psr->tks[psr->pos].line;
-  auto column = psr->tks[psr->pos].column;
+  int line = psr->tks[psr->pos].line;
+  int column = psr->tks[psr->pos].column;
 
-  auto isConst = psr->current(psr).kind == TokenKind::_CONST;
+  bool isConst = psr->current(psr).kind == TokenKind::_CONST;
   psr->expect(psr, TokenKind::VAR,
               "Expected a VAR or CONST keyword to start a var stmt");
 
@@ -58,7 +58,7 @@ Node::Stmt *Parser::varStmt(PStruct *psr, std::string name) {
   psr->expect(psr, TokenKind::COLON,
               "Expected a COLON after the variable name in a var stmt to "
               "define the type of the variable");
-  auto varType = parseType(psr, BindingPower::defaultValue);
+  Node::Type *varType = parseType(psr, BindingPower::defaultValue);
 
   if (psr->current(psr).kind == TokenKind::SEMICOLON) {
     psr->expect(psr, TokenKind::SEMICOLON,
@@ -68,7 +68,7 @@ Node::Stmt *Parser::varStmt(PStruct *psr, std::string name) {
 
   psr->expect(psr, TokenKind::EQUAL,
               "Expected a EQUAL after the type of the variable in a var stmt");
-  auto assignedValue = parseExpr(psr, BindingPower::defaultValue);
+  Node::Expr *assignedValue = parseExpr(psr, BindingPower::defaultValue);
   psr->expect(psr, TokenKind::SEMICOLON,
               "Expected a SEMICOLON at the end of a var stmt");
   int currFileID = codegen::getFileID(psr->current_file);
