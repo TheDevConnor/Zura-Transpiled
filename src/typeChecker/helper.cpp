@@ -98,3 +98,41 @@ void TypeChecker::handleUnknownType(MemberExpr *member, const std::string &lhsTy
     handlerError(member->line, member->pos, msg, "", "Type Error");
     return_type = std::make_shared<SymbolType>("unknown");
 }
+
+void TypeChecker::reportOverloadedFunctionError(CallExpr *call, const std::string &functionName) {
+    std::string msg = "Function '" + functionName + "' is overloaded";
+    handlerError(call->line, call->pos, msg, "", "Type Error");
+    return_type = std::make_shared<SymbolType>("unknown");
+}
+
+bool TypeChecker::validateArgumentCount(CallExpr *call, const std::string &functionName,
+                                        const std::vector<std::pair<std::string, Node::Type *>> &fnParams) {
+    if (fnParams.size() != call->args.size()) {
+        std::string msg = "Function '" + functionName + "' requires " +
+                          std::to_string(fnParams.size()) + " arguments but got " +
+                          std::to_string(call->args.size());
+        handlerError(call->line, call->pos, msg, "", "Type Error");
+        return_type = std::make_shared<SymbolType>("unknown");
+        return false;
+    }
+    return true;
+}
+
+bool TypeChecker::validateArgumentTypes(Maps *map, CallExpr *call, const std::string &functionName,
+                                        const std::vector<std::pair<std::string, Node::Type *>> &fnParams) {
+    for (size_t i = 0; i < call->args.size(); ++i) {
+        visitExpr(map, call->args[i]);
+        auto argType = type_to_string(return_type.get());
+        auto expectedType = type_to_string(fnParams[i].second);
+
+        if (argType != expectedType) {
+            std::string msg = "Function '" + functionName + "' requires argument '" +
+                              fnParams[i].first + "' to be of type '" + expectedType +
+                              "' but got '" + argType + "'";
+            handlerError(call->line, call->pos, msg, "", "Type Error");
+            return_type = std::make_shared<SymbolType>("unknown");
+            return false;
+        }
+    }
+    return true;
+}

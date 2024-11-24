@@ -107,6 +107,12 @@ void processEnumMember(Maps *map, MemberExpr *member,
                         const std::string &lhsType);
 void handleUnknownType(MemberExpr *member, const std::string &lhsType);
 
+void reportOverloadedFunctionError(CallExpr *call, const std::string &functionName);
+bool validateArgumentCount(CallExpr *call, const std::string &functionName,
+                                        const std::vector<std::pair<std::string, Node::Type *>> &fnParams);
+bool validateArgumentTypes(Maps *map, CallExpr *call, const std::string &functionName,
+                                        const std::vector<std::pair<std::string, Node::Type *>> &fnParams);
+
 // !TypeChecker functions
 using StmtNodeHandler = std::function<void(Maps *map, Node::Stmt *)>;
 using ExprNodeHandler = std::function<void(Maps *map, Node::Expr *)>;
