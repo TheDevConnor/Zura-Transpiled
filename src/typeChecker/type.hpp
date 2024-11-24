@@ -30,6 +30,13 @@ public:
   /// Template Table
   std::unordered_map<std::string, Node::Type *> template_table = {};
   std::vector<std::string> stackKeys;
+  /// Struct Table
+  // name -> { member name, member type }
+  std::unordered_map<std::string, std::vector<std::pair<std::string, Node::Type *>>>
+      struct_table = {};
+  /// Enum Table
+  // name -> { member name, position {0} }
+  std::unordered_map<std::string, std::vector<std::pair<std::string, int>>> enum_table = {};
 
   enum class MathOp { Add, Subtract, Multiply, Divide, Modulo, Power };
   const std::unordered_map<std::string, MathOp> mathOps = {
@@ -94,6 +101,13 @@ bool checkTypeMatch(const std::shared_ptr<SymbolType> &lhs,
                     const std::string &operation, int line, int pos);
 void performCheck(Node::Stmt *stmt, bool isMain = true);
 void printTables(Maps *map);
+
+std::string determineTypeKind(Maps *map, const std::string &type);
+void processStructMember(Maps *map, MemberExpr *member,
+                         const std::string &lhsType);
+void processEnumMember(Maps *map, MemberExpr *member,
+                        const std::string &lhsType);
+void handleUnknownType(MemberExpr *member, const std::string &lhsType);
 
 // !TypeChecker functions
 using StmtNodeHandler = std::function<void(Maps *map, Node::Stmt *)>;

@@ -146,4 +146,27 @@ void TypeChecker::printTables(Maps *map) {
                 << type_to_string(param.second) << std::endl;
     }
   }
+
+  std::cout << "Array Table" << std::endl;
+  for (Node::Type *type : map->array_table) {
+    std::cout << "\t" << type_to_string(type) << std::endl;
+  }
+
+  std::cout << "Struct Table" << std::endl;
+  for (std::pair<std::string, std::vector<std::pair<std::string, Node::Type *>>> pair : map->struct_table) {
+    std::cout << "\t" << pair.first << " : " << std::endl;
+    for (std::pair<std::string, Node::Type *> member : pair.second) {
+      std::cout << "\t\t" << member.first << " : "
+                << type_to_string(member.second) << std::endl;
+    }
+  }
+
+  std::cout << "Enum Table" << std::endl;
+  for (std::pair<std::string, std::vector<std::pair<std::string, int>>> pair : map->enum_table) {
+    std::cout << "\t" << pair.first << " : " << std::endl;
+    for (std::pair<std::string, int> &member : pair.second) {
+      std::cout << "\t\t" << member.first << " : " << member.second
+                << std::endl;
+    }
+  }
 }

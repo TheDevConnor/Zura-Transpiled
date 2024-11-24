@@ -46,3 +46,55 @@ bool TypeChecker::checkTypeMatch(const std::shared_ptr<SymbolType> &lhs,
   }
   return true;
 }
+
+std::string TypeChecker::determineTypeKind(Maps *map, const std::string &type) {
+    if (map->struct_table.find(type) != map->struct_table.end()) {
+        return "struct";
+    }
+    if (map->enum_table.find(type) != map->enum_table.end()) {
+        return "enum";
+    }
+    return "unknown";
+}
+
+void TypeChecker::processStructMember(Maps *map, MemberExpr *member, const std::string &lhsType) {
+    const std::vector<std::pair<std::string, Node::Type *>> &fields = map->struct_table[lhsType];
+    const std::vector<std::pair<std::string, Node::Type *>>::const_iterator res = std::find_if(fields.begin(), fields.end(),
+                            [&member](const std::pair<std::string, Node::Type *> &field) {
+                                return field.first == static_cast<IdentExpr *>(member->rhs)->name;
+                            });
+    if (res == fields.end()) {
+        std::string msg = "Type '" + lhsType + "' does not have member '" +
+                          static_cast<IdentExpr *>(member->rhs)->name + "'";
+        handlerError(member->line, member->pos, msg, "", "Type Error");
+        return_type = std::make_shared<SymbolType>("unknown");
+        return;
+    }
+
+    return_type = std::make_shared<SymbolType>(type_to_string(res->second));
+    member->asmType = return_type.get();
+}
+
+void TypeChecker::processEnumMember(Maps *map, MemberExpr *member, const std::string &lhsType) {
+    const std::vector<std::pair<std::string, int>> &fields = map->enum_table[lhsType];
+    const std::vector<std::pair<std::string, int>>::const_iterator res = std::find_if(fields.begin(), fields.end(),
+                            [&member](const std::pair<std::string, int> &field) {
+                                return field.first == static_cast<IdentExpr *>(member->rhs)->name;
+                            });
+    if (res == fields.end()) {
+        std::string msg = "Type '" + lhsType + "' does not have member '" +
+                          static_cast<IdentExpr *>(member->rhs)->name + "'";
+        handlerError(member->line, member->pos, msg, "", "Type Error");
+        return_type = std::make_shared<SymbolType>("unknown");
+        return;
+    }
+
+    return_type = std::make_shared<SymbolType>("int");
+    member->asmType = return_type.get();
+}
+
+void TypeChecker::handleUnknownType(MemberExpr *member, const std::string &lhsType) {
+    std::string msg = "Type '" + lhsType + "' does not have members";
+    handlerError(member->line, member->pos, msg, "", "Type Error");
+    return_type = std::make_shared<SymbolType>("unknown");
+}
