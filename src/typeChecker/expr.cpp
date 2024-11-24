@@ -268,16 +268,16 @@ void TypeChecker::visitMember(Maps *map, Node::Expr *expr) {
     // Verify that the lhs is a struct or enum
     visitExpr(map, member->lhs);
     std::string lhsType = type_to_string(return_type.get());
-
+    std::string name = static_cast<IdentExpr *>(member->lhs)->name;
     // Determine if lhs is a struct or enum
-    std::string typeKind = determineTypeKind(map, lhsType);
+    std::string typeKind = determineTypeKind(map, name);
 
     if (typeKind == "struct") {
-        processStructMember(map, member, lhsType);
+        processStructMember(map, member, name);
     } else if (typeKind == "enum") {
-        processEnumMember(map, member, lhsType);
+        processEnumMember(map, member, name);
     } else {
-        handleUnknownType(member, lhsType);
+        handleUnknownType(member, name);
     }
 }
 

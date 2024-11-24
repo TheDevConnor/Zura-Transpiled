@@ -180,7 +180,7 @@ void codegen::cast(Node::Expr *expr) {
   pushDebug(e->line, expr->file_id, e->pos);
   visitExpr(e->castee);
   if (fromType->name == "unknown") {
-    return; // Assume the dev knew what they were doing
+    return; // Assume the dev knew what they were doing and push the original value
   }
   if (toType->name == "float") {
     // We are casting into a float.
@@ -199,8 +199,9 @@ void codegen::cast(Node::Expr *expr) {
       pushRegister("%rax");
     }
   } else if (toType->name == "int") {
-    if (fromType->name == "int") {
+    if (fromType->name == "int" || fromType->name == "enum") {
       // Do nothing, it's already an int
+      // Enums are explicitly ints under-the-hood as well
       return;
     }
 
@@ -334,6 +335,14 @@ void codegen::arrayElem(Node::Expr *expr) {
 
 void codegen::memberExpr(Node::Expr *expr) {
   MemberExpr *e = static_cast<MemberExpr *>(expr);
+  pushDebug(e->line, expr->file_id, e->pos);
+  // If lhs is enum
+  if (static_cast<SymbolType *>(e->lhs->asmType)->name == "enum") {
+    IdentExpr *lhs = static_cast<IdentExpr *>(e->lhs);
+    IdentExpr *rhs = static_cast<IdentExpr *>(e->rhs);
+    pushRegister("$enum_" + lhs->name + "_" + rhs->name);
+    return;
+  }
   std::cerr
       << "No fancy error for this, beg Connor... (Soviet Pancakes speaking)"
       << std::endl;

@@ -89,7 +89,7 @@ void TypeChecker::processEnumMember(Maps *map, MemberExpr *member, const std::st
         return;
     }
 
-    return_type = std::make_shared<SymbolType>("int");
+    return_type = std::make_shared<SymbolType>(lhsType);
     member->asmType = return_type.get();
 }
 

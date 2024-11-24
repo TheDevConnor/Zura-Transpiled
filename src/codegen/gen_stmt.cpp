@@ -311,8 +311,7 @@ void codegen::enumDecl(Node::Stmt *stmt) {
   // The feilds are pushed to the .data section
   int fieldCount = 0;
   for (std::string &field : s->fields) {
-    push(Instr{.var = Label{.name = field}, .type = InstrType::Label}, Section::ReadonlyData);
-    push(Instr{.var = LinkerDirective{.value = ".long " + std::to_string(fieldCount++)}, .type = InstrType::Linker}, Section::ReadonlyData);
+    push(Instr{.var = LinkerDirective{.value = ".set enum_" + s->name + "_" + field + ", " + std::to_string(fieldCount++) + "\n"}, .type = InstrType::Linker}, Section::ReadonlyData);
 
     // Add the enum field to the global table
     variableTable.insert({field, field});
