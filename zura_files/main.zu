@@ -1,12 +1,30 @@
-const add := fn (a: int, b: int) int {
-  return a + b;
+const Weekday := enum {
+  Monday,
+  Tuesday,
+  Wednesday,
+  Thursday,
+  Friday,
+  Saturday,
+  Sunday,
+};
+
+const Person := struct {
+  name: str;
+  age: int;
 };
 
 const main := fn () int {
-  have x: int = 81;
-  if (15863 < 9175) {
-    return x;
+  have p: Person;
+  have w: Weekday;
+
+  p.name = "Zura";
+  p.age = 25;
+
+  if (p.age > w.Monday) {
+    dis("Hello, ", p.name, "!");
   } else {
-    return add(x, 1);
+    dis("Goodbye, ", p.name, "!");
   }
+
+  return 0;
 };

@@ -251,8 +251,22 @@ void TypeChecker::visitCall(Maps *map, Node::Expr *expr) {
 }
 
 void TypeChecker::visitMember(Maps *map, Node::Expr *expr) {
-  auto member = static_cast<MemberExpr *>(expr);
-  std::cerr << "Member expression not implemented yet in the TypeChecker" << std::endl;
+    auto member = static_cast<MemberExpr *>(expr);
+
+    // Verify that the lhs is a struct or enum
+    visitExpr(map, member->lhs);
+    auto lhsType = type_to_string(return_type.get());
+
+    // Determine if lhs is a struct or enum
+    auto typeKind = determineTypeKind(map, lhsType);
+
+    if (typeKind == "struct") {
+        processStructMember(map, member, lhsType);
+    } else if (typeKind == "enum") {
+        processEnumMember(map, member, lhsType);
+    } else {
+        handleUnknownType(member, lhsType);
+    }
 }
 
 void TypeChecker::visitArray(Maps *map, Node::Expr *expr) {

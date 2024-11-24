@@ -109,32 +109,51 @@ void TypeChecker::visitBlock(Maps *map, Node::Stmt *stmt) {
 
 void TypeChecker::visitStruct(Maps *map, Node::Stmt *stmt) {
   auto struct_stmt = static_cast<StructStmt *>(stmt);
+  auto type = new SymbolType("struct");
 
-  // Declare the struct name as a type and add it to the global table
-  Node::Type *struct_type = new SymbolType(struct_stmt->name);
-
-  // Add the struct fields to the local table of the struct
+  // add the struct name to the local table and global table
+  declare(map->local_symbol_table, struct_stmt->name,
+               static_cast<Node::Type *>(type), struct_stmt->line,
+               struct_stmt->pos);
+  declare(map->global_symbol_table, struct_stmt->name,
+               static_cast<Node::Type *>(type), struct_stmt->line,
+               struct_stmt->pos);
+  
+  // visit the fields Aka the variables
   for (auto &field : struct_stmt->fields) {
     declare(map->local_symbol_table, field.first, field.second,
                  struct_stmt->line, struct_stmt->pos);
+    // add the field to the struct table
+    map->struct_table[struct_stmt->name].push_back({field.first, field.second});
   }
 
-  // Add the struct to the global table
-  declare(map->global_symbol_table, struct_stmt->name, struct_type,
-               struct_stmt->line, struct_stmt->pos);
+  // TODO: Handle functions in structs
 
-  // Add the struct to the function table
-  declare_fn(map,{struct_stmt->name, struct_type},
-                  struct_stmt->fields, struct_stmt->line, struct_stmt->pos);
-
-  return_type = nullptr;
-  map->local_symbol_table.clear();
+  return_type = std::make_shared<SymbolType>("struct");
 }
 
 void TypeChecker::visitEnum(Maps *map, Node::Stmt *stmt) {
   auto enum_stmt = static_cast<EnumStmt *>(stmt);
-  // TODO: Implement the enum
-  std::cerr << "Enums are not implemented yet in the TypeChecker!" << std::endl;
+  auto type = new SymbolType("enum");
+  
+  // add the enum name to the local table and global table
+  declare(map->local_symbol_table, enum_stmt->name,
+               static_cast<Node::Type *>(type), enum_stmt->line,
+               enum_stmt->pos);
+  declare(map->global_symbol_table, enum_stmt->name,
+                static_cast<Node::Type *>(type), enum_stmt->line,
+                enum_stmt->pos);
+
+  // visit the fields Aka the variables
+  for (int i = 0; i < enum_stmt->fields.size(); i++) {
+    declare(map->local_symbol_table, enum_stmt->fields[i],
+            static_cast<Node::Type *>(new SymbolType("int")), enum_stmt->line,
+            enum_stmt->pos);
+    // add the field to the struct table
+    map->enum_table[enum_stmt->name].push_back({enum_stmt->fields[i], i});
+  }
+  
+  return_type = std::make_shared<SymbolType>("enum");
 }
 
 void TypeChecker::visitIf(Maps *map, Node::Stmt *stmt) {
