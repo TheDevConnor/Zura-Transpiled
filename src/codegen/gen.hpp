@@ -23,7 +23,7 @@ inline std::unordered_map<std::string, std::string> opMap;
 
 template <typename T, typename U>
 T lookup(const std::unordered_map<U, T> &map, U key) {
-    std::unorded_map<U, T>::iterator iter = map.find(key);
+    typename std::unordered_map<U, T>::const_iterator iter = map.find(key);
     if (iter == map.end()) {
         return nullptr;
     }

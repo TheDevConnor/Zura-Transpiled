@@ -58,10 +58,9 @@ std::string type_to_string(Node::Type *type);
 template <typename T, typename U>
 static void declare(std::unordered_map<T, U> &tables, std::string name, U value,
                     int line, int pos) {
-  std::unordered_map<T, U>::iterator res = (tables.find(name) != tables.end()) ? tables[name] : nullptr;
-  if (res != nullptr) {
-    std::string msg = "'" + name + "' is already defined as an '" +
-                      type_to_string(res) + "' in the symbol table";
+  typename std::unordered_map<T, U>::iterator res = tables.find(name);
+  if (res != tables.end()) {
+    std::string msg = "'" + name + "' is already defined as a '" + type_to_string(res->second) + "' in the symbol table";
     handlerError(line, pos, msg, "", "Symbol Table Error");
     return;
   }
@@ -71,7 +70,7 @@ static void declare(std::unordered_map<T, U> &tables, std::string name, U value,
 template <typename T, typename U>
 static Node::Type *lookup(std::unordered_map<T, U> &tables, std::string name,
                           int line, int pos, std::string tableType) {
-  std::unordered_map<T, U>::iterator res = (tables.find(name) != tables.end()) ? tables[name] : nullptr;
+  typename std::unordered_map<T, U>::iterator res = (tables.find(name) != tables.end()) ? tables[name] : nullptr;
   if (res != nullptr)
     return res;
 

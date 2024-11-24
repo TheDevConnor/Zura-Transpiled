@@ -17,8 +17,8 @@
  */
 template <typename T, typename U>
 T Parser::lookup(PStruct *psr, const std::vector<std::pair<U, T>> &lu, U key) {
-  std::vector<std::pair<U, T>>::iterator it = std::find_if(lu.begin(), lu.end(),
-                         [key](std::pair<U, T> &p) { return p.first == key; });
+  typename std::vector<std::pair<U, T>>::const_iterator it = std::find_if(lu.begin(), lu.end(),
+                         [key](const std::pair<U, T> &p) { return p.first == key; });
 
   if (it == lu.end()) {
     ErrorClass::error(0, 0, "No value found for key in Type maps", "",
