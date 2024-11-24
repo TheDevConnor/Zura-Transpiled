@@ -30,13 +30,13 @@ Node::Stmt *Parser::parse(const char *source, std::string file) {
 
   // Initialize the lexer and store the tokens
   lexer.initLexer(source, file);
-  auto vect_tk = setupParser(&psr, &lexer, lexer.scanToken(), file);
+  Parser::PStruct *vect_tk = setupParser(&psr, &lexer, lexer.scanToken(), file);
 
   ErrorClass::printError();
 
   createMaps();
   createTypeMaps();
-  auto stmts = std::vector<Node::Stmt *>();
+  std::vector<Node::Stmt *> stmts = {};
 
   while (vect_tk->hadTokens(vect_tk)) {
     stmts.push_back(parseStmt(vect_tk, ""));

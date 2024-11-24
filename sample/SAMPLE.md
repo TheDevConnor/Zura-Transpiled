@@ -3,6 +3,7 @@
 Zura is a statically typed language that blends familiar syntax with modern constructs such as templates, type casting, and high-level control structures. This documentation serves as an introduction to the syntax, constructs, and idioms of Zura.
 
 ## Table of Contents
+
 1. [Basic Syntax](#basic-syntax)
 2. [Data Types](#data-types)
 3. [Variables](#variables)
@@ -11,10 +12,10 @@ Zura is a statically typed language that blends familiar syntax with modern cons
 6. [Structures](#structures)
 7. [Enums](#enums)
 8. [Templates](#templates)
-9. [Pointers](#pointer)
-10. [Casting](#casting)
-11. [Built-in Functions](#built-in-functions)
-12. [Debugging Zura](#debug-mode)
+9. [Casting](#casting)
+10. [Built-in Functions](#built-in-functions)
+11. [Debugging Zura](#debug-mode)
+<!-- 12. [Pointers](#pointer) -->
 
 ## Basic Syntax
 
@@ -59,6 +60,7 @@ You can also use the `auto` keyword to let the compiler infer the type of the va
 ```cpp
 auto z = 30;
 ```
+
 where `z` is inferred to be of type `int`.
 
 ## Functions
@@ -137,7 +139,7 @@ dis("Color: ", c, "\n");
 ```
 
 ## Templates
- 
+
 Zura supports templates which allow you to define generic functions and data structures.
 These are very similar to C++ templates.
 
@@ -207,4 +209,4 @@ dis("Casting float to int: ", x, "\n");
 
 ## Debug mode
 
-Compiling with `-debug` will generate some (albeit very poor) debug symbols along the way of your program. It will basically paste little `.loc`s throughout the main function and a fat `.debug_info` section at the bottom (the latter is still in progress).
+You can add the `-debug` flag to the Zura binary to compile your code in debug mode. This adds debugging information (like line/column locations and expression watching) to the output assembly/executable. You can try it out GCC. (For the nerds, this uses DWARF v5.)

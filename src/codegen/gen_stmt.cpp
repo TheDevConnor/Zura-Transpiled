@@ -5,26 +5,26 @@
 
 void codegen::visitStmt(Node::Stmt *stmt) {
   // compiler optimize the statement
-  auto realStmt = CompileOptimizer::optimizeStmt(stmt);
-  auto handler = lookup(stmtHandlers, realStmt->kind);
+  Node::Stmt *realStmt = CompileOptimizer::optimizeStmt(stmt);
+  StmtHandler handler = lookup(stmtHandlers, realStmt->kind);
   if (handler) {
     handler(realStmt);
   }
 }
 
 void codegen::expr(Node::Stmt *stmt) {
-  auto s = static_cast<ExprStmt *>(stmt);
+  ExprStmt *s = static_cast<ExprStmt *>(stmt);
   // Just evaluate the expression
   codegen::visitExpr(s->expr);
   text_section.pop_back();
 };
 
 void codegen::program(Node::Stmt *stmt) {
-  auto s = static_cast<ProgramStmt *>(stmt);
+  ProgramStmt *s = static_cast<ProgramStmt *>(stmt);
   for (Node::Stmt *stm : s->stmt) {
     // check for a global variable declaration
     if (stm->kind == ND_VAR_STMT) {
-      auto var = static_cast<VarStmt *>(stm);
+      VarStmt *var = static_cast<VarStmt *>(stm);
       if (var->expr) {
         codegen::visitStmt(var);
       }
@@ -34,18 +34,18 @@ void codegen::program(Node::Stmt *stmt) {
 };
 
 void codegen::constDecl(Node::Stmt *stmt) {
-  auto s = static_cast<ConstStmt *>(stmt);
+  ConstStmt *s = static_cast<ConstStmt *>(stmt);
   // TODO: Make ConstDecl's function like constant (immutable) variables
   pushDebug(s->line, stmt->file_id, s->pos);
   codegen::visitStmt(s->value);
 };
 
 void codegen::funcDecl(Node::Stmt *stmt) {
-  auto s = static_cast<FnStmt *>(stmt);
+  FnStmt *s = static_cast<FnStmt *>(stmt);
   int preStackSize = stackSize;
 
   isEntryPoint = (s->name == "main") ? true : false;
-  auto funcName = (isEntryPoint) ? "main" : "usr_" + s->name;
+  std::string funcName = (isEntryPoint) ? "main" : "usr_" + s->name;
 
 
   // WOO YEAH BABY DEBUG TIME
@@ -174,7 +174,7 @@ void codegen::funcDecl(Node::Stmt *stmt) {
 };
 
 void codegen::varDecl(Node::Stmt *stmt) {
-  auto s = static_cast<VarStmt *>(stmt);
+  VarStmt *s = static_cast<VarStmt *>(stmt);
 
   push(Instr{.var = Comment{.comment = "Variable declaration for '" + s->name + "'"},
               .type = InstrType::Comment},Section::Main);
@@ -223,11 +223,11 @@ void codegen::varDecl(Node::Stmt *stmt) {
 }
 
 void codegen::block(Node::Stmt *stmt) {
-  auto s = static_cast<BlockStmt *>(stmt);
+  BlockStmt *s = static_cast<BlockStmt *>(stmt);
   // TODO: Track the number of variables and pop them off later
   // This should be handled by the IR when i get around to it though
-  auto preSS = stackSize;
-  auto preVS = variableCount;
+  size_t preSS = stackSize;
+  int64_t preVS = variableCount;
   scopes.push_back(std::pair(preSS, preVS));
   // AHHHH DWARF STUFF ::SOB::::::::::
   // push a .loc
@@ -255,7 +255,7 @@ void codegen::block(Node::Stmt *stmt) {
 };
 
 void codegen::ifStmt(Node::Stmt *stmt) {
-  auto s = static_cast<IfStmt *>(stmt);
+  IfStmt *s = static_cast<IfStmt *>(stmt);
   std::string preconCount = std::to_string(conditionalCount++);
 
   push(Instr{.var = Comment{.comment = "if statement"}, .type = InstrType::Comment}, Section::Main);
@@ -263,7 +263,7 @@ void codegen::ifStmt(Node::Stmt *stmt) {
 
   BinaryExpr *cond = nullptr;
   if (s->condition->kind == ND_GROUP) {
-    auto group = static_cast<GroupExpr *>(s->condition);
+    GroupExpr *group = static_cast<GroupExpr *>(s->condition);
     cond = (group->expr->kind == ND_BINARY) ? static_cast<BinaryExpr *>(group->expr) : nullptr;
   } else {
     cond = static_cast<BinaryExpr *>(s->condition);
@@ -306,13 +306,12 @@ void codegen::ifStmt(Node::Stmt *stmt) {
 }
 
 void codegen::enumDecl(Node::Stmt *stmt) {
-  auto s = static_cast<EnumStmt *>(stmt);
+  EnumStmt *s = static_cast<EnumStmt *>(stmt);
 
   // The feilds are pushed to the .data section
   int fieldCount = 0;
-  for (auto &field : s->fields) {
-    push(Instr{.var = Label{.name = field}, .type = InstrType::Label}, Section::ReadonlyData);
-    push(Instr{.var = LinkerDirective{.value = ".long " + std::to_string(fieldCount++)}, .type = InstrType::Linker}, Section::ReadonlyData);
+  for (std::string &field : s->fields) {
+    push(Instr{.var = LinkerDirective{.value = ".set enum_" + s->name + "_" + field + ", " + std::to_string(fieldCount++) + "\n"}, .type = InstrType::Linker}, Section::ReadonlyData);
 
     // Add the enum field to the global table
     variableTable.insert({field, field});
@@ -326,18 +325,18 @@ void codegen::structDecl(Node::Stmt *stmt) {
   std::cerr << "Structs are not implemented yet!" << std::endl;
   exit(-1);
 
-  // auto s = static_cast<StructStmt *>(stmt);
+  // StructStmt *s = static_cast<StructStmt *>(stmt);
 }
 
 
 void codegen::print(Node::Stmt *stmt) {
-  auto print = static_cast<PrintStmt *>(stmt);
+  PrintStmt *print = static_cast<PrintStmt *>(stmt);
 
   push(Instr{.var = Comment{.comment = "print stmt"}, .type = InstrType::Comment}, Section::Main);
   nativeFunctionsUsed[NativeASMFunc::strlen] = true;
   pushDebug(print->line, stmt->file_id);
 
-  for (auto &arg : print->args) {
+  for (Node::Expr *arg : print->args) {
     std::string argType = static_cast<SymbolType *>(arg->asmType)->name;
     if (argType == "str") {
       visitExpr(arg);
@@ -391,7 +390,7 @@ void codegen::print(Node::Stmt *stmt) {
 }
 
 void codegen::_return(Node::Stmt *stmt) {
-  auto returnStmt = static_cast<ReturnStmt *>(stmt);
+  ReturnStmt *returnStmt = static_cast<ReturnStmt *>(stmt);
 
   pushDebug(returnStmt->line, stmt->file_id, returnStmt->pos);
   if (returnStmt->expr != nullptr) {
@@ -415,7 +414,7 @@ void codegen::_return(Node::Stmt *stmt) {
 }
 
 void codegen::forLoop(Node::Stmt *stmt) {
-  auto s = static_cast<ForStmt *>(stmt);
+  ForStmt *s = static_cast<ForStmt *>(stmt);
 
   std::string preconCount = std::to_string(conditionalCount++);
 
@@ -426,8 +425,8 @@ void codegen::forLoop(Node::Stmt *stmt) {
   std::string postLoopLabel = "loop_post" + std::to_string(loopCount++);
   
   // Declare the loop variable
-  auto assign = static_cast<AssignmentExpr *>(s->forLoop);
-  auto assignee = static_cast<IdentExpr *>(assign->assignee);
+  AssignmentExpr *assign = static_cast<AssignmentExpr *>(s->forLoop);
+  IdentExpr *assignee = static_cast<IdentExpr *>(assign->assignee);
 
   push(Instr{.var = Comment{.comment = "For loop variable declaration"}, .type = InstrType::Comment}, Section::Main);
 
@@ -469,7 +468,7 @@ void codegen::whileLoop(Node::Stmt *stmt) {
   std::cerr << "While loops not implemented!" << std::endl;
   exit(-1);
   /*
-  auto s = static_cast<WhileStmt *>(stmt);
+  WhileStmt *s = static_cast<WhileStmt *>(stmt);
   loopDepth++;
   pushDebug(s->line, stmt->file_id, s->pos);
   // Do something
@@ -478,7 +477,7 @@ void codegen::whileLoop(Node::Stmt *stmt) {
 };
 
 void codegen::_break(Node::Stmt *stmt) {
-  auto s = static_cast<BreakStmt *>(stmt);
+  BreakStmt *s = static_cast<BreakStmt *>(stmt);
   
   push(Instr{.var = Comment{.comment = "break statement"}, .type = InstrType::Comment}, Section::Main);
   pushDebug(s->line, stmt->file_id, s->pos);
@@ -494,7 +493,7 @@ void codegen::_break(Node::Stmt *stmt) {
 };
 
 void codegen::_continue(Node::Stmt *stmt) {
-  auto s = static_cast<ContinueStmt *>(stmt);
+  ContinueStmt *s = static_cast<ContinueStmt *>(stmt);
   
   push(Instr{.var = Comment{.comment = "continue statement"}, .type = InstrType::Comment}, Section::Main);
   pushDebug(s->line, stmt->file_id, s->pos);
@@ -513,13 +512,13 @@ void codegen::importDecl(Node::Stmt *stmt) {
   // Lex, parse, and generate code for the imported file
   // Keep track of its imports to ensure there are no circular dependencies.
   
-  auto s = static_cast<ImportStmt *>(stmt);
+  ImportStmt *s = static_cast<ImportStmt *>(stmt);
   push(Instr{.var = Comment{.comment = "Import file '" + s->name + "'."}, .type = InstrType::Comment}, Section::Main);
   codegen::program(s->stmt);
 };
 
 void codegen::linkFile(Node::Stmt *stmt) {
-  auto s = static_cast<LinkStmt *>(stmt);
+  LinkStmt *s = static_cast<LinkStmt *>(stmt);
   if (linkedFiles.find(s->name) != linkedFiles.end()) {
     // It's not the end of the world.
     std::cout << "Warning: File '" << s->name << "' already @link'd." << std::endl;
@@ -529,7 +528,7 @@ void codegen::linkFile(Node::Stmt *stmt) {
 }
 
 void codegen::externName(Node::Stmt *stmt) {
-  auto s = static_cast<ExternStmt *>(stmt);
+  ExternStmt *s = static_cast<ExternStmt *>(stmt);
   push(Instr{.var = Comment{.comment = "Extern name '" + s->name + "'."}, .type = InstrType::Comment}, Section::Main);
   // Push the extern directive to the front of the section
   if (externalNames.find(s->name) != externalNames.end()) { 
@@ -538,7 +537,7 @@ void codegen::externName(Node::Stmt *stmt) {
   } 
   // i did, it works we don't touch now lmao
   if (s->externs.size() > 0) {
-    for (auto &ext : s->externs) {
+    for (std::string &ext : s->externs) {
       text_section.emplace(text_section.begin(), Instr{.var = LinkerDirective{.value = ".extern " + ext + "\n"}, .type = InstrType::Linker});
       externalNames.insert(ext);
     }

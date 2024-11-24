@@ -28,8 +28,8 @@ using namespace Parser;
  */
 template <typename T, typename U>
 T Parser::lookup(PStruct *psr, const std::vector<std::pair<U, T>> &lu, U key) {
-  auto it = std::find_if(lu.begin(), lu.end(),
-                         [key](auto &p) { return p.first == key; });
+  typename std::vector<std::pair<U, T>>::const_iterator it = std::find_if(lu.begin(), lu.end(),
+                         [key](const std::pair<U, T> &p) { return p.first == key; });
 
   if (isIgnoreToken(key)) {
     return nullptr;
@@ -200,9 +200,9 @@ bool Parser::isIgnoreToken(TokenKind tk) {
  * @return A pointer to the parsed expression, or nullptr if parsing fails.
  */
 Node::Expr *Parser::nud(PStruct *psr) {
-  auto op = psr->current(psr);
+  Lexer::Token op = psr->current(psr);
   try {
-    auto result = lookup(psr, nud_lu, op.kind);
+    Parser::NudHandler result = lookup(psr, nud_lu, op.kind);
     if (result == nullptr) {
       psr->advance(psr);
       return nullptr;
@@ -227,9 +227,9 @@ Node::Expr *Parser::nud(PStruct *psr) {
  * @return The parsed expression.
  */
 Node::Expr *Parser::led(PStruct *psr, Node::Expr *left, BindingPower bp) {
-  auto op = psr->current(psr);
+  Lexer::Token op = psr->current(psr);
   try {
-    auto result = lookup(psr, led_lu, op.kind);
+    Parser::LedHandler result = lookup(psr, led_lu, op.kind);
     if (result == nullptr) {
       psr->advance(psr);
       return left;
@@ -258,15 +258,15 @@ Node::Expr *Parser::led(PStruct *psr, Node::Expr *left, BindingPower bp) {
  * statement is found.
  */
 Node::Stmt *Parser::stmt(PStruct *psr, std::string name) {
-  auto stmt_it = std::find_if(stmt_lu.begin(), stmt_lu.end(), [psr](auto &p) {
+  std::vector<std::pair<TokenKind, Parser::StmtHandler>>::iterator stmt_it = std::find_if(stmt_lu.begin(), stmt_lu.end(), [psr](std::pair<TokenKind, Parser::StmtHandler> &p) {
     return p.first == psr->current(psr).kind;
   });
   return stmt_it != stmt_lu.end() ? stmt_it->second(psr, name) : nullptr;
 }
 
 BindingPower Parser::getBP(TokenKind tk) {
-  auto bp_it = std::find_if(bp_lu.begin(), bp_lu.end(),
-                            [tk](auto &p) { return p.first == tk; });
+  std::vector<std::pair<TokenKind, BindingPower>>::iterator bp_it = std::find_if(bp_lu.begin(), bp_lu.end(),
+                            [tk](std::pair<TokenKind, BindingPower> &p) { return p.first == tk; });
 
   return bp_it != bp_lu.end() ? bp_it->second : BindingPower::defaultValue;
 }

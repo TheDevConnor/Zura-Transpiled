@@ -232,7 +232,7 @@ void codegen::gen(Node::Stmt *stmt, bool isSaved, std::string output_filename,
         : "gcc -e _start -nostdlib -nostartfiles -no-pie " + output_filename + ".s -o " + output_filename;
   std::string assembler_log = output_filename + "_assembler.log";
   // loop over linkedFiles set and link them with gcc
-  for (auto &linkedFile : linkedFiles) {
+  for (std::string linkedFile : linkedFiles) {
     assembler += " -l" + linkedFile;
   }
   if (!execute_command(assembler, assembler_log))

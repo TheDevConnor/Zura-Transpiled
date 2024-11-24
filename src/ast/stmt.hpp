@@ -18,16 +18,12 @@ public:
   void debug(int indent = 0) const override {
     Node::printIndent(indent);
     std::cout << "ProgramStmt: \n";
-    for (auto s : stmt) {
+    for (Node::Stmt *s : stmt) {
       s->debug(indent + 1);
     }
   }
 
-  ~ProgramStmt() {
-    for (auto s : stmt) {
-      delete s;
-    }
-  }
+  ~ProgramStmt() = default; // rule of threes
 };
 
 class ExprStmt : public Node::Stmt {
@@ -47,7 +43,7 @@ public:
     expr->debug(indent + 1);
   }
 
-  ~ExprStmt() { delete expr; }
+  ~ExprStmt() = default; // rule of threes
 };
 
 class ConstStmt : public Node::Stmt {
@@ -72,7 +68,7 @@ public:
     value->debug(indent + 1);
   }
 
-  ~ConstStmt() { delete value; }
+  ~ConstStmt() = default; // rule of threes
 };
 
 class BlockStmt : public Node::Stmt {
@@ -89,18 +85,14 @@ public:
   void debug(int indent = 0) const override {
     Node::printIndent(indent);
     std::cout << "BlockStmt: \n";
-    for (auto s : stmts) {
+    for (Node::Stmt *s : stmts) {
       s->debug(indent + 1);
     }
     Node::printIndent(indent);
     std::cout << "End of BlockStmt\n";
   }
 
-  ~BlockStmt() {
-    for (auto s : stmts) {
-      delete s;
-    }
-  }
+  ~BlockStmt() = default; // rule of threes
 };
 
 class VarStmt : public Node::Stmt {
@@ -138,10 +130,7 @@ public:
     }
   }
 
-  ~VarStmt() {
-    delete expr;
-    delete type;
-  }
+  ~VarStmt() = default; // rule of threes
 };
 
 class PrintStmt : public Node::Stmt {
@@ -158,16 +147,12 @@ public:
   void debug(int indent = 0) const override {
     Node::printIndent(indent);
     std::cout << "PrintStmt: \n";
-    for (auto a : args) {
+    for (Node::Expr *a : args) {
       a->debug(indent + 1);
     }
   }
 
-  ~PrintStmt() {
-    for (auto a : args) {
-      delete a;
-    }
-  }
+  ~PrintStmt() = default; // rule of threes
 };
 class FnStmt : public Node::Stmt {
 public:
@@ -196,7 +181,7 @@ public:
     std::cout << "Name: " << name << "\n";
     Node::printIndent(indent + 1);
     std::cout << "Params: \n";
-    for (auto p : params) {
+    for (std::pair<std::string, Node::Type *> p : params) {
       Node::printIndent(indent + 2);
       std::cout << "Name: " << p.first << "\n";
       Node::printIndent(indent + 3);
@@ -213,13 +198,7 @@ public:
     block->debug(indent + 1);
   }
 
-  ~FnStmt() {
-    delete block;
-    for (auto p : params) {
-      delete p.second;
-    }
-    delete returnType;
-  }
+  ~FnStmt() = default; // rule of threes
 };
 
 class ReturnStmt : public Node::Stmt {
@@ -243,9 +222,7 @@ public:
     }
   }
 
-  ~ReturnStmt() {
-    delete expr;
-  }
+  ~ReturnStmt() = default; // rule of threes
 };
 
 class IfStmt : public Node::Stmt {
@@ -279,11 +256,7 @@ public:
     }
   }
 
-  ~IfStmt() {
-    delete condition;
-    delete thenStmt;
-    delete elseStmt;
-  }
+  ~IfStmt() = default; // rule of threes
 };
 
 class StructStmt : public Node::Stmt {
@@ -308,7 +281,7 @@ public:
     std::cout << "Name: " << name << "\n";
     Node::printIndent(indent + 1);
     std::cout << "Fields: \n";
-    for (auto f : fields) {
+    for (std::pair<std::string, Node::Type *> f : fields) {
       Node::printIndent(indent + 2);
       std::cout << "Name: " << f.first << ", Type: ";
       f.second->debug(indent + 2);
@@ -317,20 +290,13 @@ public:
     if (stmts.size() > 0) {
       Node::printIndent(indent + 1);
       std::cout << "Stmts: \n";
-      for (auto s : stmts) {
+      for (Node::Stmt *s : stmts) {
         s->debug(indent + 2);
       }
     }
   }
 
-  ~StructStmt() {
-    for (auto f : fields) {
-      delete f.second;
-    }
-    for (auto s : stmts) {
-      delete s;
-    }
-  }
+  ~StructStmt() = default; // rule of threes
 };
 
 class WhileStmt : public Node::Stmt {
@@ -364,11 +330,7 @@ public:
     block->debug(indent + 2);
   }
 
-  ~WhileStmt() {
-    delete optional;
-    delete condition;
-    delete block;
-  }
+  ~WhileStmt() = default; // rule of threes
 };
 
 class ForStmt : public Node::Stmt {
@@ -407,11 +369,7 @@ public:
     block->debug(indent + 2);
   }
 
-  ~ForStmt() {
-    delete forLoop;
-    delete optional;
-    delete block;
-  }
+  ~ForStmt() = default; // rule of threes
 };
 
 class EnumStmt : public Node::Stmt {
@@ -433,7 +391,7 @@ public:
     std::cout << "Name: " << name << "\n";
     Node::printIndent(indent + 1);
     std::cout << "Fields: \n";
-    for (auto f : fields) {
+    for (std::string f : fields) {
       Node::printIndent(indent + 2);
       std::cout << f << "\n";
     }
@@ -456,13 +414,13 @@ public:
     std::cout << "TemplateStmt: \n";
     Node::printIndent(indent + 1);
     std::cout << "Typenames: \n";
-    for (auto t : typenames) {
+    for (std::string t : typenames) {
       Node::printIndent(indent + 2);
       std::cout << t << "\n";
     }
   }
 
-  ~TemplateStmt() {}
+  ~TemplateStmt() = default; // rule of threes
 };
 
 class ImportStmt : public Node::Stmt {
@@ -485,7 +443,7 @@ public:
     stmt->debug(indent + 1);
   }
 
-  ~ImportStmt() { delete stmt; }
+  ~ImportStmt() = default; // rule of threes
 };
 
 class LinkStmt : public Node::Stmt {
@@ -525,7 +483,7 @@ public:
     Node::printIndent(indent + 1);
     if (externs.size() > 0) {
       std::cout << "Externs: \n";
-      for (auto e : externs) {
+      for (std::string e : externs) {
         Node::printIndent(indent + 2);
         std::cout << e << "\n";
       }

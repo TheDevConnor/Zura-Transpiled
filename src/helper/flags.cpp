@@ -49,7 +49,7 @@ void Flags::runFile(const char *path, std::string outName, bool save, bool debug
   const char *source = readFile(path);
 
   if (echoOn) Flags::updateProgressBar(0.0);
-  auto result = Parser::parse(source, path);
+  Node::Stmt *result = Parser::parse(source, path);
   ErrorClass::printError();
   if (echoOn) Flags::updateProgressBar(0.25);
 

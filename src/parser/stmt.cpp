@@ -8,7 +8,7 @@
 #include <vector>
 
 Node::Stmt *Parser::parseStmt(PStruct *psr, std::string name) {
-  auto stmt_it = stmt(psr, name);
+  Node::Stmt *stmt_it = stmt(psr, name);
 
   if (stmt_it != nullptr)
     return stmt_it;
@@ -17,18 +17,18 @@ Node::Stmt *Parser::parseStmt(PStruct *psr, std::string name) {
 }
 
 Node::Stmt *Parser::exprStmt(PStruct *psr) {
-  auto line = psr->tks[psr->pos].line;
-  auto column = psr->tks[psr->pos].column;
+  int line = psr->tks[psr->pos].line;
+  int column = psr->tks[psr->pos].column;
 
-  auto *expr = parseExpr(psr, BindingPower::defaultValue);
+  Node::Expr *expr = parseExpr(psr, BindingPower::defaultValue);
   psr->expect(psr, TokenKind::SEMICOLON,
               "Expected a SEMICOLON at the end of a expr stmt!");
   return new ExprStmt(line, column, expr, codegen::getFileID(psr->current_file));
 }
 
 Node::Stmt *Parser::blockStmt(PStruct *psr, std::string name) {
-  auto line = psr->tks[psr->pos].line;
-  auto column = psr->tks[psr->pos].column;
+  int line = psr->tks[psr->pos].line;
+  int column = psr->tks[psr->pos].column;
 
   psr->expect(psr, TokenKind::LEFT_BRACE,
               "Expected a L_BRACE to start a block stmt");
@@ -77,8 +77,8 @@ Node::Stmt *Parser::varStmt(PStruct *psr, std::string name) {
 }
 
 Node::Stmt *Parser::printStmt(PStruct *psr, std::string name) {
-  auto line = psr->tks[psr->pos].line;
-  auto column = psr->tks[psr->pos].column;
+  int line = psr->tks[psr->pos].line;
+  int column = psr->tks[psr->pos].column;
 
   psr->expect(psr, TokenKind::PRINT,
               "Expected a PRINT keyword to start a print stmt");
@@ -103,8 +103,8 @@ Node::Stmt *Parser::printStmt(PStruct *psr, std::string name) {
 }
 
 Node::Stmt *Parser::constStmt(PStruct *psr, std::string name) {
-  auto line = psr->tks[psr->pos].line;
-  auto column = psr->tks[psr->pos].column;
+  int line = psr->tks[psr->pos].line;
+  int column = psr->tks[psr->pos].column;
 
   psr->expect(psr, TokenKind::_CONST,
               "Expected a CONST keyword to start a const stmt");
@@ -115,14 +115,14 @@ Node::Stmt *Parser::constStmt(PStruct *psr, std::string name) {
   psr->expect(psr, TokenKind::WALRUS,
               "Expected a WALRUS after the variable name in a const stmt");
 
-  auto value = parseStmt(psr, name);
+  Node::Stmt *value = parseStmt(psr, name);
 
   return new ConstStmt(line, column, name, value, codegen::getFileID(psr->current_file));
 }
 
 Node::Stmt *Parser::funStmt(PStruct *psr, std::string name) {
-  auto line = psr->tks[psr->pos].line;
-  auto column = psr->tks[psr->pos].column;
+  int line = psr->tks[psr->pos].line;
+  int column = psr->tks[psr->pos].column;
 
   psr->expect(psr, TokenKind::FUN,
               "Expected a FUN keyword to start a function stmt");
@@ -131,14 +131,14 @@ Node::Stmt *Parser::funStmt(PStruct *psr, std::string name) {
               "Expected a L_PAREN to start a function stmt");
   std::vector<std::pair<std::string, Node::Type *>> params;
   while (psr->current(psr).kind != TokenKind::RIGHT_PAREN) {
-    auto paramName =
+    std::string paramName =
         psr->expect(
                psr, TokenKind::IDENTIFIER,
                "Expected an IDENTIFIER as a parameter name in a function stmt")
             .value;
     psr->expect(psr, TokenKind::COLON,
                 "Expected a COLON after the parameter name in a function stmt");
-    auto paramType = parseType(psr, BindingPower::defaultValue);
+    Node::Type *paramType = parseType(psr, BindingPower::defaultValue);
     params.push_back({paramName, paramType});
 
     if (psr->current(psr).kind == TokenKind::COMMA)
@@ -150,7 +150,7 @@ Node::Stmt *Parser::funStmt(PStruct *psr, std::string name) {
 
   Node::Type *returnType = parseType(psr, BindingPower::defaultValue);
 
-  auto body = parseStmt(psr, name);
+  Node::Stmt *body = parseStmt(psr, name);
   psr->expect(psr, TokenKind::SEMICOLON,
               "Expected a SEMICOLON at the end of a function stmt");
 
@@ -160,8 +160,8 @@ Node::Stmt *Parser::funStmt(PStruct *psr, std::string name) {
 }
 
 Node::Stmt *Parser::returnStmt(PStruct *psr, std::string name) {
-  auto line = psr->tks[psr->pos].line;
-  auto column = psr->tks[psr->pos].column;
+  int line = psr->tks[psr->pos].line;
+  int column = psr->tks[psr->pos].column;
 
   psr->expect(psr, TokenKind::RETURN,
               "Expected a RETURN keyword to start a return stmt");
@@ -169,20 +169,20 @@ Node::Stmt *Parser::returnStmt(PStruct *psr, std::string name) {
     psr->advance(psr);
     return new ReturnStmt(line, column, nullptr, codegen::getFileID(psr->current_file));
   }
-  auto expr = parseExpr(psr, BindingPower::defaultValue);
+  Node::Expr *expr = parseExpr(psr, BindingPower::defaultValue);
   psr->expect(psr, TokenKind::SEMICOLON,
               "Expected a SEMICOLON at the end of a return stmt");
   return new ReturnStmt(line, column, expr, codegen::getFileID(psr->current_file));
 }
 
 Node::Stmt *Parser::ifStmt(PStruct *psr, std::string name) {
-  auto line = psr->tks[psr->pos].line;
-  auto column = psr->tks[psr->pos].column;
+  int line = psr->tks[psr->pos].line;
+  int column = psr->tks[psr->pos].column;
 
   psr->expect(psr, TokenKind::IF, "Expected an IF keyword to start an if stmt");
-  auto condition = parseExpr(psr, BindingPower::defaultValue);
+  Node::Expr *condition = parseExpr(psr, BindingPower::defaultValue);
 
-  auto thenStmt = parseStmt(psr, name);
+  Node::Stmt *thenStmt = parseStmt(psr, name);
   Node::Stmt *elseStmt = nullptr;
 
   if (psr->current(psr).kind == TokenKind::ELSE) {
@@ -195,8 +195,8 @@ Node::Stmt *Parser::ifStmt(PStruct *psr, std::string name) {
 }
 
 Node::Stmt *Parser::structStmt(PStruct *psr, std::string name) {
-  auto line = psr->tks[psr->pos].line;
-  auto column = psr->tks[psr->pos].column;
+  int line = psr->tks[psr->pos].line;
+  int column = psr->tks[psr->pos].column;
 
   psr->expect(psr, TokenKind::STRUCT,
               "Expected a STRUCT keyword to start a struct stmt");
@@ -208,16 +208,16 @@ Node::Stmt *Parser::structStmt(PStruct *psr, std::string name) {
   std::vector<Node::Stmt *> stmts;
 
   while (psr->current(psr).kind != TokenKind::RIGHT_BRACE) {
-    auto tokenKind = psr->current(psr).kind;
+    TokenKind tokenKind = psr->current(psr).kind;
     switch (tokenKind) {
     case TokenKind::IDENTIFIER: {
-      auto fieldName =
+      std::string fieldName =
           psr->expect(psr, TokenKind::IDENTIFIER,
                       "Expected an IDENTIFIER as a field name in a struct stmt")
               .value;
       psr->expect(psr, TokenKind::COLON,
                   "Expected a COLON after the field name in a struct stmt");
-      auto fieldType = parseType(psr, BindingPower::defaultValue);
+      Node::Type *fieldType = parseType(psr, BindingPower::defaultValue);
       fields.push_back({fieldName, fieldType});
       psr->expect(psr, TokenKind::SEMICOLON,
                   "Expected a SEMICOLON after the field type in a struct stmt");
@@ -247,8 +247,8 @@ Node::Stmt *Parser::structStmt(PStruct *psr, std::string name) {
 }
 
 Node::Stmt *Parser::loopStmt(PStruct *psr, std::string name) {
-  auto line = psr->tks[psr->pos].line;
-  auto column = psr->tks[psr->pos].column;
+  int line = psr->tks[psr->pos].line;
+  int column = psr->tks[psr->pos].column;
 
   psr->expect(psr, TokenKind::LOOP,
               "Expected a LOOP keyword to start a loop stmt");
@@ -303,7 +303,7 @@ Node::Stmt *Parser::loopStmt(PStruct *psr, std::string name) {
                   "Expected a R_PAREN to end the condition in a loop stmt");
     }
 
-    auto body = parseStmt(psr, name);
+    Node::Stmt *body = parseStmt(psr, name);
 
     if (isOptional) {
       if (isForLoop)
@@ -321,8 +321,8 @@ Node::Stmt *Parser::loopStmt(PStruct *psr, std::string name) {
 }
 
 Node::Stmt *Parser::enumStmt(PStruct *psr, std::string name) {
-  auto line = psr->tks[psr->pos].line;
-  auto column = psr->tks[psr->pos].column;
+  int line = psr->tks[psr->pos].line;
+  int column = psr->tks[psr->pos].column;
 
   psr->expect(psr, TokenKind::ENUM,
               "Expected an ENUM keyword to start an enum stmt");
@@ -348,8 +348,8 @@ Node::Stmt *Parser::enumStmt(PStruct *psr, std::string name) {
 
 Node::Stmt *Parser::templateStmt(PStruct *psr, std::string name) {
   // template <typealias T>
-  auto line = psr->tks[psr->pos].line;
-  auto column = psr->tks[psr->pos].column;
+  int line = psr->tks[psr->pos].line;
+  int column = psr->tks[psr->pos].column;
 
   psr->expect(psr, TokenKind::TEMPLATE,
               "Expected a TEMPLATE keyword to start a template stmt");
@@ -377,15 +377,15 @@ Node::Stmt *Parser::templateStmt(PStruct *psr, std::string name) {
 }
 
 Node::Stmt *Parser::importStmt(PStruct *psr, std::string name) {
-  auto line = psr->tks[psr->pos].line;
-  auto column = psr->tks[psr->pos].column;
+  int line = psr->tks[psr->pos].line;
+  int column = psr->tks[psr->pos].column;
 
 
   psr->expect(psr, TokenKind::IMPORT,
               "Expected an IMPORT keyword to start an import stmt");
 
   std::string current_file = node.current_file;
-  auto path = psr->expect(psr, TokenKind::STRING,
+  std::string path = psr->expect(psr, TokenKind::STRING,
                           "Expected a STRING as a path in an import stmt")
                   .value;
   node.current_file = path;
@@ -399,8 +399,8 @@ Node::Stmt *Parser::importStmt(PStruct *psr, std::string name) {
   // the absolute path will be /home/user/std/file2
   std::filesystem::path absolutePath = std::filesystem::absolute(
     std::filesystem::path(current_file).parent_path() / path);
-  auto fileContent = Flags::readFile(absolutePath.string().c_str());
-  auto result = parse(fileContent, absolutePath);
+  char *fileContent = Flags::readFile(absolutePath.string().c_str());
+  Node::Stmt *result = parse(fileContent, absolutePath);
   if (result == nullptr) {
     ErrorClass::error(line, column, "Could not parse the imported file '" + path + "'",
                       "", "Parser Error", path.c_str(), lexer, psr->tks, true,
@@ -419,8 +419,8 @@ Node::Stmt *Parser::importStmt(PStruct *psr, std::string name) {
 }
 
 Node::Stmt *Parser::linkStmt(PStruct *psr, std::string name) {
-  auto line = psr->tks[psr->pos].line;
-  auto column = psr->tks[psr->pos].column;
+  int line = psr->tks[psr->pos].line;
+  int column = psr->tks[psr->pos].column;
 
   // @link "path";
   psr->expect(psr, TokenKind::LINK,
@@ -435,8 +435,8 @@ Node::Stmt *Parser::linkStmt(PStruct *psr, std::string name) {
 }
 
 Node::Stmt *Parser::externStmt(PStruct *psr, std::string name) {
-  auto line = psr->tks[psr->pos].line;
-  auto column = psr->tks[psr->pos].column;
+  int line = psr->tks[psr->pos].line;
+  int column = psr->tks[psr->pos].column;
 
   std::vector<std::string> externs;
 
@@ -447,7 +447,7 @@ Node::Stmt *Parser::externStmt(PStruct *psr, std::string name) {
     psr->expect(psr, TokenKind::LESS,
                 "Expected a LESS to start an extern stmt");
     while (psr->current(psr).kind != TokenKind::GREATER) {
-      auto path = psr->expect(psr, TokenKind::STRING,
+      std::string path = psr->expect(psr, TokenKind::STRING,
                               "Expected a STRING as a path in an extern stmt")
                       .value;
       path.erase(path.begin()); // Erase initial "
@@ -473,8 +473,8 @@ Node::Stmt *Parser::externStmt(PStruct *psr, std::string name) {
 }
 
 Node::Stmt *Parser::breakStmt(PStruct *psr, std::string name) {
-  auto line = psr->tks[psr->pos].line;
-  auto column = psr->tks[psr->pos].column;
+  int line = psr->tks[psr->pos].line;
+  int column = psr->tks[psr->pos].column;
   psr->expect(psr, TokenKind::BREAK,
               "Expected a BREAK keyword to start a break stmt");
   psr->expect(psr, TokenKind::SEMICOLON,
@@ -483,8 +483,8 @@ Node::Stmt *Parser::breakStmt(PStruct *psr, std::string name) {
 }
 
 Node::Stmt *Parser::continueStmt(PStruct *psr, std::string name) {
-  auto line = psr->tks[psr->pos].line;
-  auto column = psr->tks[psr->pos].column;
+  int line = psr->tks[psr->pos].line;
+  int column = psr->tks[psr->pos].column;
   psr->expect(psr, TokenKind::CONTINUE,
               "Expected a CONTINUE keyword to start a continue stmt");
   psr->expect(psr, TokenKind::SEMICOLON,

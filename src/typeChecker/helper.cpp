@@ -58,9 +58,9 @@ std::string TypeChecker::determineTypeKind(Maps *map, const std::string &type) {
 }
 
 void TypeChecker::processStructMember(Maps *map, MemberExpr *member, const std::string &lhsType) {
-    const auto &fields = map->struct_table[lhsType];
-    auto res = std::find_if(fields.begin(), fields.end(),
-                            [&member](const auto &field) {
+    const std::vector<std::pair<std::string, Node::Type *>> &fields = map->struct_table[lhsType];
+    const std::vector<std::pair<std::string, Node::Type *>>::const_iterator res = std::find_if(fields.begin(), fields.end(),
+                            [&member](const std::pair<std::string, Node::Type *> &field) {
                                 return field.first == static_cast<IdentExpr *>(member->rhs)->name;
                             });
     if (res == fields.end()) {
@@ -76,9 +76,9 @@ void TypeChecker::processStructMember(Maps *map, MemberExpr *member, const std::
 }
 
 void TypeChecker::processEnumMember(Maps *map, MemberExpr *member, const std::string &lhsType) {
-    const auto &fields = map->enum_table[lhsType];
-    auto res = std::find_if(fields.begin(), fields.end(),
-                            [&member](const auto &field) {
+    const std::vector<std::pair<std::string, int>> &fields = map->enum_table[lhsType];
+    const std::vector<std::pair<std::string, int>>::const_iterator res = std::find_if(fields.begin(), fields.end(),
+                            [&member](const std::pair<std::string, int> &field) {
                                 return field.first == static_cast<IdentExpr *>(member->rhs)->name;
                             });
     if (res == fields.end()) {
@@ -89,7 +89,7 @@ void TypeChecker::processEnumMember(Maps *map, MemberExpr *member, const std::st
         return;
     }
 
-    return_type = std::make_shared<SymbolType>("int");
+    return_type = std::make_shared<SymbolType>(lhsType);
     member->asmType = return_type.get();
 }
 

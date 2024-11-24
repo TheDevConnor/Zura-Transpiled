@@ -27,7 +27,7 @@ ErrorClass::formatLineWithTokens(int line, int pos,
                                  const std::vector<Lexer::Token> &tokens,
                                  bool highlightPos = false) {
   std::string formattedLine = lineNumber(line) + std::to_string(line) + " | ";
-  for (const auto &tk : tokens) {
+  for (const Lexer::Token &tk : tokens) {
     if (tk.line == line) {
       if (highlightPos && tk.column == pos) {
         formattedLine += col.color("_", Color::RED, true, true);
@@ -121,8 +121,8 @@ void ErrorClass::printError() {
                 << col.color(std::to_string(errors.size()), Color::RED, true,
                              false)
                 << std::endl;
-      for (const auto &[line, error] : errors) {
-        std::cout << error << std::endl;
+      for (const std::pair<int, std::string>& errorPair : errors) {
+        std::cout << errorPair.second << std::endl;
       }
     }
     if (!typeErros.empty()) {
@@ -131,7 +131,7 @@ void ErrorClass::printError() {
                 << col.color(std::to_string(typeErros.size()), Color::RED, true,
                              false)
                 << std::endl;
-      for (const auto &error : typeErros) {
+      for (const std::string &error : typeErros) {
         std::cout << error << std::endl;
       }
     }
