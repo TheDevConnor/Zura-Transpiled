@@ -18,22 +18,27 @@ void TypeChecker::visitExprStmt(Maps *map, Node::Stmt *stmt) {
 void TypeChecker::visitProgram(Maps *map, Node::Stmt *stmt) {
   ProgramStmt *program_stmt = static_cast<ProgramStmt *>(stmt);
   for (Node::Stmt *stmt : program_stmt->stmt) {
-    // check for a global variable declaration
-    if (stmt->kind == NodeKind::ND_VAR_STMT) {
+    switch (stmt->kind) {
+    case NodeKind::ND_VAR_STMT: {
       VarStmt *var = static_cast<VarStmt *>(stmt);
-      if (var->expr) {
-        visitStmt(map, var);
+      if (var->expr == nullptr) {
+        std::string msg = "Global variables must be initialized";
+        handlerError(var->line, var->pos, msg, "", "Type Error");
       }
+      break;
     }
-    // make sure there are no loops or if statements in the global scope
-    if (stmt->kind == NodeKind::ND_FOR_STMT ||
-        stmt->kind == NodeKind::ND_WHILE_STMT ||
-        stmt->kind == NodeKind::ND_IF_STMT) {
+    case NodeKind::ND_FOR_STMT:
+    case NodeKind::ND_WHILE_STMT:
+    case NodeKind::ND_IF_STMT: {
       std::string msg = "Loops and if statements are not allowed in the global "
                         "scope";
       handlerError(0, 0, msg, "", "Type Error");
+      break;
     }
-    visitStmt(map, stmt);
+    default:
+      visitStmt(map, stmt);
+      break;
+    }
   }
 }
 
@@ -83,12 +88,12 @@ void TypeChecker::visitFn(Maps *map, Node::Stmt *stmt) {
     return;
   }
 
-  if (type_to_string(return_type.get()) !=
-      type_to_string(fn_stmt->returnType)) {
-    std::string msg = "Function '" + fn_stmt->name + "' must return a '" +
-                      type_to_string(fn_stmt->returnType) + "' but got '" +
-                      type_to_string(return_type.get()) + "'";
-    handlerError(fn_stmt->line, fn_stmt->pos, msg, "", "Type Error");
+  auto check = checkTypeMatch(std::make_shared<SymbolType>(type_to_string(fn_stmt->returnType)),
+                              std::make_shared<SymbolType>(type_to_string(return_type.get())),
+                              fn_stmt->name, fn_stmt->line, fn_stmt->pos);
+  if (!check) {
+    return_type = std::make_shared<SymbolType>("unknown");
+    return;
   }
 
   // also add the function name to the global table and function table

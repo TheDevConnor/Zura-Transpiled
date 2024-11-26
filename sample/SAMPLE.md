@@ -119,7 +119,11 @@ const Point := struct {
    have y: int;
 };
 
-have p: Point = Point(10, 20);
+have p: Point;
+
+p.x = 10;
+p.y = 20;
+
 dis("Point: (", p.x, ", ", p.y, ")\n");
 ```
 

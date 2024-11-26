@@ -270,15 +270,22 @@ void TypeChecker::visitMember(Maps *map, Node::Expr *expr) {
 void TypeChecker::visitArray(Maps *map, Node::Expr *expr) {
   ArrayExpr *array = static_cast<ArrayExpr *>(expr);
   for (Node::Expr *elem : array->elements) {
-    // push the type of the element into the array table
-    if (elem->kind == NodeKind::ND_INT) {
+    switch (elem->kind) {
+    case NodeKind::ND_INT:
       map->array_table.push_back(new SymbolType("int"));
-    } else if (elem->kind == NodeKind::ND_STRING) {
-      map->array_table.push_back(new SymbolType("str"));
-    } else if (elem->kind == NodeKind::ND_BOOL) {
-      map->array_table.push_back(new SymbolType("bool"));
-    } else if (elem->kind == NodeKind::ND_FLOAT) {
+      break;
+    case NodeKind::ND_FLOAT:
       map->array_table.push_back(new SymbolType("float"));
+      break;
+    case NodeKind::ND_STRING:
+      map->array_table.push_back(new SymbolType("str"));
+      break;
+    case NodeKind::ND_BOOL:
+      map->array_table.push_back(new SymbolType("bool"));
+      break;
+    default:
+      visitExpr(map, elem);
+      break;
     }
 
     // check if the type of the element is the same as the previous element
