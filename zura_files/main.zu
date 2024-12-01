@@ -1,10 +1,9 @@
-const add := fn () int {
-  have x: int = 1;
-  have y: int = 2;
-  return x + "y";
-};
-
 const main := fn () int {
-  have w: int = 1++;
-  return 0;
+  have w: int = 1 + 2;
+  if (w > 0) {
+    w = w + 1;
+  } else {
+    w = w - 1;
+  }
+  return w; # 4
 };
