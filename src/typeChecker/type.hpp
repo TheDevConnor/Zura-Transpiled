@@ -97,7 +97,8 @@ std::shared_ptr<SymbolType> checkReturnType(Node::Expr *expr,
                                             const std::string &defaultType);
 bool checkTypeMatch(const std::shared_ptr<SymbolType> &lhs,
                     const std::shared_ptr<SymbolType> &rhs,
-                    const std::string &operation, int line, int pos);
+                    const std::string &operation, int line, int pos,
+                    std::string &msg);
 void performCheck(Node::Stmt *stmt, bool isMain = true);
 void printTables(Maps *map);
 

@@ -37,10 +37,8 @@ std::shared_ptr<SymbolType> TypeChecker::checkReturnType(Node::Expr *expr, const
 bool TypeChecker::checkTypeMatch(const std::shared_ptr<SymbolType> &lhs,
                                  const std::shared_ptr<SymbolType> &rhs,
                                  const std::string &operation, int line,
-                                 int pos) {
+                                 int pos, std::string &msg) {
   if (type_to_string(lhs.get()) != type_to_string(rhs.get())) {
-    std::string msg =
-        "Operation '" + operation + "' requires both sides to be the same type";
     handlerError(line, pos, msg, "", "Type Error");
     return false;
   }

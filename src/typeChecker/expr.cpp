@@ -98,7 +98,11 @@ void TypeChecker::visitBinary(Maps *map, Node::Expr *expr) {
     visitExpr(map, binary->rhs);
     std::shared_ptr<SymbolType> rhs = checkReturnType(binary->rhs, "unknown");
 
-    if (!checkTypeMatch(lhs, rhs, binary->op, binary->line, binary->pos)) {
+    std::string msg = "Binary operation '" + binary->op +
+                      "' requires the type to be an 'int' or 'float' but got '" +
+                      type_to_string(lhs.get()) + "' and '" +
+                      type_to_string(rhs.get()) + "'";
+    if (!checkTypeMatch(lhs, rhs, binary->op, binary->line, binary->pos, msg)) {
         return_type = std::make_shared<SymbolType>("unknown");
         expr->asmType = return_type.get();
         return;
