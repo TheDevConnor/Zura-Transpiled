@@ -51,10 +51,10 @@ int levenshtein_distance(std::string s1, std::string s2) {
   // Fill in the array
   for (int i = 1; i <= m; i++) {
     for (int j = 1; j <= n; j++) {
-      if (s1[i - 1] == s2[j - 1]) {
-        dp[i][j] = dp[i - 1][j - 1];
-      } else {
-        dp[i][j] = 1 + std::min({dp[i - 1][j], dp[i][j - 1], dp[i - 1][j - 1]});
+      if (s1[i - 1] == s2[j - 1]) { // only add to the distance if the characters are different
+        dp[i][j] = dp[i - 1][j - 1]; // set distance at that location
+      } else { // the characters were different
+        dp[i][j] = 1 + std::min({dp[i - 1][j], dp[i][j - 1], dp[i - 1][j - 1]}); // set distance at that location
       }
     }
   }

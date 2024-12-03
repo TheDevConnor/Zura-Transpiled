@@ -1,9 +1,7 @@
+const b := struct {
+  a: int;
+};
+
 const main := fn () int {
-  have w: int = 1 + 2;
-  if (w > 0) {
-    w = w + 1;
-  } else {
-    w = w - 1;
-  }
-  return w; # 4
+  return 0;
 };

@@ -154,7 +154,11 @@ void codegen::funcDecl(Node::Stmt *stmt) {
     }
   }
 
+  // Do not push the lexical block
+  dwarf::nextBlockDIE = false;
   codegen::visitStmt(s->block);
+  dwarf::nextBlockDIE = true; // reset it
+  
   // Check if last instruction was a "RET"
   if (text_section.back().type != InstrType::Ret) {
     // Push a ret anyway
@@ -200,8 +204,10 @@ void codegen::varDecl(Node::Stmt *stmt) {
   // Push DWARF DIE for variable declaration!!!!!
   if (!debug) return;
   std::string dieLabel = ".Ldie" + std::to_string(dieCount);
-  SymbolType *st = static_cast<SymbolType *>(s->expr->asmType);
-  std::string asmName = st->name;
+  // Get the type of the variable
+  // (struct, array, pointer, or basic)
+  std::string asmName = type_to_diename(s->type); // This handles things like _ptr's and _arr's, too!
+  dwarf::useType(s->type);
   dwarf::useAbbrev(dwarf::DIEAbbrev::Variable);
   dwarf::useAbbrev(dwarf::DIEAbbrev::Type);
   pushLinker(".uleb128 " + std::to_string((int)dwarf::DIEAbbrev::Variable) +
@@ -235,20 +241,24 @@ void codegen::block(Node::Stmt *stmt) {
   // gotta love the ++i operator bro :D
   // if this was i++, we'd be fucking dead!!!!!!! YIPEEEE
   size_t thisDieCount = dieCount++;
-  if (debug) push(Instr{.var = Label{.name = ".Ldie" + std::to_string(thisDieCount) + "_begin"}, .type = InstrType::Label}, Section::Main);
-  dwarf::useAbbrev(dwarf::DIEAbbrev::LexicalBlock);
-  pushLinker(".uleb128 " + std::to_string((int)dwarf::DIEAbbrev::LexicalBlock) +
-             "\n.byte " + std::to_string(s->file_id) + // File ID
-             "\n.byte " + std::to_string(s->line) + // Line number
-             "\n.byte " + std::to_string(s->pos) + // Column number
-             "\n.long .Ldie" + std::to_string(thisDieCount) + "_begin" // Low pc
-             "\n.quad .Ldie" + std::to_string(thisDieCount) + "_end - .Ldie" + std::to_string(thisDieCount) + "_begin\n" // High pc
-  , Section::DIE);
+  if (dwarf::nextBlockDIE) {
+    if (debug) push(Instr{.var = Label{.name = ".Ldie" + std::to_string(thisDieCount) + "_begin"}, .type = InstrType::Label}, Section::Main);
+    dwarf::useAbbrev(dwarf::DIEAbbrev::LexicalBlock);
+    pushLinker(".uleb128 " + std::to_string((int)dwarf::DIEAbbrev::LexicalBlock) +
+              "\n.byte " + std::to_string(s->file_id) + // File ID
+              "\n.byte " + std::to_string(s->line) + // Line number
+              "\n.byte " + std::to_string(s->pos) + // Column number
+              "\n.long .Ldie" + std::to_string(thisDieCount) + "_begin" // Low pc
+              "\n.quad .Ldie" + std::to_string(thisDieCount) + "_end - .Ldie" + std::to_string(thisDieCount) + "_begin\n" // High pc
+    , Section::DIE);
+  }
   for (Node::Stmt *stm : s->stmts) {
     codegen::visitStmt(stm);
   }
-  pushLinker(".byte 0\n", Section::DIE); // End of children nodes of the scope
-  if (debug) push(Instr{.var = Label{.name = ".Ldie" + std::to_string(thisDieCount) + "_end"}, .type = InstrType::Label}, Section::Main);
+  if (dwarf::nextBlockDIE) {
+    pushLinker(".byte 0\n", Section::DIE); // End of children nodes of the scope
+    if (debug) push(Instr{.var = Label{.name = ".Ldie" + std::to_string(thisDieCount) + "_end"}, .type = InstrType::Label}, Section::Main);
+  }
   stackSize = scopes.at(scopes.size() - 1).first;
   variableCount = scopes.at(scopes.size() - 1).second;
   scopes.pop_back();
@@ -322,12 +332,58 @@ void codegen::enumDecl(Node::Stmt *stmt) {
 }
 
 void codegen::structDecl(Node::Stmt *stmt) {
-  std::cerr << "Structs are not implemented yet!" << std::endl;
-  exit(-1);
+  StructStmt *s = static_cast<StructStmt *>(stmt);
+  // As a declaration, this cannot have a loc directive
+  //! pushDebug(s->line, stmt->file_id, s->pos);
+  int size = 0;
+  // Calculate size by adding the size of members
+  for (std::pair<std::string, Node::Type *> field : s->fields) {
+    size += getByteSizeOfType(field.second); // Yes, even calculates the size of nested structs.
+  }
+  structByteSizes.insert({s->name, size});
+  if (debug) {
+    // Loop over fields, append as DIEs
+    dwarf::useAbbrev(dwarf::DIEAbbrev::StructType);
+    dwarf::useAbbrev(dwarf::DIEAbbrev::StructMember);
+    dwarf::useAbbrev(dwarf::DIEAbbrev::Type);
+    dwarf::useAbbrev(dwarf::DIEAbbrev::PointerType);
+    
+    // Push struct type first
+    pushLinker(".uleb128 " + std::to_string((int)dwarf::DIEAbbrev::StructType) +
+               "\n.long .L" + s->name + "_debug_type\n"
+               ".byte " + std::to_string(s->file_id) + // File ID
+               "\n.byte " + std::to_string(s->line) + // Line number
+               "\n.byte " + std::to_string(s->pos) + // Line column
+               "\n.byte " + std::to_string(size) + // Size of struct
+               "\n",
+                Section::DIE);
+    // Push name
+    push(Instr{.var = Label{.name = ".L" + s->name + "_debug_type"}, .type = InstrType::Label}, Section::DIEString);
+    pushLinker(".string \"" + s->name + "\"\n", Section::DIEString);
 
-  // StructStmt *s = static_cast<StructStmt *>(stmt);
+    int currentByte = 0;
+    for (std::pair<std::string, Node::Type *> field : s->fields) {
+      // Push member DIE
+      dwarf::useType(field.second);
+      std::string fieldName = ".L" + s->name + "_" + field.first + "_debug_struct_type";
+      pushLinker(".uleb128 " + std::to_string((int)dwarf::DIEAbbrev::StructMember) +
+                 "\n.long " + fieldName +
+                 "\n.long .L" + type_to_diename(field.second) + "_debug_type"
+                 "\n.byte " + std::to_string(currentByte) + // Offset in struct
+                 "\n",
+                  Section::DIE);
+      // push name in string
+      push(Instr{.var = Label{.name = fieldName}, .type = InstrType::Label}, Section::DIEString);
+      pushLinker(".string \"" + field.first + "\"\n", Section::DIEString);
+
+      // Add the byte size of this to the current byte
+      currentByte += getByteSizeOfType(field.second);
+    }
+
+    // Push end of children
+    pushLinker(".byte 0\n", Section::DIE);
+  }
 }
-
 
 void codegen::print(Node::Stmt *stmt) {
   PrintStmt *print = static_cast<PrintStmt *>(stmt);

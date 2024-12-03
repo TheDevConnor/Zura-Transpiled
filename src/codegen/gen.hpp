@@ -39,7 +39,6 @@ inline int64_t variableCount = 1;
 
 // String could be register (%rdi, %rdx, ...) or effective address (-8(%rbp), ...)
 inline std::unordered_map<std::string, std::string> variableTable = {};
-inline std::unordered_map<std::string, std::unordered_map<std::string, std::string>> structTable = {};
 inline std::vector<size_t> stackSizesForScopes = {}; // wordy term for "when we start a scope, push its stack size"
 inline size_t stackSize;
 
@@ -83,6 +82,11 @@ void memberExpr(Node::Expr *expr);
 void externalCall(Node::Expr *expr);
 
 int convertFloatToInt(float input); // Float input. Crazy, right?
+
+inline std::unordered_map<std::string, size_t> structByteSizes = {}; // Name of a struct and its size in bytes
+signed short int getByteSizeOfType(Node::Type *type); // Return the size of a type in bytes, ie pointers are a size_t (os specific macros baby!)
+std::string getUnderlying(Node::Type *type); // Get the underlying type name of a type (ie, int* -> int, []int -> int, int -> int)
+std::string type_to_diename(Node::Type *type);
 
 inline std::set<std::string> linkedFiles = {};
 inline std::set<std::string> externalNames = {}; // Make sure that when external functions are called, we run "call 'ExternalName'" rather than "call 'usr_FuncName'"/
@@ -139,16 +143,21 @@ enum class DIEAbbrev {
   // (... Inline scopes when?)
   LexicalBlock,
 
+  StructType,
+  StructMember,
+
   // Types
   Type, // EX: char
-  PointerType, // EX: * -> char (reference to 'char')
+  PointerType, // EX: char* -> points to a char.
   // Void type is not included because it will not be included by function declarations
 };
 inline std::set<DIEAbbrev> dieAbbrevsUsed = {};
 void useAbbrev(DIEAbbrev abbrev);
 bool isUsed(DIEAbbrev abbrev);
+void useType(Node::Type *type);
+inline std::set<std::string> dieNamesUsed = {};
 std::string generateAbbreviations();
-
+inline bool nextBlockDIE = true;
 
 inline static const std::unordered_map<std::string, int> argOP_regs = {
   {"%rax", 0},

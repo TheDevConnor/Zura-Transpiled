@@ -53,7 +53,9 @@ void codegen::gen(Node::Stmt *stmt, bool isSaved, std::string output_filename,
           "# "
         << ZuraVersion
         << "\n"
-          "# What's New: Debug symbols (Open GDB and try it!)\n";
+          "# What's New: Structs and Optimizations\n"
+        << "\n# Everything beyond this point was created by the Zura compiler.\n" 
+           ".att_syntax\n";
   
 
   // This one defines the file the whole assembly is related to

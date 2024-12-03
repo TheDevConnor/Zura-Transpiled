@@ -257,3 +257,69 @@ void codegen::pushDebug(int line, int file, int column) {
           Section::Main);
   }
 }
+
+signed short int codegen::getByteSizeOfType(Node::Type *type) {
+  if (type->kind == NodeKind::ND_POINTER_TYPE) {
+    return 8;
+  }
+  if (type->kind == NodeKind::ND_ARRAY_TYPE) {
+    // Get the size of the underlying type
+    // multiply by # of elements
+    ArrayType *arr = static_cast<ArrayType *>(type);
+    return getByteSizeOfType(arr->underlying) /* * arr->size */; 
+  }
+  if (type->kind == NodeKind::ND_SYMBOL_TYPE) {
+    SymbolType *sym = static_cast<SymbolType *>(type);
+    if (sym->name == "int") {
+      return 8;
+    } else if (sym->name == "char") {
+      return 1;
+    } else if (sym->name == "float") {
+      return 4;
+    } else if (sym->name == "void") {
+      return 0;
+    } else if (structByteSizes.find(sym->name) != structByteSizes.end()) {
+      return structByteSizes[sym->name];
+    } else {
+      return 8; // Default to 8 bytes because x64 rules!!
+    }
+    std::cout << "Unknown type: " << sym->name << std::endl;
+    return -1;
+  }
+  // Unreachable!
+};
+
+std::string codegen::getUnderlying(Node::Type *type) {
+  // Eventually, all underlying's will turn into SymbolType's, which is just the name of the type.
+  if (type->kind == ND_POINTER_TYPE) {
+    PointerType *p = static_cast<PointerType *>(type);
+    return getUnderlying(p->underlying);
+  }
+  if (type->kind == ND_ARRAY_TYPE) {
+    ArrayType *a = static_cast<ArrayType *>(type);
+    return getUnderlying(a->underlying);
+  }
+  if (type->kind == ND_SYMBOL_TYPE) {
+    SymbolType *s = static_cast<SymbolType *>(type);
+    return s->name; // The end!
+  }
+  // Unreachable!
+};
+
+std::string codegen::type_to_diename(Node::Type *type) {
+  // just imagine what a [[int *]*] would look like
+  // int_ptr_arr_ptr_arr LMAO
+  if (type->kind == ND_POINTER_TYPE) {
+    PointerType *p = static_cast<PointerType *>(type);
+    return type_to_diename(p->underlying) + "_ptr";
+  }
+  if (type->kind == ND_ARRAY_TYPE) {
+    ArrayType *a = static_cast<ArrayType *>(type);
+    return type_to_diename(a->underlying) + "_arr";
+  }
+  if (type->kind == ND_SYMBOL_TYPE) { // Yes, structs are symbols too
+    SymbolType *s = static_cast<SymbolType *>(type);
+    return s->name;
+  }
+  // Unreachable!
+};

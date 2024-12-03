@@ -41,7 +41,12 @@ struct Parser::PStruct {
   std::string current_file;
   size_t pos = 0;
 
-  Lexer::Token current(PStruct *psr) { return psr->tks[psr->pos]; }
+  Lexer::Token current(PStruct *psr) { 
+    if (psr->pos >= psr->tks.size()) {
+      return psr->tks[psr->tks.size() - 1]; // Return the last EOF token. This might fall all the way down into an "expect" and create a NICE error instead of segfaulting.
+    }
+    return psr->tks[psr->pos];
+  }
 
   Lexer::Token advance(PStruct *psr) {
     Lexer::Token tk = current(psr);
@@ -50,6 +55,9 @@ struct Parser::PStruct {
   }
 
   Lexer::Token peek(PStruct *psr, int offset = 0) {
+    if (psr->pos + offset >= psr->tks.size()) {
+      return psr->tks[psr->tks.size() - 1]; // Return the last EOF token. This might fall all the way down into an "expect" and create a NICE error instead of segfaulting.
+    }
     return psr->tks[psr->pos + offset];
   }
 

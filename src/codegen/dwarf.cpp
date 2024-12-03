@@ -209,6 +209,37 @@ std::string codegen::dwarf::generateAbbreviations() {
                          "\n";
         break;
       }
+      case DIEAbbrev::StructType: {
+        // DW_TAG_structure_type
+        abbreviations += "\n.uleb128 " + std::to_string((int)a) +
+                         "\n.uleb128 0x13 # TAG_structure_type"
+                         "\n.byte 1 # children"
+                         "\n.uleb128 0x3 # AT_name"
+                         "\n.uleb128 0xe # FORM_strp"
+                         "\n.uleb128 0x3a # AT_decl_file"
+                         "\n.uleb128 0xb # FORM_data1"
+                         "\n.uleb128 0x3b # AT_decl_line"
+                         "\n.uleb128 0xb # FORM_data1"
+                         "\n.uleb128 0x39 # AT_decl_column"
+                         "\n.uleb128 0xb # FORM_data1"
+                         "\n.uleb128 0xb # AT_byte_size"
+                         "\n.uleb128 0xb # FORM_data1"
+                         "\n";
+        break;
+      }
+      case DIEAbbrev::StructMember: {
+        abbreviations += "\n.uleb128 " + std::to_string((int)a) +
+                         "\n.uleb128 0x0d # TAG_member"
+                         "\n.byte 0 # No children"
+                         "\n.uleb128 0x3 # AT_name"
+                         "\n.uleb128 0xe # FORM_strp"
+                         "\n.uleb128 0x49 # AT_type"
+                         "\n.uleb128 0x13 # FORM_ref4"
+                         "\n.uleb128 0x38 # AT_data_member_location"
+                         "\n.uleb128 0xb # FORM_data1"
+                         "\n";
+        break;
+      }
       default:
         abbreviations += "ERROR HERE! UNIMPLEMENTED";
         break;
@@ -225,4 +256,32 @@ void codegen::dwarf::useAbbrev(codegen::dwarf::DIEAbbrev a) {
 
 bool codegen::dwarf::isUsed(codegen::dwarf::DIEAbbrev a) {
   return dieAbbrevsUsed.find(a) != dieAbbrevsUsed.end();
+};
+
+void codegen::dwarf::useType(Node::Type *type) {
+  // Equivalent of 'useAbbrev' but on dienames
+  std::string dieName = type_to_diename(type);
+  if (dieNamesUsed.find(dieName) != dieNamesUsed.end()) return;
+  dieNamesUsed.insert(dieName);
+  useAbbrev(DIEAbbrev::Type);
+  if (type->kind == NodeKind::ND_POINTER_TYPE) {
+    // Create a PointerType
+    useAbbrev(DIEAbbrev::PointerType);
+    PointerType *p = static_cast<PointerType *>(type);
+    useType(p->underlying);
+    std::string underlyingName = type_to_diename(p->underlying);
+    push(Instr{.var = Label{.name = ".L" + dieName + "_debug_type"}, .type = InstrType::Label}, Section::DIE);
+    pushLinker(".uleb128 " + std::to_string((int)DIEAbbrev::PointerType) +
+               "\n.byte 8 # AT_byte_size (all pointers are 8 bytes)"
+               "\n.long .L" + underlyingName + "_debug_type # FORM_ref4"
+               , Section::DIE);
+  } else if (type->kind == NodeKind::ND_ARRAY_TYPE) {
+    // Create an ArrayType
+    // useAbbrev(DIEAbbrev::ArrayType);
+
+  } else {
+    // Nothing can be done if it is a basic type.
+    // If it is a struct type, then that will already be handled by the structDecl function
+    // This area here is useless!
+  }
 };

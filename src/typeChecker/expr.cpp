@@ -302,7 +302,16 @@ void TypeChecker::visitArray(Maps *map, Node::Expr *expr) {
             type_to_string(map->array_table[map->array_table.size() - 1]) + "'";
         handlerError(array->line, array->pos, msg, "", "Type Error");
       }
+    } else {
+      // this was the first element, or the array is empty
+      continue;
     }
+  }
+
+  if (map->array_table.empty()) {
+    return_type = std::make_shared<ArrayType>(array->type);
+    expr->asmType = return_type.get();
+    return;
   }
   return_type =
       std::make_shared<ArrayType>(map->array_table[0]);
