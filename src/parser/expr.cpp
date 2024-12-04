@@ -3,6 +3,7 @@
 #include "parser.hpp"
 
 #include <iostream>
+#include <unordered_map>
 
 /**
  * Parses an expression from the given parser and returns the resulting
@@ -329,4 +330,31 @@ Node::Expr *Parser::bool_expr(PStruct *psr) {
   bool res = (psr->advance(psr).value == "true") ? true : false;
 
   return new BoolExpr(line, column, res, codegen::getFileID(psr->current_file));
+}
+
+// {a: 1, b: 2, c: 3}
+Node::Expr *Parser::structExpr(PStruct *psr) {
+  int line = psr->tks[psr->pos].line;
+  int column = psr->tks[psr->pos].column;
+  psr->expect(psr, TokenKind::LEFT_BRACE,
+              "Expected a L_Brace to start a struct expr!");
+
+  std::unordered_map<Node::Expr *, Node::Expr *> elements;
+
+  while (psr->current(psr).kind != TokenKind::RIGHT_BRACE) {
+    Node::Expr *key = parseExpr(psr, defaultValue);
+    psr->expect(psr, TokenKind::COLON,
+                "Expected a COLON after a key in a struct expr!");
+    Node::Expr *value = parseExpr(psr, defaultValue);
+    elements[key] = value;
+
+    if (psr->current(psr).kind == TokenKind::COMMA)
+      psr->expect(psr, TokenKind::COMMA,
+                  "Expected a COMMA after a key-value pair in a struct expr!");
+  }
+
+  psr->expect(psr, TokenKind::RIGHT_BRACE,
+              "Expected a R_Brace to end a struct expr!");
+
+  return new StructExpr(line, column, elements, codegen::getFileID(psr->current_file));
 }

@@ -3,6 +3,13 @@ const e := enum {
   B
 };
 
+const Person := struct {
+  age: int;
+};
+
 const main := fn () int {
+  have p: Person = {
+    age: 25,
+  };
   return 0;
 };

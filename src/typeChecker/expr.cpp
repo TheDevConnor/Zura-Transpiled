@@ -273,6 +273,15 @@ void TypeChecker::visitMember(Maps *map, Node::Expr *expr) {
 
 void TypeChecker::visitArray(Maps *map, Node::Expr *expr) {
   ArrayExpr *array = static_cast<ArrayExpr *>(expr);
+
+  // check if the array is empty
+  if (array->elements.empty()) {
+    std::string msg = "Array must have at least one element!";
+    handlerError(array->line, array->pos, msg, "", "Type Error");
+    return_type = std::make_shared<SymbolType>("unknown");
+    return;
+  }
+
   for (Node::Expr *elem : array->elements) {
     switch (elem->kind) {
     case NodeKind::ND_INT:
@@ -302,9 +311,6 @@ void TypeChecker::visitArray(Maps *map, Node::Expr *expr) {
             type_to_string(map->array_table[map->array_table.size() - 1]) + "'";
         handlerError(array->line, array->pos, msg, "", "Type Error");
       }
-    } else {
-      // this was the first element, or the array is empty
-      continue;
     }
   }
 
@@ -352,4 +358,63 @@ void TypeChecker::visitCast(Maps *map, Node::Expr *expr) {
   visitExpr(map, cast->castee);
   expr->asmType = cast->castee_type;
   return_type = std::make_shared<SymbolType>(type_to_string(cast->castee_type));
+}
+
+void TypeChecker::visitStructExpr(Maps *map, Node::Expr *expr) {
+  StructExpr *struct_expr = static_cast<StructExpr *>(expr);
+
+  auto struct_type = return_type; // save the struct type
+
+  // find the struct in the struct table
+  if (map->struct_table.find(type_to_string(return_type.get())) ==
+      map->struct_table.end()) {
+    std::string msg = "Struct '" + type_to_string(return_type.get()) +
+                      "' is not defined in the struct table";
+    handlerError(struct_expr->line, struct_expr->pos, msg, "", "Type Error");
+    return_type = std::make_shared<SymbolType>("unknown");
+    return;
+  }
+
+  // check if the number of elements in the struct is the same as the number of elements in the struct expression
+  int struct_size = map->struct_table[type_to_string(return_type.get())].size();
+  if (struct_size != struct_expr->values.size()) {
+    std::string msg = "Struct '" + type_to_string(return_type.get()) +
+                      "' requires " + std::to_string(struct_size) +
+                      " elements but got " +
+                      std::to_string(struct_expr->values.size());
+    handlerError(struct_expr->line, struct_expr->pos, msg, "", "Type Error");
+    return_type = std::make_shared<SymbolType>("unknown");
+    return;
+  }
+
+  // Now compare the types of the struct elements with the types of the struct expression elements 
+  for (auto &elem : struct_expr->values) {
+    // find the type of the struct element
+    auto name = static_cast<IdentExpr *>(elem.first);
+    std::string elem_type;
+
+    // ?NOTE: This is kinda working but for some reason wont reconize str????
+
+    for (const auto &pair : map->struct_table[type_to_string(return_type.get())]) {
+      if (pair.first == name->name) {
+        elem_type = type_to_string(pair.second);
+        break;
+      }
+    }
+    // find the type of the struct expression element
+    visitExpr(map, elem.second);
+    std::string value_type = type_to_string(return_type.get());
+
+    if (elem_type != value_type) {
+      std::string msg = "Struct element '" + name->name + "' requires type '" +
+                        elem_type + "' but got '" + value_type + "'";
+      handlerError(struct_expr->line, struct_expr->pos, msg, "", "Type Error");
+      return_type = std::make_shared<SymbolType>("unknown");
+      return;
+    }
+  }
+
+  // set the return type to the struct type
+  return_type = struct_type;
+  expr->asmType = return_type.get();
 }

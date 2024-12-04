@@ -141,6 +141,7 @@ Node::Expr *array(PStruct *psr);
 Node::Expr *bool_expr(PStruct *psr);
 Node::Expr *cast_expr(PStruct *psr);
 Node::Expr *externalCall(PStruct *psr);
+Node::Expr *structExpr(PStruct *psr);
 Node::Expr *_postfix(PStruct *psr, Node::Expr *left, BindingPower bp);
 Node::Expr *binary(PStruct *psr, Node::Expr *left, BindingPower bp);
 Node::Expr *assign(PStruct *psr, Node::Expr *left, BindingPower bp);

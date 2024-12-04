@@ -14,6 +14,7 @@
 #include <vector>
 
 namespace TypeChecker {
+extern std::string struct_name;
 void handlerError(int line, int pos, std::string msg, std::string note,
                   std::string typeOfError);
 
@@ -165,4 +166,5 @@ void visitArray(Maps *map, Node::Expr *expr);
 void visitIndex(Maps *map, Node::Expr *expr);
 void visitCast(Maps *map, Node::Expr *expr);
 void visitExternalCall(Maps *map, Node::Expr *expr);
+void visitStructExpr(Maps *map, Node::Expr *expr);
 } // namespace TypeChecker

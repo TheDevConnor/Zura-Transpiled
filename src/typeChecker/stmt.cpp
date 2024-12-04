@@ -191,6 +191,15 @@ void TypeChecker::visitVar(Maps *map, Node::Stmt *stmt) {
   declare(map->local_symbol_table, var_stmt->name, var_stmt->type,
                var_stmt->line, var_stmt->pos);
 
+  // check if the type is a struct or enum
+  if (map->struct_table.find(type_to_string(var_stmt->type)) !=
+      map->struct_table.end()) {
+    return_type = std::make_shared<SymbolType>(type_to_string(var_stmt->type));
+  } else if (map->enum_table.find(type_to_string(var_stmt->type)) !=
+             map->enum_table.end()) {
+    return_type = std::make_shared<SymbolType>(type_to_string(var_stmt->type));
+  }
+
   // check if the variable is initialized
   if (var_stmt->expr == nullptr) {
     return;

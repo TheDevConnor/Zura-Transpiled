@@ -1,6 +1,7 @@
 #pragma once
 
 #include <iostream>
+#include <unordered_map>
 #include <vector>
 
 #include "ast.hpp"
@@ -581,4 +582,33 @@ public:
     Node::printIndent(indent + 1);
     std::cout << "Value: " << value << "\n";
   }
+};
+
+// { name: value, name: value, ... }
+class StructExpr : public Node::Expr {
+public:
+  int line, pos;
+  std::unordered_map<Node::Expr *, Node::Expr *> values;
+
+  StructExpr(int line, int pos, std::unordered_map<Node::Expr *, Node::Expr *> values, int file)
+      : line(line), pos(pos), values(std::move(values)) {
+    file_id = file;
+    kind = NodeKind::ND_STRUCT;
+    // type check whatever the rhs is supposed to be
+  }
+
+  void debug(int indent = 0) const override {
+    Node::printIndent(indent);
+    std::cout << "StructExpr: \n";
+    for (auto &pair : values) {
+      Node::printIndent(indent + 1);
+      std::cout << "Name: \n";
+      pair.first->debug(indent + 2);
+      Node::printIndent(indent + 1);
+      std::cout << "Value: \n";
+      pair.second->debug(indent + 2);
+    }
+  }
+
+  ~StructExpr() = default; // rule of threes
 };
