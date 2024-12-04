@@ -9,7 +9,7 @@ std::string codegen::dwarf::generateAbbreviations() {
                          "\n.uleb128 0x2e # TAG_subprogram - FunctionNoParams, non-void"
                          "\n.byte 0x1 # Has children"
                          "\n.uleb128 0x3f # AT_external"
-                         "\n.uleb128 0x19 # FORM_flag_present"
+                         "\n.uleb128 0xc # FORM_flag_present"
                          "\n.uleb128 0x3 # AT_name"
                          "\n.uleb128 0xe # FORM_strp"
                          "\n.uleb128 0x3a # AT_decl_file"
@@ -36,7 +36,7 @@ std::string codegen::dwarf::generateAbbreviations() {
                          "\n.uleb128 0x2e # TAG_subprogram - FunctionNoParams, non-void"
                          "\n.byte 0x1 # Has children"
                          "\n.uleb128 0x3f # AT_external"
-                         "\n.uleb128 0x19 # FORM_flag_present"
+                         "\n.uleb128 0xc # FORM_flag_present"
                          "\n.uleb128 0x3 # AT_name"
                          "\n.uleb128 0xe # FORM_strp"
                          "\n.uleb128 0x3a # AT_decl_file"
@@ -61,7 +61,7 @@ std::string codegen::dwarf::generateAbbreviations() {
                          "\n.uleb128 0x2e # TAG_subprogram - FunctionNoParams, non-void"
                          "\n.byte 0x1 # Has children"
                          "\n.uleb128 0x3f # AT_external"
-                         "\n.uleb128 0x19 # FORM_flag_present"
+                         "\n.uleb128 0xc # FORM_flag_present"
                          "\n.uleb128 0x3 # AT_name"
                          "\n.uleb128 0xe # FORM_strp"
                          "\n.uleb128 0x27 # AT_prototyped"
@@ -90,7 +90,7 @@ std::string codegen::dwarf::generateAbbreviations() {
                          "\n.uleb128 0x2e # TAG_subprogram - FunctionNoParams, non-void"
                          "\n.byte 0x1 # Has children"
                          "\n.uleb128 0x3f # AT_external"
-                         "\n.uleb128 0x19 # FORM_flag_present"
+                         "\n.uleb128 0xc # FORM_flag_present"
                          "\n.uleb128 0x3 # AT_name"
                          "\n.uleb128 0xe # FORM_strp"
                          "\n.uleb128 0x27 # AT_prototyped"
@@ -236,6 +236,41 @@ std::string codegen::dwarf::generateAbbreviations() {
                          "\n.uleb128 0x49 # AT_type"
                          "\n.uleb128 0x13 # FORM_ref4"
                          "\n.uleb128 0x38 # AT_data_member_location"
+                         "\n.uleb128 0xb # FORM_data1"
+                         "\n";
+        break;
+      }
+      case DIEAbbrev::EnumType: {
+        abbreviations += "\n.uleb128 " + std::to_string((int)a) +
+                         "\n.uleb128 0x04 # TAG_enumeration_type"
+                         "\n.byte 1 # children"
+                         "\n.uleb128 0x3 # AT_name"
+                         "\n.uleb128 0xe # FORM_strp"
+                         "\n.uleb128 0x3a # AT_decl_file"
+                         "\n.uleb128 0xb # FORM_data1"
+                         "\n.uleb128 0x3b # AT_decl_line"
+                         "\n.uleb128 0xb # FORM_data1"
+                         "\n.uleb128 0x39 # AT_decl_column"
+                         "\n.uleb128 0xb # FORM_data1"
+                         // For some reason, C includes BOTH a "type" AND "encoding" attribute.
+                         // Since both the 'type', and the 'encoding'-'byte-size' pair are included in C,
+                         // i will just make them both the same constant- unsigned long (32-bits, although this is too much.)
+                         "\n.uleb128 0xb # AT_byte_size"
+                         "\n.uleb128 0xb # FORM_data1"
+                         "\n.uleb128 0x3e # AT_encoding"
+                         "\n.uleb128 0xb # FORM_data1"
+                         "\n.uleb128 0x49 # AT_type"
+                         "\n.uleb128 0x13 # FORM_ref4"
+                         "\n";
+        break;
+      }
+      case DIEAbbrev::EnumMember: {
+        abbreviations += "\n.uleb128 " + std::to_string((int)a) +
+                         "\n.uleb128 0x28 # TAG_enumerator"
+                         "\n.byte 0 # No children"
+                         "\n.uleb128 0x3 # AT_name"
+                         "\n.uleb128 0xe # FORM_strp"
+                         "\n.uleb128 0x1c # AT_const_value"
                          "\n.uleb128 0xb # FORM_data1"
                          "\n";
         break;

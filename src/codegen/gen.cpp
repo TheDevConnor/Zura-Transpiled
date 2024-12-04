@@ -168,6 +168,10 @@ void codegen::gen(Node::Stmt *stmt, bool isSaved, std::string output_filename,
             "\n";
     // Attributes or whatever that follow
     file << Stringifier::stringifyInstrs(die_section) << "\n";
+    file << "\n.byte 0\n"; // End of compile unit's children
+    // Ensure that these TYPES are public
+    // If they are INSIDE the compile unit (before the byte 0 above here),
+    // then they are not visible to other CU's (other files)
     if (dwarf::isUsed(dwarf::DIEAbbrev::Type)) {
       file << ".Lint_debug_type:\n"
             ".uleb128 " + std::to_string((int)dwarf::DIEAbbrev::Type) +
@@ -192,7 +196,6 @@ void codegen::gen(Node::Stmt *stmt, bool isSaved, std::string output_filename,
             ".byte 6\n" // DW_ATE_signed
             ".string \"char\"\n";
     }
-    file << "\n.byte 0\n"; // End of compile unit's children
     file << ".Ldebug_end:\n";
     file << ".section .debug_abbrev,\"\",@progbits\n";
     file << ".Ldebug_abbrev:\n";

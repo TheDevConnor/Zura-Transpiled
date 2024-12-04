@@ -4,9 +4,10 @@ NOTE: Read into switch statements "jump tables", and how to emit them in ASM.
 Add in struct, enums, and unions, member expr !!!
 Print integers using a native function
 
-Fix XOpenDisplay@PLT call segfault - Honestly, I think this is an issue with Xlib, rather than Zura.
-Still needs looking into, though.
+Add and recognize more int types in asm. (Ex. byte, short, long, quad).
+ - IMPORTANT - Update stmt::enumDecl IMMEDIATELY after adding longs
 
+A test for if adding TCP/HTTP requests
 Maybe do pointers? (Yes, do pointers)
    - Implement sockets (HTTP requests ??)
    - Note for HTTP:

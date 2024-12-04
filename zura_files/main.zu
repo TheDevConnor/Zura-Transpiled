@@ -1,7 +1,14 @@
-const b := struct {
-  a: int;
+const e := enum {
+  Saturday,
+  Sunday,
+  Monday,
+  Tuesday,
+  Wednesday,
+  Thursday,
+  Friday
 };
 
 const main := fn () int {
-  return 0;
+  have day: e = e.Saturday;
+  return @cast<int>(day);
 };

@@ -74,16 +74,29 @@ JumpCondition codegen::getJumpCondition(const std::string &op) {
   exit(-1);
 }
 
-int codegen::getExpressionDepth(BinaryExpr *e) {
-    int depth = 0;
-    // We don't need to check for the depth of the left-hand side because it's already been visited
-    if (e->rhs->kind == NodeKind::ND_BINARY) {
-        int rhsDepth = getExpressionDepth(static_cast<BinaryExpr *>(e->rhs));
-        if (rhsDepth > depth) {
-            depth = rhsDepth;
-        }
+int codegen::getExpressionDepth(Node::Expr *e) {
+  if (e->kind != NodeKind::ND_BINARY) return 1; 
+  BinaryExpr *expr = static_cast<BinaryExpr *>(e);
+  int lhsDepth = 1;
+  if (expr->lhs->kind == NodeKind::ND_BINARY) {
+    lhsDepth += getExpressionDepth(static_cast<BinaryExpr *>(expr->lhs));
+  } else if (expr->lhs->kind == NodeKind::ND_GROUP) {
+    GroupExpr *group = static_cast<GroupExpr *>(expr->lhs);
+    if (group->expr->kind == NodeKind::ND_BINARY) {
+      lhsDepth += getExpressionDepth(static_cast<BinaryExpr *>(group->expr));
     }
-    return depth + 1;
+  }
+  // check for rhs and see if its greater
+  int rhsDepth = 1;
+  if (expr->rhs->kind == NodeKind::ND_BINARY) {
+    rhsDepth += getExpressionDepth(static_cast<BinaryExpr *>(expr->rhs));
+  } else if (expr->rhs->kind == NodeKind::ND_GROUP) {
+    GroupExpr *group = static_cast<GroupExpr *>(expr->rhs);
+    if (group->expr->kind == NodeKind::ND_BINARY) {
+      rhsDepth += getExpressionDepth(static_cast<BinaryExpr *>(group->expr));
+    }
+  }
+  return lhsDepth > rhsDepth ? lhsDepth : rhsDepth;
 }
 
 void codegen::processBinaryExpression(BinaryExpr *cond,

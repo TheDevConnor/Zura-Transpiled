@@ -348,7 +348,8 @@ void TypeChecker::visitIndex(Maps *map, Node::Expr *expr) {
 void TypeChecker::visitCast(Maps *map, Node::Expr *expr) {
   // Cast the generic expression to a CastExpr
   CastExpr *cast = static_cast<CastExpr *>(expr);
-
+  // Visit the inside (update it's inner asmType)
+  visitExpr(map, cast->castee);
   expr->asmType = cast->castee_type;
   return_type = std::make_shared<SymbolType>(type_to_string(cast->castee_type));
 }

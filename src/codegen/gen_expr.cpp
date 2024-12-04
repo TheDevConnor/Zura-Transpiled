@@ -96,15 +96,19 @@ void codegen::binary(Node::Expr *expr) {
   SymbolType *returnType = static_cast<SymbolType *>(e->asmType);
 
   if (returnType->name == "int") {
-    // Evaluate LHS first, result will be pushed directly by VisitExpr
-    visitExpr(e->lhs);
-
-    // Evaluate RHS second, result will be pushed directly by VisitExpr
-    visitExpr(e->rhs);
-
-    // Pop operands in order: RHS first, then LHS
-    popToRegister("%rbx"); // Pop RHS into RBX
-    popToRegister("%rax"); // Pop LHS into RAX
+    int lhsDepth = getExpressionDepth(static_cast<BinaryExpr *>(e->lhs));
+    int rhsDepth = getExpressionDepth(static_cast<BinaryExpr *>(e->rhs));
+    if (lhsDepth > rhsDepth) {
+      visitExpr(e->lhs);
+      visitExpr(e->rhs);
+      popToRegister("%rbx"); // Pop RHS into RBX
+      popToRegister("%rax"); // Pop LHS into RAX
+    } else {
+      visitExpr(e->rhs);
+      visitExpr(e->lhs);
+      popToRegister("%rax"); // Pop LHS into RAX
+      popToRegister("%rbx"); // Pop RHS into RBX
+    }
 
     // Perform the operation
     std::string op = lookup(opMap, e->op);
@@ -126,11 +130,19 @@ void codegen::binary(Node::Expr *expr) {
   } 
   else if (returnType->name == "float") {
     // Similar logic for floats
-    visitExpr(e->lhs); // Push result of LHS to stack
-    visitExpr(e->rhs); // Push result of RHS to stack
-
-    popToRegister("%xmm1"); // Pop RHS into XMM1
-    popToRegister("%xmm0"); // Pop LHS into XMM0
+    int lhsDepth = getExpressionDepth(static_cast<BinaryExpr *>(e->lhs));
+    int rhsDepth = getExpressionDepth(static_cast<BinaryExpr *>(e->rhs));
+    if (lhsDepth > rhsDepth) {
+      visitExpr(e->lhs);
+      visitExpr(e->rhs);
+      popToRegister("%xmm1"); // Pop RHS into XMM1
+      popToRegister("%xmm0"); // Pop LHS into XMM0
+    } else {
+      visitExpr(e->rhs);
+      visitExpr(e->lhs);
+      popToRegister("%xmm0"); // Pop LHS into XMM0
+      popToRegister("%xmm1"); // Pop RHS into XMM1
+    }
 
     std::string op;
     if (e->op == "+") op = "addss";
@@ -181,6 +193,14 @@ void codegen::cast(Node::Expr *expr) {
   visitExpr(e->castee);
   if (fromType->name == "unknown") {
     return; // Assume the dev knew what they were doing and push the original value
+  }
+  if (toType->name == "enum") {
+    // Enums are truly just ints under-the-hood
+    if (fromType->name != "int") {
+      std::cerr << "Cannot cast non-int to enum" << std::endl;
+      exit(-1);
+    }
+    return; // Do nothing (essentially just a void cast)
   }
   if (toType->name == "float") {
     // We are casting into a float.

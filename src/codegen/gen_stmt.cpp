@@ -59,6 +59,7 @@ void codegen::funcDecl(Node::Stmt *stmt) {
       if (st->name == "void") {
         dwarf::useAbbrev(dwarf::DIEAbbrev::FunctionWithParamsVoid);
         pushLinker(".uleb128 " + std::to_string((int)dwarf::DIEAbbrev::FunctionWithParamsVoid) +
+                  "\n.byte 1" // External - This means "is it a public function?"
                   "\n.long " + dieLabel + "_string\n"
                   ".byte " + std::to_string(s->file_id) + // File ID
                   "\n.byte " + std::to_string(s->line) + "\n" // Line number
@@ -72,6 +73,7 @@ void codegen::funcDecl(Node::Stmt *stmt) {
         dwarf::useAbbrev(dwarf::DIEAbbrev::Type);
         dwarf::useAbbrev(dwarf::DIEAbbrev::FunctionWithParams);
         pushLinker(".uleb128 " + std::to_string((int)dwarf::DIEAbbrev::FunctionWithParams) +
+                  "\n.byte 1" // External - This means "is it a public function?"
                   "\n.long " + dieLabel + "_string\n"
                   ".byte " + std::to_string(s->file_id) + // File ID
                   "\n.byte " + std::to_string(s->line) + "\n" // Line number
@@ -87,6 +89,7 @@ void codegen::funcDecl(Node::Stmt *stmt) {
       if (st->name == "void") {
         dwarf::useAbbrev(dwarf::DIEAbbrev::FunctionNoParamsVoid);
         pushLinker(".uleb128 " + std::to_string((int)dwarf::DIEAbbrev::FunctionNoParamsVoid) +
+                  "\n.byte 1"
                   "\n.long " + dieLabel + "_string\n"
                   ".byte " + std::to_string(s->file_id) + // File ID
                   "\n.byte " + std::to_string(s->line) + "\n" // Line number
@@ -100,6 +103,7 @@ void codegen::funcDecl(Node::Stmt *stmt) {
         dwarf::useAbbrev(dwarf::DIEAbbrev::Type);
         dwarf::useAbbrev(dwarf::DIEAbbrev::FunctionNoParams);
         pushLinker(".uleb128 " + std::to_string((int)dwarf::DIEAbbrev::FunctionNoParams) +
+                  "\n.byte 1"
                   "\n.long " + dieLabel + "_string\n"
                   ".byte " + std::to_string(s->file_id) + // File ID
                   "\n.byte " + std::to_string(s->line) + "\n" // Line number
@@ -319,13 +323,49 @@ void codegen::enumDecl(Node::Stmt *stmt) {
   EnumStmt *s = static_cast<EnumStmt *>(stmt);
 
   // The feilds are pushed to the .data section
+  if (debug) {
+    // Ahh yes, the good ol' DWARF DIEs
+    dwarf::useAbbrev(dwarf::DIEAbbrev::EnumType);
+    dwarf::useAbbrev(dwarf::DIEAbbrev::EnumMember);
+    dwarf::useAbbrev(dwarf::DIEAbbrev::Type);
+    // Push the enum over-all DIE
+    // start with label 
+    push(Instr{.var = Label{.name = ".L" + s->name + "_debug_type"}, .type = InstrType::Label}, Section::DIE);
+    // die data
+    pushLinker(".uleb128 " + std::to_string((int)dwarf::DIEAbbrev::EnumType) +
+               "\n.long .L" + s->name + "_enum_debug_type"
+               "\n.byte " + std::to_string(s->file_id) + // File ID
+               "\n.byte " + std::to_string(s->line) + // Line number
+               "\n.byte " + std::to_string(s->pos) + // Line column
+               "\n.byte 4" // each enum member is 4 bytes
+               "\n.byte 7" // encoding - DW_ATE_signed is 7
+               "\n.long .Llong_debug_type\n" // And yes, for some reason, this is still required.
+              , Section::DIE);
+    push(Instr{.var = Label{.name = ".L" + s->name + "_enum_debug_type"}, .type = InstrType::Label}, Section::DIEString);
+    pushLinker(".string \"" + s->name + "\"\n", Section::DIEString);
+  }
   int fieldCount = 0;
   for (std::string &field : s->fields) {
+    // Turn the enum field into an assembler constant
     push(Instr{.var = LinkerDirective{.value = ".set enum_" + s->name + "_" + field + ", " + std::to_string(fieldCount++) + "\n"}, .type = InstrType::Linker}, Section::ReadonlyData);
 
     // Add the enum field to the global table
     variableTable.insert({field, field});
+
+    if (debug) {
+      // Push the enum member DIE
+      pushLinker(".uleb128 " + std::to_string((int)dwarf::DIEAbbrev::EnumMember) +
+                 "\n.long .L" + s->name + "_" + field + "_debug_enum_type"
+                 "\n.byte " + std::to_string(fieldCount - 1) + // Value of the enum member
+                 "\n"
+      , Section::DIE);
+      // Push the name of the enum member
+      push(Instr{.var = Label{.name = ".L" + s->name + "_" + field + "_debug_enum_type"}, .type = InstrType::Label}, Section::DIEString);
+      pushLinker(".string \"" + field + "\"\n", Section::DIEString);
+    }
   }
+
+  if (debug) pushLinker("\n.byte 0\n", Section::DIE); // End of children
 
   // Add the enum to the global table
   variableTable.insert({s->name, ""}); // You should never refer to the enum base itself. You can only ever get its values

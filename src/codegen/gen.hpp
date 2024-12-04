@@ -146,6 +146,9 @@ enum class DIEAbbrev {
   StructType,
   StructMember,
 
+  EnumType, // TAG_enumeration_type (encoding, byte size, type)
+  EnumMember, // TAG_enumerator (name, const val)
+
   // Types
   Type, // EX: char
   PointerType, // EX: char* -> points to a char.
@@ -220,7 +223,7 @@ void handleReturnCleanup();
 
 // Helper for the if statement condition
 void processBinaryExpression(BinaryExpr *cond, const std::string &preconCount, const std::string &name, bool isLoop = false);
-int getExpressionDepth(BinaryExpr *e);
+int getExpressionDepth(Node::Expr *e);
 JumpCondition getJumpCondition(const std::string &op);
 
 bool execute_command(const std::string &command, const std::string &log_file);

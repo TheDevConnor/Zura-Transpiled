@@ -335,6 +335,9 @@ Node::Stmt *Parser::enumStmt(PStruct *psr, std::string name) {
         psr->expect(psr, TokenKind::IDENTIFIER,
                     "Expected an IDENTIFIER as a field name in an enum stmt")
             .value);
+    // Check if next character is brace - comma not REQUIRED there
+    if (psr->current(psr).kind == TokenKind::RIGHT_BRACE)
+      break;
     psr->expect(psr, TokenKind::COMMA,
                 "Expected a COMMA after a field in an enum stmt");
   }
