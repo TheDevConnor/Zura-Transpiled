@@ -176,13 +176,18 @@ void codegen::gen(Node::Stmt *stmt, bool isSaved, std::string output_filename,
       file << ".Lint_debug_type:\n"
             ".uleb128 " + std::to_string((int)dwarf::DIEAbbrev::Type) +
             "\n.byte 8\n" // 8 bytes
-            ".byte 5\n" // DW_ATE_signed - basically signed int
+            ".byte 5\n" // DW_ATE_signed - basically `signed long long int` in c
             ".string \"int\"\n";
+      file << ".Llong_debug_type:\n"
+            ".uleb128 " + std::to_string((int)dwarf::DIEAbbrev::Type) +
+            "\n.byte 4\n" // 8 bytes
+            ".byte 7\n" // DW_ATE_unsigned - basically `unsigned long int` in c
+            ".string \"long\"\n";
     file << ".Lfloat_debug_type:\n"
             ".uleb128 " + std::to_string((int)dwarf::DIEAbbrev::Type) +
-            "\n.byte 4\n"
-            ".byte 4\n"
-            ".string \"float\"\n";
+            "\n.byte 4" // 4 bytes
+            "\n.byte 4" // DW_ATE_float - basically `float` in c, or a "single precision" float in 🤓 CPU terms
+            "\n.string \"float\"\n";
     // Str type is a pointer type
     // Might as well just let it in.
     dwarf::useAbbrev(dwarf::DIEAbbrev::PointerType);

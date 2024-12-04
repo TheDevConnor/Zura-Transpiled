@@ -1,14 +1,8 @@
 const e := enum {
-  Saturday,
-  Sunday,
-  Monday,
-  Tuesday,
-  Wednesday,
-  Thursday,
-  Friday
+  A,
+  B
 };
 
 const main := fn () int {
-  have day: e = e.Saturday;
-  return @cast<int>(day);
+  return 0;
 };

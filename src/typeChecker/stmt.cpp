@@ -154,6 +154,11 @@ void TypeChecker::visitEnum(Maps *map, Node::Stmt *stmt) {
                 static_cast<Node::Type *>(type), enum_stmt->line,
                 enum_stmt->pos);
 
+  if (enum_stmt->fields.empty()) {
+    std::string msg = "Enum '" + enum_stmt->name + "' must have at least one field";
+    handlerError(enum_stmt->line, enum_stmt->pos, msg, "", "Type Error");
+  }
+
   // visit the fields Aka the variables
   for (int i = 0; i < enum_stmt->fields.size(); i++) {
     declare(map->local_symbol_table, enum_stmt->fields[i],
