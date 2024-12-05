@@ -288,7 +288,7 @@ signed short int codegen::getByteSizeOfType(Node::Type *type) {
     } else if (sym->name == "char") {
       return 1;
     } else if (sym->name == "float") {
-      return 4;
+      return 8;
     } else if (sym->name == "void") {
       return 0;
     } else if (structByteSizes.find(sym->name) != structByteSizes.end()) {

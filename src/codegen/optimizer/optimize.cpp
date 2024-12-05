@@ -129,7 +129,7 @@ void Optimizer::simplifyPushPopPair(std::vector<Instr> *output, Instr &prev, Ins
         // movq %rdx, (%rbx)
         // I hate that this is the solution, Intel go fix your stinky x86
         Instr newInstr = {
-            .var = LeaInstr{.size = DataSize::Qword, .dest = "%r13", .src = prevAsPush.what},
+            .var = MovInstr{.dest="%r13",.src=prevAsPush.what,.destSize=DataSize::Qword,.srcSize=prevAsPush.whatSize},
             .type = InstrType::Lea
         };
         prev = newInstr;
