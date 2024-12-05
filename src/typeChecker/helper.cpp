@@ -6,9 +6,11 @@
 void TypeChecker::handlerError(int line, int pos, std::string msg,
                                std::string note, std::string typeOfError) {
   Lexer lexer; // dummy lexer
-  if (note != "")
+  if (note != "") {
     ErrorClass::error(line, pos, msg, note, typeOfError, node.current_file,
                       lexer, node.tks, false, false, false, false, true, false);
+    return; // don't print the error twice!
+  }
   ErrorClass::error(line, pos, msg, "", typeOfError, node.current_file, lexer,
                     node.tks, false, false, false, false, true, false);
 }
@@ -55,7 +57,7 @@ std::string TypeChecker::determineTypeKind(Maps *map, const std::string &type) {
     return "unknown";
 }
 
-void TypeChecker::processStructMember(Maps *map, MemberExpr *member, const std::string &lhsType) {
+void TypeChecker::processStructMember(Maps *map, MemberExpr *member, const std::string &name, std::string lhsType) {
     const std::vector<std::pair<std::string, Node::Type *>> &fields = map->struct_table[lhsType];
     const std::vector<std::pair<std::string, Node::Type *>>::const_iterator res = std::find_if(fields.begin(), fields.end(),
                             [&member](const std::pair<std::string, Node::Type *> &field) {

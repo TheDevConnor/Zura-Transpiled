@@ -35,12 +35,12 @@ void initMaps();
 // Signed 64-bit integer
 
 // Start at one because retrieving 0(%rbp) results in unusual behavior
-inline int64_t variableCount = 1;
+inline int64_t variableCount = 8;
 
 // String could be register (%rdi, %rdx, ...) or effective address (-8(%rbp), ...)
 inline std::unordered_map<std::string, std::string> variableTable = {};
 inline std::vector<size_t> stackSizesForScopes = {}; // wordy term for "when we start a scope, push its stack size"
-inline size_t stackSize;
+inline size_t stackSize = 0;
 
 void visitStmt(Node::Stmt *stmt);
 void visitExpr(Node::Expr *expr);
@@ -79,11 +79,17 @@ void assign(Node::Expr *expr);
 void primary(Node::Expr *expr);
 void cast(Node::Expr *expr);
 void memberExpr(Node::Expr *expr);
+void _struct(Node::Expr *expr);
 void externalCall(Node::Expr *expr);
+void declareStructVariable(Node::Expr *expr, std::string structName, std::string varName);
 
 int convertFloatToInt(float input); // Float input. Crazy, right?
 
-inline std::unordered_map<std::string, size_t> structByteSizes = {}; // Name of a struct and its size in bytes
+// <name, <type, offset>>
+using StructMember = std::pair<std::string, std::pair<Node::Type *, unsigned short int>>;
+// <size, <StructMember>>
+using Struct = std::pair<size_t, std::vector<StructMember>>;
+inline std::unordered_map<std::string, Struct> structByteSizes = {}; // Name of a struct and its size in bytes
 signed short int getByteSizeOfType(Node::Type *type); // Return the size of a type in bytes, ie pointers are a size_t (os specific macros baby!)
 std::string getUnderlying(Node::Type *type); // Get the underlying type name of a type (ie, int* -> int, []int -> int, int -> int)
 std::string type_to_diename(Node::Type *type);

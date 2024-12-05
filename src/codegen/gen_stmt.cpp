@@ -190,17 +190,27 @@ void codegen::varDecl(Node::Stmt *stmt) {
   // push another .loc
   pushDebug(s->line, stmt->file_id, s->pos);
 
-  int whereBytes = (variableCount++) * -8;
+
+  int whereBytes = -variableCount;
   std::string where = std::to_string(whereBytes) + "(%rbp)";
   if (s->expr != nullptr) {
-    visitExpr(s->expr);
-    popToRegister(where);
+    if (structByteSizes.find(getUnderlying(s->type)) != structByteSizes.end()) {
+      // It's of type struct!
+      // Basically ignore the part where we allocate memory for this thing.
+      declareStructVariable(s->expr, getUnderlying(s->type), s->name);
+    } else {
+      int whereBytes = -variableCount;
+      visitExpr(s->expr);
+      popToRegister(where); // For values small enough to fit in a register.
+      variableCount += getByteSizeOfType(s->type);
+      variableTable.insert({s->name, where});
+    }
   } else {
-    // SUbtract from the stack pointer
-    push(Instr{.var = SubInstr{.lhs = "%rsp", .rhs = "$8"}, .type = InstrType::Sub}, Section::Main);
+    // Subtract from the stack pointer
+    // NOTE: this isn't really where they are stored anyways so this line was kinda useleess!!!
+    // push(Instr{.var = SubInstr{.lhs = "%rsp", .rhs = "$" + std::to_string(-whereBytes)}, .type = InstrType::Sub}, Section::Main);
   }
   // Update the symbol table with the variable's position
-  variableTable.insert({s->name, where});
 
   push(Instr{.var = Comment{.comment = "End of variable declaration for '" + s->name + "'"},
               .type = InstrType::Comment},Section::Main);
@@ -376,11 +386,14 @@ void codegen::structDecl(Node::Stmt *stmt) {
   // As a declaration, this cannot have a loc directive
   //! pushDebug(s->line, stmt->file_id, s->pos);
   int size = 0;
+  std::vector<StructMember> members;
   // Calculate size by adding the size of members
   for (std::pair<std::string, Node::Type *> field : s->fields) {
-    size += getByteSizeOfType(field.second); // Yes, even calculates the size of nested structs.
+    int fieldSize = getByteSizeOfType(field.second);
+    size += fieldSize; // Yes, even calculates the size of nested structs.
+    members.push_back({field.first, {field.second, size}});
   }
-  structByteSizes.insert({s->name, size});
+  structByteSizes.insert({s->name, {size, members}});
   if (debug) {
     // Loop over fields, append as DIEs
     dwarf::useAbbrev(dwarf::DIEAbbrev::StructType);
@@ -525,8 +538,8 @@ void codegen::forLoop(Node::Stmt *stmt) {
   IdentExpr *assignee = static_cast<IdentExpr *>(assign->assignee);
 
   push(Instr{.var = Comment{.comment = "For loop variable declaration"}, .type = InstrType::Comment}, Section::Main);
-
-  variableTable.insert({assignee->name, std::to_string(-8 * variableCount++) + "(%rbp)"}); // Track the variable in the stack table
+  variableCount += 8;
+  variableTable.insert({assignee->name, std::to_string(-variableCount) + "(%rbp)"}); // Track the variable in the stack table
   pushDebug(s->line, stmt->file_id, s->pos);
   visitExpr(assign);  // Process the initial loop assignment (e.g., i = 0)
   // Remove the last instruction!! Its a push and thats bad!
@@ -650,4 +663,45 @@ void codegen::externName(Node::Stmt *stmt) {
     .type = InstrType::Linker});
   text_section.emplace(text_section.begin(), Instr{.var = Comment{.comment = "Include external function name '" + s->name + "'."}, .type = InstrType::Comment});
   externalNames.insert(s->name);
+}
+
+// Structname passed by the varStmt's "type" field
+void codegen::declareStructVariable(Node::Expr *expr, std::string structName, std::string varName) {
+  StructExpr *s = static_cast<StructExpr *>(expr);
+  // At the end, we are gonna load the effective address into
+  // garbage register and put that into the variable table.
+  // (This is because structs cannot be passed by value, duh)
+
+  // Make sure that the fields unordered_map is not empty
+  if (structByteSizes[structName].first == 0 || s->values.size() == 0) {
+    std::cerr << "Empty struct not allowed!" << std::endl;
+    exit(-1);
+  }
+
+  // The fields of the expression might be out of order from which they are defined
+  // in the struct. We need to reorder them.
+  std::vector<std::pair<std::string, Node::Expr *>> orderedFields;
+  for (int i = 0; i < structByteSizes[structName].second.size(); i++) {
+    for (std::pair<Node::Expr *, Node::Expr *> field : s->values) {
+      if (static_cast<IdentExpr *>(field.first)->name == structByteSizes[structName].second.at(i).first) {
+        orderedFields.push_back({structByteSizes[structName].second.at(i).first, field.second});
+        break;
+      }
+    }
+  }
+
+  int structBase = variableCount;
+  // Evaluate the orderedFields and store them in the struct!!!!
+  for (int i = 0; i < orderedFields.size(); i++) {
+    std::pair<std::string, Node::Expr *> field = orderedFields.at(i);
+    // Evaluate the expression
+    visitExpr(field.second);
+    int offset = i == 0 ? 0 : structByteSizes[structName].second.at(i - 1).second.second;
+    // Pop the value into a register
+    popToRegister(std::to_string(-(structBase + offset)) + "(%rbp)");
+  }
+  variableCount += structByteSizes[structName].first;
+
+  // Add the struct to the variable table
+  variableTable.insert({varName, std::to_string(-structBase) + "(%rbp)"});
 }

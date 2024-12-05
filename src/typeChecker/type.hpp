@@ -105,7 +105,7 @@ void printTables(Maps *map);
 
 std::string determineTypeKind(Maps *map, const std::string &type);
 void processStructMember(Maps *map, MemberExpr *member,
-                         const std::string &lhsType);
+                         const std::string &name, std::string lhsType);
 void processEnumMember(Maps *map, MemberExpr *member,
                         const std::string &lhsType);
 void handleUnknownType(MemberExpr *member, const std::string &lhsType);

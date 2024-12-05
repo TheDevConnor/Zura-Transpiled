@@ -68,8 +68,21 @@ void TypeChecker::visitIdent(Maps *map, Node::Expr *expr) {
 
   if (map->local_symbol_table.find(ident->name) != map->local_symbol_table.end()) {
     res = map->local_symbol_table[ident->name];
+    // if struct, append "struct-" to asmType
+    std::string resName = static_cast<SymbolType *>(res)->name;
+    if (map->struct_table.find(resName) != map->struct_table.end()) {
+      ident->asmType = new SymbolType("struct-" + resName);
+    } else {
+      ident->asmType = res;
+    }
   } else if (map->global_symbol_table.find(ident->name) != map->global_symbol_table.end()) {
     res = map->global_symbol_table[ident->name];
+    std::string resName = static_cast<SymbolType *>(res)->name;
+    if (map->struct_table.find(resName) != map->struct_table.end()) {
+      ident->asmType = new SymbolType("struct-" + resName);
+    } else {
+      ident->asmType = res;
+    }
   }
   
   // check if we found something in the local symbol table if not return error
@@ -86,7 +99,7 @@ void TypeChecker::visitIdent(Maps *map, Node::Expr *expr) {
 
   // update the ast-node (IdentExpr) to hold the type of the identifier as a
   // property
-  ident->type = expr->asmType = res;
+  ident->type = res;
   return_type = std::make_shared<SymbolType>(type_to_string(res));
 }
 
@@ -260,10 +273,10 @@ void TypeChecker::visitMember(Maps *map, Node::Expr *expr) {
     std::string lhsType = type_to_string(return_type.get());
     std::string name = static_cast<IdentExpr *>(member->lhs)->name;
     // Determine if lhs is a struct or enum
-    std::string typeKind = determineTypeKind(map, name);
+    std::string typeKind = determineTypeKind(map, lhsType);
 
     if (typeKind == "struct") {
-        processStructMember(map, member, name);
+        processStructMember(map, member, name, lhsType);
     } else if (typeKind == "enum") {
         processEnumMember(map, member, name);
     } else {
@@ -360,30 +373,31 @@ void TypeChecker::visitCast(Maps *map, Node::Expr *expr) {
   return_type = std::make_shared<SymbolType>(type_to_string(cast->castee_type));
 }
 
+
 void TypeChecker::visitStructExpr(Maps *map, Node::Expr *expr) {
   StructExpr *struct_expr = static_cast<StructExpr *>(expr);
-
-  auto struct_type = return_type; // save the struct type
-
+  std::string struct_name = type_to_string(return_type.get());
   // find the struct in the struct table
-  if (map->struct_table.find(type_to_string(return_type.get())) ==
+  if (map->struct_table.find(struct_name) ==
       map->struct_table.end()) {
-    std::string msg = "Struct '" + type_to_string(return_type.get()) +
-                      "' is not defined in the struct table";
+    std::string msg = "Struct '" + struct_name +
+                      "' is not defined in the scope.";
     handlerError(struct_expr->line, struct_expr->pos, msg, "", "Type Error");
     return_type = std::make_shared<SymbolType>("unknown");
+    struct_expr->asmType = new SymbolType("struct-unknown");
     return;
   }
 
   // check if the number of elements in the struct is the same as the number of elements in the struct expression
-  int struct_size = map->struct_table[type_to_string(return_type.get())].size();
+  int struct_size = map->struct_table[struct_name].size();
   if (struct_size != struct_expr->values.size()) {
-    std::string msg = "Struct '" + type_to_string(return_type.get()) +
+    std::string msg = "Struct '" + struct_name +
                       "' requires " + std::to_string(struct_size) +
                       " elements but got " +
                       std::to_string(struct_expr->values.size());
     handlerError(struct_expr->line, struct_expr->pos, msg, "", "Type Error");
     return_type = std::make_shared<SymbolType>("unknown");
+    struct_expr->asmType = new SymbolType("struct-unknown");
     return;
   }
 
@@ -391,16 +405,33 @@ void TypeChecker::visitStructExpr(Maps *map, Node::Expr *expr) {
   for (auto &elem : struct_expr->values) {
     // find the type of the struct element
     auto name = static_cast<IdentExpr *>(elem.first);
-    std::string elem_type;
-
-    // ?NOTE: This is kinda working but for some reason wont reconize str????
-
-    for (const auto &pair : map->struct_table[type_to_string(return_type.get())]) {
-      if (pair.first == name->name) {
-        elem_type = type_to_string(pair.second);
+    std::string elem_type = "";
+    // set elem_type to the type of the struct element, if it exists
+    for (auto &member : map->struct_table[struct_name]) {
+      if (member.first == name->name) {
+        elem_type = type_to_string(member.second);
         break;
       }
     }
+
+    if (elem_type == "") {
+      std::string msg = "Named member '" + name->name + "' not found in struct '" + struct_name + "'";
+      // did you mean?
+      std::vector<std::string> known;
+      for (auto &member : map->struct_table[struct_name]) {
+        known.push_back(member.first);
+      }
+      std::optional<std::string> closest = string_distance(known, name->name, 3);
+      if (closest.has_value()) {
+        handlerError(struct_expr->line, struct_expr->pos, msg, "Did you mean '" + closest.value() + "'?", "Type Error");
+      } else {
+        handlerError(struct_expr->line, struct_expr->pos, msg, "", "Type Error");
+      }
+      return_type = std::make_shared<SymbolType>("unknown");
+      struct_expr->asmType = new SymbolType("struct-unknown");
+      return;
+    }
+
     // find the type of the struct expression element
     visitExpr(map, elem.second);
     std::string value_type = type_to_string(return_type.get());
@@ -415,6 +446,6 @@ void TypeChecker::visitStructExpr(Maps *map, Node::Expr *expr) {
   }
 
   // set the return type to the struct type
-  return_type = struct_type;
-  expr->asmType = return_type.get();
+  return_type = std::make_shared<SymbolType>(struct_name);
+  expr->asmType = new SymbolType("struct-" + struct_name);
 }

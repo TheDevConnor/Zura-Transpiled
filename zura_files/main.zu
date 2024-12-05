@@ -1,15 +1,14 @@
-const e := enum {
-  A,
-  B
-};
-
 const Person := struct {
+  socialsecurity: int;
   age: int;
+  name: str;
 };
 
 const main := fn () int {
   have p: Person = {
     age: 25,
+    socialsecurity: 175, # keep it in the range of 0-255 so the exit code can use it lol
+    name: "johnathon"
   };
-  return 0;
+  return p.socialsecurity;
 };

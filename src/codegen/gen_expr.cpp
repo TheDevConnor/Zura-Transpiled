@@ -32,8 +32,17 @@ void codegen::primary(Node::Expr *expr) {
 
     pushDebug(e->line, expr->file_id, e->pos);
 
-    // Push the result (the retrieved data)
-    pushRegister(res);
+    // Push the result
+    // Check for struct
+    if (getUnderlying(e->asmType).find("struct") == 0) {
+      // It is a struct type!
+      // We MUST use lea here.
+      // Like seriously, this is its JOB.
+      push(Instr{.var = LeaInstr { .size = DataSize::Qword, .dest = "%rcx", .src = res }, .type = InstrType::Lea}, Section::Main);
+      pushRegister("%rcx");
+    } else {
+      pushRegister(res);
+    }
     break;
   }
   case ND_STRING: {
@@ -357,12 +366,51 @@ void codegen::memberExpr(Node::Expr *expr) {
   MemberExpr *e = static_cast<MemberExpr *>(expr);
   pushDebug(e->line, expr->file_id, e->pos);
   // If lhs is enum
-  if (static_cast<SymbolType *>(e->lhs->asmType)->name == "enum") {
+  std::string asmName = static_cast<SymbolType *>(e->lhs->asmType)->name;
+  if (asmName == "enum") {
     IdentExpr *lhs = static_cast<IdentExpr *>(e->lhs);
     IdentExpr *rhs = static_cast<IdentExpr *>(e->rhs);
     pushRegister("$enum_" + lhs->name + "_" + rhs->name);
     return;
   }
+
+  // Check if starts with "struct-"
+  if (asmName.find("struct-") == 0) {
+    // It's a struct
+    std::string structName = asmName.substr(7);
+    // Now we have the name of the struct!
+    if (structName == "unknown") {
+      // Typechecker thought that its fields did not correlate to a struct.
+      // That means we cannot calculate byte sizes/offsets or any of that good stuff
+      // since the struct wasn't valid.
+      std::cerr << "Cannot access member of unknown struct" << std::endl;
+      exit(-1);
+    }
+    // Now we can access the struct's fields
+    int size = structByteSizes[structName].first;
+    std::vector<StructMember> fields = structByteSizes[structName].second;
+    // Eval lhs (this will put the struct's address onto the stack)
+    visitExpr(e->lhs);
+    // Pop the struct's address into a register
+    popToRegister("%rcx");
+
+    // Now, we have to do some crazy black magic shit like -8(%rcx) but we find what to replace '8' with.
+    std::string fieldName = static_cast<IdentExpr *>(e->rhs)->name;
+    for (int i = 0; i < fields.size(); i++) {
+      if (fields[i].first == fieldName) {
+        // push the value at this offset
+        int offset = 8 - fields[i].second.second;
+        if (offset == 0)
+          pushRegister("(%rcx)");
+        else
+          pushRegister(std::to_string(offset) + "(%rcx)");
+        break;
+      }
+    }
+    return;
+  }
+  
+
   std::cerr
       << "No fancy error for this, beg Connor... (Soviet Pancakes speaking)"
       << std::endl;
@@ -373,3 +421,9 @@ void codegen::memberExpr(Node::Expr *expr) {
   pushDebug(e->line, expr->file_id, e->pos);
   */
 }
+
+void codegen::_struct(Node::Expr *expr) {
+  std::cerr << "Lonely struct expression just dangling here. That's not allowed!" << std::endl;
+  exit(-1);
+  return;
+};

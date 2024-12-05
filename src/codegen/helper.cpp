@@ -292,7 +292,7 @@ signed short int codegen::getByteSizeOfType(Node::Type *type) {
     } else if (sym->name == "void") {
       return 0;
     } else if (structByteSizes.find(sym->name) != structByteSizes.end()) {
-      return structByteSizes[sym->name];
+      return structByteSizes[sym->name].first;
     } else {
       return 8; // Default to 8 bytes because x64 rules!!
     }
