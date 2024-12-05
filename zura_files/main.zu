@@ -2,13 +2,17 @@ const Person := struct {
   socialsecurity: int;
   age: int;
   name: str;
+  dogs: float;
 };
 
 const main := fn () int {
   have p: Person = {
     age: 25,
+    dogs: 2.5,
     socialsecurity: 175, # keep it in the range of 0-255 so the exit code can use it lol
     name: "johnathon"
   };
-  return p.socialsecurity;
+  have dogs: float = p.dogs;
+  have floorDogs: int = @cast<int>(dogs);
+  return floorDogs;
 };

@@ -131,8 +131,6 @@ void TypeChecker::visitStruct(Maps *map, Node::Stmt *stmt) {
   
   // visit the fields Aka the variables
   for (std::pair<std::string, Node::Type *> &field : struct_stmt->fields) {
-    declare(map->local_symbol_table, field.first, field.second,
-                 struct_stmt->line, struct_stmt->pos);
     // add the field to the struct table
     map->struct_table[struct_stmt->name].push_back({field.first, field.second});
   }
