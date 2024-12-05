@@ -51,7 +51,8 @@ void codegen::primary(Node::Expr *expr) {
 
     pushDebug(string->line, expr->file_id, string->pos);
     // Push the label onto the stack
-    pushRegister(label + "(%rip)");
+    push(Instr{.var=LeaInstr{.size=DataSize::Qword,.dest="%r13",.src=label+"(%rip)"},.type=InstrType::Lea},Section::Main);
+    pushRegister("%r13");
 
     // define the string in the data section
     push(Instr{.var = Label{.name = label}, .type = InstrType::Label},

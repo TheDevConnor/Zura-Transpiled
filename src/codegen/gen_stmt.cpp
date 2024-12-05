@@ -120,7 +120,8 @@ void codegen::funcDecl(Node::Stmt *stmt) {
     push(Instr {.var = Label {.name = dieLabel + "_debug_start" }, .type = InstrType::Label }, Section::Main);
   }
   
-  push(Instr{.var = LinkerDirective{.value = "\n.type " + funcName + ", @function"},.type = InstrType::Linker},Section::Main);
+  pushLinker("\n.type " + funcName + ", @function", Section::Main);
+  pushLinker("\n.globl " + funcName + "\n", Section::Main); // All functions are global functions for now.
   push(Instr{.var = Label{.name = funcName}, .type = InstrType::Label},Section::Main);
   // push linker directive for the debug info (the line number)
   pushDebug(s->line, stmt->file_id, s->pos);
@@ -446,7 +447,7 @@ void codegen::print(Node::Stmt *stmt) {
   pushDebug(print->line, stmt->file_id);
 
   for (Node::Expr *arg : print->args) {
-    std::string argType = static_cast<SymbolType *>(arg->asmType)->name;
+    std::string argType = getUnderlying(arg->asmType);
     if (argType == "str") {
       visitExpr(arg);
       popToRegister("%rsi"); // String address
@@ -461,32 +462,17 @@ void codegen::print(Node::Stmt *stmt) {
 
       // Make syscall to write
       push(Instr{.var = Syscall{.name = "SYS_WRITE"}, .type = InstrType::Syscall}, Section::Main);
-      break;
     } else if (argType == "int") {
       nativeFunctionsUsed[NativeASMFunc::itoa] = true;
       visitExpr(arg);
-      popToRegister("%rax");
+      popToRegister("%rdi");
       push(Instr{.var = CallInstr{.name = "native_itoa"}, .type = InstrType::Call}, Section::Main); // Convert int to string
-      
+      moveRegister("%rdi", "%rax", DataSize::Qword, DataSize::Qword);
+      moveRegister("%rsi", "%rdi", DataSize::Qword, DataSize::Qword);
       // Now we have the integer string in %rax (assuming %rax holds the pointer to the result)
-      moveRegister("%rsi", "%rax", DataSize::Qword, DataSize::Qword);
       push(Instr{.var = CallInstr{.name = "native_strlen"}, .type = InstrType::Call}, Section::Main);
       moveRegister("%rdx", "%rax", DataSize::Qword, DataSize::Qword); // Length of number string
       
-      // syscall id for write on x86 is 1
-      moveRegister("%rax", "$1", DataSize::Qword, DataSize::Qword);
-      // set rdi to 1 (file descriptor for stdout)
-      moveRegister("%rdi", "$1", DataSize::Qword, DataSize::Qword);
-
-      // Make syscall to write
-      push(Instr{.var = Syscall({.name = "SYS_WRITE"}), .type = InstrType::Syscall}, Section::Main);
-      break;
-    } else {
-      // Assume char* (string) type
-      // If not, then ITS NOT OUR FAULT IT SEGFAULTS! YOUR code was trash!
-      visitExpr(arg);
-      popToRegister("%rsi");
-
       // syscall id for write on x86 is 1
       moveRegister("%rax", "$1", DataSize::Qword, DataSize::Qword);
       // set rdi to 1 (file descriptor for stdout)
