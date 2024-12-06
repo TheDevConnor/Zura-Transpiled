@@ -65,14 +65,14 @@ void Parser::createMaps() {
       {TokenKind::LINK, linkStmt},        {TokenKind::EXTERN, externStmt},
   };
   nud_lu = {
-      {TokenKind::INT, primary},         {TokenKind::FLOAT, primary},
-      {TokenKind::IDENTIFIER, primary},  {TokenKind::STRING, primary},
-      {TokenKind::LEFT_PAREN, group},    {TokenKind::MINUS, unary},
-      {TokenKind::PLUS_PLUS, _prefix},   {TokenKind::BANG, unary},
-      {TokenKind::MINUS_MINUS, _prefix}, {TokenKind::LEFT_BRACKET, array},
-      {TokenKind::TR, bool_expr},        {TokenKind::FAL, bool_expr},
-      {TokenKind::CAST, cast_expr},      {TokenKind::CALL, externalCall},
-      {TokenKind::LEFT_BRACE, structExpr},
+      {TokenKind::INT, primary},           {TokenKind::FLOAT, primary},
+      {TokenKind::IDENTIFIER, primary},    {TokenKind::STRING, primary},
+      {TokenKind::LEFT_PAREN, group},      {TokenKind::MINUS, unary},
+      {TokenKind::PLUS_PLUS, _prefix},     {TokenKind::BANG, unary},
+      {TokenKind::MINUS_MINUS, _prefix},   {TokenKind::LEFT_BRACKET, array},
+      {TokenKind::TR, bool_expr},          {TokenKind::FAL, bool_expr},
+      {TokenKind::CAST, cast_expr},        {TokenKind::CALL, externalCall},
+      {TokenKind::LEFT_BRACE, structExpr}, {TokenKind::LAND, address},
   };
   led_lu = {
       {TokenKind::PLUS, binary},

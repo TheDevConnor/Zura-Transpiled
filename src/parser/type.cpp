@@ -29,7 +29,7 @@ Node::Type *Parser::array_type(PStruct *psr) {
 }
 
 Node::Type *Parser::pointer_type(PStruct *psr) {
-  Lexer::Token op = psr->advance(psr);
+  psr->advance(psr);
   Node::Type *underlying = parseType(psr, defaultValue);
-  return new PointerType(op.value, underlying);
+  return new PointerType(underlying);
 }

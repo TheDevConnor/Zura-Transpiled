@@ -62,6 +62,14 @@ void TypeChecker::visitString(Maps *map, Node::Expr *expr) {
   expr->asmType = return_type.get();
 }
 
+void TypeChecker::visitAddress(Maps *map, Node::Expr *expr) {
+  AddressExpr *address = static_cast<AddressExpr *>(expr);
+  visitExpr(map, address->right);
+  return_type = std::make_shared<PointerType>(return_type.get());
+  expr->asmType = return_type.get();
+  std::cout << "We got here TC!" << std::endl;
+}
+
 void TypeChecker::visitIdent(Maps *map, Node::Expr *expr) {
   IdentExpr *ident = static_cast<IdentExpr *>(expr);
   Node::Type *res = nullptr;

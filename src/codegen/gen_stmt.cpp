@@ -195,7 +195,10 @@ void codegen::varDecl(Node::Stmt *stmt) {
   int whereBytes = -variableCount;
   std::string where = std::to_string(whereBytes) + "(%rbp)";
   if (s->expr != nullptr) {
-    if (structByteSizes.find(getUnderlying(s->type)) != structByteSizes.end()) {
+    // The first clause: If it's a literal, straight up, struct declaration.
+    // It might be a pointer to struct declaration, but the underlyingType func makes it 
+    // seem like a normal one instead.
+    if (s->type->kind == ND_SYMBOL_TYPE && structByteSizes.find(getUnderlying(s->type)) != structByteSizes.end()) {
       // It's of type struct!
       // Basically ignore the part where we allocate memory for this thing.
       declareStructVariable(s->expr, getUnderlying(s->type), s->name);
@@ -670,7 +673,8 @@ void codegen::declareStructVariable(Node::Expr *expr, std::string structName, st
   std::vector<std::pair<std::string, Node::Expr *>> orderedFields;
   for (int i = 0; i < structByteSizes[structName].second.size(); i++) {
     for (std::pair<Node::Expr *, Node::Expr *> field : s->values) {
-      if (static_cast<IdentExpr *>(field.first)->name == structByteSizes[structName].second.at(i).first) {
+      if (static_cast<IdentExpr *>(field.first)->name
+         == structByteSizes[structName].second.at(i).first) {
         orderedFields.push_back({structByteSizes[structName].second.at(i).first, field.second});
         break;
       }

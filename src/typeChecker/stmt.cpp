@@ -226,7 +226,7 @@ Node::Type *createDuplicate(Node::Type *original) {
     return new ArrayType(createDuplicate(arr->underlying));
   } else if (original->kind == NodeKind::ND_POINTER_TYPE) {
     PointerType *ptr = static_cast<PointerType *>(original);
-    return new PointerType(ptr->pointer_type, createDuplicate(ptr->underlying));
+    return new PointerType(createDuplicate(ptr->underlying));
   }
   return nullptr;
 }

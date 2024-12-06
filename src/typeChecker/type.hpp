@@ -167,4 +167,6 @@ void visitIndex(Maps *map, Node::Expr *expr);
 void visitCast(Maps *map, Node::Expr *expr);
 void visitExternalCall(Maps *map, Node::Expr *expr);
 void visitStructExpr(Maps *map, Node::Expr *expr);
+void visitAddress(Maps *map, Node::Expr *expr);
+
 } // namespace TypeChecker

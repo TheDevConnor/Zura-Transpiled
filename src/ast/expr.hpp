@@ -270,6 +270,26 @@ public:
   ~GroupExpr() = default; // rule of threes
 };
 
+class AddressExpr : public Node::Expr {
+public:
+  int line, pos;
+  Node::Expr *right;
+
+  AddressExpr(int line, int pos, Node::Expr *right, int file)
+      : line(line), pos(pos), right(right) {
+    file_id = file;
+    kind = NodeKind::ND_ADDRESS;
+  }
+
+  void debug(int indent = 0) const override {
+    Node::printIndent(indent);
+    std::cout << "AddressExpr: \n";
+    right->debug(indent + 1);
+  }
+
+  ~AddressExpr() = default; // rule of threes
+};
+
 class ArrayExpr : public Node::Expr {
 public:
   int line, pos;

@@ -142,6 +142,8 @@ Node::Expr *bool_expr(PStruct *psr);
 Node::Expr *cast_expr(PStruct *psr);
 Node::Expr *externalCall(PStruct *psr);
 Node::Expr *structExpr(PStruct *psr);
+Node::Expr *address(PStruct *psr);
+// Binary Functions
 Node::Expr *_postfix(PStruct *psr, Node::Expr *left, BindingPower bp);
 Node::Expr *binary(PStruct *psr, Node::Expr *left, BindingPower bp);
 Node::Expr *assign(PStruct *psr, Node::Expr *left, BindingPower bp);
@@ -150,7 +152,6 @@ Node::Expr *_ternary(PStruct *psr, Node::Expr *left, BindingPower bp);
 Node::Expr *_member(PStruct *psr, Node::Expr *left, BindingPower bp);
 Node::Expr *index(PStruct *psr, Node::Expr *left, BindingPower bp);
 Node::Expr *resolution(PStruct *psr, Node::Expr *left, BindingPower bp);
-
 // Stmt Functions
 Node::Stmt *returnStmt(PStruct *psr, std::string name);
 Node::Stmt *structStmt(PStruct *psr, std::string name);

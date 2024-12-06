@@ -358,3 +358,14 @@ Node::Expr *Parser::structExpr(PStruct *psr) {
 
   return new StructExpr(line, column, elements, codegen::getFileID(psr->current_file));
 }
+
+Node::Expr *Parser::address(PStruct *psr) {
+  int line = psr->tks[psr->pos].line;
+  int column = psr->tks[psr->pos].column;
+  Lexer::Token op = psr->advance(psr);
+  std::cout << "we got here parser" << std::endl;
+  // Expect an rhs expression
+  Node::Expr *expr = parseExpr(psr, defaultValue);
+
+  return new AddressExpr(line, column, expr, codegen::getFileID(psr->current_file));
+}

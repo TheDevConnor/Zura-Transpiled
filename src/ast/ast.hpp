@@ -31,6 +31,7 @@ enum NodeKind {
   ND_CAST, // @cast<int>(12.3)
   ND_EXTERNAL_CALL, // @call<LinkedFunction>(12);
   ND_STRUCT, // have x: struct = { val = 12 };
+  ND_ADDRESS, // &x
 
   // Statements
   ND_EXPR_STMT, // x = 12

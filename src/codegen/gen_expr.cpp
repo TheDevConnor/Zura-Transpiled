@@ -428,3 +428,20 @@ void codegen::_struct(Node::Expr *expr) {
   exit(-1);
   return;
 };
+
+void codegen::addressExpr(Node::Expr *expr) {
+  AddressExpr *e = static_cast<AddressExpr *>(expr);
+  if (getByteSizeOfType(e->right->asmType) <= 8) {
+    // It is small enough to fit in a register or stack
+    // so it can be passed by value (pointing to it is useless)
+
+    // NOTE: This also makes pointer pointers (**int)s useless and optimizable!
+    visitExpr(e->right);
+    return;
+  }
+
+  // It was a struct or something like that
+  // Get the address of it. The address is the return type (becuase it's a pointer)
+  visitExpr(e->right);
+  // Good enough
+};

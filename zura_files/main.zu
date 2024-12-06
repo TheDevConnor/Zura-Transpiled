@@ -4,7 +4,8 @@ const Person := struct {
 };
 
 const main := fn () int {
-  have p: Person = { name: "Zura", age: 25 };
-  dis("Name: ", p.name, " Age: ", p.age);
+  have p: Person = {name: "zura", age: 2};
+  have pPtr: *Person = &p;
+
   return 0;
 };
