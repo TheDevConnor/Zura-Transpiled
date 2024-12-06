@@ -219,7 +219,11 @@ void TypeChecker::visitVar(Maps *map, Node::Stmt *stmt) {
 void TypeChecker::visitPrint(Maps *map, Node::Stmt *stmt) {
   PrintStmt *print_stmt = static_cast<PrintStmt *>(stmt);
   for (Node::Expr *expr : print_stmt->args) {
-    visitExpr(map, expr);
+    if (expr->kind == NodeKind::ND_STRING) {
+      return_type = std::make_shared<SymbolType>("str");
+    } else {
+      visitExpr(map, expr);
+    }
   }
 }
 

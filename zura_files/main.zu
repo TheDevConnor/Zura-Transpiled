@@ -1,11 +1,10 @@
 const main := fn () int {
   dis(85814); # Prints 85814 to the console :)
 
-  dis("\nHello, World!\n"); # Prints '4202496' to the console >:(
+  dis("\nHello, World!\n"); # Prints '4202496' to the console >:( (fixed) :)
   
   have p: str = "\nHello, World!\n";
   dis(p); # Prints "Hello, World!" to the console :)
-  # I swear, aren't str variables supposed to be MORE complicated than literals?
   
   return 0;
 };
