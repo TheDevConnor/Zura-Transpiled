@@ -216,15 +216,28 @@ void TypeChecker::visitVar(Maps *map, Node::Stmt *stmt) {
   return_type = nullptr;
 }
 
+// Why, oh why, C++, is this the solution?
+Node::Type *createDuplicate(Node::Type *original) {
+  if (original->kind == NodeKind::ND_SYMBOL_TYPE) {
+    SymbolType *sym = static_cast<SymbolType *>(original);
+    return new SymbolType(sym->name);
+  } else if (original->kind == NodeKind::ND_ARRAY_TYPE) {
+    ArrayType *arr = static_cast<ArrayType *>(original);
+    return new ArrayType(createDuplicate(arr->underlying));
+  } else if (original->kind == NodeKind::ND_POINTER_TYPE) {
+    PointerType *ptr = static_cast<PointerType *>(original);
+    return new PointerType(ptr->pointer_type, createDuplicate(ptr->underlying));
+  }
+  return nullptr;
+}
+
 void TypeChecker::visitPrint(Maps *map, Node::Stmt *stmt) {
   PrintStmt *print_stmt = static_cast<PrintStmt *>(stmt);
-  for (Node::Expr *expr : print_stmt->args) {
-    if (expr->kind == NodeKind::ND_STRING) {
-      return_type = std::make_shared<SymbolType>("str");
-    } else {
-      visitExpr(map, expr);
-    }
+  for (int i = 0; i < print_stmt->args.size(); i++) {
+    visitExpr(map, print_stmt->args[i]);
+    print_stmt->args[i]->asmType = createDuplicate(return_type.get());
   }
+  return_type = nullptr;
 }
 
 void TypeChecker::visitReturn(Maps *map, Node::Stmt *stmt) {

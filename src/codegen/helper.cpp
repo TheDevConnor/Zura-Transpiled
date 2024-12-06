@@ -317,6 +317,8 @@ std::string codegen::getUnderlying(Node::Type *type) {
     return s->name; // The end!
   }
   // Unreachable!
+  std::cout << "REached the end fucking asfelf" << std::endl;
+  std::cout << std::to_string((int)type->kind) << std::endl;
 };
 
 std::string codegen::type_to_diename(Node::Type *type) {
@@ -335,4 +337,5 @@ std::string codegen::type_to_diename(Node::Type *type) {
     return s->name;
   }
   // Unreachable!
+  return "";
 };

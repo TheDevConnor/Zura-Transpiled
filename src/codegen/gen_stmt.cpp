@@ -448,6 +448,7 @@ void codegen::print(Node::Stmt *stmt) {
 
   for (Node::Expr *arg : print->args) {
     std::string argType = getUnderlying(arg->asmType);
+    if (argType == "") continue;
     if (argType == "str") {
       visitExpr(arg);
       popToRegister("%rsi"); // String address
@@ -687,7 +688,8 @@ void codegen::declareStructVariable(Node::Expr *expr, std::string structName, st
     popToRegister(std::to_string(-(structBase + offset)) + "(%rbp)");
   }
   variableCount += structByteSizes[structName].first;
-
+  // Offset rsp
+  push(Instr{.var = SubInstr{.lhs = "%rsp", .rhs = "$" + std::to_string(structByteSizes[structName].first)}, .type = InstrType::Sub}, Section::Main);
   // Add the struct to the variable table
   variableTable.insert({varName, std::to_string(-structBase) + "(%rbp)"});
 }
