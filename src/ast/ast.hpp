@@ -60,6 +60,7 @@ enum NodeKind {
   ND_POINTER_TYPE, // *int
   ND_CALLABLE_TYPE, // Idk honestly
   ND_FUNCTION_TYPE, // fn (int) int
+  ND_NULL, // nil
 };
 
 class Node {

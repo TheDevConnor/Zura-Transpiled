@@ -82,7 +82,9 @@ void memberExpr(Node::Expr *expr);
 void _struct(Node::Expr *expr);
 void externalCall(Node::Expr *expr);
 void addressExpr(Node::Expr *expr);
+void nullExpr(Node::Expr *expr);
 
+void assignStructMember(Node::Expr *expr);
 void declareStructVariable(Node::Expr *expr, std::string structName, std::string varName);
 
 int convertFloatToInt(float input); // Float input. Crazy, right?

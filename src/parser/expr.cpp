@@ -369,3 +369,8 @@ Node::Expr *Parser::address(PStruct *psr) {
 
   return new AddressExpr(line, column, expr, codegen::getFileID(psr->current_file));
 }
+
+Node::Expr *Parser::null_type(PStruct *psr) {
+  psr->advance(psr);
+  return new NullExpr(psr->tks[psr->pos].line, psr->tks[psr->pos].column, codegen::getFileID(psr->current_file));
+};

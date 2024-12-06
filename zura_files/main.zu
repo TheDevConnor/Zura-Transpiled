@@ -1,11 +1,23 @@
-const Person := struct {
-  name: str;
+const Dog := struct {
   age: int;
 };
 
-const main := fn () int {
-  have p: Person = {name: "zura", age: 2};
-  have pPtr: *Person = &p;
+const Person := struct {
+  age: int;
+  pet: Dog;
+};
 
-  return 0;
+const main := fn () int {
+  have d: Dog = {
+    age: 5
+  };
+  have p: Person = {
+    age: 20,
+    pet: d
+  };
+  have d2: Dog = {
+    age: 1
+  };
+  p.pet = d2;
+  return p.pet.age;
 };

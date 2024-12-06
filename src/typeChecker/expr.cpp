@@ -279,10 +279,14 @@ void TypeChecker::visitMember(Maps *map, Node::Expr *expr) {
     // Verify that the lhs is a struct or enum
     visitExpr(map, member->lhs);
     std::string lhsType = type_to_string(return_type.get());
-    std::string name = static_cast<IdentExpr *>(member->lhs)->name;
+    std::string name = "";
+    if (member->lhs->kind == ND_MEMBER) {
+      name = static_cast<IdentExpr *>(static_cast<MemberExpr *>(member->lhs)->rhs)->name;
+    } else {
+      name = static_cast<IdentExpr *>(member->lhs)->name;
+    }
     // Determine if lhs is a struct or enum
     std::string typeKind = determineTypeKind(map, lhsType);
-
     if (typeKind == "struct") {
         processStructMember(map, member, name, lhsType);
     } else if (typeKind == "enum") {
@@ -442,11 +446,10 @@ void TypeChecker::visitStructExpr(Maps *map, Node::Expr *expr) {
 
     // find the type of the struct expression element
     visitExpr(map, elem.second);
-    std::string value_type = type_to_string(return_type.get());
-
-    if (elem_type != value_type) {
+    std::string expected = type_to_string(elem.second->asmType);
+    if (checkReturnType(elem.second, expected) == nullptr) {
       std::string msg = "Struct element '" + name->name + "' requires type '" +
-                        elem_type + "' but got '" + value_type + "'";
+                        elem_type + "' but got '" + expected + "'";
       handlerError(struct_expr->line, struct_expr->pos, msg, "", "Type Error");
       return_type = std::make_shared<SymbolType>("unknown");
       return;

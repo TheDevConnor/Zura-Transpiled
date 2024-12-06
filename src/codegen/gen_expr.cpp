@@ -331,8 +331,12 @@ void codegen::externalCall(Node::Expr *expr) {
 
 void codegen::assign(Node::Expr *expr) {
   AssignmentExpr *e = static_cast<AssignmentExpr *>(expr);
-  IdentExpr *lhs = static_cast<IdentExpr *>(e->assignee);
   pushDebug(e->line, expr->file_id, e->pos);
+  if (e->assignee->kind == ND_MEMBER || e->rhs->kind == ND_STRUCT) {
+    assignStructMember(e);
+    return;
+  }
+  IdentExpr *lhs = static_cast<IdentExpr *>(e->assignee);
   visitExpr(e->rhs);
   std::string res = variableTable[lhs->name];
   popToRegister(res);
@@ -367,8 +371,8 @@ void codegen::memberExpr(Node::Expr *expr) {
   MemberExpr *e = static_cast<MemberExpr *>(expr);
   pushDebug(e->line, expr->file_id, e->pos);
   // If lhs is enum
-  std::string asmName = static_cast<SymbolType *>(e->lhs->asmType)->name;
-  if (asmName == "enum") {
+  std::string lhsName = static_cast<SymbolType *>(e->lhs->asmType)->name;
+  if (lhsName == "enum") {
     IdentExpr *lhs = static_cast<IdentExpr *>(e->lhs);
     IdentExpr *rhs = static_cast<IdentExpr *>(e->rhs);
     pushRegister("$enum_" + lhs->name + "_" + rhs->name);
@@ -376,9 +380,9 @@ void codegen::memberExpr(Node::Expr *expr) {
   }
 
   // Check if starts with "struct-"
-  if (asmName.find("struct-") == 0) {
+  if (lhsName.find("struct-") == 0) {
     // It's a struct
-    std::string structName = asmName.substr(7);
+    std::string structName = lhsName.substr(7);
     // Now we have the name of the struct!
     if (structName == "unknown") {
       // Typechecker thought that its fields did not correlate to a struct.
@@ -445,3 +449,121 @@ void codegen::addressExpr(Node::Expr *expr) {
   visitExpr(e->right);
   // Good enough
 };
+
+
+
+void codegen::assignStructMember(Node::Expr *expr) {
+  AssignmentExpr *e = static_cast<AssignmentExpr *>(expr);
+  if (e->assignee->kind == ND_MEMBER) {
+    // Reassigning a struct's member.
+    // The new value is already pushed onto the stack.
+    // We just have to find where to pop it!
+    MemberExpr *member = static_cast<MemberExpr *>(e->assignee);
+    IdentExpr *lhs = static_cast<IdentExpr *>(member->lhs);
+    IdentExpr *rhs = static_cast<IdentExpr *>(member->rhs);
+    std::string asmName = static_cast<SymbolType *>(lhs->asmType)->name;
+    std::string structTypeName = asmName.substr(7);
+    int size = structByteSizes[structTypeName].first;
+    std::vector<StructMember> fields = structByteSizes[structTypeName].second;
+    // Find the position of the field
+    int offset = 0;
+    for (int i = 0; i < fields.size(); i++) {
+      if (fields[i].first == rhs->name) {
+        offset = fields[i].second.second;
+        break;
+      }
+    }
+    // If it's a pointer, it's very simple.
+    // This is if it's NOT simple...
+    if (member->asmType->kind == ND_STRUCT
+      && getUnderlying(member->asmType).find("struct") == 0) {
+      // Find where the inner struct was previously stored
+      // so we can override those values
+      // step 1: find base address of the whole struct
+      std::string base = variableTable[rhs->name];
+      std::string subbedString = base.substr(0, base.find('('));
+      int baseBytes = std::stoi(subbedString);
+      // step 2: find the offset of the field
+      int fieldOffset = offset;
+      // step 3: order the fields
+      std::vector<std::pair<std::string, Node::Expr *>> orderedFields;
+      for (int i = 0; i < fields.size(); i++) {
+        for (std::pair<Node::Expr *, Node::Expr *> field : static_cast<StructExpr *>(e->rhs)->values) {
+          if (static_cast<IdentExpr *>(field.first)->name
+              == fields.at(i).first) {
+            orderedFields.push_back({fields.at(i).first, field.second});
+            break;
+          }
+        }
+      }
+      // step 4: evaluate the ordered fields and store them in the inner struct
+      for (int i = 0; i < orderedFields.size(); i++) {
+        std::pair<std::string, Node::Expr *> field = orderedFields.at(i);
+        // Evaluate the expression
+        visitExpr(field.second);
+        // Pop the value into a register
+        std::string popExpr = std::to_string(baseBytes + offset + (-8 + fields.at(i).second.second)) + "(%rcx)";
+        // optimizer bug fsr
+        popToRegister(popExpr);
+      }
+      push(Instr{.var=LeaInstr{.size=DataSize::Qword,.dest="%rcx",.src=std::to_string(8 - (size + offset)) + "(%rbp)"},.type=InstrType::Lea},Section::Main);
+      pushRegister("%rcx");
+      return;
+    } else {
+      // We are setting a memberexpr to a ptr
+      // ex. human.pet = dog;
+      // Get 'dog' value (the location of the struct)
+      visitExpr(e->rhs);
+      // Pop the value into a register
+      int baseBytes = std::stoi(variableTable[lhs->name].substr(0, variableTable[lhs->name].find('(')));
+      std::string popExpr = std::to_string(baseBytes + 8 - offset) + "(%rbp)";
+      // optimizer bug fsr
+      popToRegister(popExpr);
+    }
+    // Push what's in the field
+    int baseBytes = std::stoi(variableTable[lhs->name].substr(0, variableTable[lhs->name].find('(')));
+    pushRegister(std::to_string(baseBytes + 8 - (size + offset)) + "(%rbp)");
+    return;
+  } else if (e->rhs->kind == ND_STRUCT) {
+    // Just evaluate the struct expression but use the base of the already
+    // defined struct as the base of the new one
+    StructExpr *s = static_cast<StructExpr *>(e->rhs);
+    std::string structTypeName = static_cast<SymbolType *>(s->asmType)->name.substr(7);
+    int size = structByteSizes[structTypeName].first;
+    std::string base = variableTable[static_cast<IdentExpr *>(e->assignee)->name];
+    std::vector<StructMember> fields = structByteSizes[structTypeName].second;
+    // The fields of the expression might be out of order from which they are defined
+    // in the struct. We need to reorder them.
+    std::vector<std::pair<std::string, Node::Expr *>> orderedFields;
+    for (int i = 0; i < fields.size(); i++) {
+      for (std::pair<Node::Expr *, Node::Expr *> field : s->values) {
+        if (static_cast<IdentExpr *>(field.first)->name
+            == fields.at(i).first) {
+          orderedFields.push_back({fields.at(i).first, field.second});
+          break;
+        }
+      }
+    }
+
+    // Evaluate the orderedFields and store them in the struct!!!!
+    std::string subbedString = base.substr(0, base.find('('));
+    int baseBytes = std::stoi(subbedString);
+    for (int i = 0; i < orderedFields.size(); i++) {
+      std::pair<std::string, Node::Expr *> field = orderedFields.at(i);
+      // Evaluate the expression
+      visitExpr(field.second);
+      // Pop the value into a register
+      std::string popExpr = std::to_string(baseBytes + (-8 + fields.at(i).second.second)) + "(%rcx)";
+      // optimizer bug fsr
+      popToRegister(popExpr);
+    }
+    push(Instr{.var=LeaInstr{.size=DataSize::Qword,.dest="%rcx",.src=variableTable[static_cast<IdentExpr *>(e->assignee)->name]},.type=InstrType::Lea},Section::Main);
+    pushRegister("%rcx");
+  }
+};
+
+void codegen::nullExpr(Node::Expr *expr) {
+  // Has implicit value of 0.
+  pushRegister("$0");
+  return;  
+}

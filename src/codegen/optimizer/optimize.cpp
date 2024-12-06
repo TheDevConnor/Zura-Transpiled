@@ -90,6 +90,7 @@ void Optimizer::processOppositePair(std::vector<Instr> *output, Instr &prev, Ins
     if (curr.type == InstrType::Pop) {
         tryPop(output);
         simplifyPushPopPair(output, prev, curr);
+        prev = Instr {.var = {}, .type=InstrType::NONE}; // Reset prev after processing
     } else {
         output->push_back(curr);
     }
@@ -191,6 +192,7 @@ void Optimizer::simplifyPushPopPair(std::vector<Instr> *output, Instr &prev, Ins
         prev = cvtInstr;
         return;
     }
+    
     Instr newInstr = {
         .var = MovInstr{.dest = currAsPop.where, .src = prevAsPush.what, .destSize = currAsPop.whereSize, .srcSize = prevAsPush.whatSize},
         .type = InstrType::Mov

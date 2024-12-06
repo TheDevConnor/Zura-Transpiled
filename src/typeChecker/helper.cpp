@@ -33,6 +33,11 @@ std::shared_ptr<SymbolType> TypeChecker::checkReturnType(Node::Expr *expr, const
         expr->asmType = return_type.get();
         return std::make_shared<SymbolType>(defaultType);
     }
+    // NullExpr is valid for all pointer types
+    if (expr->kind == NodeKind::ND_NULL) {
+        expr->asmType = return_type.get();
+        return std::make_shared<SymbolType>(defaultType);
+    }
     return std::static_pointer_cast<SymbolType>(return_type);
 }
 
@@ -48,31 +53,46 @@ bool TypeChecker::checkTypeMatch(const std::shared_ptr<SymbolType> &lhs,
 }
 
 std::string TypeChecker::determineTypeKind(Maps *map, const std::string &type) {
-    if (map->struct_table.find(type) != map->struct_table.end()) {
-        return "struct";
-    }
-    if (map->enum_table.find(type) != map->enum_table.end()) {
-        return "enum";
-    }
-    return "unknown";
+  std::string real = type;
+  if (type.find('*') == 0) {
+    real = type.substr(1);
+  }
+  if (map->struct_table.find(real) != map->struct_table.end()) {
+      return "struct";
+  }
+  if (map->enum_table.find(real) != map->enum_table.end()) {
+      return "enum";
+  }
+  return "unknown";
 }
 
 void TypeChecker::processStructMember(Maps *map, MemberExpr *member, const std::string &name, std::string lhsType) {
-    const std::vector<std::pair<std::string, Node::Type *>> &fields = map->struct_table[lhsType];
-    const std::vector<std::pair<std::string, Node::Type *>>::const_iterator res = std::find_if(fields.begin(), fields.end(),
-                            [&member](const std::pair<std::string, Node::Type *> &field) {
-                                return field.first == static_cast<IdentExpr *>(member->rhs)->name;
-                            });
-    if (res == fields.end()) {
-        std::string msg = "Type '" + lhsType + "' does not have member '" +
-                          static_cast<IdentExpr *>(member->rhs)->name + "'";
-        handlerError(member->line, member->pos, msg, "", "Type Error");
-        return_type = std::make_shared<SymbolType>("unknown");
-        return;
-    }
+  std::string realType = lhsType;
+  if (lhsType.find('*') == 0) {
+    realType = lhsType.substr(1);
+  }
+  const std::vector<std::pair<std::string, Node::Type *>> &fields = map->struct_table[realType];
+  const std::vector<std::pair<std::string, Node::Type *>>::const_iterator res = std::find_if(fields.begin(), fields.end(),
+                          [&member](const std::pair<std::string, Node::Type *> &field) {
+                              return field.first == static_cast<IdentExpr *>(member->rhs)->name;
+                          });
+  if (res == fields.end()) {
+      std::string msg = "Type '" + lhsType + "' does not have member '" +
+                        static_cast<IdentExpr *>(member->rhs)->name + "'";
+      handlerError(member->line, member->pos, msg, "", "Type Error");
+      return_type = std::make_shared<SymbolType>("unknown");
+      return;
+  }
 
-    return_type = std::make_shared<SymbolType>(type_to_string(res->second));
+  // if the member expr returns a struct,
+  // append struct- to the start of the asmtype
+  return_type = std::make_shared<SymbolType>(type_to_string(res->second));
+  if (map->struct_table.find(type_to_string(res->second)) != map->struct_table.end()) {
+    member->asmType = new SymbolType("struct-" + type_to_string(return_type.get()));
+  } else {
     member->asmType = return_type.get();
+  }
+
 }
 
 void TypeChecker::processEnumMember(Maps *map, MemberExpr *member, const std::string &lhsType) {

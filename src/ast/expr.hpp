@@ -270,6 +270,24 @@ public:
   ~GroupExpr() = default; // rule of threes
 };
 
+class NullExpr : public Node::Expr {
+public:
+  int line, pos;
+
+  NullExpr(int line, int pos, int file) : line(line), pos(pos) {
+    file_id = file;
+    kind = NodeKind::ND_NULL;
+    asmType = new PointerType(new SymbolType("void"));
+  }
+
+  void debug(int indent = 0) const override {
+    Node::printIndent(indent);
+    std::cout << "NullExpr\n";
+  }
+
+  ~NullExpr() = default; // rule of threes
+};
+
 class AddressExpr : public Node::Expr {
 public:
   int line, pos;
