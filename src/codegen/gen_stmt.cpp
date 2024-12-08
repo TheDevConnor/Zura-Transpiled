@@ -202,6 +202,8 @@ void codegen::varDecl(Node::Stmt *stmt) {
       // It's of type struct!
       // Basically ignore the part where we allocate memory for this thing.
       declareStructVariable(s->expr, getUnderlying(s->type), s->name);
+    } else if (s->type->kind == ND_ARRAY_TYPE) {
+      declareArrayVariable(s->expr, getUnderlying(s->type), s->name); // s->name so it can be inserted to variableTable, s->type so we know the byte sizes.
     } else {
       int whereBytes = -variableCount;
       visitExpr(s->expr);
@@ -696,4 +698,25 @@ void codegen::declareStructVariable(Node::Expr *expr, std::string structName, st
   push(Instr{.var = SubInstr{.lhs = "%rsp", .rhs = "$" + std::to_string(structByteSizes[structName].first)}, .type = InstrType::Sub}, Section::Main);
   // Add the struct to the variable table
   variableTable.insert({varName, std::to_string(-structBase) + "(%rbp)"});
+}
+
+void codegen::declareArrayVariable(Node::Expr *expr, std::string arrayName, std::string varName) {
+  ArrayExpr *s = static_cast<ArrayExpr *>(expr);
+  int underlyingByteSize = getByteSizeOfType(s->type);
+  dwarf::useType(s->type);
+
+  int arrayBase = variableCount;
+  // Evaluate the orderedFields and store them in the struct!!!!
+  for (int i = 0; i < s->elements.size(); i++) {
+    Node::Expr *element = s->elements.at(i);
+    // Evaluate the expression
+    visitExpr(element);
+    // Pop the value into a register
+    popToRegister(std::to_string(-(arrayBase + i * underlyingByteSize)) + "(%rbp)");
+  }
+  variableCount += s->elements.size() * underlyingByteSize;
+  // Offset rsp
+  push(Instr{.var = SubInstr{.lhs = "%rsp", .rhs = "$" + std::to_string(s->elements.size() * underlyingByteSize)}, .type = InstrType::Sub}, Section::Main);
+  // Add the struct to the variable table
+  variableTable.insert({varName, std::to_string(-arrayBase) + "(%rbp)"});
 }

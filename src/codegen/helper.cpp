@@ -271,6 +271,7 @@ void codegen::pushDebug(int line, int file, int column) {
   }
 }
 
+// A real type, not the asmType
 signed short int codegen::getByteSizeOfType(Node::Type *type) {
   if (type->kind == NodeKind::ND_POINTER_TYPE) {
     return 8;
@@ -330,7 +331,11 @@ std::string codegen::type_to_diename(Node::Type *type) {
   }
   if (type->kind == ND_ARRAY_TYPE) {
     ArrayType *a = static_cast<ArrayType *>(type);
-    return type_to_diename(a->underlying) + "_arr";
+    if (a->constSize <= 0) {
+      // Variable-length array.
+      return type_to_diename(a->underlying) + "_arr";
+    }
+    return type_to_diename(a->underlying) + "_arr" + std::to_string(a->constSize - 1);
   }
   if (type->kind == ND_SYMBOL_TYPE) { // Yes, structs are symbols too
     SymbolType *s = static_cast<SymbolType *>(type);

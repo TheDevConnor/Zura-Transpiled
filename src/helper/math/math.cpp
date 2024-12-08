@@ -16,7 +16,7 @@ std::optional<std::string> string_distance(std::vector<std::string> known,
     }
   }
 
-  if (min <= limit) {
+  if (min <= limit && closest != "") {
     return closest;
   }
   // No match found, oh well then

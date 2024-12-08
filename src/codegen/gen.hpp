@@ -86,6 +86,7 @@ void nullExpr(Node::Expr *expr);
 
 void assignStructMember(Node::Expr *expr);
 void declareStructVariable(Node::Expr *expr, std::string structName, std::string varName);
+void declareArrayVariable(Node::Expr *expr, std::string underlying, std::string varName);
 
 int convertFloatToInt(float input); // Float input. Crazy, right?
 
@@ -162,6 +163,8 @@ enum class DIEAbbrev {
   // Types
   Type, // EX: char
   PointerType, // EX: char* -> points to a char.
+  ArrayType, // EX: [10]char -> array of 10 chars
+  ArraySubrange,
   // Void type is not included because it will not be included by function declarations
 };
 inline std::set<DIEAbbrev> dieAbbrevsUsed = {};

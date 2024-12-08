@@ -202,6 +202,11 @@ void TypeChecker::visitVar(Maps *map, Node::Stmt *stmt) {
   if (var_stmt->expr == nullptr) {
     return;
   }
+  if (var_stmt->type->kind == ND_ARRAY_TYPE) {
+    // Set the expr.type to the type of the variable so it can be used
+    // in codegen process.
+    static_cast<ArrayExpr *>(var_stmt->expr)->type = var_stmt->type;
+  }
   visitExpr(map, var_stmt->expr);
 
   if (return_type != nullptr) {
@@ -223,7 +228,7 @@ Node::Type *createDuplicate(Node::Type *original) {
     return new SymbolType(sym->name);
   } else if (original->kind == NodeKind::ND_ARRAY_TYPE) {
     ArrayType *arr = static_cast<ArrayType *>(original);
-    return new ArrayType(createDuplicate(arr->underlying));
+    return new ArrayType(createDuplicate(arr->underlying), arr->constSize);
   } else if (original->kind == NodeKind::ND_POINTER_TYPE) {
     PointerType *ptr = static_cast<PointerType *>(original);
     return new PointerType(createDuplicate(ptr->underlying));

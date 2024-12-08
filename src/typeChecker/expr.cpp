@@ -99,8 +99,12 @@ void TypeChecker::visitIdent(Maps *map, Node::Expr *expr) {
     for (std::pair<std::string, Node::Type *> pair : map->local_symbol_table)
       map->stackKeys.push_back(pair.first);
     std::optional<std::string> closest = string_distance(map->stackKeys, ident->name, 3);
-
-    std::string msg = "Undefined variable '" + ident->name + "' did you mean '" + closest.value() + "'?";
+    std::string msg = "";
+    if (closest.has_value()) {
+      msg = "Undefined variable '" + ident->name + "' did you mean '" + closest.value() + "'?";
+    } else {
+      msg = "Undefined variable '" + ident->name + "'";
+    }
     handlerError(ident->line, ident->pos, msg, "", "Symbol Table Error");
     res = new SymbolType("unknown"); // return unknown type
   }
@@ -298,12 +302,17 @@ void TypeChecker::visitMember(Maps *map, Node::Expr *expr) {
 
 void TypeChecker::visitArray(Maps *map, Node::Expr *expr) {
   ArrayExpr *array = static_cast<ArrayExpr *>(expr);
+  if (array->type == nullptr) {
+    array->type = new ArrayType(new SymbolType("unknown"), -1);
+    expr->asmType = array->type;
+  }
 
   // check if the array is empty
   if (array->elements.empty()) {
     std::string msg = "Array must have at least one element!";
     handlerError(array->line, array->pos, msg, "", "Type Error");
-    return_type = std::make_shared<SymbolType>("unknown");
+    return_type = std::make_shared<ArrayType>(array->type, 0);
+    expr->asmType = return_type.get();
     return;
   }
 
@@ -340,12 +349,13 @@ void TypeChecker::visitArray(Maps *map, Node::Expr *expr) {
   }
 
   if (map->array_table.empty()) {
-    return_type = std::make_shared<ArrayType>(array->type);
+    ArrayType *at = static_cast<ArrayType *>(array->type);
+    return_type = std::make_shared<ArrayType>(at->underlying, 0);
     expr->asmType = return_type.get();
     return;
   }
   return_type =
-      std::make_shared<ArrayType>(map->array_table[0]);
+      std::make_shared<ArrayType>(map->array_table[0], map->array_table.size());
   expr->asmType = return_type.get();
 
   // clear the array table
@@ -374,6 +384,7 @@ void TypeChecker::visitIndex(Maps *map, Node::Expr *expr) {
 
   return_type =
       std::make_shared<SymbolType>(type_to_string(array.get()).substr(2));
+  expr->asmType = return_type.get();
 }
 
 void TypeChecker::visitCast(Maps *map, Node::Expr *expr) {

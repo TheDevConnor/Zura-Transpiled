@@ -21,8 +21,13 @@ public:
 class ArrayType : public Node::Type {
 public:
   Node::Type *underlying; // []int - 'int' is the underlying type
+  signed short int constSize; // [45]int - 45 is the constant, maximum size
 
-  ArrayType(Node::Type *underlying) : underlying(underlying) {
+  ArrayType(Node::Type *underlying, signed short int constSize) : underlying(underlying), constSize(constSize) {
+    kind = NodeKind::ND_ARRAY_TYPE;
+  }
+
+  ArrayType(ArrayType *&arr) : underlying(arr->underlying), constSize(arr->constSize) {
     kind = NodeKind::ND_ARRAY_TYPE;
   }
 

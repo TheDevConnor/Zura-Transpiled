@@ -106,8 +106,8 @@ void codegen::binary(Node::Expr *expr) {
   SymbolType *returnType = static_cast<SymbolType *>(e->asmType);
 
   if (returnType->name == "int") {
-    int lhsDepth = getExpressionDepth(static_cast<BinaryExpr *>(e->lhs));
-    int rhsDepth = getExpressionDepth(static_cast<BinaryExpr *>(e->rhs));
+    int lhsDepth = getExpressionDepth(e->lhs);
+    int rhsDepth = getExpressionDepth(e->rhs);
     if (lhsDepth > rhsDepth) {
       visitExpr(e->lhs);
       visitExpr(e->rhs);
@@ -355,16 +355,68 @@ void codegen::_arrayExpr(Node::Expr *expr) {
 
 void codegen::arrayElem(Node::Expr *expr) {
   IndexExpr *e = static_cast<IndexExpr *>(expr);
-  std::cerr
-      << "No fancy error for this, beg Connor... (Soviet Pancakes speaking)"
-      << std::endl;
-  std::cerr << "Array element not implemented! (LHS: NodeKind["
-            << (int)e->lhs->kind << "], RHS: NodeKind[" << (int)e->rhs->kind
-            << "])" << std::endl;
-  exit(-1);
-  /*
   pushDebug(e->line, expr->file_id, e->pos);
-  */
+  // Evaluate the arrauy
+  // Evaluate the index
+  ArrayExpr *array = static_cast<ArrayExpr *>(e->lhs);
+  if (e->rhs->kind == ND_INT) {
+    // It's a constant index
+    IntExpr *index = static_cast<IntExpr *>(e->rhs);
+    Node::Type *underlying = static_cast<ArrayType *>(array->type)->underlying;
+    if (e->lhs->kind == ND_IDENT) {
+      std::string whereBytes = variableTable[static_cast<IdentExpr *>(e->lhs)->name];
+      int offset = std::stoi(whereBytes.substr(0, whereBytes.find("(")));
+      offset -= (index->value * getByteSizeOfType(underlying));
+      pushRegister(std::to_string(offset) + "(%rbp)");
+    } else {
+      visitExpr(e->lhs);
+      popToRegister("%rcx");
+      int byteSize = getByteSizeOfType(underlying);
+      int offset = -index->value * byteSize;
+      if (offset == 0)
+        pushRegister("(%rcx)");
+      else
+        pushRegister(std::to_string(offset) + "(%rcx)");
+    }
+  } else {
+    // This is a little more intricate.
+    // We have to evaluate the index and multiply it by the size of the type
+    visitExpr(e->lhs);
+    popToRegister("%rcx");
+    // %rcx contains the base of the array
+    visitExpr(e->rhs);
+    popToRegister("%rax");
+    // %rax contains the index
+    // Negate rax
+    pushLinker("negq %rax", Section::Main);
+    // Multiply it by the size of the type
+    ArrayExpr *array = static_cast<ArrayExpr *>(e->lhs);
+    int byteSize = getByteSizeOfType(array->type);
+    switch (byteSize) {
+      case 1: {
+        // No need to multiply
+        pushRegister("(%rcx, %rax)");
+        break;
+      }
+      case 2:
+      case 4:
+      case 8: {
+        // Multiply by the size of the type
+        pushRegister("(%rcx, %rax, " + std::to_string(byteSize) + ")");
+        break;
+      }
+
+      default: {
+        // Sad, we can't rely on little syntactical sugar of the assembler to cheat our way out :(
+        push(Instr{.var = BinaryInstr{.op = "imul", .src = "$" + std::to_string(byteSize), .dst = "%rax"},
+                   .type = InstrType::Binary},
+             Section::Main);
+        pushRegister("(%rcx, %rax)");
+        break;
+      }
+    }
+  }
+  // the end!
 }
 
 void codegen::memberExpr(Node::Expr *expr) {

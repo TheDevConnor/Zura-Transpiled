@@ -1,23 +1,5 @@
-const Dog := struct {
-  age: int;
-};
-
-const Person := struct {
-  age: int;
-  pet: Dog;
-};
-
 const main := fn () int {
-  have d: Dog = {
-    age: 5
-  };
-  have p: Person = {
-    age: 20,
-    pet: d
-  };
-  have d2: Dog = {
-    age: 1
-  };
-  p.pet = d2;
-  return p.pet.age;
+  have arr: [3]int = [1, 2, 3];
+  have arr2: [13]int = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12];
+  return arr[2] + arr2[12];
 };
