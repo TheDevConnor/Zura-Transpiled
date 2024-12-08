@@ -84,6 +84,7 @@ void declare_fn(Maps *maps, const std::pair<std::string, Node::Type *> &pair,
                 std::vector<std::pair<std::string, Node::Type *>> paramTypes,
                 int line, int pos);
 
+// pair<pair<fn name, fn return type>, vector<pair<param name, param type>>>
 using Fn = std::pair<std::pair<std::string, Node::Type *>,
                                        std::vector<std::pair<std::string, Node::Type *>>>;
 using FnVector = std::vector<Fn>;

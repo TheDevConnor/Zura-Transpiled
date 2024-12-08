@@ -272,8 +272,15 @@ void TypeChecker::visitCall(Maps *map, Node::Expr *expr) {
         return;
     }
 
-    // Set return type based on the first parameter's type (assuming standard convention)
-    return_type = std::make_shared<SymbolType>(type_to_string(fnParams[0].second));
+    // Set return type to the return of the fn
+    if (fnName.second->kind == ND_POINTER_TYPE) {
+      return_type = std::make_shared<PointerType>(static_cast<PointerType *>(fnName.second)->underlying);
+    } else if (fnName.second->kind == ND_ARRAY_TYPE) {
+      ArrayType *at = static_cast<ArrayType *>(fnName.second);
+      return_type = std::make_shared<ArrayType>(at->underlying, at->constSize);
+    } else {
+      return_type = std::make_shared<SymbolType>(type_to_string(fnName.second));
+    }
     expr->asmType = return_type.get();
 }
 
