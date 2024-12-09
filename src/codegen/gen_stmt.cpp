@@ -1,6 +1,10 @@
-#include "gen.hpp"
-#include "optimizer/instr.hpp"
+#include "../helper/error/error.hpp"  
 #include "optimizer/compiler.hpp"
+#include "optimizer/instr.hpp"
+#include "../common.hpp"
+#include "gen.hpp"
+
+#include <iostream>
 #include <sys/cdefs.h>
 
 void codegen::visitStmt(Node::Stmt *stmt) {
@@ -201,9 +205,12 @@ void codegen::varDecl(Node::Stmt *stmt) {
     if (s->type->kind == ND_SYMBOL_TYPE && structByteSizes.find(getUnderlying(s->type)) != structByteSizes.end()) {
       // It's of type struct!
       // Basically ignore the part where we allocate memory for this thing.
-      declareStructVariable(s->expr, getUnderlying(s->type), s->name);
-    } else if (s->type->kind == ND_ARRAY_TYPE) {
-      declareArrayVariable(s->expr, getUnderlying(s->type), s->name); // s->name so it can be inserted to variableTable, s->type so we know the byte sizes.
+      push(Instr{.var = SubInstr{.lhs = "%rsp", .rhs = "$" + std::to_string(structByteSizes[getUnderlying(s->type)].first)}, .type = InstrType::Sub}, Section::Main);
+      declareStructVariable(s->expr, getUnderlying(s->type), variableCount);
+      variableCount += structByteSizes[getUnderlying(s->type)].first;
+      variableTable.insert({s->name, where});
+    } else if (s->type->kind == ND_ARRAY_TYPE || s->type->kind == ND_ARRAY_AUTO_FILL) {
+      declareArrayVariable(s->expr, static_cast<ArrayType *>(s->type)->constSize, s->name); // s->name so it can be inserted to variableTable, s->type so we know the byte sizes.
     } else {
       int whereBytes = -variableCount;
       visitExpr(s->expr);
@@ -658,7 +665,7 @@ void codegen::externName(Node::Stmt *stmt) {
 }
 
 // Structname passed by the varStmt's "type" field
-void codegen::declareStructVariable(Node::Expr *expr, std::string structName, std::string varName) {
+void codegen::declareStructVariable(Node::Expr *expr, std::string structName, int whereToPut) {
   StructExpr *s = static_cast<StructExpr *>(expr);
   // At the end, we are gonna load the effective address into
   // garbage register and put that into the variable table.
@@ -666,6 +673,7 @@ void codegen::declareStructVariable(Node::Expr *expr, std::string structName, st
 
   // Make sure that the fields unordered_map is not empty
   if (structByteSizes[structName].first == 0 || s->values.size() == 0) {
+    std::cout << std::to_string(structByteSizes[structName].first) << ", " << std::to_string(s->values.size()) << std::endl;
     std::cerr << "Empty struct not allowed!" << std::endl;
     exit(-1);
   }
@@ -683,24 +691,74 @@ void codegen::declareStructVariable(Node::Expr *expr, std::string structName, st
     }
   }
 
-  int structBase = variableCount;
+  int structBase = whereToPut;
   // Evaluate the orderedFields and store them in the struct!!!!
   for (int i = 0; i < orderedFields.size(); i++) {
     std::pair<std::string, Node::Expr *> field = orderedFields.at(i);
+    // Check if the field is a struct itself
+    Node::Type *fieldType = structByteSizes[structName].second[i].second.first;
+    if (fieldType->kind == ND_SYMBOL_TYPE && (structByteSizes.find(getUnderlying(fieldType)) != structByteSizes.end())) {
+      // It's of type struct!
+      if (field.second->kind == ND_STRUCT) {
+        /*
+        have a: Struct = {
+          inner: {
+            # Nested struct literal expressions
+          }
+        }
+        */
+        // Basically ignore the part where we allocate memory for this thing.
+        declareStructVariable(field.second, getUnderlying(fieldType), whereToPut + structByteSizes[structName].second.at(i).second.second);
+        continue;
+      }
+      // Check if the kind is an identifier, but still a struct
+      if (field.second->kind == ND_IDENT) {
+        // Load each individual field of the ident struct into this new struct
+        // This is a bit of a hack, but it works.
+        IdentExpr *ident = static_cast<IdentExpr *>(field.second);
+        std::string where = variableTable[ident->name];
+        int fieldOffset = structByteSizes[structName].second.at(i).second.second;
+        int variableOffset = -std::stoi(where.substr(0, where.find('(')));
+        // Now we need to go through each field of that struct
+        Node::Type *fieldType = structByteSizes[structName].second.at(i).second.first;
+        for (int j = 0; j < structByteSizes[getUnderlying(fieldType)].second.size(); j++) {
+          // What if that field has a struct, too?
+          if (structByteSizes.find(getUnderlying(fieldType)) != structByteSizes.end()) {
+            // It's of type struct!
+            // Basically ignore the part where we allocate memory for this thing.
+            declareStructVariable(field.second, getUnderlying(fieldType), whereToPut + structByteSizes[structName].second.at(i).second.second);
+            continue;
+          }
+          // Get the data stored in the field
+          moveRegister("%rax", std::to_string(variableOffset - j * 8) + "(%rbp)", DataSize::Qword, DataSize::Qword);
+        }
+      }
+    }
     // Evaluate the expression
     visitExpr(field.second);
     int offset = i == 0 ? 0 : structByteSizes[structName].second.at(i - 1).second.second;
     // Pop the value into a register
     popToRegister(std::to_string(-(structBase + offset)) + "(%rbp)");
   }
-  variableCount += structByteSizes[structName].first;
-  // Offset rsp
-  push(Instr{.var = SubInstr{.lhs = "%rsp", .rhs = "$" + std::to_string(structByteSizes[structName].first)}, .type = InstrType::Sub}, Section::Main);
-  // Add the struct to the variable table
-  variableTable.insert({varName, std::to_string(-structBase) + "(%rbp)"});
 }
 
-void codegen::declareArrayVariable(Node::Expr *expr, std::string arrayName, std::string varName) {
+void codegen::declareArrayVariable(Node::Expr *expr, short int arrayLength, std::string varName) {
+  if (expr->kind == ND_ARRAY_AUTO_FILL) {
+    // This is an implicit shorthand version of setting an array to [0, 0, 0, 0, ....]
+    ArrayAutoFill *s = static_cast<ArrayAutoFill *>(expr);
+    if (arrayLength < 1) {
+      std::string msg = "Auto-fill arrays must have an explicitly-defined length."; // the tc should catch this, but just in case
+      handleError(s->line, s->pos, msg, "Codegen Error", true); // overload not exist
+      ErrorClass::printError(); // replace with real code lmao
+      Exit(ExitValue::GENERATOR_ERROR);
+    } 
+    push(Instr{.var=LeaInstr{.size = DataSize::Qword, .dest="%rdi", .src="-" + std::to_string(variableCount) + "(%rbp)"}, .type=InstrType::Lea}, Section::Main);
+    moveRegister("%rcx", "$" + std::to_string(arrayLength), DataSize::Qword, DataSize::Qword);
+    push(Instr{.var=XorInstr{.lhs="%rax", .rhs="%rax"}, .type=InstrType::Xor}, Section::Main);
+    pushLinker("rep stosq\n\t", Section::Main); // Ah yes, the good ol' "req stosq"... (what the fuck is this thing again??)
+    return;
+  }
+
   ArrayExpr *s = static_cast<ArrayExpr *>(expr);
   int underlyingByteSize = getByteSizeOfType(s->type);
   dwarf::useType(s->type);

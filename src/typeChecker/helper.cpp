@@ -3,7 +3,7 @@
 #include "type.hpp"
 #include <memory>
 
-void TypeChecker::handlerError(int line, int pos, std::string msg,
+void TypeChecker::handleError(int line, int pos, std::string msg,
                                std::string note, std::string typeOfError) {
   Lexer lexer; // dummy lexer
   if (note != "") {
@@ -46,7 +46,7 @@ bool TypeChecker::checkTypeMatch(const std::shared_ptr<SymbolType> &lhs,
                                  const std::string &operation, int line,
                                  int pos, std::string &msg) {
   if (type_to_string(lhs.get()) != type_to_string(rhs.get())) {
-    handlerError(line, pos, msg, "", "Type Error");
+    handleError(line, pos, msg, "", "Type Error");
     return false;
   }
   return true;
@@ -79,7 +79,7 @@ void TypeChecker::processStructMember(Maps *map, MemberExpr *member, const std::
   if (res == fields.end()) {
       std::string msg = "Type '" + lhsType + "' does not have member '" +
                         static_cast<IdentExpr *>(member->rhs)->name + "'";
-      handlerError(member->line, member->pos, msg, "", "Type Error");
+      handleError(member->line, member->pos, msg, "", "Type Error");
       return_type = std::make_shared<SymbolType>("unknown");
       return;
   }
@@ -104,7 +104,7 @@ void TypeChecker::processEnumMember(Maps *map, MemberExpr *member, const std::st
     if (res == fields.end()) {
         std::string msg = "Type '" + lhsType + "' does not have member '" +
                           static_cast<IdentExpr *>(member->rhs)->name + "'";
-        handlerError(member->line, member->pos, msg, "", "Type Error");
+        handleError(member->line, member->pos, msg, "", "Type Error");
         return_type = std::make_shared<SymbolType>("unknown");
         return;
     }
@@ -115,13 +115,13 @@ void TypeChecker::processEnumMember(Maps *map, MemberExpr *member, const std::st
 
 void TypeChecker::handleUnknownType(MemberExpr *member, const std::string &lhsType) {
     std::string msg = "Type '" + lhsType + "' does not have members";
-    handlerError(member->line, member->pos, msg, "", "Type Error");
+    handleError(member->line, member->pos, msg, "", "Type Error");
     return_type = std::make_shared<SymbolType>("unknown");
 }
 
 void TypeChecker::reportOverloadedFunctionError(CallExpr *call, const std::string &functionName) {
     std::string msg = "Function '" + functionName + "' is overloaded";
-    handlerError(call->line, call->pos, msg, "", "Type Error");
+    handleError(call->line, call->pos, msg, "", "Type Error");
     return_type = std::make_shared<SymbolType>("unknown");
 }
 
@@ -131,7 +131,7 @@ bool TypeChecker::validateArgumentCount(CallExpr *call, const std::string &funct
         std::string msg = "Function '" + functionName + "' requires " +
                           std::to_string(fnParams.size()) + " arguments but got " +
                           std::to_string(call->args.size());
-        handlerError(call->line, call->pos, msg, "", "Type Error");
+        handleError(call->line, call->pos, msg, "", "Type Error");
         return_type = std::make_shared<SymbolType>("unknown");
         return false;
     }
@@ -149,7 +149,7 @@ bool TypeChecker::validateArgumentTypes(Maps *map, CallExpr *call, const std::st
             std::string msg = "Function '" + functionName + "' requires argument '" +
                               fnParams[i].first + "' to be of type '" + expectedType +
                               "' but got '" + argType + "'";
-            handlerError(call->line, call->pos, msg, "", "Type Error");
+            handleError(call->line, call->pos, msg, "", "Type Error");
             return_type = std::make_shared<SymbolType>("unknown");
             return false;
         }

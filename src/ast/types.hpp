@@ -14,7 +14,7 @@ public:
   void debug(int indent = 0) const override { 
     std::cout << "Type: \n";
     Node::printIndent(indent + 1);
-    std::cout << name;
+    std::cout << name << "\n";
   }
 };
 
@@ -35,7 +35,7 @@ public:
     std::cout << "[]";
     if (underlying) {
       underlying->debug(indent);
-    }
+    } else std::cout << "\n";
   }
 
   ~ArrayType() = default;

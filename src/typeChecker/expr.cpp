@@ -16,7 +16,7 @@ void TypeChecker::visitTemplateCall(Maps *map, Node::Expr *expr) {
   TemplateCallExpr *template_call = static_cast<TemplateCallExpr *>(expr);
 
   std::string msg = "Template function calls are not supported yet";
-  handlerError(template_call->line, template_call->pos, msg, "", "Type Error");
+  handleError(template_call->line, template_call->pos, msg, "", "Type Error");
 }
 
 void TypeChecker::visitExternalCall(Maps *map, Node::Expr *expr) {
@@ -34,7 +34,7 @@ void TypeChecker::visitInt(Maps *map, Node::Expr *expr) {
       integer->value < std::numeric_limits<signed long long int>::min()) {
     std::string msg = "Integer '" + std::to_string(integer->value) +
                       "' is out of range for an 'int' which is 64 bits";
-    handlerError(integer->line, integer->pos, msg, "", "Type Error");
+    handleError(integer->line, integer->pos, msg, "", "Type Error");
   }
 
   return_type = std::make_shared<SymbolType>("int");
@@ -49,7 +49,7 @@ void TypeChecker::visitFloat(Maps *map, Node::Expr *expr) {
       floating->value < std::numeric_limits<float>::min()) {
     std::string msg = "Float '" + std::to_string(floating->value) +
                       "' is out of range for a 'float' which is 32 bits";
-    handlerError(floating->line, floating->pos, msg, "", "Type Error");
+    handleError(floating->line, floating->pos, msg, "", "Type Error");
   }
 
   return_type = std::make_shared<SymbolType>("float");
@@ -105,7 +105,7 @@ void TypeChecker::visitIdent(Maps *map, Node::Expr *expr) {
     } else {
       msg = "Undefined variable '" + ident->name + "'";
     }
-    handlerError(ident->line, ident->pos, msg, "", "Symbol Table Error");
+    handleError(ident->line, ident->pos, msg, "", "Type Error");
     res = new SymbolType("unknown"); // return unknown type
   }
 
@@ -141,7 +141,7 @@ void TypeChecker::visitBinary(Maps *map, Node::Expr *expr) {
       expr->asmType = return_type.get();
     } else {
       std::string msg = "Unsupported binary operator: " + binary->op;
-      handlerError(binary->line, binary->pos, msg, "", "Type Error");
+      handleError(binary->line, binary->pos, msg, "", "Type Error");
       return_type = std::make_shared<SymbolType>("unknown");
       expr->asmType = return_type.get();
     }
@@ -158,14 +158,14 @@ void TypeChecker::visitUnary(Maps *map, Node::Expr *expr) {
     std::string msg = "Unary operation '" + unary->op +
                       "' requires the type to be an 'int' but got '" +
                       type_to_string(return_type.get()) + "'";
-    handlerError(unary->line, unary->pos, msg, "", "Type Error");
+    handleError(unary->line, unary->pos, msg, "", "Type Error");
   }
 
   if (unary->op == "!" && type_to_string(return_type.get()) != "bool") {
     std::string msg = "Unary operation '" + unary->op +
                       "' requires the type to be a 'bool' but got '" +
                       type_to_string(return_type.get()) + "'";
-    handlerError(unary->line, unary->pos, msg, "", "Type Error");
+    handleError(unary->line, unary->pos, msg, "", "Type Error");
   }
 
   // check for ++ and --
@@ -174,7 +174,7 @@ void TypeChecker::visitUnary(Maps *map, Node::Expr *expr) {
       std::string msg = "Unary operation '" + unary->op +
                         "' requires the type to be an 'int' but got '" +
                         type_to_string(return_type.get()) + "'";
-      handlerError(unary->line, unary->pos, msg, "", "Type Error");
+      handleError(unary->line, unary->pos, msg, "", "Type Error");
     }
   }
 
@@ -200,7 +200,7 @@ void TypeChecker::visitTernary(Maps *map, Node::Expr *expr) {
   if (type_to_string(return_type.get()) != "bool") {
     std::string msg = "Ternary condition must be a 'bool' but got '" +
                       type_to_string(return_type.get()) + "'";
-    handlerError(ternary->line, ternary->pos, msg, "", "Type Error");
+    handleError(ternary->line, ternary->pos, msg, "", "Type Error");
   }
 
   visitExpr(map, ternary->lhs);
@@ -216,7 +216,7 @@ void TypeChecker::visitTernary(Maps *map, Node::Expr *expr) {
   if (type_to_string(lhs.get()) != type_to_string(rhs.get())) {
     std::string msg =
         "Ternary operation requires both sides to be the same type";
-    handlerError(ternary->line, ternary->pos, msg, "", "Type Error");
+    handleError(ternary->line, ternary->pos, msg, "", "Type Error");
   }
 
   return_type = lhs;
@@ -239,7 +239,7 @@ void TypeChecker::visitAssign(Maps *map, Node::Expr *expr) {
     std::string msg =
         "Assignment requires both sides to be the same type and got '" +
         type_to_string(lhs.get()) + "' and '" + type_to_string(rhs.get()) + "'";
-    handlerError(assign->line, assign->pos, msg, "", "Type Error");
+    handleError(assign->line, assign->pos, msg, "", "Type Error");
   }
 
   return_type = lhs;
@@ -298,6 +298,7 @@ void TypeChecker::visitMember(Maps *map, Node::Expr *expr) {
     }
     // Determine if lhs is a struct or enum
     std::string typeKind = determineTypeKind(map, lhsType);
+
     if (typeKind == "struct") {
         processStructMember(map, member, name, lhsType);
     } else if (typeKind == "enum") {
@@ -317,7 +318,7 @@ void TypeChecker::visitArray(Maps *map, Node::Expr *expr) {
   // check if the array is empty
   if (array->elements.empty()) {
     std::string msg = "Array must have at least one element!";
-    handlerError(array->line, array->pos, msg, "", "Type Error");
+    handleError(array->line, array->pos, msg, "", "Type Error");
     return_type = std::make_shared<ArrayType>(array->type, 0);
     expr->asmType = return_type.get();
     return;
@@ -350,7 +351,7 @@ void TypeChecker::visitArray(Maps *map, Node::Expr *expr) {
             "Array elements must be of the same type but got '" +
             type_to_string(map->array_table[0]) + "' and '" +
             type_to_string(map->array_table[map->array_table.size() - 1]) + "'";
-        handlerError(array->line, array->pos, msg, "", "Type Error");
+        handleError(array->line, array->pos, msg, "", "Type Error");
       }
     }
   }
@@ -369,6 +370,11 @@ void TypeChecker::visitArray(Maps *map, Node::Expr *expr) {
   map->array_table.clear();
 }
 
+void TypeChecker::visitArrayType(Maps *map, Node::Type *type) {
+  ArrayType *array = static_cast<ArrayType *>(type);
+  return_type = std::make_shared<SymbolType>("[]" + type_to_string(array->underlying));
+}
+
 void TypeChecker::visitIndex(Maps *map, Node::Expr *expr) {
   IndexExpr *index = static_cast<IndexExpr *>(expr);
   visitExpr(map, index->lhs);
@@ -379,19 +385,32 @@ void TypeChecker::visitIndex(Maps *map, Node::Expr *expr) {
   if (type_to_string(idx.get()) != "int") {
     std::string msg = "Array index must be of type 'int' but got '" +
                       type_to_string(idx.get()) + "'";
-    handlerError(index->line, index->pos, msg, "", "Type Error");
+    handleError(index->line, index->pos, msg, "", "Type Error");
   }
 
   if (type_to_string(array.get()).find("[]") == std::string::npos) {
     std::string msg =
-        "Indexing requires the array to be of type '[]' but got '" +
+        "Indexing requires the lhs to be of type array but got '" +
         type_to_string(array.get()) + "'";
-    handlerError(index->line, index->pos, msg, "", "Type Error");
+    handleError(index->line, index->pos, msg, "", "Type Error");
   }
 
   return_type =
       std::make_shared<SymbolType>(type_to_string(array.get()).substr(2));
   expr->asmType = return_type.get();
+}
+
+void TypeChecker::visitArrayAutoFill(Maps *map, Node::Expr *expr) {
+  ArrayExpr *array = static_cast<ArrayExpr *>(expr);
+
+  // confirm that we have an elem and that is it 0
+  if (array->elements.size() != 1) {
+    std::string msg = "Auto-fill arrays must have an explicitly-defined length.";
+    handleError(array->line, array->pos, msg, "", "Type Error");
+    return_type = std::make_shared<ArrayType>(new SymbolType("unknown"), 0);
+    expr->asmType = return_type.get();
+    return;
+  }
 }
 
 void TypeChecker::visitCast(Maps *map, Node::Expr *expr) {
@@ -412,7 +431,7 @@ void TypeChecker::visitStructExpr(Maps *map, Node::Expr *expr) {
       map->struct_table.end()) {
     std::string msg = "Struct '" + struct_name +
                       "' is not defined in the scope.";
-    handlerError(struct_expr->line, struct_expr->pos, msg, "", "Type Error");
+    handleError(struct_expr->line, struct_expr->pos, msg, "", "Type Error");
     return_type = std::make_shared<SymbolType>("unknown");
     struct_expr->asmType = new SymbolType("struct-unknown");
     return;
@@ -425,7 +444,7 @@ void TypeChecker::visitStructExpr(Maps *map, Node::Expr *expr) {
                       "' requires " + std::to_string(struct_size) +
                       " elements but got " +
                       std::to_string(struct_expr->values.size());
-    handlerError(struct_expr->line, struct_expr->pos, msg, "", "Type Error");
+    handleError(struct_expr->line, struct_expr->pos, msg, "", "Type Error");
     return_type = std::make_shared<SymbolType>("unknown");
     struct_expr->asmType = new SymbolType("struct-unknown");
     return;
@@ -453,9 +472,9 @@ void TypeChecker::visitStructExpr(Maps *map, Node::Expr *expr) {
       }
       std::optional<std::string> closest = string_distance(known, name->name, 3);
       if (closest.has_value()) {
-        handlerError(struct_expr->line, struct_expr->pos, msg, "Did you mean '" + closest.value() + "'?", "Type Error");
+        handleError(struct_expr->line, struct_expr->pos, msg, "Did you mean '" + closest.value() + "'?", "Type Error");
       } else {
-        handlerError(struct_expr->line, struct_expr->pos, msg, "", "Type Error");
+        handleError(struct_expr->line, struct_expr->pos, msg, "", "Type Error");
       }
       return_type = std::make_shared<SymbolType>("unknown");
       struct_expr->asmType = new SymbolType("struct-unknown");
@@ -468,7 +487,7 @@ void TypeChecker::visitStructExpr(Maps *map, Node::Expr *expr) {
     if (checkReturnType(elem.second, expected) == nullptr) {
       std::string msg = "Struct element '" + name->name + "' requires type '" +
                         elem_type + "' but got '" + expected + "'";
-      handlerError(struct_expr->line, struct_expr->pos, msg, "", "Type Error");
+      handleError(struct_expr->line, struct_expr->pos, msg, "", "Type Error");
       return_type = std::make_shared<SymbolType>("unknown");
       return;
     }

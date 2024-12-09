@@ -9,13 +9,14 @@ Zura is a statically typed language that blends familiar syntax with modern cons
 3. [Variables](#variables)
 4. [Functions](#functions)
 5. [Loops and Conditionals](#loops-and-conditionals)
-6. [Structures](#structures)
-7. [Enums](#enums)
-8. [Templates](#templates)
-9. [Casting](#casting)
-10. [Built-in Functions](#built-in-functions)
+6. [Arrays](#arrays)
+7. [Structures](#structures)
+8. [Enums](#enums)
+9. [Templates](#templates)
+10. [Casting](#casting)
 11. [Pointers](#pointers)
-12. [Debugging Zura](#debug-mode)
+12. [Built-in Functions](#built-in-functions)
+13. [Debugging Zura](#debug-mode)
 
 ## Basic Syntax
 
@@ -115,6 +116,28 @@ if (x > 10) {
    dis("x <= 10\n");
 }
 ```
+
+## Arrays
+
+Zura supports arrays which are fixed-size collections of elements of the same type. Arrays are defined using square brackets `[]`.
+
+```cpp
+have arr: [5]int = [1, 2, 3, 4, 5];
+```
+
+You can also define arrays with a specific size and fill them with a default value.
+
+```cpp
+have arr: [5]int = [0];
+```
+
+You can access elements of an array using the square bracket operator `[]`.
+
+```cpp
+have x: int = arr[0];
+```
+
+There is more to come like; push, pop, and other array operations.
 
 ## Structures
 

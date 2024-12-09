@@ -1,3 +1,4 @@
+#include "../helper/error/error.hpp"
 #include "../ast/types.hpp"
 #include "parser.hpp"
 
@@ -32,8 +33,19 @@ Node::Type *Parser::array_type(PStruct *psr) {
   }
   psr->expect(psr, TokenKind::RIGHT_BRACKET,
               "Expected a right bracket after an array type!");
+
+  // Expect the type of the array
+  if (psr->current(psr).kind != TokenKind::IDENTIFIER) {
+    std::string msg = "Expected a type for the array!";
+    ErrorClass::error(psr->current(psr).line, psr->current(psr).column, msg, "",
+                        "Parser Error", node.current_file, lexer, psr->tks, true, false,
+                        false, false, false, false);
+    return nullptr;
+  }
+   
+  // Else you are good and can continue
   Node::Type *underlying = parseType(psr, defaultValue);
-  return new ArrayType(underlying, -1); // -1 is a variable-length array
+  return new ArrayType(underlying, -1); // -1 is a any-length array
 }
 
 Node::Type *Parser::pointer_type(PStruct *psr) {

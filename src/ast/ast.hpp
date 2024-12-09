@@ -19,6 +19,7 @@ enum NodeKind {
   ND_GROUP, // (x + 12)
   ND_ARRAY, // [x, 12]
   ND_INDEX, // x[12]
+  ND_ARRAY_AUTO_FILL, // x: [5]int = {0}
   ND_POP, // x.pop
   ND_PUSH, // x.push
   ND_CALL, // x()

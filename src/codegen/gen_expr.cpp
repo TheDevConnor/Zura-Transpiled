@@ -1,6 +1,7 @@
 #include "gen.hpp"
 #include "optimizer/instr.hpp"
 #include "optimizer/compiler.hpp"
+#include <string>
 
 void codegen::visitExpr(Node::Expr *expr) {
   // Optimize the expression before we handle it!
@@ -335,22 +336,15 @@ void codegen::assign(Node::Expr *expr) {
   if (e->assignee->kind == ND_MEMBER || e->rhs->kind == ND_STRUCT) {
     assignStructMember(e);
     return;
-  }
+  } else if (e->assignee->kind == ND_INDEX || e->rhs->kind == ND_ARRAY) {
+    assignArray(e);
+    return;
+  };
   IdentExpr *lhs = static_cast<IdentExpr *>(e->assignee);
   visitExpr(e->rhs);
   std::string res = variableTable[lhs->name];
   popToRegister(res);
   pushRegister(res); // Expressions return values!
-}
-
-void codegen::_arrayExpr(Node::Expr *expr) {
-  ArrayExpr *e = static_cast<ArrayExpr *>(expr);
-  std::cerr
-      << "No fancy error for this, beg Connor... (Soviet Pancakes speaking)"
-      << std::endl;
-  std::cerr << "Array expression not implemented! (Type: NodeKind["
-            << (int)e->type->kind << "])" << std::endl;
-  exit(-1);
 }
 
 void codegen::arrayElem(Node::Expr *expr) {
@@ -365,7 +359,7 @@ void codegen::arrayElem(Node::Expr *expr) {
     Node::Type *underlying = static_cast<ArrayType *>(array->type)->underlying;
     if (e->lhs->kind == ND_IDENT) {
       std::string whereBytes = variableTable[static_cast<IdentExpr *>(e->lhs)->name];
-      int offset = std::stoi(whereBytes.substr(0, whereBytes.find("(")));
+      int offset = std::stoi(whereBytes.substr(0, whereBytes.find("("))); // this is the base of the array - the first byte of the first element
       offset -= (index->value * getByteSizeOfType(underlying));
       pushRegister(std::to_string(offset) + "(%rbp)");
     } else {
@@ -419,6 +413,13 @@ void codegen::arrayElem(Node::Expr *expr) {
   // the end!
 }
 
+// z: [1, 2, 3, 4, 5]
+void codegen::_arrayExpr(Node::Expr *expr) { 
+  auto e = static_cast<ArrayExpr *>(expr);
+  pushDebug(e->line, expr->file_id, e->pos); // k ping me on discord if you need help, i am going to be studying for a bit
+
+}
+
 void codegen::memberExpr(Node::Expr *expr) {
   MemberExpr *e = static_cast<MemberExpr *>(expr);
   pushDebug(e->line, expr->file_id, e->pos);
@@ -455,6 +456,15 @@ void codegen::memberExpr(Node::Expr *expr) {
     std::string fieldName = static_cast<IdentExpr *>(e->rhs)->name;
     for (int i = 0; i < fields.size(); i++) {
       if (fields[i].first == fieldName) {
+        // Check if the type of the member is another struct
+        Node::Type *fieldType = fields[i].second.first;
+        if (fieldType->kind == ND_SYMBOL_TYPE && (structByteSizes.find(getUnderlying(fieldType)) != structByteSizes.end())) {
+          // It was a struct!
+          // We have to return the ADDRESS of this node here!
+          push(Instr{.var=LeaInstr{.size=DataSize::Qword,.dest="%rcx",.src=std::to_string(8-fields[i].second.second)+"(%rcx)"}, .type=InstrType::Lea},Section::Main);
+          pushRegister("%rcx");
+          return;
+        }
         // push the value at this offset
         int offset = 8 - fields[i].second.second;
         if (offset == 0)
@@ -612,6 +622,46 @@ void codegen::assignStructMember(Node::Expr *expr) {
     push(Instr{.var=LeaInstr{.size=DataSize::Qword,.dest="%rcx",.src=variableTable[static_cast<IdentExpr *>(e->assignee)->name]},.type=InstrType::Lea},Section::Main);
     pushRegister("%rcx");
   }
+};
+
+void codegen::assignArray(Node::Expr *expr) {
+  AssignmentExpr *assign = static_cast<AssignmentExpr *>(expr);
+  if (assign->assignee->kind == ND_INDEX) {
+    IndexExpr *e = static_cast<IndexExpr *>(assign->assignee);
+    IntExpr *index = static_cast<IntExpr *>(e->rhs);
+    int idx = index->value;
+    // lhs is likely an identifier to an array
+    // it doesn't matter for this example, though
+    visitExpr(e->lhs);
+    popToRegister("%rcx"); // rcx now has the base of the array
+    int size = getByteSizeOfType(e->lhs->asmType);
+    int offset = idx * size;
+    visitExpr(e->rhs);
+    popToRegister(std::to_string(offset) + "(%rcx)");
+    // Push the value again
+    pushRegister(std::to_string(offset) + "(%rcx)");
+    return;
+  } else if (assign->rhs->kind == ND_ARRAY) {
+    // assume that the bytes are already allocated for us
+    // (for example, in a sub from rax or from the member of a struct)
+    if (assign->assignee->asmType->kind == ND_ARRAY_TYPE) {
+      // array = array
+      // Go through each member of the first array and override with the second.
+      visitExpr(assign->assignee);
+      PushInstr instr = std::get<PushInstr>(text_section.at(text_section.size() - 1).var);
+      text_section.pop_back();
+      push(Instr{.var=LeaInstr{.size=DataSize::Qword,.dest="%rcx",.src=instr.what}, .type = InstrType::Lea},Section::Main);
+      ArrayExpr *rhs = static_cast<ArrayExpr *>(assign->rhs);
+      for (int i = 0; i < rhs->elements.size(); i++) {
+        visitExpr(rhs->elements.at(i));
+        popToRegister(std::to_string(-i * getByteSizeOfType(rhs->type)) + "(%rcx)");
+      }
+      // push the base of the array
+      pushRegister("%rcx");
+      return;
+    }
+  }
+  // I think that's it??!!!
 };
 
 void codegen::nullExpr(Node::Expr *expr) {

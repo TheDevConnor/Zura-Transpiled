@@ -133,6 +133,11 @@ Node::Expr *Parser::array(PStruct *psr) {
   psr->expect(psr, TokenKind::RIGHT_BRACKET,
               "Expected a R_Bracket to end an array expr!");
 
+  // check if the array has only one elem and that the elem is equal to 0
+  // if its an array of bools or chars that will also seg
+  if (elements.size() == 1 && static_cast<IntExpr*>(elements.at(0))->value == 0) {
+    return new ArrayAutoFill(line, column, codegen::getFileID(psr->current_file));
+  }
   return new ArrayExpr(line, column, nullptr, elements, codegen::getFileID(psr->current_file));
 }
 

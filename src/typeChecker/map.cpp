@@ -48,6 +48,7 @@ std::vector<std::pair<NodeKind, TypeChecker::ExprNodeHandler>>
         {NodeKind::ND_ASSIGN, visitAssign},
         {NodeKind::ND_ARRAY, visitArray},
         {NodeKind::ND_INDEX, visitIndex},
+        {NodeKind::ND_ARRAY_AUTO_FILL, visitArrayAutoFill},
         {NodeKind::ND_PREFIX, visitUnary},
         {NodeKind::ND_POSTFIX, visitUnary},
         {NodeKind::ND_CAST, visitCast},
@@ -87,21 +88,21 @@ void TypeChecker::declare_fn(Maps *maps, const std::pair<std::string, Node::Type
 
   if (res != maps->function_table.end()) {
     std::string msg = "Function '" + pair.first + "' is already defined";
-    handlerError(line, pos, msg, "", "Symbol Table Error");
+    handleError(line, pos, msg, "", "Type Error");
   }
 
   if (pair.first == "main") {
     if (foundMain) {
-      std::string msg = "Main function is already defined";
-      handlerError(line, pos, msg, "", "Symbol Table Error");
+      std::string msg = "Entry (main) function is already defined";
+      handleError(line, pos, msg, "", "Type Error");
     }
     if (type_to_string(pair.second) != "int") {
       std::string msg = "Main function must return an int";
-      handlerError(line, pos, msg, "", "Symbol Table Error");
+      handleError(line, pos, msg, "", "Type Error");
     }
     if (paramTypes.size() != 0) {
       std::string msg = "Main function must not have any parameters";
-      handlerError(line, pos, msg, "", "Symbol Table Error");
+      handleError(line, pos, msg, "", "Type Error");
     }
     maps->function_table.push_back({pair, paramTypes});
     foundMain = true;
@@ -122,7 +123,7 @@ FnVector TypeChecker::lookup_fn(Maps *maps, std::string name, int line, int pos)
   }
 
   std::string msg = "Function '" + name + "' is not defined";
-  handlerError(line, pos, msg, "", "Symbol Table Error");
+  handleError(line, pos, msg, "", "Type Error");
   return {};
 }
 

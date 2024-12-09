@@ -9,7 +9,7 @@ void TypeChecker::performCheck(Node::Stmt *stmt, bool isMain) {
 
   if (!foundMain && isMain) {
     std::cout << "No main function found" << std::endl;
-    handlerError(0, 0, "No main function found",
+    handleError(0, 0, "No main function found",
                  "Try adding this function: \n\tconst main := fn() int { \n\t  "
                  "  return 0\n\t}",
                  "Type Error");

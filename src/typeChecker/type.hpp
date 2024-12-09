@@ -15,7 +15,9 @@
 
 namespace TypeChecker {
 extern std::string struct_name;
-void handlerError(int line, int pos, std::string msg, std::string note,
+extern bool isType;
+
+void handleError(int line, int pos, std::string msg, std::string note,
                   std::string typeOfError);
 
 struct Maps {
@@ -62,7 +64,7 @@ static void declare(std::unordered_map<T, U> &tables, std::string name, U value,
   typename std::unordered_map<T, U>::iterator res = tables.find(name);
   if (res != tables.end()) {
     std::string msg = "'" + name + "' is already defined as a '" + type_to_string(res->second) + "' in the symbol table";
-    handlerError(line, pos, msg, "", "Symbol Table Error");
+    handleError(line, pos, msg, "", "Type Error");
     return;
   }
   tables[name] = value;
@@ -76,7 +78,7 @@ static Node::Type *lookup(std::unordered_map<T, U> &tables, std::string name,
     return res;
 
   std::string msg = "'" + name + "' is not defined in the " + tableType;
-  handlerError(line, pos, msg, "", "Symbol Table Error");
+  handleError(line, pos, msg, "", tableType + " Error");
   return new SymbolType("unknown");
 }
 
@@ -116,6 +118,8 @@ bool validateArgumentCount(CallExpr *call, const std::string &functionName,
                                         const std::vector<std::pair<std::string, Node::Type *>> &fnParams);
 bool validateArgumentTypes(Maps *map, CallExpr *call, const std::string &functionName,
                                         const std::vector<std::pair<std::string, Node::Type *>> &fnParams);
+
+void visitArrayType(Maps *map, Node::Type *type);
 
 // !TypeChecker functions
 using StmtNodeHandler = std::function<void(Maps *map, Node::Stmt *)>;
@@ -165,6 +169,7 @@ void visitMember(Maps *map, Node::Expr *expr);
 void visitAssign(Maps *map, Node::Expr *expr);
 void visitArray(Maps *map, Node::Expr *expr);
 void visitIndex(Maps *map, Node::Expr *expr);
+void visitArrayAutoFill(Maps *map, Node::Expr *expr);
 void visitCast(Maps *map, Node::Expr *expr);
 void visitExternalCall(Maps *map, Node::Expr *expr);
 void visitStructExpr(Maps *map, Node::Expr *expr);

@@ -41,7 +41,7 @@ void codegen::gen(Node::Stmt *stmt, bool isSaved, std::string output_filename,
   // rodata section cant be optimized either
 
   std::ofstream file(output_filename + ".s");
-  if (!file.is_open()) handlerError(0, 0,
+  if (!file.is_open()) handleError(0, 0,
               "Unable to open output file for finalized assembly '" +
                   output_filename +
                   ".s' - ensure Zura has permissions to write/create files", "Codegen Error");

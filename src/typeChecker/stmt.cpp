@@ -23,7 +23,7 @@ void TypeChecker::visitProgram(Maps *map, Node::Stmt *stmt) {
       VarStmt *var = static_cast<VarStmt *>(stmt);
       if (var->expr == nullptr) {
         std::string msg = "Global variables must be initialized";
-        handlerError(var->line, var->pos, msg, "", "Type Error");
+        handleError(var->line, var->pos, msg, "", "Type Error");
       }
       break;
     }
@@ -32,7 +32,7 @@ void TypeChecker::visitProgram(Maps *map, Node::Stmt *stmt) {
     case NodeKind::ND_IF_STMT: {
       std::string msg = "Loops and if statements are not allowed in the global "
                         "scope";
-      handlerError(0, 0, msg, "", "Type Error");
+      handleError(0, 0, msg, "", "Type Error");
       break;
     }
     default:
@@ -66,7 +66,7 @@ void TypeChecker::visitFn(Maps *map, Node::Stmt *stmt) {
   if (return_type == nullptr) {
     // throw an error (but this should not happen ever)
     std::string msg = "return_type is not defined";
-    handlerError(fn_stmt->line, fn_stmt->pos, msg, "", "Type Error");
+    handleError(fn_stmt->line, fn_stmt->pos, msg, "", "Type Error");
   }
 
   if (type_to_string(fn_stmt->returnType) == "void") {
@@ -84,12 +84,12 @@ void TypeChecker::visitFn(Maps *map, Node::Stmt *stmt) {
   if (!needsReturn && type_to_string(fn_stmt->returnType) != "void") {
     std::string msg = "Function '" + fn_stmt->name + "' requeries a return stmt "
                       "but none was found";
-    handlerError(fn_stmt->line, fn_stmt->pos, msg, "", "Type Error");
+    handleError(fn_stmt->line, fn_stmt->pos, msg, "", "Type Error");
     return;
   }
 
   std::string msg = "Function '" + fn_stmt->name +
-                    "' requeries a retrun type of '" +
+                    "' requeries a return type of '" +
                     type_to_string(fn_stmt->returnType) + "' but got '" +
                     type_to_string(return_type.get()) + "' instead.";
   auto check = checkTypeMatch(
@@ -154,7 +154,7 @@ void TypeChecker::visitEnum(Maps *map, Node::Stmt *stmt) {
 
   if (enum_stmt->fields.empty()) {
     std::string msg = "Enum '" + enum_stmt->name + "' must have at least one field";
-    handlerError(enum_stmt->line, enum_stmt->pos, msg, "", "Type Error");
+    handleError(enum_stmt->line, enum_stmt->pos, msg, "", "Type Error");
   }
 
   // visit the fields Aka the variables
@@ -175,7 +175,7 @@ void TypeChecker::visitIf(Maps *map, Node::Stmt *stmt) {
   if (type_to_string(return_type.get()) != "bool") {
     std::string msg = "If condition must be a 'bool' but got '" +
                       type_to_string(return_type.get()) + "'";
-    handlerError(if_stmt->line, if_stmt->pos, msg, "", "Type Error");
+    handleError(if_stmt->line, if_stmt->pos, msg, "", "Type Error");
   }
   visitStmt(map, if_stmt->thenStmt);
   if (if_stmt->elseStmt != nullptr) {
@@ -214,7 +214,7 @@ void TypeChecker::visitVar(Maps *map, Node::Stmt *stmt) {
       std::string msg = "Variable '" + var_stmt->name + "' must be a '" +
                         type_to_string(var_stmt->type) + "' but got '" +
                         type_to_string(return_type.get()) + "'";
-      handlerError(var_stmt->line, var_stmt->pos, msg, "", "Type Error");
+      handleError(var_stmt->line, var_stmt->pos, msg, "", "Type Error");
     }
   }
 
@@ -279,7 +279,7 @@ void TypeChecker::visitFor(Maps *map, Node::Stmt *stmt) {
   if (type_to_string(return_type.get()) != "bool") {
     std::string msg = "For loop condition must be a 'bool' but got '" +
                       type_to_string(return_type.get()) + "'";
-    handlerError(for_stmt->line, for_stmt->pos, msg, "", "Type Error");
+    handleError(for_stmt->line, for_stmt->pos, msg, "", "Type Error");
   }
 
   // Now check if we have the increment in an optional parameter
@@ -305,7 +305,7 @@ void TypeChecker::visitWhile(Maps *map, Node::Stmt *stmt) {
   if (type_to_string(return_type.get()) != "bool") {
     std::string msg = "While loop condition must be a 'bool' but got '" +
                       type_to_string(return_type.get()) + "'";
-    handlerError(while_stmt->line, while_stmt->pos, msg, "", "Type Error");
+    handleError(while_stmt->line, while_stmt->pos, msg, "", "Type Error");
   }
 
   // now we visit the block
@@ -324,9 +324,8 @@ void TypeChecker::visitImport(Maps *map, Node::Stmt *stmt) {
   // check if the import is already in the global table
   std::unordered_map<std::string, Node::Type *>::iterator res = map->global_symbol_table.find(import_stmt->name);
   if (res != map->global_symbol_table.end()) {
-    std::string msg = "'" + import_stmt->name + "' is already defined in the "
-                      "global symbol table";
-    handlerError(import_stmt->line, import_stmt->pos, msg, "", "Symbol Table Error");
+    std::string msg = "'" + import_stmt->name + "' has already been imported.";
+    handleError(import_stmt->line, import_stmt->pos, msg, "", "Type Error");
   }
 
   // add the import to the global table

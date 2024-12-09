@@ -3,14 +3,12 @@
 #include "optimizer/instr.hpp"
 #include <fstream>
 
-/*
- * Haha, connor mispelled this
-*/
-void codegen::handlerError(int line, int pos, std::string msg,
-                           std::string typeOfError) {
+
+void codegen::handleError(int line, int pos, std::string msg,
+                           std::string typeOfError, bool isFatal) {
   Lexer lexer; // dummy lexer
   ErrorClass::error(line, pos, msg, "", typeOfError, node.current_file, lexer,
-                    node.tks, false, false, false, 
+                    node.tks, false, false, isFatal,
                     false, false, true);
 }
 
@@ -192,7 +190,7 @@ bool codegen::execute_command(const std::string &command,
   std::string log_contents = "";
 
   if (!log.is_open()) {
-    handlerError(0, 0, "Error opening log file: " + log_file, "Codegen Error");
+    handleError(0, 0, "Error opening log file: " + log_file, "Codegen Error");
     return false;
   }
   
@@ -210,7 +208,7 @@ bool codegen::execute_command(const std::string &command,
   log.close();
 
   if (result != 0) {
-    handlerError(0, 0,
+    handleError(0, 0,
                  "Error executing command: " + command + "\n\t" + log_contents,
                  "Codegen Error");
     return false;
@@ -301,6 +299,7 @@ signed short int codegen::getByteSizeOfType(Node::Type *type) {
     return -1;
   }
   // Unreachable!
+  return -1;
 };
 
 std::string codegen::getUnderlying(Node::Type *type) {
@@ -318,8 +317,9 @@ std::string codegen::getUnderlying(Node::Type *type) {
     return s->name; // The end!
   }
   // Unreachable!
-  std::cout << "REached the end fucking asfelf" << std::endl;
+  std::cout << "Unreachable code ... well, reached!" << std::endl;
   std::cout << std::to_string((int)type->kind) << std::endl;
+  return "";
 };
 
 std::string codegen::type_to_diename(Node::Type *type) {

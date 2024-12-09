@@ -360,6 +360,27 @@ public:
   ~IndexExpr() = default; // rule of threes
 };
 
+// have x: [4]int = [0]; # Auto fills the array with bytes of 0.
+class ArrayAutoFill : public Node::Expr {
+public:
+  int line, pos;
+
+  ArrayAutoFill(int line, int pos, int file)
+      : line(line), pos(pos) {
+    file_id = file;
+    kind = NodeKind::ND_ARRAY_AUTO_FILL;
+    asmType = new SymbolType("int");
+  }
+
+  void debug(int indent = 0) const override {
+    Node::printIndent(indent);
+    std::cout << "ArrayAutoFill: \n";
+    Node::printIndent(indent + 1);
+  }
+
+  ~ArrayAutoFill() = default; // rule of threes
+};
+
 class PopExpr : public Node::Expr {
 public:
   int line, pos;

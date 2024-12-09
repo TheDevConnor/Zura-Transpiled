@@ -85,8 +85,9 @@ void addressExpr(Node::Expr *expr);
 void nullExpr(Node::Expr *expr);
 
 void assignStructMember(Node::Expr *expr);
-void declareStructVariable(Node::Expr *expr, std::string structName, std::string varName);
-void declareArrayVariable(Node::Expr *expr, std::string underlying, std::string varName);
+void assignArray(Node::Expr *expr);
+void declareStructVariable(Node::Expr *expr, std::string structName, int whereToPut);
+void declareArrayVariable(Node::Expr *expr, short int arrayLength, std::string varName);
 
 int convertFloatToInt(float input); // Float input. Crazy, right?
 
@@ -241,5 +242,5 @@ JumpCondition getJumpCondition(const std::string &op);
 
 bool execute_command(const std::string &command, const std::string &log_file);
 void gen(Node::Stmt *stmt, bool isSaved, std::string output, const char* filename, bool isDebug);
-void handlerError(int line, int pos, std::string msg, std::string typeOfError);
+void handleError(int line, int pos, std::string msg, std::string typeOfError, bool isFatal = false);
 } // namespace codegen
