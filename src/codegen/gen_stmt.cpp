@@ -711,27 +711,45 @@ void codegen::declareStructVariable(Node::Expr *expr, std::string structName, in
         declareStructVariable(field.second, getUnderlying(fieldType), whereToPut + structByteSizes[structName].second.at(i).second.second);
         continue;
       }
-      // Check if the kind is an identifier, but still a struct
+      // x = {
+      //   a: OtherStructThatAlreadyExists;
+      // }
       if (field.second->kind == ND_IDENT) {
         // Load each individual field of the ident struct into this new struct
         // This is a bit of a hack, but it works.
         IdentExpr *ident = static_cast<IdentExpr *>(field.second);
         std::string where = variableTable[ident->name];
-        int fieldOffset = structByteSizes[structName].second.at(i).second.second;
-        int variableOffset = -std::stoi(where.substr(0, where.find('(')));
-        // Now we need to go through each field of that struct
-        Node::Type *fieldType = structByteSizes[structName].second.at(i).second.first;
-        for (int j = 0; j < structByteSizes[getUnderlying(fieldType)].second.size(); j++) {
-          // What if that field has a struct, too?
-          if (structByteSizes.find(getUnderlying(fieldType)) != structByteSizes.end()) {
-            // It's of type struct!
-            // Basically ignore the part where we allocate memory for this thing.
-            declareStructVariable(field.second, getUnderlying(fieldType), whereToPut + structByteSizes[structName].second.at(i).second.second);
-            continue;
-          }
-          // Get the data stored in the field
-          moveRegister("%rax", std::to_string(variableOffset - j * 8) + "(%rbp)", DataSize::Qword, DataSize::Qword);
+        int structFieldSize = structByteSizes[structName].second.at(i).second.second;
+        // Get the offset - this will be the sum of all previous fieldSizes
+        int offset = 0;
+        if (i != 0) for (int j = 0; j < i; j++) {
+          offset += structByteSizes[structName].second.at(j).second.second;
         }
+        int fieldVarOffset = std::stoi(where.substr(0, where.find('(')));
+        // Put the identifer address into rcx
+        visitExpr(ident);
+        popToRegister("%rcx");
+
+        // Go through each field of the field
+        // and basically move the value into the new one
+        for (int j = 0; j < structByteSizes[getUnderlying(fieldType)].second.size(); j++) {
+          push(Instr{.var=Comment{.comment="Move field '" + structByteSizes[getUnderlying(fieldType)].second[j].first + 
+            "' of " + ident->name + " to field '" + structByteSizes[structName].second.at(i).first + "' of '" + structName + "'"}, .type=InstrType::Comment}, Section::Main);
+          // From - relative to rcx, the base of the identifier struct
+          std::string from = std::to_string(-(fieldVarOffset + structByteSizes[getUnderlying(fieldType)].second[j].second.second)) + "(%rcx)";
+          // To - relative to rbp, PLUS the base of the new struct
+          int subFieldOffset = 0;
+          if (j != 0) for (int k = 0; k < j; k++) {
+            // Don't ask. Please, this is so bad...
+            subFieldOffset += structByteSizes[getUnderlying(structByteSizes[structName].second[i].second.first)].second[i].second.second;
+          }
+          std::string to = std::to_string(-(whereToPut+subFieldOffset)) + "(%rbp)";
+          pushRegister(from);
+          popToRegister(to);
+
+          // Optimizer will handle the intermediate motions of the values
+        }
+        continue; // Do not just push the address here :)
       }
     }
     // Evaluate the expression

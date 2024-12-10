@@ -1,5 +1,6 @@
 const Inside := struct {
   x: int;
+  y: int;
 };
 
 const Outside := struct {
@@ -7,12 +8,12 @@ const Outside := struct {
 };
 
 const main := fn () int {
-  have hehe: Inside = { 
-    x: 42
-  };
   have HAHA: Outside = {
-    a: hehe
+    a: { 
+      x: 42,
+      y: 17
+    }
   };
 
-  return 1;
+  return HAHA.a.x;
 };

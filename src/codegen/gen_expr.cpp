@@ -461,12 +461,19 @@ void codegen::memberExpr(Node::Expr *expr) {
         if (fieldType->kind == ND_SYMBOL_TYPE && (structByteSizes.find(getUnderlying(fieldType)) != structByteSizes.end())) {
           // It was a struct!
           // We have to return the ADDRESS of this node here!
-          push(Instr{.var=LeaInstr{.size=DataSize::Qword,.dest="%rcx",.src=std::to_string(8-fields[i].second.second)+"(%rcx)"}, .type=InstrType::Lea},Section::Main);
+          int offset = 0;
+          if (i != 0) for (int j = 0; j < i; j++) {
+            offset += fields[i].second.second;
+          }
+          push(Instr{.var=LeaInstr{.size=DataSize::Qword,.dest="%rcx",.src=std::to_string(offset)+"(%rcx)"}, .type=InstrType::Lea},Section::Main);
           pushRegister("%rcx");
           return;
         }
         // push the value at this offset
-        int offset = 8 - fields[i].second.second;
+        int offset = 0;
+        if (i != 0) for (int j = 0; j < i; j++) {
+          offset += fields[i].second.second;
+        }
         if (offset == 0)
           pushRegister("(%rcx)");
         else

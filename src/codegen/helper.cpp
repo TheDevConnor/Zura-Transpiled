@@ -278,7 +278,7 @@ signed short int codegen::getByteSizeOfType(Node::Type *type) {
     // Get the size of the underlying type
     // multiply by # of elements
     ArrayType *arr = static_cast<ArrayType *>(type);
-    return getByteSizeOfType(arr->underlying) /* * arr->size */; 
+    return getByteSizeOfType(arr->underlying) * std::max(arr->constSize, (signed short int)1); 
   }
   if (type->kind == NodeKind::ND_SYMBOL_TYPE) {
     SymbolType *sym = static_cast<SymbolType *>(type);
