@@ -67,32 +67,59 @@ std::string TypeChecker::determineTypeKind(Maps *map, const std::string &type) {
 }
 
 void TypeChecker::processStructMember(Maps *map, MemberExpr *member, const std::string &name, std::string lhsType) {
+  std::cout << "Processing struct member" << std::endl;
+
   std::string realType = lhsType;
   if (lhsType.find('*') == 0) {
     realType = lhsType.substr(1);
   }
-  const std::vector<std::pair<std::string, Node::Type *>> &fields = map->struct_table[realType];
-  const std::vector<std::pair<std::string, Node::Type *>>::const_iterator res = std::find_if(fields.begin(), fields.end(),
-                          [&member](const std::pair<std::string, Node::Type *> &field) {
-                              return field.first == static_cast<IdentExpr *>(member->rhs)->name;
-                          });
-  if (res == fields.end()) {
-      std::string msg = "Type '" + lhsType + "' does not have member '" +
-                        static_cast<IdentExpr *>(member->rhs)->name + "'";
-      handleError(member->line, member->pos, msg, "", "Type Error");
-      return_type = std::make_shared<SymbolType>("unknown");
-      return;
-  }
 
-  // if the member expr returns a struct,
-  // append struct- to the start of the asmtype
-  return_type = std::make_shared<SymbolType>(type_to_string(res->second));
-  if (map->struct_table.find(type_to_string(res->second)) != map->struct_table.end()) {
-    member->asmType = new SymbolType("struct-" + type_to_string(return_type.get()));
+  // check if we are in the struct_table_fn or struct_table
+  if (map->struct_table.find(realType) != map->struct_table.end()) {
+    const std::vector<std::pair<std::string, Node::Type *>> &fields = map->struct_table[realType];
+    const std::vector<std::pair<std::string, Node::Type *>>::const_iterator res = std::find_if(fields.begin(), fields.end(),
+                            [&member](const std::pair<std::string, Node::Type *> &field) {
+                                return field.first == static_cast<IdentExpr *>(member->rhs)->name;
+                            });
+    if (res == fields.end()) {
+        std::string msg = "Type '" + lhsType + "' does not have member '" +
+                          static_cast<IdentExpr *>(member->rhs)->name + "'";
+        handleError(member->line, member->pos, msg, "", "Type Error");
+        return_type = std::make_shared<SymbolType>("unknown");
+        return;
+    }
+
+    // if the member expr returns a struct,
+    // append struct- to the start of the asmtype
+    return_type = std::make_shared<SymbolType>(type_to_string(res->second));
+    if (map->struct_table.find(type_to_string(res->second)) != map->struct_table.end()) {
+      member->asmType = new SymbolType("struct-" + type_to_string(return_type.get()));
+    } else {
+      member->asmType = return_type.get();
+    }
   } else {
-    member->asmType = return_type.get();
-  }
+    auto fields = map->struct_table_fn[realType];
+    auto res = std::find_if(fields.begin(), fields.end(),
+                            [&member](const std::pair<std::string, Node::Type *> &field) {
+                                return field.first == static_cast<IdentExpr *>(member->rhs)->name;
+                            });
+    if (res == fields.end()) {
+        std::string msg = "Type '" + lhsType + "' does not have member '" +
+                          static_cast<IdentExpr *>(member->rhs)->name + "'";
+        handleError(member->line, member->pos, msg, "", "Type Error");
+        return_type = std::make_shared<SymbolType>("unknown");
+        return;
+    }
 
+    // if the member expr returns a struct,
+    // append struct- to the start of the asmtype
+    return_type = std::make_shared<SymbolType>(type_to_string(res->first.second));
+    if (map->struct_table.find(type_to_string(res->first.second)) != map->struct_table.end()) {
+      member->asmType = new SymbolType("struct-" + type_to_string(return_type.get()));
+    } else {
+      member->asmType = return_type.get();
+    }
+  }
 }
 
 void TypeChecker::processEnumMember(Maps *map, MemberExpr *member, const std::string &lhsType) {

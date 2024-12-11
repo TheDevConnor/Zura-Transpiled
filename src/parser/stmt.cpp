@@ -215,6 +215,26 @@ Node::Stmt *Parser::structStmt(PStruct *psr, std::string name) {
           psr->expect(psr, TokenKind::IDENTIFIER,
                       "Expected an IDENTIFIER as a field name in a struct stmt")
               .value;
+
+      // Check if the field is a fn, enum, struct, or union
+      if (psr->current(psr).kind == TokenKind::WALRUS) {
+        // Parse as if it is an actual function
+        psr->advance(psr); // Consume detected :=
+        switch (psr->current(psr).kind) {
+        case TokenKind::FUN:
+          stmts.push_back(funStmt(psr, fieldName));
+          break; 
+        default:
+          std::string msg = "Structs only take in fields, structs, and functions. ";
+          msg += "Found unexpected token: " + psr->current(psr).value;
+          ErrorClass::error(line, column, msg, "", "Parser Error",
+                            psr->current_file.c_str(), lexer, psr->tks, true,
+                            false, false, false, false, false);
+          break;
+        }
+        break;
+      }
+      
       psr->expect(psr, TokenKind::COLON,
                   "Expected a COLON after the field name in a struct stmt");
       Node::Type *fieldType = parseType(psr, BindingPower::defaultValue);
@@ -223,10 +243,11 @@ Node::Stmt *Parser::structStmt(PStruct *psr, std::string name) {
                   "Expected a SEMICOLON after the field type in a struct stmt");
       break;
     }
-    case TokenKind::SEMICOLON:
+    case TokenKind::SEMICOLON: {
       psr->expect(psr, TokenKind::SEMICOLON,
                   "Expected a SEMICOLON after a field in a struct stmt");
       break;
+    }
     case TokenKind::_CONST:
       stmts.push_back(constStmt(psr, name));
       break;

@@ -5,8 +5,7 @@
 
 void TypeChecker::performCheck(Node::Stmt *stmt, bool isMain) {
   std::unique_ptr<Maps> map = std::make_unique<Maps>();
-  visitStmt(map.get(), stmt); // Pass the instance of Maps to visitStmt
-
+  visitStmt(map.get(), stmt); // Pass the instance of Maps to visitStmt 
   if (!foundMain && isMain) {
     std::cout << "No main function found" << std::endl;
     handleError(0, 0, "No main function found",
@@ -15,4 +14,3 @@ void TypeChecker::performCheck(Node::Stmt *stmt, bool isMain) {
                  "Type Error");
   }
 }
-

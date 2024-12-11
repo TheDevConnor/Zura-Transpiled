@@ -707,8 +707,12 @@ void codegen::declareStructVariable(Node::Expr *expr, std::string structName, in
           }
         }
         */
-        // Basically ignore the part where we allocate memory for this thing.
-        declareStructVariable(field.second, getUnderlying(fieldType), whereToPut + structByteSizes[structName].second.at(i).second.second);
+        int offset = 0;
+        if (i != 0) for (int j = 0; j < i; j++) {
+          offset += structByteSizes[structName].second.at(j).second.second;
+        }
+        // Avoid doing extra work even though we are literally recursioning
+        declareStructVariable(field.second, getUnderlying(fieldType), whereToPut + offset);
         continue;
       }
       // x = {

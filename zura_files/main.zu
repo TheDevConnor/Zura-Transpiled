@@ -14,6 +14,6 @@ const main := fn () int {
       y: 17
     }
   };
-
-  return HAHA.a.x;
+  
+  return HAHA.a.y;
 };

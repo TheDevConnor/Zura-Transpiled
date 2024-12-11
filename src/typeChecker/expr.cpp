@@ -425,7 +425,8 @@ void TypeChecker::visitCast(Maps *map, Node::Expr *expr) {
 
 void TypeChecker::visitStructExpr(Maps *map, Node::Expr *expr) {
   StructExpr *struct_expr = static_cast<StructExpr *>(expr);
-  std::string struct_name = type_to_string(return_type.get());
+  std::string struct_name = type_to_string(return_type.get()); 
+
   // find the struct in the struct table
   if (map->struct_table.find(struct_name) ==
       map->struct_table.end()) {
@@ -438,7 +439,8 @@ void TypeChecker::visitStructExpr(Maps *map, Node::Expr *expr) {
   }
 
   // check if the number of elements in the struct is the same as the number of elements in the struct expression
-  int struct_size = map->struct_table[struct_name].size();
+  int struct_size = 0;
+  struct_size = map->struct_table[struct_name].size();
   if (struct_size != struct_expr->values.size()) {
     std::string msg = "Struct '" + struct_name +
                       "' requires " + std::to_string(struct_size) +
@@ -481,7 +483,10 @@ void TypeChecker::visitStructExpr(Maps *map, Node::Expr *expr) {
       return;
     }
 
-    // find the type of the struct expression element
+
+    // find if the type of the struct expression element is a nested struct of a bigger one
+    if (elem.second->kind == ND_STRUCT) return_type = std::make_shared<SymbolType>(elem_type);
+
     visitExpr(map, elem.second);
     std::string expected = type_to_string(elem.second->asmType);
     if (checkReturnType(elem.second, expected) == nullptr) {

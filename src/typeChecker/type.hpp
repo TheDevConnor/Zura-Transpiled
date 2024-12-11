@@ -35,8 +35,16 @@ public:
   std::vector<std::string> stackKeys;
   /// Struct Table
   // name -> { member name, member type }
-  std::unordered_map<std::string, std::vector<std::pair<std::string, Node::Type *>>>
+  std::unordered_map<std::string,
+                     std::vector<std::pair<std::string, Node::Type *>>>
       struct_table = {};
+  /// Struct Function Table
+  // struct name -> {(fn_name, fn_return type) ->  { param name, param type }}
+  std::unordered_map<
+      std::string,
+      std::vector<std::pair<std::pair<std::string, Node::Type *>,
+                            std::vector<std::pair<std::string, Node::Type *>>>>>
+      struct_table_fn = {};
   /// Enum Table
   // name -> { member name, position {0} }
   std::unordered_map<std::string, std::vector<std::pair<std::string, int>>> enum_table = {};
@@ -86,6 +94,10 @@ void declare_fn(Maps *maps, const std::pair<std::string, Node::Type *> &pair,
                 std::vector<std::pair<std::string, Node::Type *>> paramTypes,
                 int line, int pos);
 
+void declare_struct_fn(Maps *maps, const std::pair<std::string, Node::Type *> &pair,
+                       std::vector<std::pair<std::string, Node::Type *>> paramTypes,
+                       int line, int pos, std::string structName);
+
 // pair<pair<fn name, fn return type>, vector<pair<param name, param type>>>
 using Fn = std::pair<std::pair<std::string, Node::Type *>,
                                        std::vector<std::pair<std::string, Node::Type *>>>;
@@ -120,6 +132,8 @@ bool validateArgumentTypes(Maps *map, CallExpr *call, const std::string &functio
                                         const std::vector<std::pair<std::string, Node::Type *>> &fnParams);
 
 void visitArrayType(Maps *map, Node::Type *type);
+
+void processStructFunction(Maps *map, FnStmt *fn_stmt, std::string structName);
 
 // !TypeChecker functions
 using StmtNodeHandler = std::function<void(Maps *map, Node::Stmt *)>;

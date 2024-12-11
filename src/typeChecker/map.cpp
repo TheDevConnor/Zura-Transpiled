@@ -113,6 +113,21 @@ void TypeChecker::declare_fn(Maps *maps, const std::pair<std::string, Node::Type
   maps->function_table.push_back({pair, paramTypes});
 }
 
+void TypeChecker::declare_struct_fn(Maps *maps, const std::pair<std::string, Node::Type *> &pair,
+                        std::vector<std::pair<std::string, Node::Type *>> paramTypes,
+                        int line, int pos, std::string structName) {
+  // check if the function is already defined in the struct_table_fn
+  for (auto &member : maps->struct_table_fn[structName]) {
+    if (member.first.first == pair.first) {
+      std::string msg = "Function '" + pair.first + "' is already defined in struct '" + structName + "'";
+      handleError(line, pos, msg, "", "Type Error");
+    }
+  }
+
+  // add the function to the struct_table_fn
+  maps->struct_table_fn[structName].push_back({pair, paramTypes});
+}
+
 FnVector TypeChecker::lookup_fn(Maps *maps, std::string name, int line, int pos) {
   FnVector::iterator res =
       std::find_if(maps->function_table.begin(), maps->function_table.end(),
@@ -161,6 +176,19 @@ void TypeChecker::printTables(Maps *map) {
     for (std::pair<std::string, Node::Type *> member : pair.second) {
       std::cout << "\t\t" << member.first << " : "
                 << type_to_string(member.second) << std::endl;
+    }
+  }
+
+  std::cout << "Struct Function Table" << std::endl;
+  for (std::pair<std::string, std::vector<std::pair<std::pair<std::string, Node::Type *>, std::vector<std::pair<std::string, Node::Type *>>>>> pair : map->struct_table_fn) {
+    std::cout << "\t" << pair.first << " : " << std::endl;
+    for (std::pair<std::pair<std::string, Node::Type *>, std::vector<std::pair<std::string, Node::Type *>>> member : pair.second) {
+      std::cout << "\t\t" << member.first.first << " : "
+                << type_to_string(member.first.second) << std::endl;
+      for (std::pair<std::string, Node::Type *> param : member.second) {
+        std::cout << "\t\t\t" << param.first << " : "
+                  << type_to_string(param.second) << std::endl;
+      }
     }
   }
 

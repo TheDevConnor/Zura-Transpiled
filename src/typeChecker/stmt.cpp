@@ -5,6 +5,7 @@
 
 #include <iostream>
 #include <memory>
+#include <vector>
 
 void TypeChecker::visitStmt(Maps *map, Node::Stmt *stmt) {
   StmtAstLookup(stmt, map);
@@ -131,13 +132,74 @@ void TypeChecker::visitStruct(Maps *map, Node::Stmt *stmt) {
   
   // visit the fields Aka the variables
   for (std::pair<std::string, Node::Type *> &field : struct_stmt->fields) {
-    // add the field to the struct table
-    map->struct_table[struct_stmt->name].push_back({field.first, field.second});
+    map->struct_table[struct_stmt->name].push_back(field);
   }
 
-  // TODO: Handle functions in structs
+  // handle fn stmts in the struct
+  std::vector<std::pair<std::string, Node::Type *>> params;
+  for (Node::Stmt *stmt : struct_stmt->stmts) {
+    FnStmt *fn_stmt = static_cast<FnStmt *>(stmt);
+  
+    for (std::pair<std::string, Node::Type *> &param : fn_stmt->params) {
+      params.push_back({param.first, param.second});
+      // add the params to the local table
+      declare(map->local_symbol_table, param.first, param.second,
+              fn_stmt->line, fn_stmt->pos);
+    }
+
+    declare_struct_fn(map, {fn_stmt->name, fn_stmt->returnType},
+                      params, fn_stmt->line, fn_stmt->pos, struct_stmt->name);
+
+    visitStmt(map, fn_stmt->block);
+    params.clear();
+
+    if (return_type == nullptr) {
+      // throw an error (but this should not happen ever)
+      std::string msg = "return_type is not defined";
+      handleError(fn_stmt->line, fn_stmt->pos, msg, "", "Type Error");
+    }
+
+    if (type_to_string(fn_stmt->returnType) == "void") {
+      return_type = nullptr;
+      map->local_symbol_table
+          .clear(); // clear the local table for the next function
+      continue;
+    }
+
+    // Verify that we have a return stmt in the function
+    if (!needsReturn && type_to_string(fn_stmt->returnType) != "void") {
+      std::string msg = "Function '" + fn_stmt->name + "' requeries a return stmt "
+                        "but none was found";
+      handleError(fn_stmt->line, fn_stmt->pos, msg, "", "Type Error");
+      return;
+    }
+
+    std::string msg = "Function '" + fn_stmt->name +
+                      "' requeries a return type of '" +
+                      type_to_string(fn_stmt->returnType) + "' but got '" +
+                      type_to_string(return_type.get()) + "' instead.";
+    auto check = checkTypeMatch(
+        std::make_shared<SymbolType>(type_to_string(fn_stmt->returnType)),
+        std::make_shared<SymbolType>(type_to_string(return_type.get())),
+        fn_stmt->name, fn_stmt->line, fn_stmt->pos, msg);
+    if (!check) {
+      return_type = std::make_shared<SymbolType>("unknown");
+      return;
+    }
+
+    // also add the function name to the global table and function table
+    declare(map->global_symbol_table, fn_stmt->name, fn_stmt->returnType,
+                 fn_stmt->line, fn_stmt->pos);
+
+    return_type = nullptr;
+    map->local_symbol_table
+        .clear(); // clear the local table for the next function
+  }
+
 
   return_type = std::make_shared<SymbolType>("struct");
+
+  printTables(map);
 }
 
 void TypeChecker::visitEnum(Maps *map, Node::Stmt *stmt) {

@@ -1,0 +1,27 @@
+const Hobbies := enum {
+    Cooking,
+    Programming,
+    Drawing,
+    Reading,
+}; 
+
+const Person := struct {
+    name: str;
+    age: int;
+    fav_hobby: Hobbies;
+
+    greet := fn (self: *Person) void {
+        dis("Hello, my name is ", self.name, " and I am ", self.age, " years old.");
+    }; 
+};
+
+const main := fn () int {
+  have John: Person = {
+    name: "John",
+    age: 25
+  };
+
+  John.greet(); # 'self' not included here
+
+  return 0;
+};

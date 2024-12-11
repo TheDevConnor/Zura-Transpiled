@@ -458,13 +458,37 @@ void codegen::memberExpr(Node::Expr *expr) {
       if (fields[i].first == fieldName) {
         // Check if the type of the member is another struct
         Node::Type *fieldType = fields[i].second.first;
-        if (fieldType->kind == ND_SYMBOL_TYPE && (structByteSizes.find(getUnderlying(fieldType)) != structByteSizes.end())) {
-          // It was a struct!
-          // We have to return the ADDRESS of this node here!
+        if (fieldType->kind == ND_POINTER_TYPE && (structByteSizes.find(getUnderlying(fieldType)) != structByteSizes.end())) {
+          // It was a struct ptr!
+          /*
+          s {
+            embedded: *Nested;
+          }
+          */
+
           int offset = 0;
           if (i != 0) for (int j = 0; j < i; j++) {
             offset += fields[i].second.second;
           }
+          push(Instr{.var=LeaInstr{.size=DataSize::Qword,.dest="%rcx",.src=std::to_string(offset)+"(%rcx)"}, .type=InstrType::Lea},Section::Main);
+          pushRegister("%rcx");
+          return;
+        } else if (fieldType->kind == ND_SYMBOL_TYPE && (structByteSizes.find(getUnderlying(fieldType)) != structByteSizes.end())) {
+          // This does NOT contain a pointer that requires dereferencing,
+          // however we still need to handle this seperately.
+
+          /*
+          s {
+            embedded: Nested;
+          }
+          */
+
+          // Get the field offset
+          int offset = 0;
+          if (i != 0) for (int j = 0; j < i; j++) {
+            offset += fields[i].second.second;
+          }
+          // Push the value at this offset
           push(Instr{.var=LeaInstr{.size=DataSize::Qword,.dest="%rcx",.src=std::to_string(offset)+"(%rcx)"}, .type=InstrType::Lea},Section::Main);
           pushRegister("%rcx");
           return;
