@@ -247,11 +247,11 @@ void TypeChecker::visitAssign(Maps *map, Node::Expr *expr) {
 }
 
 void TypeChecker::visitCall(Maps *map, Node::Expr *expr) {
-    auto call = static_cast<CallExpr *>(expr);
-    auto name = static_cast<IdentExpr *>(call->callee);
+    CallExpr *call = static_cast<CallExpr *>(expr);
+    IdentExpr *name = static_cast<IdentExpr *>(call->callee);
 
     // Lookup function
-    auto fn = lookup_fn(map, name->name, call->line, call->pos);
+    FnVector fn = lookup_fn(map, name->name, call->line, call->pos);
 
     if (fn.empty()) {
         return; // Function not found, error already handled in lookup_fn
@@ -453,12 +453,12 @@ void TypeChecker::visitStructExpr(Maps *map, Node::Expr *expr) {
   }
 
   // Now compare the types of the struct elements with the types of the struct expression elements 
-  for (auto &elem : struct_expr->values) {
+  for (std::pair<Node::Expr *, Node::Expr *> elem : struct_expr->values) {
     // find the type of the struct element
-    auto name = static_cast<IdentExpr *>(elem.first);
+    IdentExpr *name = static_cast<IdentExpr *>(elem.first);
     std::string elem_type = "";
     // set elem_type to the type of the struct element, if it exists
-    for (auto &member : map->struct_table[struct_name]) {
+    for (std::pair<std::string, Node::Type *> member : map->struct_table[struct_name]) {
       if (member.first == name->name) {
         elem_type = type_to_string(member.second);
         break;
@@ -469,7 +469,7 @@ void TypeChecker::visitStructExpr(Maps *map, Node::Expr *expr) {
       std::string msg = "Named member '" + name->name + "' not found in struct '" + struct_name + "'";
       // did you mean?
       std::vector<std::string> known;
-      for (auto &member : map->struct_table[struct_name]) {
+      for (std::pair<std::string, Node::Type *> member : map->struct_table[struct_name]) {
         known.push_back(member.first);
       }
       std::optional<std::string> closest = string_distance(known, name->name, 3);

@@ -93,7 +93,7 @@ void TypeChecker::visitFn(Maps *map, Node::Stmt *stmt) {
                     "' requeries a return type of '" +
                     type_to_string(fn_stmt->returnType) + "' but got '" +
                     type_to_string(return_type.get()) + "' instead.";
-  auto check = checkTypeMatch(
+  bool check = checkTypeMatch(
       std::make_shared<SymbolType>(type_to_string(fn_stmt->returnType)),
       std::make_shared<SymbolType>(type_to_string(return_type.get())),
       fn_stmt->name, fn_stmt->line, fn_stmt->pos, msg);
@@ -178,7 +178,7 @@ void TypeChecker::visitStruct(Maps *map, Node::Stmt *stmt) {
                       "' requeries a return type of '" +
                       type_to_string(fn_stmt->returnType) + "' but got '" +
                       type_to_string(return_type.get()) + "' instead.";
-    auto check = checkTypeMatch(
+    bool check = checkTypeMatch(
         std::make_shared<SymbolType>(type_to_string(fn_stmt->returnType)),
         std::make_shared<SymbolType>(type_to_string(return_type.get())),
         fn_stmt->name, fn_stmt->line, fn_stmt->pos, msg);

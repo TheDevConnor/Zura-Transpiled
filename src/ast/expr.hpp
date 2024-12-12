@@ -659,7 +659,7 @@ public:
   void debug(int indent = 0) const override {
     Node::printIndent(indent);
     std::cout << "StructExpr: \n";
-    for (auto &pair : values) {
+    for (std::pair<Node::Expr *, Node::Expr *> pair : values) {
       Node::printIndent(indent + 1);
       std::cout << "Name: \n";
       pair.first->debug(indent + 2);

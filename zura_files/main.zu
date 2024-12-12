@@ -1,19 +1,24 @@
-const Inside := struct {
+const test2 := struct {
   x: int;
   y: int;
 };
 
-const Outside := struct {
-  a: Inside;
+const test := struct {
+  x: float;
+  y: test2;
 };
 
 const main := fn () int {
-  have HAHA: Outside = {
-    a: { 
-      x: 42,
-      y: 17
+  # I also tested on regular, flat structs with float members
+  # and it works fine. It works now!
+  have e: test = {
+    x: 1.0,
+    y: {
+      x: 1,
+      y: 2
     }
   };
-  
-  return HAHA.a.y;
+
+  have y: float = e.x;
+  return @cast<int>(y);
 };

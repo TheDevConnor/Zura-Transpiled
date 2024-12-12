@@ -415,8 +415,8 @@ void codegen::arrayElem(Node::Expr *expr) {
 
 // z: [1, 2, 3, 4, 5]
 void codegen::_arrayExpr(Node::Expr *expr) { 
-  auto e = static_cast<ArrayExpr *>(expr);
-  pushDebug(e->line, expr->file_id, e->pos); // k ping me on discord if you need help, i am going to be studying for a bit
+  ArrayExpr *e = static_cast<ArrayExpr *>(expr);
+  pushDebug(e->line, expr->file_id, e->pos);
 
 }
 
@@ -468,7 +468,7 @@ void codegen::memberExpr(Node::Expr *expr) {
 
           int offset = 0;
           if (i != 0) for (int j = 0; j < i; j++) {
-            offset += fields[i].second.second;
+            offset += fields[j].second.second;
           }
           push(Instr{.var=LeaInstr{.size=DataSize::Qword,.dest="%rcx",.src=std::to_string(offset)+"(%rcx)"}, .type=InstrType::Lea},Section::Main);
           pushRegister("%rcx");
@@ -486,7 +486,7 @@ void codegen::memberExpr(Node::Expr *expr) {
           // Get the field offset
           int offset = 0;
           if (i != 0) for (int j = 0; j < i; j++) {
-            offset += fields[i].second.second;
+            offset += fields[j].second.second;
           }
           // Push the value at this offset
           push(Instr{.var=LeaInstr{.size=DataSize::Qword,.dest="%rcx",.src=std::to_string(offset)+"(%rcx)"}, .type=InstrType::Lea},Section::Main);
@@ -496,12 +496,12 @@ void codegen::memberExpr(Node::Expr *expr) {
         // push the value at this offset
         int offset = 0;
         if (i != 0) for (int j = 0; j < i; j++) {
-          offset += fields[i].second.second;
+          offset += fields[j].second.second;
         }
         if (offset == 0)
           pushRegister("(%rcx)");
         else
-          pushRegister(std::to_string(offset) + "(%rcx)");
+          pushRegister(std::to_string(-offset) + "(%rcx)");
         break;
       }
     }
@@ -641,12 +641,20 @@ void codegen::assignStructMember(Node::Expr *expr) {
     // Evaluate the orderedFields and store them in the struct!!!!
     std::string subbedString = base.substr(0, base.find('('));
     int baseBytes = std::stoi(subbedString);
+
+    // Evaluate what rcx has to be
+    visitExpr(e->assignee); // The identifier's position
+    popToRegister("%rcx");
     for (int i = 0; i < orderedFields.size(); i++) {
       std::pair<std::string, Node::Expr *> field = orderedFields.at(i);
       // Evaluate the expression
       visitExpr(field.second);
       // Pop the value into a register
-      std::string popExpr = std::to_string(baseBytes + (-8 + fields.at(i).second.second)) + "(%rcx)";
+      int popToOffset = 0;
+      if (i != 0) for (int j = 0; j < i; j++) {
+        popToOffset += fields[j].second.second;
+      }
+      std::string popExpr = std::to_string(-popToOffset) + "(%rcx)";
       // optimizer bug fsr
       popToRegister(popExpr);
     }

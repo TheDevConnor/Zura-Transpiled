@@ -98,10 +98,10 @@ void TypeChecker::processStructMember(Maps *map, MemberExpr *member, const std::
       member->asmType = return_type.get();
     }
   } else {
-    auto fields = map->struct_table_fn[realType];
-    auto res = std::find_if(fields.begin(), fields.end(),
-                            [&member](const std::pair<std::string, Node::Type *> &field) {
-                                return field.first == static_cast<IdentExpr *>(member->rhs)->name;
+    FnVector fields = map->struct_table_fn[realType];
+    FnVector::const_iterator res = std::find_if(fields.begin(), fields.end(),
+                            [&member](Fn field) {
+                                return field.first.first == static_cast<IdentExpr *>(member->rhs)->name;
                             });
     if (res == fields.end()) {
         std::string msg = "Type '" + lhsType + "' does not have member '" +
@@ -169,8 +169,8 @@ bool TypeChecker::validateArgumentTypes(Maps *map, CallExpr *call, const std::st
                                         const std::vector<std::pair<std::string, Node::Type *>> &fnParams) {
     for (size_t i = 0; i < call->args.size(); ++i) {
         visitExpr(map, call->args[i]);
-        auto argType = type_to_string(return_type.get());
-        auto expectedType = type_to_string(fnParams[i].second);
+        std::string argType = type_to_string(return_type.get());
+        std::string expectedType = type_to_string(fnParams[i].second);
 
         if (argType != expectedType) {
             std::string msg = "Function '" + functionName + "' requires argument '" +

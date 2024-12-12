@@ -205,7 +205,6 @@ void codegen::varDecl(Node::Stmt *stmt) {
     if (s->type->kind == ND_SYMBOL_TYPE && structByteSizes.find(getUnderlying(s->type)) != structByteSizes.end()) {
       // It's of type struct!
       // Basically ignore the part where we allocate memory for this thing.
-      push(Instr{.var = SubInstr{.lhs = "%rsp", .rhs = "$" + std::to_string(structByteSizes[getUnderlying(s->type)].first)}, .type = InstrType::Sub}, Section::Main);
       declareStructVariable(s->expr, getUnderlying(s->type), variableCount);
       variableCount += structByteSizes[getUnderlying(s->type)].first;
       variableTable.insert({s->name, where});
@@ -795,8 +794,6 @@ void codegen::declareArrayVariable(Node::Expr *expr, short int arrayLength, std:
     popToRegister(std::to_string(-(arrayBase + i * underlyingByteSize)) + "(%rbp)");
   }
   variableCount += s->elements.size() * underlyingByteSize;
-  // Offset rsp
-  push(Instr{.var = SubInstr{.lhs = "%rsp", .rhs = "$" + std::to_string(s->elements.size() * underlyingByteSize)}, .type = InstrType::Sub}, Section::Main);
   // Add the struct to the variable table
   variableTable.insert({varName, std::to_string(-arrayBase) + "(%rbp)"});
 }

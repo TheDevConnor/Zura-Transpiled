@@ -117,7 +117,8 @@ void TypeChecker::declare_struct_fn(Maps *maps, const std::pair<std::string, Nod
                         std::vector<std::pair<std::string, Node::Type *>> paramTypes,
                         int line, int pos, std::string structName) {
   // check if the function is already defined in the struct_table_fn
-  for (auto &member : maps->struct_table_fn[structName]) {
+  for (std::pair<std::pair<std::string, Node::Type *>,
+        std::vector<std::pair<std::string, Node::Type *>>> member : maps->struct_table_fn[structName]) {
     if (member.first.first == pair.first) {
       std::string msg = "Function '" + pair.first + "' is already defined in struct '" + structName + "'";
       handleError(line, pos, msg, "", "Type Error");
