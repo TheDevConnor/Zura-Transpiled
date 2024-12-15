@@ -237,7 +237,8 @@ void TypeChecker::visitEnum(Maps *map, Node::Stmt *stmt) {
     map->enum_table[enum_stmt->name].push_back({enum_stmt->fields[i], i});
   }
   
-  return_type = std::make_shared<SymbolType>("enum");
+  // set return type to the name of the enum
+  return_type = std::make_shared<SymbolType>(enum_stmt->name);
 }
 
 void TypeChecker::visitIf(Maps *map, Node::Stmt *stmt) {

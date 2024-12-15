@@ -60,7 +60,7 @@ std::string TypeChecker::determineTypeKind(Maps *map, const std::string &type) {
   if (map->struct_table.find(real) != map->struct_table.end()) {
       return "struct";
   }
-  if (map->enum_table.find(real) != map->enum_table.end()) {
+  if (type == "enum") { // When enum names get looked up in the symbol table, their type is "enum".
       return "enum";
   }
   return "unknown";

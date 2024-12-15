@@ -491,6 +491,17 @@ void TypeChecker::visitStructExpr(Maps *map, Node::Expr *expr) {
       return_type = std::make_shared<SymbolType>(elem_type);
 
     visitExpr(map, elem.second);
+    // check for enums
+    if (elem.second->kind == ND_MEMBER) {
+      MemberExpr *member = static_cast<MemberExpr *>(elem.second);
+      if (member->lhs->kind == ND_IDENT) {
+        IdentExpr *ident = static_cast<IdentExpr *>(member->lhs);
+        if (map->enum_table.find(ident->name) != map->enum_table.end()) {
+          processEnumMember(map, member, ident->name); // Will automatically set return_type
+          member->asmType = return_type.get(); // maybe this works idrk lmao
+        }
+      }
+    }
     std::string expected = type_to_string(elem.second->asmType);
     if (checkReturnType(elem.second, expected) == nullptr) {
       std::string msg = "Struct element '" + name->name + "' requires type '" +

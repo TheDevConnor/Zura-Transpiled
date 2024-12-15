@@ -8,11 +8,10 @@ const Hobbies := enum {
 const Person := struct {
     name: str;
     age: int;
-    # hobby: str;
+    fav_hobby: Hobbies;
 
-    greet := fn (self: *Person) void { # Fixed bug where 'self' did not need to be a pointer (which is false)
-        dis("Hello, my name is ", self.name, " and I am ", self.age, 
-            " years old.\n");
+    greet := fn (self: *Person) void {
+        dis("Hello, my name is ", self.name, " and I am ", self.age, " years old.");
     }; 
 };
 
@@ -20,14 +19,9 @@ const main := fn () int {
   have John: Person = {
     name: "John",
     age: 25,
-    # hobby: "Programming"
-    # Fixed the error so now it knows we need 3 arguments
-    # but we seg when trying to pass the 3rd argument 
-    # that has a type of enum. I will look into that on the next commit
-    # it is 4:08 am and I need to sleep
+    fav_hobby: Hobbies.Programming
   };
 
-  # And yes, this absolutely works great!
   John.greet(); # 'self' not included here
 
   return 0;
