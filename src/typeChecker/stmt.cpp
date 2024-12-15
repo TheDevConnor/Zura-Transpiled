@@ -145,6 +145,17 @@ void TypeChecker::visitStruct(Maps *map, Node::Stmt *stmt) {
       // add the params to the local table
       declare(map->local_symbol_table, param.first, param.second,
               fn_stmt->line, fn_stmt->pos);
+
+      // make sure that one of the args is a pointer to the struct
+      bool isPointer = false;
+      Node::Type *self = new SymbolType("*" + struct_stmt->name);
+      std::string msg = "Struct method '" + fn_stmt->name + "' must have a "
+                        "pointer to the struct as an argument";
+      if (type_to_string(param.second) == type_to_string(self)) {
+        isPointer = true;
+      } else {
+        handleError(fn_stmt->line, fn_stmt->pos, msg, "", "Type Error");
+      }
     }
 
     declare_struct_fn(map, {fn_stmt->name, fn_stmt->returnType},

@@ -430,10 +430,12 @@ void TypeChecker::visitStructExpr(Maps *map, Node::Expr *expr) {
   // check if the number of elements in the struct is the same as the number of elements in the struct expression
   int struct_size = 0;
   struct_size = map->struct_table[struct_name].size();
-  
-  // Subtract function declarations from this struct size
-  for (Fn member : map->struct_table_fn[struct_name]) {
-    struct_size--;
+
+  // We do not need ti check the struct size if the struct expression is empty
+  if (struct_expr->values.empty()) {
+    return_type = std::make_shared<SymbolType>(struct_name);
+    struct_expr->asmType = new SymbolType(struct_name);
+    return;
   }
 
   if (struct_size != struct_expr->values.size()) {
@@ -447,13 +449,15 @@ void TypeChecker::visitStructExpr(Maps *map, Node::Expr *expr) {
     return;
   }
 
-  // Now compare the types of the struct elements with the types of the struct expression elements 
+  // Now compare the types of the struct elements with the types of the struct
+  // expression elements
   for (std::pair<Node::Expr *, Node::Expr *> elem : struct_expr->values) {
     // find the type of the struct element
     IdentExpr *name = static_cast<IdentExpr *>(elem.first);
     std::string elem_type = "";
     // set elem_type to the type of the struct element, if it exists
-    for (std::pair<std::string, Node::Type *> member : map->struct_table[struct_name]) {
+    for (std::pair<std::string, Node::Type *> member :
+         map->struct_table[struct_name]) {
       if (member.first == name->name) {
         elem_type = type_to_string(member.second);
         break;
@@ -461,15 +465,19 @@ void TypeChecker::visitStructExpr(Maps *map, Node::Expr *expr) {
     }
 
     if (elem_type == "") {
-      std::string msg = "Named member '" + name->name + "' not found in struct '" + struct_name + "'";
+      std::string msg = "Named member '" + name->name +
+                        "' not found in struct '" + struct_name + "'";
       // did you mean?
       std::vector<std::string> known;
-      for (std::pair<std::string, Node::Type *> member : map->struct_table[struct_name]) {
+      for (std::pair<std::string, Node::Type *> member :
+           map->struct_table[struct_name]) {
         known.push_back(member.first);
       }
-      std::optional<std::string> closest = string_distance(known, name->name, 3);
+      std::optional<std::string> closest =
+          string_distance(known, name->name, 3);
       if (closest.has_value()) {
-        handleError(struct_expr->line, struct_expr->pos, msg, "Did you mean '" + closest.value() + "'?", "Type Error");
+        handleError(struct_expr->line, struct_expr->pos, msg,
+                    "Did you mean '" + closest.value() + "'?", "Type Error");
       } else {
         handleError(struct_expr->line, struct_expr->pos, msg, "", "Type Error");
       }
@@ -477,10 +485,10 @@ void TypeChecker::visitStructExpr(Maps *map, Node::Expr *expr) {
       struct_expr->asmType = new SymbolType("unknown");
       return;
     }
-
-
-    // find if the type of the struct expression element is a nested struct of a bigger one
-    if (elem.second->kind == ND_STRUCT) return_type = std::make_shared<SymbolType>(elem_type);
+    // find if the type of the struct expression element is a nested struct of a
+    // bigger one
+    if (elem.second->kind == ND_STRUCT)
+      return_type = std::make_shared<SymbolType>(elem_type);
 
     visitExpr(map, elem.second);
     std::string expected = type_to_string(elem.second->asmType);
@@ -492,7 +500,6 @@ void TypeChecker::visitStructExpr(Maps *map, Node::Expr *expr) {
       return;
     }
   }
-
   // set the return type to the struct type
   return_type = std::make_shared<SymbolType>(struct_name);
   expr->asmType = new SymbolType(struct_name);
