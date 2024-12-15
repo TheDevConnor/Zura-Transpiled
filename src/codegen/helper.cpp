@@ -167,7 +167,6 @@ void codegen::handleExitSyscall() {
 }
 
 void codegen::handleReturnCleanup() {
-  moveRegister("%rsp", "%rbp", DataSize::Qword, DataSize::Qword);
   popToRegister("%rbp");
   push(Instr{.var = Ret{}, .type = InstrType::Ret}, Section::Main);
 }
@@ -343,4 +342,12 @@ std::string codegen::type_to_diename(Node::Type *type) {
   }
   // Unreachable!
   return "";
+};
+
+// This will usually be a multiple of 8 because x64 rules!
+// Multiple: 8
+// 16 -> 16
+// 17 -> 24
+int codegen::round(int num, int multiple) {
+  return (num + multiple - 1) / multiple * multiple;
 };

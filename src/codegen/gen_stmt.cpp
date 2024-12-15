@@ -48,8 +48,8 @@ void codegen::funcDecl(Node::Stmt *stmt) {
   FnStmt *s = static_cast<FnStmt *>(stmt);
   int preStackSize = stackSize;
 
-  isEntryPoint = (s->name == "main") ? true : false;
-  std::string funcName = (isEntryPoint) ? "main" : "usr_" + s->name;
+  isEntryPoint = (s->name == "main" && insideStructName == "") ? true : false;
+  std::string funcName = (isEntryPoint) ? "main" : (insideStructName != "") ? "usrstruct_" + insideStructName + "_" + s->name : "usr_" + s->name;
 
 
   // WOO YEAH BABY DEBUG TIME
@@ -146,21 +146,29 @@ void codegen::funcDecl(Node::Stmt *stmt) {
 
   // Function args
   for (size_t i = 0; i < s->params.size(); i++) {
-    // TODO: REPLACE THIS IMMEDIATELY!
-    variableTable.insert({s->params.at(i).first, argOrder.at(i)});
+    // Move the argument to the stack
+    // This is the same as a variable declaration, kinda
+    moveRegister(std::to_string(-variableCount-getByteSizeOfType(s->params.at(i).second)) + "(%rbp)", argOrder.at(i), DataSize::Qword, DataSize::Qword);
+    variableTable.insert({s->params.at(i).first, std::to_string(-variableCount-getByteSizeOfType(s->params.at(i).second)) + "(%rbp)"});
 
     if (debug) {
-      SymbolType *st = static_cast<SymbolType *>(s->params.at(i).second);
+      // Use the parameter type
       pushLinker("\n.uleb128 " + std::to_string((int)dwarf::DIEAbbrev::FunctionParam) +
                  "\n.byte " + std::to_string(s->file_id) +
                  "\n.byte " + std::to_string(s->line) +
                  "\n.byte " + std::to_string(s->pos) +
-                 "\n.long .L" + st->name + "_debug_type\n" +
+                 "\n.long .L" + type_to_diename(s->params.at(i).second) + "_debug_type\n" +
                  "\n.uleb128 0x1" // 1 byte is gonna follow
                  "\n.byte " + std::to_string(dwarf::argOP_regs.at(argOrder.at(i)) + 80) + "\n"
                  "\n"
       , Section::DIE);
     }
+  }
+  for (size_t i = 0; i < s->params.size(); i++) {
+    // Types have to be declared after for 2 reasons:
+    // 1. The type will be declared as a member of the function
+    // 2. It looks nice and probably works better anyways
+    dwarf::useType(s->params.at(i).second);
   }
 
   // Do not push the lexical block
@@ -172,6 +180,7 @@ void codegen::funcDecl(Node::Stmt *stmt) {
   if (text_section.back().type != InstrType::Ret) {
     // Push a ret anyway
     // Otherwise we SEGFAULTT
+    popToRegister("%rbp");
     push(Instr{.var = Ret{.fromWhere=funcName},.type = InstrType::Ret},Section::Main);
   }
 
@@ -206,7 +215,8 @@ void codegen::varDecl(Node::Stmt *stmt) {
       // It's of type struct!
       // Basically ignore the part where we allocate memory for this thing.
       declareStructVariable(s->expr, getUnderlying(s->type), variableCount);
-      variableCount += structByteSizes[getUnderlying(s->type)].first;
+      int structSize = structByteSizes[getUnderlying(s->type)].first;
+      variableCount += structSize;
       variableTable.insert({s->name, where});
     } else if (s->type->kind == ND_ARRAY_TYPE || s->type->kind == ND_ARRAY_AUTO_FILL) {
       declareArrayVariable(s->expr, static_cast<ArrayType *>(s->type)->constSize, s->name); // s->name so it can be inserted to variableTable, s->type so we know the byte sizes.
@@ -406,6 +416,14 @@ void codegen::structDecl(Node::Stmt *stmt) {
     members.push_back({field.first, {field.second, size}});
   }
   structByteSizes.insert({s->name, {size, members}});
+
+  // Time for inline function declarations
+  std::string prevSname = insideStructName;
+  for (Node::Stmt *stmt : s->stmts) {
+    insideStructName += s->name;
+    visitStmt(stmt);
+    insideStructName = prevSname; // Nested structs are not allowed currently, but may be later.
+  }
   if (debug) {
     // Loop over fields, append as DIEs
     dwarf::useAbbrev(dwarf::DIEAbbrev::StructType);

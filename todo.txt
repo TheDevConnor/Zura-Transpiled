@@ -1,9 +1,6 @@
 Add in control flow to the codegen (done => if, for) (strill need => switch, while)
 NOTE: Read into switch statements "jump tables", and how to emit them in ASM.
 
-Add in struct, enums, and unions, member expr !!! - LETS GO ITS DONE
-Print integers using a native function
-
 Add and recognize more int types in asm. (Ex. byte, short, long, quad).
  - IMPORTANT - Update stmt::enumDecl IMMEDIATELY after adding longs
 

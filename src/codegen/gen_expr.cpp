@@ -257,24 +257,65 @@ void codegen::grouping(Node::Expr *expr) {
 
 void codegen::call(Node::Expr *expr) {
   CallExpr *e = static_cast<CallExpr *>(expr);
-  IdentExpr *n = static_cast<IdentExpr *>(e->callee);
-  pushDebug(e->line, expr->file_id, e->pos);
-  // Push each argument one by one.
-  if (e->args.size() > argOrder.size()) {
-    std::cerr << "Too many arguments in call - consider reducing them or moving them to a globally defined space." << std::endl;
-    exit(-1);
+  if (e->callee->kind == ND_IDENT) {
+    IdentExpr *n = static_cast<IdentExpr *>(e->callee);
+    pushDebug(e->line, expr->file_id, e->pos);
+    // Push each argument one by one.
+    if (e->args.size() > argOrder.size()) {
+      std::cerr << "Too many arguments in call - consider reducing them or moving them to a globally defined space." << std::endl;
+      exit(-1);
+    }
+    push(Instr{.var=SubInstr{.lhs="%rsp",.rhs="$"+std::to_string(round(variableCount-8, 8))},.type=InstrType::Sub},Section::Main);
+    for (size_t i = 0; i < e->args.size(); i++) {
+      // evaluate them
+      codegen::visitExpr(e->args.at(i));
+      popToRegister(argOrder[i]);
+    }
+    // Call the function
+    push(Instr{.var = CallInstr{.name = "usr_" + n->name},
+              .type = InstrType::Call,
+              .optimize = false},
+        Section::Main);
+    pushRegister("%rax");
+  } else if (e->callee->kind == ND_MEMBER) {
+    // Get the struct name
+    MemberExpr *member = static_cast<MemberExpr *>(e->callee);
+    IdentExpr *name = static_cast<IdentExpr *>(member->lhs);
+    std::string structName = getUnderlying(name->asmType);
+    std::string fnName = static_cast<IdentExpr *>(member->rhs)->name;
+    pushDebug(e->line, expr->file_id, e->pos);
+    // Push each argument one by one.
+    if (e->args.size() + 1 > argOrder.size()) {
+      // 1 arg will be 'self', a pointer to the struct being called and always in argOrder[0]
+      std::cerr << "Too many arguments in call - consider reducing them or moving them to a globally defined space." << std::endl;
+      exit(-1);
+    }
+
+    // Evaluate the struct
+    visitExpr(name);
+    // Weeellll
+    // We want this to be an lea, so let's get the pushexpr of the last instruction
+    // and change it to an lea
+    PushInstr instr = std::get<PushInstr>(text_section.at(text_section.size() - 1).var);
+    std::string whatWasPushed = instr.what;
+    text_section.pop_back();
+    // NOW we can lea
+    push(Instr{.var = LeaInstr{.size = DataSize::Qword, .dest = argOrder[0], .src = whatWasPushed},
+               .type = InstrType::Lea},
+         Section::Main);
+    push(Instr{.var=SubInstr{.lhs="%rsp",.rhs="$"+std::to_string(round(variableCount-8, 8))},.type=InstrType::Sub},Section::Main);
+    for (size_t i = 0; i < e->args.size(); i++) {
+      // evaluate them
+      codegen::visitExpr(e->args.at(i));
+      popToRegister(argOrder[i + 1]);
+    }
+    // Call the function
+    push(Instr{.var = CallInstr{.name = "usrstruct_" + structName + "_" + fnName},
+              .type = InstrType::Call,
+              .optimize = false},
+        Section::Main);
+    pushRegister("%rax");
   }
-  for (size_t i = 0; i < e->args.size(); i++) {
-    // evaluate them
-    codegen::visitExpr(e->args.at(i));
-    popToRegister(argOrder[i]);
-  }
-  // Call the function
-  push(Instr{.var = CallInstr{.name = "usr_" + n->name},
-             .type = InstrType::Call,
-             .optimize = false},
-       Section::Main);
-  pushRegister("%rax");
 }
 
 // TODO: FIX this to evalueate correctly
@@ -424,7 +465,7 @@ void codegen::memberExpr(Node::Expr *expr) {
   MemberExpr *e = static_cast<MemberExpr *>(expr);
   pushDebug(e->line, expr->file_id, e->pos);
   // If lhs is enum
-  std::string lhsName = static_cast<SymbolType *>(e->lhs->asmType)->name;
+  std::string lhsName = getUnderlying(e->lhs->asmType);
   if (lhsName == "enum") {
     IdentExpr *lhs = static_cast<IdentExpr *>(e->lhs);
     IdentExpr *rhs = static_cast<IdentExpr *>(e->rhs);
@@ -432,10 +473,9 @@ void codegen::memberExpr(Node::Expr *expr) {
     return;
   }
 
-  // Check if starts with "struct-"
-  if (lhsName.find("struct-") == 0) {
+  if (structByteSizes.find(lhsName) != structByteSizes.end()) {
     // It's a struct
-    std::string structName = lhsName.substr(7);
+    std::string structName = lhsName;
     // Now we have the name of the struct!
     if (structName == "unknown") {
       // Typechecker thought that its fields did not correlate to a struct.
@@ -555,7 +595,7 @@ void codegen::assignStructMember(Node::Expr *expr) {
     IdentExpr *lhs = static_cast<IdentExpr *>(member->lhs);
     IdentExpr *rhs = static_cast<IdentExpr *>(member->rhs);
     std::string asmName = static_cast<SymbolType *>(lhs->asmType)->name;
-    std::string structTypeName = asmName.substr(7);
+    std::string structTypeName = asmName;
     int size = structByteSizes[structTypeName].first;
     std::vector<StructMember> fields = structByteSizes[structTypeName].second;
     // Find the position of the field
@@ -601,6 +641,9 @@ void codegen::assignStructMember(Node::Expr *expr) {
       }
       push(Instr{.var=LeaInstr{.size=DataSize::Qword,.dest="%rcx",.src=std::to_string(8 - (size + offset)) + "(%rbp)"},.type=InstrType::Lea},Section::Main);
       pushRegister("%rcx");
+
+      // Offset %rsp by the size of the struct
+      // in case of function calls that push %rip
       return;
     } else {
       // We are setting a memberexpr to a ptr
@@ -621,7 +664,7 @@ void codegen::assignStructMember(Node::Expr *expr) {
     // Just evaluate the struct expression but use the base of the already
     // defined struct as the base of the new one
     StructExpr *s = static_cast<StructExpr *>(e->rhs);
-    std::string structTypeName = static_cast<SymbolType *>(s->asmType)->name.substr(7);
+    std::string structTypeName = static_cast<SymbolType *>(s->asmType)->name;
     int size = structByteSizes[structTypeName].first;
     std::string base = variableTable[static_cast<IdentExpr *>(e->assignee)->name];
     std::vector<StructMember> fields = structByteSizes[structTypeName].second;
@@ -660,6 +703,7 @@ void codegen::assignStructMember(Node::Expr *expr) {
     }
     push(Instr{.var=LeaInstr{.size=DataSize::Qword,.dest="%rcx",.src=variableTable[static_cast<IdentExpr *>(e->assignee)->name]},.type=InstrType::Lea},Section::Main);
     pushRegister("%rcx");
+
   }
 };
 

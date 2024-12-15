@@ -66,7 +66,7 @@ void TypeChecker::visitFn(Maps *map, Node::Stmt *stmt) {
 
   if (return_type == nullptr) {
     // throw an error (but this should not happen ever)
-    std::string msg = "return_type is not defined";
+    std::string msg = "Return type is not defined";
     handleError(fn_stmt->line, fn_stmt->pos, msg, "", "Type Error");
   }
 
@@ -153,17 +153,17 @@ void TypeChecker::visitStruct(Maps *map, Node::Stmt *stmt) {
     visitStmt(map, fn_stmt->block);
     params.clear();
 
-    if (return_type == nullptr) {
-      // throw an error (but this should not happen ever)
-      std::string msg = "return_type is not defined";
-      handleError(fn_stmt->line, fn_stmt->pos, msg, "", "Type Error");
-    }
-
     if (type_to_string(fn_stmt->returnType) == "void") {
       return_type = nullptr;
       map->local_symbol_table
           .clear(); // clear the local table for the next function
       continue;
+    }
+
+    if (return_type == nullptr) {
+      // throw an error (but this should not happen ever)
+      std::string msg = "Struct return type is not defined";
+      handleError(fn_stmt->line, fn_stmt->pos, msg, "", "Type Error");
     }
 
     // Verify that we have a return stmt in the function
@@ -198,8 +198,6 @@ void TypeChecker::visitStruct(Maps *map, Node::Stmt *stmt) {
 
 
   return_type = std::make_shared<SymbolType>("struct");
-
-  printTables(map);
 }
 
 void TypeChecker::visitEnum(Maps *map, Node::Stmt *stmt) {

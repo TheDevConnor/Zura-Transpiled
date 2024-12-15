@@ -76,21 +76,10 @@ void TypeChecker::visitIdent(Maps *map, Node::Expr *expr) {
 
   if (map->local_symbol_table.find(ident->name) != map->local_symbol_table.end()) {
     res = map->local_symbol_table[ident->name];
-    // if struct, append "struct-" to asmType
-    std::string resName = static_cast<SymbolType *>(res)->name;
-    if (map->struct_table.find(resName) != map->struct_table.end()) {
-      ident->asmType = new SymbolType("struct-" + resName);
-    } else {
-      ident->asmType = res;
-    }
+    ident->asmType = res;
   } else if (map->global_symbol_table.find(ident->name) != map->global_symbol_table.end()) {
     res = map->global_symbol_table[ident->name];
-    std::string resName = static_cast<SymbolType *>(res)->name;
-    if (map->struct_table.find(resName) != map->struct_table.end()) {
-      ident->asmType = new SymbolType("struct-" + resName);
-    } else {
-      ident->asmType = res;
-    }
+    ident->asmType = res;
   }
   
   // check if we found something in the local symbol table if not return error
@@ -248,27 +237,27 @@ void TypeChecker::visitAssign(Maps *map, Node::Expr *expr) {
 
 void TypeChecker::visitCall(Maps *map, Node::Expr *expr) {
     CallExpr *call = static_cast<CallExpr *>(expr);
-    IdentExpr *name = static_cast<IdentExpr *>(call->callee);
+    Node::Expr *name = call->callee;
 
     // Lookup function
-    FnVector fn = lookup_fn(map, name->name, call->line, call->pos);
+    FnVector fn = lookup_fn(map, name, call->line, call->pos);
 
     if (fn.empty()) {
         return; // Function not found, error already handled in lookup_fn
     }
 
     if (fn.size() > 1) {
-        reportOverloadedFunctionError(call, name->name);
+        reportOverloadedFunctionError(call, name);
         return;
     }
 
     auto [fnName, fnParams] = fn[0];
 
-    if (!validateArgumentCount(call, name->name, fnParams)) {
+    if (!validateArgumentCount(call, name, fnParams)) {
         return;
     }
 
-    if (!validateArgumentTypes(map, call, name->name, fnParams)) {
+    if (!validateArgumentTypes(map, call, name, fnParams)) {
         return;
     }
 
@@ -434,13 +423,19 @@ void TypeChecker::visitStructExpr(Maps *map, Node::Expr *expr) {
                       "' is not defined in the scope.";
     handleError(struct_expr->line, struct_expr->pos, msg, "", "Type Error");
     return_type = std::make_shared<SymbolType>("unknown");
-    struct_expr->asmType = new SymbolType("struct-unknown");
+    struct_expr->asmType = new SymbolType("unknown");
     return;
   }
 
   // check if the number of elements in the struct is the same as the number of elements in the struct expression
   int struct_size = 0;
   struct_size = map->struct_table[struct_name].size();
+  
+  // Subtract function declarations from this struct size
+  for (Fn member : map->struct_table_fn[struct_name]) {
+    struct_size--;
+  }
+
   if (struct_size != struct_expr->values.size()) {
     std::string msg = "Struct '" + struct_name +
                       "' requires " + std::to_string(struct_size) +
@@ -448,7 +443,7 @@ void TypeChecker::visitStructExpr(Maps *map, Node::Expr *expr) {
                       std::to_string(struct_expr->values.size());
     handleError(struct_expr->line, struct_expr->pos, msg, "", "Type Error");
     return_type = std::make_shared<SymbolType>("unknown");
-    struct_expr->asmType = new SymbolType("struct-unknown");
+    struct_expr->asmType = new SymbolType("unknown");
     return;
   }
 
@@ -479,7 +474,7 @@ void TypeChecker::visitStructExpr(Maps *map, Node::Expr *expr) {
         handleError(struct_expr->line, struct_expr->pos, msg, "", "Type Error");
       }
       return_type = std::make_shared<SymbolType>("unknown");
-      struct_expr->asmType = new SymbolType("struct-unknown");
+      struct_expr->asmType = new SymbolType("unknown");
       return;
     }
 
@@ -500,5 +495,5 @@ void TypeChecker::visitStructExpr(Maps *map, Node::Expr *expr) {
 
   // set the return type to the struct type
   return_type = std::make_shared<SymbolType>(struct_name);
-  expr->asmType = new SymbolType("struct-" + struct_name);
+  expr->asmType = new SymbolType(struct_name);
 }

@@ -1,24 +1,31 @@
-const test2 := struct {
-  x: int;
-  y: int;
-};
+const Hobbies := enum {
+    Cooking,
+    Programming,
+    Drawing,
+    Reading,
+}; 
 
-const test := struct {
-  x: float;
-  y: test2;
+const Person := struct {
+    name: str;
+    age: int;
+    fav_hobby: Hobbies;
+
+    greet := fn (self: *Person) void {
+        dis("Hello, my name is ", self.name, " and I am ", self.age, " years old.\n");
+    }; 
 };
 
 const main := fn () int {
-  # I also tested on regular, flat structs with float members
-  # and it works fine. It works now!
-  have e: test = {
-    x: 1.0,
-    y: {
-      x: 1,
-      y: 2
-    }
+  have John: Person = {
+    name: "John",
+    age: 25,
+    # fav_hobby: Hobbies.Programming
+    # ^^^ connor issue
+    # "Requires 2 elements but got 3" it says
   };
 
-  have y: float = e.x;
-  return @cast<int>(y);
+  # And yes, this absolutely works great!
+  John.greet(); # 'self' not included here
+
+  return 0;
 };

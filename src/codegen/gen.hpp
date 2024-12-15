@@ -41,6 +41,7 @@ inline int64_t variableCount = 8;
 inline std::unordered_map<std::string, std::string> variableTable = {};
 inline std::vector<size_t> stackSizesForScopes = {}; // wordy term for "when we start a scope, push its stack size"
 inline size_t stackSize = 0;
+inline std::string insideStructName = "";
 
 void visitStmt(Node::Stmt *stmt);
 void visitExpr(Node::Expr *expr);
@@ -90,6 +91,7 @@ void declareStructVariable(Node::Expr *expr, std::string structName, int whereTo
 void declareArrayVariable(Node::Expr *expr, short int arrayLength, std::string varName);
 
 int convertFloatToInt(float input); // Float input. Crazy, right?
+int round(int num, int multiple); // Round a number up to the nearest multiple
 
 // <name, <type, offset>>
 using StructMember = std::pair<std::string, std::pair<Node::Type *, unsigned short int>>;

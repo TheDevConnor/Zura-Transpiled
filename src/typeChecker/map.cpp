@@ -129,17 +129,41 @@ void TypeChecker::declare_struct_fn(Maps *maps, const std::pair<std::string, Nod
   maps->struct_table_fn[structName].push_back({pair, paramTypes});
 }
 
-FnVector TypeChecker::lookup_fn(Maps *maps, std::string name, int line, int pos) {
-  FnVector::iterator res =
-      std::find_if(maps->function_table.begin(), maps->function_table.end(),
-                   [&name](const Fn &fn) { return fn.first.first == name; });
+FnVector TypeChecker::lookup_fn(Maps *maps, Node::Expr *callee, int line, int pos) {
+  if (callee->kind == ND_IDENT) {
+    std::string name = static_cast<IdentExpr *>(callee)->name;
+    FnVector::iterator res =
+        std::find_if(maps->function_table.begin(), maps->function_table.end(),
+                    [&name](const Fn &fn) { return fn.first.first == name; });
 
-  if (res != maps->function_table.end()) {
-    return { *res };
+    if (res != maps->function_table.end()) {
+      return { *res };
+    }
+
+    std::string msg = "Function '" + name + "' is not defined";
+    handleError(line, pos, msg, "", "Type Error");
+  } else if (callee->kind == ND_MEMBER) {
+    MemberExpr *member = static_cast<MemberExpr *>(callee);
+    // visit the lhs of the member expression
+    visitExpr(maps, member->lhs);
+    std::string lhsType = type_to_string(return_type.get());
+    // get the name of the member
+    std::string name = static_cast<IdentExpr *>(member->rhs)->name;
+    // only structs can have function members
+    if (maps->struct_table.find(lhsType) == maps->struct_table.end()) {
+      std::string msg = "Function '" + name + "' is not defined in struct '" + lhsType + "'";
+      handleError(member->line, member->pos, msg, "", "Type Error");
+    }
+    // find the function in the struct_table_fn
+    for (std::pair<std::pair<std::string, Node::Type *>,
+          std::vector<std::pair<std::string, Node::Type *>>> member : maps->struct_table_fn[lhsType]) {
+      if (member.first.first == name) {
+        return { member };
+      }
+    }
+    std::string msg = "Function '" + name + "' is not defined in struct '" + lhsType + "'";
+    handleError(member->line, member->pos, msg, "", "Type Error");
   }
-
-  std::string msg = "Function '" + name + "' is not defined";
-  handleError(line, pos, msg, "", "Type Error");
   return {};
 }
 

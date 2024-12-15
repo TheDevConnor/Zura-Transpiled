@@ -102,7 +102,7 @@ void declare_struct_fn(Maps *maps, const std::pair<std::string, Node::Type *> &p
 using Fn = std::pair<std::pair<std::string, Node::Type *>,
                                        std::vector<std::pair<std::string, Node::Type *>>>;
 using FnVector = std::vector<Fn>;
-FnVector lookup_fn(Maps *maps, std::string name, int line, int pos);
+FnVector lookup_fn(Maps *maps, Node::Expr *callee, int line, int pos);
 
 inline bool foundMain = false;
 inline bool needsReturn = false;
@@ -125,10 +125,10 @@ void processEnumMember(Maps *map, MemberExpr *member,
                         const std::string &lhsType);
 void handleUnknownType(MemberExpr *member, const std::string &lhsType);
 
-void reportOverloadedFunctionError(CallExpr *call, const std::string &functionName);
-bool validateArgumentCount(CallExpr *call, const std::string &functionName,
+void reportOverloadedFunctionError(CallExpr *call, Node::Expr *callee);
+bool validateArgumentCount(CallExpr *call, Node::Expr *callee,
                                         const std::vector<std::pair<std::string, Node::Type *>> &fnParams);
-bool validateArgumentTypes(Maps *map, CallExpr *call, const std::string &functionName,
+bool validateArgumentTypes(Maps *map, CallExpr *call, Node::Expr *callee,
                                         const std::vector<std::pair<std::string, Node::Type *>> &fnParams);
 
 void visitArrayType(Maps *map, Node::Type *type);
