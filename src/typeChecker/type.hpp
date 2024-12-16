@@ -31,7 +31,7 @@ public:
   /// Array content table
   std::vector<Node::Type *> array_table = {};
   /// Template Table
-  std::unordered_map<std::string, Node::Type *> template_table = {};
+  std::vector<std::string> template_table = {};
   std::vector<std::string> stackKeys;
   /// Struct Table
   // name -> { member name, member type }

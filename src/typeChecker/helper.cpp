@@ -23,6 +23,10 @@ std::string TypeChecker::type_to_string(Node::Type *type) {
     return "[]" + type_to_string(static_cast<ArrayType *>(type)->underlying);
   case NodeKind::ND_POINTER_TYPE:
     return "*" + type_to_string(static_cast<PointerType *>(type)->underlying);
+  case NodeKind::ND_TEMPLATE_STRUCT_TYPE: {
+    TemplateStructType *temp = static_cast<TemplateStructType *>(type);
+    return type_to_string(temp->name);
+  }
   default:
     return "Unknown type";
   }
@@ -33,6 +37,13 @@ std::shared_ptr<SymbolType> TypeChecker::checkReturnType(Node::Expr *expr, const
         expr->asmType = return_type.get();
         return std::make_shared<SymbolType>(defaultType);
     }
+
+    // check if we have a return type of any
+    if (type_to_string(return_type.get()) == "any") {
+        expr->asmType = return_type.get();
+        return std::make_shared<SymbolType>(defaultType); // return the default type
+    }
+
     // NullExpr is valid for all pointer types
     if (expr->kind == NodeKind::ND_NULL) {
         expr->asmType = return_type.get();
@@ -46,6 +57,10 @@ bool TypeChecker::checkTypeMatch(const std::shared_ptr<SymbolType> &lhs,
                                  const std::string &operation, int line,
                                  int pos, std::string &msg) {
   if (type_to_string(lhs.get()) != type_to_string(rhs.get())) {
+    // if one side is of type 'any' let the other side be the type so it is not an error
+    if (type_to_string(lhs.get()) == "any" || type_to_string(rhs.get()) == "any") {
+      return true;
+    }
     handleError(line, pos, msg, "", "Type Error");
     return false;
   }
@@ -74,7 +89,6 @@ void TypeChecker::processStructMember(Maps *map, MemberExpr *member, const std::
 
   if (map->struct_table.find(realType) != map->struct_table.end()) {
     // Check if we are looking at a function or a field
-    bool isFunc = true;
     if (map->struct_table_fn.find(realType) != map->struct_table_fn.end()) {
       const FnVector &stmts = map->struct_table_fn[realType];
       const FnVector::const_iterator res = std::find_if(stmts.begin(), stmts.end(),
@@ -82,29 +96,30 @@ void TypeChecker::processStructMember(Maps *map, MemberExpr *member, const std::
                                   return fn.first.first == static_cast<IdentExpr *>(member->rhs)->name;
                               });
       if (res == stmts.end()) {
-        isFunc = false;
       } else {
         return_type = std::make_shared<SymbolType>(type_to_string(res->first.second));
         member->asmType = return_type.get();
         return;
       }
     }
-    if (!isFunc) {
-      const std::vector<std::pair<std::string, Node::Type *>> &fields = map->struct_table[realType];
-      std::string mname = static_cast<IdentExpr *>(member->rhs)->name;
-      const std::vector<std::pair<std::string, Node::Type *>>::const_iterator res = std::find_if(fields.begin(), fields.end(),
-                              [&mname](const std::pair<std::string, Node::Type *> &field) {
-                                  return field.first == mname;
-                              });
-      if (res == fields.end()) {
-        std::string msg = "Type '" + lhsType + "' does not have member '" + name + "'";
-        handleError(member->line, member->pos, msg, "", "Type Error");
-        return_type = std::make_shared<SymbolType>("unknown");
-        return;
-      }
-      return_type = std::make_shared<SymbolType>(type_to_string(res->second));
-      member->asmType = return_type.get();
+    const std::vector<std::pair<std::string, Node::Type *>> &fields =
+        map->struct_table[realType];
+    std::string mname = static_cast<IdentExpr *>(member->rhs)->name;
+    const std::vector<std::pair<std::string, Node::Type *>>::const_iterator
+        res = std::find_if(
+            fields.begin(), fields.end(),
+            [&mname](const std::pair<std::string, Node::Type *> &field) {
+              return field.first == mname;
+            });
+    if (res == fields.end()) {
+      std::string msg =
+          "Type '" + lhsType + "' does not have member '" + name + "'";
+      handleError(member->line, member->pos, msg, "", "Type Error");
+      return_type = std::make_shared<SymbolType>("unknown");
+      return;
     }
+    return_type = std::make_shared<SymbolType>(type_to_string(res->second));
+    member->asmType = return_type.get();
   }
 }
 

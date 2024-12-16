@@ -132,6 +132,11 @@ void TypeChecker::visitStruct(Maps *map, Node::Stmt *stmt) {
   
   // visit the fields Aka the variables
   for (std::pair<std::string, Node::Type *> &field : struct_stmt->fields) {
+    // check if the field is a template type change the field type to "any"
+    if (std::find(map->template_table.begin(), map->template_table.end(), type_to_string(field.second)) !=
+        map->template_table.end()) {
+      field.second = new SymbolType("any");
+    }
     map->struct_table[struct_stmt->name].push_back(field);
   }
 
@@ -270,6 +275,34 @@ void TypeChecker::visitVar(Maps *map, Node::Stmt *stmt) {
     return_type = std::make_shared<SymbolType>(type_to_string(var_stmt->type));
   }
 
+  // Now check if we have a template struct
+  if (var_stmt->type->kind == ND_TEMPLATE_STRUCT_TYPE) {
+    TemplateStructType *temp = static_cast<TemplateStructType *>(var_stmt->type);
+    
+    auto res = map->struct_table.find(type_to_string(temp->name));
+    if (res == nullptr) {
+      std::string msg = "Template struct '" + type_to_string(temp->name) + "' is not defined";
+      handleError(var_stmt->line, var_stmt->pos, msg, "", "Type Error");
+    }
+
+    // If we found the struct now lets go through the fields and find the value with the template type and change that to the underlying type
+    for (std::pair<std::string, Node::Type *> &field : map->struct_table[type_to_string(temp->name)]) {
+      // see if the type is a template type
+      auto res = std::find(map->template_table.begin(), map->template_table.end(), type_to_string(field.second));
+      if (res != map->template_table.end()) {
+        printTables(map);
+        field.second = temp->underlying;
+        printTables(map);
+      }
+    }
+
+    // Now we can set the return type to the underlying type
+    return_type = std::make_shared<SymbolType>(type_to_string(temp->underlying));
+
+    // Now we can set the type of the variable to the underlying type
+    var_stmt->type = temp->underlying;
+  }
+
   // check if the variable is initialized
   if (var_stmt->expr == nullptr) {
     return;
@@ -295,17 +328,29 @@ void TypeChecker::visitVar(Maps *map, Node::Stmt *stmt) {
 
 // Why, oh why, C++, is this the solution?
 Node::Type *createDuplicate(Node::Type *original) {
-  if (original->kind == NodeKind::ND_SYMBOL_TYPE) {
-    SymbolType *sym = static_cast<SymbolType *>(original);
-    return new SymbolType(sym->name);
-  } else if (original->kind == NodeKind::ND_ARRAY_TYPE) {
-    ArrayType *arr = static_cast<ArrayType *>(original);
-    return new ArrayType(createDuplicate(arr->underlying), arr->constSize);
-  } else if (original->kind == NodeKind::ND_POINTER_TYPE) {
-    PointerType *ptr = static_cast<PointerType *>(original);
-    return new PointerType(createDuplicate(ptr->underlying));
+  switch(original->kind) {
+    case NodeKind::ND_SYMBOL_TYPE: {
+      SymbolType *sym = static_cast<SymbolType *>(original);
+      return new SymbolType(sym->name);
+    }
+    case NodeKind::ND_ARRAY_TYPE: {
+      ArrayType *arr = static_cast<ArrayType *>(original);
+      return new ArrayType(createDuplicate(arr->underlying), arr->constSize);
+    }
+    case NodeKind::ND_POINTER_TYPE: {
+      PointerType *ptr = static_cast<PointerType *>(original);
+      return new PointerType(createDuplicate(ptr->underlying));
+    }
+    case NodeKind::ND_TEMPLATE_STRUCT_TYPE: {
+      TemplateStructType *temp = static_cast<TemplateStructType *>(original);
+      return new TemplateStructType(createDuplicate(temp->name), createDuplicate(temp->underlying));
+    }
+    default: {
+      std::string msg = "Unknown type";
+      TypeChecker::handleError(0, 0, msg, "", "Type Error");
+      return nullptr;
+    }
   }
-  return nullptr;
 }
 
 void TypeChecker::visitPrint(Maps *map, Node::Stmt *stmt) {
@@ -330,8 +375,15 @@ void TypeChecker::visitReturn(Maps *map, Node::Stmt *stmt) {
 void TypeChecker::visitTemplateStmt(Maps *map, Node::Stmt *stmt) {
   TemplateStmt *templateStmt = static_cast<TemplateStmt *>(stmt);
   // template <typename T>
-  std::cout << "Not yet Implemented! Templates" << std::endl;
-  return_type = nullptr;
+  // add to the template table
+  map->template_table = templateStmt->typenames;
+
+  // add the template to the global table
+  for (std::string &name : templateStmt->typenames) {
+    SymbolType *type = new SymbolType("any");
+    declare(map->global_symbol_table, name, static_cast<Node::Type *>(type),
+                 templateStmt->line, templateStmt->pos);
+  }
 }
 
 void TypeChecker::visitFor(Maps *map, Node::Stmt *stmt) {

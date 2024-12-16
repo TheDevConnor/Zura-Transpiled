@@ -224,12 +224,11 @@ void TypeChecker::visitAssign(Maps *map, Node::Expr *expr) {
     return;
   }
 
-  if (type_to_string(lhs.get()) != type_to_string(rhs.get())) {
-    std::string msg =
-        "Assignment requires both sides to be the same type and got '" +
-        type_to_string(lhs.get()) + "' and '" + type_to_string(rhs.get()) + "'";
-    handleError(assign->line, assign->pos, msg, "", "Type Error");
-  }
+  std::string msg = "Assignment requires both sides to be the same type, but got '" +
+                    type_to_string(lhs.get()) + "' and '" + type_to_string(rhs.get()) + "'";
+  checkTypeMatch(std::make_shared<SymbolType>(type_to_string(lhs.get())),
+                 std::make_shared<SymbolType>(type_to_string(rhs.get())),
+                 "=", assign->line, assign->pos, msg);
 
   return_type = lhs;
   expr->asmType = lhs.get();

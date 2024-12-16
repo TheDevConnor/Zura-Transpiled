@@ -57,3 +57,23 @@ public:
 
   ~PointerType() = default; // rule of threes-
 };
+
+class TemplateStructType : public Node::Type {
+public:
+  Node::Type *name; // Person
+  Node::Type *underlying; // < int >
+
+  TemplateStructType(Node::Type *name, Node::Type *underlying)
+      : name(name), underlying(underlying) {
+    kind = NodeKind::ND_TEMPLATE_STRUCT_TYPE;
+  }
+
+  void debug(int indent = 0) const override {
+    name->debug(indent);
+    std::cout << "<";
+    underlying->debug(indent);
+    std::cout << ">";
+  }
+
+  ~TemplateStructType() = default;
+};

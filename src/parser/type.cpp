@@ -53,3 +53,12 @@ Node::Type *Parser::pointer_type(PStruct *psr) {
   Node::Type *underlying = parseType(psr, defaultValue);
   return new PointerType(underlying);
 }
+
+Node::Type *Parser::type_application(PStruct *psr) {
+  psr->advance(psr); // Skip the <
+  Node::Type *left = parseType(psr, defaultValue);
+  psr->expect(psr, TokenKind::GREATER,
+              "Expected a greater than symbol after a type application!");
+  Node::Type *right = parseType(psr, defaultValue);
+  return new TemplateStructType(right, left);
+}

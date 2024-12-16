@@ -226,4 +226,9 @@ void TypeChecker::printTables(Maps *map) {
                 << std::endl;
     }
   }
+
+  std::cout << "Template Table" << std::endl;
+  for (std::string &name : map->template_table) {
+    std::cout << "\t" << name << std::endl;
+  }
 }

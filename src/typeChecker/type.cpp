@@ -13,4 +13,5 @@ void TypeChecker::performCheck(Node::Stmt *stmt, bool isMain) {
                  "  return 0\n\t}",
                  "Type Error");
   }
+  std::cout << "Type checking completed successfully" << std::endl;
 }

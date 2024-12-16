@@ -1,28 +1,24 @@
-const Hobbies := enum {
-  Drawing,
-  Cooking,
-  Programming,
-  Reading,
+@template<typename T>
+const Zura := struct {
+  value: T;
+
+  print := fn(self: *Zura) void {
+    dis(self.value);
+  };
 };
 
-const main := fn () int {
-  have x: Hobbies = Hobbies.Programming;
-  match (x) {
-    case Hobbies.Drawing -> {
-      return 1;
-    }
-    case Hobbies.Cooking -> {
-      return 2;
-    }
-    case Hobbies.Programming -> {
-      return 3;
-    }
-    case Hobbies.Reading -> {
-      return 4;
-    }
-    default -> {
-      return 0;
-    }
-  }
+const main := fn() int {
+  have zura: <int>Zura;
+  zura.value = 10;
+  zura.print();
+
+  have zura2: <str>Zura;
+  zura2.value = "Hello, Zura!";
+  zura2.print();
+
+  have zura3: <bool>Zura;
+  zura3.value = true;
+  zura.print();
+
   return 0;
 };

@@ -8,8 +8,7 @@ const Hobbies := enum {
 const Person := struct {
     name: str;
     age: int;
-    fav_hobby: Hobbies;
-
+    
     greet := fn (self: *Person) void {
         dis("Hello, my name is ", self.name, " and I am ", self.age, " years old.");
     }; 
