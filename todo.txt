@@ -1,11 +1,11 @@
-Add in control flow to the codegen (done => if, for) (strill need => switch, while)
-NOTE: Read into switch statements "jump tables", and how to emit them in ASM.
+Add in control flow to the codegen (done => if, for, switch; still need => while)
+NOTE: Read into switch statements "jump tables", and how to emit them in ASM. => Kind of done. Need more research.
 
 Add and recognize more int types in asm. (Ex. byte, short, long, quad).
  - IMPORTANT - Update stmt::enumDecl IMMEDIATELY after adding longs
 
 A test for if adding TCP/HTTP requests
-Maybe do pointers? (Yes, do pointers)
+Pointers implemented now. Still backwards from C declarations tho but shh
    - Implement sockets (HTTP requests ??)
    - Note for HTTP:
       - $ man 2 socket
@@ -16,4 +16,4 @@ Maybe do pointers? (Yes, do pointers)
       - Listen Syscall #: SYS_listen 50
       - Accept Syscall #: SYS_accept 43
       - Read Syscall #:   SYS_read 0
-      
+      - Write Syscall #:  SYS_WRITE 1 (Already implemented in the form of 'dis')

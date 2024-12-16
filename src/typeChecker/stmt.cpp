@@ -411,6 +411,18 @@ void TypeChecker::visitImport(Maps *map, Node::Stmt *stmt) {
   node.current_file = file_name; // reset the current file name
 }
 
+void TypeChecker::visitMatch(Maps *map, Node::Stmt *stmt) {
+  MatchStmt *match_stmt = static_cast<MatchStmt *>(stmt);
+  visitExpr(map, match_stmt->coverExpr);
+
+  for (std::pair<Node::Expr *, Node::Stmt *> &pair : match_stmt->cases) {
+    visitExpr(map, pair.first); // Implement actual jump tables and math later. For now, all return_types for case expressions are allowed.
+    visitStmt(map, pair.second);
+  }
+
+  return_type = nullptr;
+}
+
 void TypeChecker::visitLink(Maps *map, Node::Stmt *stmt) {
   // nothing to do here
 }

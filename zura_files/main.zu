@@ -1,28 +1,28 @@
 const Hobbies := enum {
-    Cooking,
-    Programming,
-    Drawing,
-    Reading,
-}; 
-
-const Person := struct {
-    name: str;
-    age: int;
-    fav_hobby: Hobbies;
-
-    greet := fn (self: *Person) void {
-        dis("Hello, my name is ", self.name, " and I am ", self.age, " years old.");
-    }; 
+  Drawing,
+  Cooking,
+  Programming,
+  Reading,
 };
 
 const main := fn () int {
-  have John: Person = {
-    name: "John",
-    age: 25,
-    fav_hobby: Hobbies.Programming
-  };
-
-  John.greet(); # 'self' not included here
-
+  have x: Hobbies = Hobbies.Programming;
+  match (x) {
+    case Hobbies.Drawing -> {
+      return 1;
+    }
+    case Hobbies.Cooking -> {
+      return 2;
+    }
+    case Hobbies.Programming -> {
+      return 3;
+    }
+    case Hobbies.Reading -> {
+      return 4;
+    }
+    default -> {
+      return 0;
+    }
+  }
   return 0;
 };

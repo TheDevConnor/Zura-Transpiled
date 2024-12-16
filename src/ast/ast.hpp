@@ -54,6 +54,7 @@ enum NodeKind {
   ND_CONTINUE_STMT, // continue
   ND_LINK_STMT, // link "x"
   ND_EXTERN_STMT, // extern "C"
+  ND_MATCH_STMT, // match (x) { case 123 => { ... } }
 
   // Types
   ND_SYMBOL_TYPE, // int

@@ -26,6 +26,46 @@ public:
   ~ProgramStmt() = default; // rule of threes
 };
 
+class MatchStmt : public Node::Stmt {
+public:
+  int line, pos;
+  Node::Expr *coverExpr;
+  std::vector<std::pair<Node::Expr *, Node::Stmt *>> cases;
+  Node::Stmt *defaultCase;
+
+  MatchStmt(int line, int pos, Node::Expr *coverExpr,
+            std::vector<std::pair<Node::Expr *, Node::Stmt *>> cases,
+            Node::Stmt *defaultCase, int file)
+      : line(line), pos(pos), coverExpr(coverExpr), cases(cases),
+        defaultCase(defaultCase) {
+    file_id = file;
+    kind = NodeKind::ND_MATCH_STMT;
+  }
+
+  void debug(int indent = 0) const override {
+    Node::printIndent(indent);
+    std::cout << "MatchStmt: \n";
+    Node::printIndent(indent + 1);
+    std::cout << "WhatExpr: \n";
+    coverExpr->debug(indent + 2);
+    for (int i = 0; i < cases.size(); i++) {
+      Node::printIndent(indent + 1);
+      std::cout << "Case #" << std::to_string(i) << ": \n";
+      Node::printIndent(indent + 2);
+      std::cout << "Expr: \n";
+      cases[i].first->debug(indent + 3);
+      Node::printIndent(indent + 2);
+      std::cout << "Stmt: \n";
+      cases[i].second->debug(indent + 3);
+    }
+    if (defaultCase) {
+      Node::printIndent(indent + 1);
+      std::cout << "Default Case: \n";
+      defaultCase->debug(indent + 2);
+    }
+  }
+};
+
 class ExprStmt : public Node::Stmt {
 public:
   int line, pos;

@@ -57,20 +57,21 @@ void Lexer::initMap() {
   };
 
   keywords = {
-      {"and", TokenKind::AND},           {"else", TokenKind::ELSE},
-      {"false", TokenKind::FAL},         {"fn", TokenKind::FUN},
-      {"loop", TokenKind::LOOP},         {"if", TokenKind::IF},
-      {"nil", TokenKind::NIL},           {"or", TokenKind::OR},
-      {"dis", TokenKind::PRINT},         {"return", TokenKind::RETURN},
-      {"exit", TokenKind::EXIT},         {"super", TokenKind::SUPER},
-      {"true", TokenKind::TR},           {"have", TokenKind::VAR},
-      {"pkg", TokenKind::PKG},           {"in", TokenKind::IN},
-      {"type", TokenKind::TYPE},         {"struct", TokenKind::STRUCT},
-      {"enum", TokenKind::ENUM},         {"union", TokenKind::UNION},
-      {"const", TokenKind::_CONST},      {"import", TokenKind::IMPORT},
-      {"pub", TokenKind::PUB},           {"priv", TokenKind::PRIV},
-      {"break", TokenKind::BREAK},       {"continue", TokenKind::CONTINUE},
-      {"typename", TokenKind::TYPEALIAS},
+      {"and", TokenKind::AND},            {"else", TokenKind::ELSE},
+      {"false", TokenKind::FAL},          {"fn", TokenKind::FUN},
+      {"loop", TokenKind::LOOP},          {"if", TokenKind::IF},
+      {"nil", TokenKind::NIL},            {"or", TokenKind::OR},
+      {"dis", TokenKind::PRINT},          {"return", TokenKind::RETURN},
+      {"exit", TokenKind::EXIT},          {"super", TokenKind::SUPER},
+      {"true", TokenKind::TR},            {"have", TokenKind::VAR},
+      {"pkg", TokenKind::PKG},            {"in", TokenKind::IN},
+      {"type", TokenKind::TYPE},          {"struct", TokenKind::STRUCT},
+      {"enum", TokenKind::ENUM},          {"union", TokenKind::UNION},
+      {"const", TokenKind::_CONST},       {"import", TokenKind::IMPORT},
+      {"pub", TokenKind::PUB},            {"priv", TokenKind::PRIV},
+      {"break", TokenKind::BREAK},        {"continue", TokenKind::CONTINUE},
+      {"typename", TokenKind::TYPEALIAS}, {"match", TokenKind::MATCH},
+      {"default", TokenKind::DEFAULT},    {"case", TokenKind::CASE},
   };
 
   scMap = {

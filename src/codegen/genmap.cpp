@@ -16,6 +16,7 @@ void codegen::initMaps() {
       {ND_CONTINUE_STMT, _continue}, {ND_STRUCT_STMT, structDecl},
       {ND_ENUM_STMT, enumDecl},      {ND_IMPORT_STMT, importDecl},
       {ND_LINK_STMT, linkFile},      {ND_EXTERN_STMT, externName},
+      {ND_MATCH_STMT, matchStmt}
   };
   exprHandlers = {
       {ND_BINARY, binary},   {ND_UNARY, unary},         {ND_CALL, call},

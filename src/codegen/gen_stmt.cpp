@@ -681,6 +681,72 @@ void codegen::externName(Node::Stmt *stmt) {
   externalNames.insert(s->name);
 }
 
+void codegen::matchStmt(Node::Stmt *stmt) {
+  MatchStmt *s = static_cast<MatchStmt *>(stmt);
+  push(Instr{.var = Comment{.comment = "match statement"}, .type = InstrType::Comment}, Section::Main);
+  pushDebug(s->line, stmt->file_id, s->pos);
+  if (s->cases.size() == 0 && s->defaultCase != nullptr) {
+    // Always jump to the default. What the hell are you using a switch for, anyway?
+    visitStmt(s->defaultCase);
+    return;
+  }
+  if (s->cases.size() == 0 && s->defaultCase == nullptr) {
+    // Empty switch. Do not do anything or emit any code.
+    return;
+  }
+
+  // Evaluate the match expression
+  visitExpr(s->coverExpr);
+  // Pop the value somewhere where a comp can be made
+  popToRegister("%rax");
+
+  std::string matchEndWhere = ".Lmatch_end" + std::to_string(conditionalCount + s->cases.size());
+  std::string matchDefaultWhere = ".Lmatch_default" + std::to_string(conditionalCount + s->cases.size());
+
+  // Go through each case and evaluate the condition.
+  for (int i = 0; i < s->cases.size(); i++) {
+    std::pair<Node::Expr *, Node::Stmt *> matchCase = s->cases[i];
+    visitExpr(matchCase.first);
+    // We can optimize a little further and remove the previous push and compare to its value directly!
+    PushInstr prevPush = std::get<PushInstr>(text_section[text_section.size() - 1].var);
+    text_section.pop_back();
+
+    push(Instr {.var = CmpInstr {.lhs = "%rax", .rhs = prevPush.what}, .type = InstrType::Cmp}, Section::Main);
+    // Jump if equal to the case
+    push(Instr{.var = JumpInstr{.op = JumpCondition::Equal, .label = ".Lmatch_case" + std::to_string(conditionalCount + i)}, .type = InstrType::Jmp}, Section::Main);
+  };
+
+  // If there is a default case, jump to it. We have clearly gotten this far and not found a match.
+  if (s->defaultCase == nullptr) {
+    // Jump to the end of the match statement. One will always be added later.
+    push(Instr{.var = JumpInstr{.op = JumpCondition::Unconditioned, .label = matchEndWhere}, .type = InstrType::Jmp}, Section::Main);
+  } else {
+    push(Instr{.var = JumpInstr{.op = JumpCondition::Unconditioned, .label = matchDefaultWhere}, .type = InstrType::Jmp}, Section::Main);
+  }
+
+  // Evaluate each case's label and, of course, statements.
+  for (int i = 0; i < s->cases.size(); i++) {
+    std::pair<Node::Expr *, Node::Stmt *> matchCase = s->cases[i];
+    push(Instr{.var = Label{.name = ".Lmatch_case" + std::to_string(conditionalCount + i)}, .type = InstrType::Label}, Section::Main);
+    visitStmt(matchCase.second);
+    // Only jump to the end if there is a break. Otherwise, fall through!
+    // Yes, this is intended. If you made a mistake and forgot to break, then we are not cleaning up after you!
+  }
+
+  // Evaluate the default case, if it exists
+  if (s->defaultCase != nullptr) {
+    push(Instr{.var = Label{.name = matchDefaultWhere}, .type = InstrType::Label}, Section::Main);
+    visitStmt(s->defaultCase);
+    // No need to jump here. Since we evaluated this last, we can simply fall through to the end.
+  };
+
+  // We're done! Simply append the finishing label and we will be good to go.
+  push(Instr{.var = Label{.name = matchEndWhere}, .type = InstrType::Label}, Section::Main);
+  conditionalCount += s->cases.size();
+};
+
+
+
 // Structname passed by the varStmt's "type" field
 void codegen::declareStructVariable(Node::Expr *expr, std::string structName, int whereToPut) {
   StructExpr *s = static_cast<StructExpr *>(expr);

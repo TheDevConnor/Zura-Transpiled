@@ -68,6 +68,7 @@ void _continue(Node::Stmt *stmt);
 void _return(Node::Stmt *stmt);
 void linkFile(Node::Stmt *stmt);
 void externName(Node::Stmt *stmt);
+void matchStmt(Node::Stmt *stmt);
 
 void _arrayExpr(Node::Expr *expr);
 void arrayElem(Node::Expr *expr);

@@ -71,7 +71,7 @@ enum TokenKind {
   _CONST,
   PKG,
   TYPE,
-  EXIT,
+  EXIT, // Create an exit syscall from anywhere within the program, whether that be the main function or some other crazy place.
   IN,
   STRUCT,
   ENUM,
@@ -87,6 +87,9 @@ enum TokenKind {
   CALL, // Call extern'd functions.
   LINK,
   EXTERN,
+  MATCH, // a C-like switch statement
+  DEFAULT,
+  CASE,
 
   // Error
   ERROR_,

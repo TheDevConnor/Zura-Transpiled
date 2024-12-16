@@ -31,6 +31,7 @@ std::vector<std::pair<NodeKind, TypeChecker::StmtNodeHandler>>
         {NodeKind::ND_IMPORT_STMT, visitImport},
         {NodeKind::ND_LINK_STMT, visitLink},
         {NodeKind::ND_EXTERN_STMT, visitExtern},
+        {NodeKind::ND_MATCH_STMT, visitMatch}
 };
 
 std::vector<std::pair<NodeKind, TypeChecker::ExprNodeHandler>>

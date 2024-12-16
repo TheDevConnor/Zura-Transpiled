@@ -341,6 +341,58 @@ Node::Stmt *Parser::loopStmt(PStruct *psr, std::string name) {
   return nullptr;
 }
 
+Node::Stmt *Parser::matchStmt(PStruct *psr, std::string name) {
+  int line = psr->tks[psr->pos].line;
+  int column = psr->tks[psr->pos].column;
+  
+  psr->expect(psr, TokenKind::MATCH,
+              "Expected a MATCH keyword to start a match stmt");
+
+  psr->expect(psr, TokenKind::LEFT_PAREN,
+              "Expected a L_PAREN to start a match stmt catch");
+  
+  Node::Expr *cond = parseExpr(psr, BindingPower::defaultValue);
+
+  psr->expect(psr, TokenKind::RIGHT_PAREN,
+              "Expected a R_PAREN to end the condition in a match stmt");
+  
+  psr->expect(psr, TokenKind::LEFT_BRACE,
+              "Expected a L_BRACE to start a match stmt body");
+  
+  std::vector<std::pair<Node::Expr *, Node::Stmt *>> cases;
+  Node::Stmt *defaultCase = nullptr;
+  while (psr->current(psr).kind != TokenKind::RIGHT_BRACE) {
+    if (psr->current(psr).kind == TokenKind::DEFAULT) {
+      psr->advance(psr);
+      psr->expect(psr, TokenKind::RIGHT_ARROW,
+                  "Expected a RIGHT_ARROW after the DEFAULT keyword in a match stmt");
+      defaultCase = blockStmt(psr, name); // Will automatically detect another L_BRACE
+      continue;
+    }
+    if (psr->current(psr).kind == TokenKind::CASE) {
+      psr->advance(psr);
+      Node::Expr *caseExpr = parseExpr(psr, BindingPower::defaultValue);
+      psr->expect(psr, TokenKind::RIGHT_ARROW,
+                  "Expected a RIGHT_ARROW after the case expression in a match stmt");
+      Node::Stmt *caseStmt = blockStmt(psr, name);
+      cases.push_back({caseExpr, caseStmt});
+    } else {
+      // What the hell token is this?
+      // Not creating a case here would result in an infinite loop.
+      // This is a safety measure to prevent that.
+      std::string msg = "Unexpected token in match statement: " + psr->current(psr).value;
+      ErrorClass::error(line, column, msg, "", "Parser Error",
+                        psr->current_file.c_str(), lexer, psr->tks, true,
+                        false, false, false, false, false);
+      psr->advance(psr); // Consume the bad token
+    }
+  }
+
+  psr->expect(psr, TokenKind::RIGHT_BRACE,
+              "Expected a R_BRACE to end a match stmt");
+  return new MatchStmt(line, column, cond, cases, defaultCase, codegen::getFileID(psr->current_file));
+};
+
 Node::Stmt *Parser::enumStmt(PStruct *psr, std::string name) {
   int line = psr->tks[psr->pos].line;
   int column = psr->tks[psr->pos].column;

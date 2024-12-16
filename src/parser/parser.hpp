@@ -154,6 +154,7 @@ Node::Expr *_member(PStruct *psr, Node::Expr *left, BindingPower bp);
 Node::Expr *index(PStruct *psr, Node::Expr *left, BindingPower bp);
 Node::Expr *resolution(PStruct *psr, Node::Expr *left, BindingPower bp);
 // Stmt Functions
+Node::Stmt *matchStmt(PStruct *psr, std::string name);
 Node::Stmt *returnStmt(PStruct *psr, std::string name);
 Node::Stmt *structStmt(PStruct *psr, std::string name);
 Node::Stmt *importStmt(PStruct *psr, std::string name);
