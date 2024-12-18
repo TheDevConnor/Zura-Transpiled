@@ -1,0 +1,7 @@
+const len := fn (s: []int) int {
+    loop (i = 0; i < 1000) : (i++) {
+        if (s[i] == 0) return i;
+    }
+    dis("Error: len() reached the end of the array.");
+    return 1000;
+};

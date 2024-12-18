@@ -443,7 +443,7 @@ void codegen::arrayElem(Node::Expr *expr) {
 
       default: {
         // Sad, we can't rely on little syntactical sugar of the assembler to cheat our way out :(
-        push(Instr{.var = BinaryInstr{.op = "imul", .src = "$" + std::to_string(byteSize), .dst = "%rax"},
+        push(Instr{.var = BinaryInstr{.op = "\nimul", .src = "$" + std::to_string(byteSize), .dst = "%rax"},
                    .type = InstrType::Binary},
              Section::Main);
         pushRegister("(%rcx, %rax)");

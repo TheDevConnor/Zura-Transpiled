@@ -7,6 +7,11 @@ const Zura := struct {
   };
 };
 
+@template<typename T>
+const add := fn(a: U, b: U) U {
+  return a + b;
+};
+
 const main := fn() int {
   have zura: <int>Zura;
   zura.value = 10;
@@ -20,5 +25,5 @@ const main := fn() int {
   zura3.value = true;
   zura.print();
 
-  return 0;
+  return add(10, 20);
 };

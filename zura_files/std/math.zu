@@ -1,9 +1,7 @@
 const power := fn(n: int, m: int) int {
-    have res: int = 1;
-
-    loop (i=0; i < m) : (i++) {
-        res = res * n;
+    have result: int = 1;
+    loop (i = 0; i < m) : (i++) {
+        result = result * n;
     }
-    
-    return res;
+    return result;
 };
