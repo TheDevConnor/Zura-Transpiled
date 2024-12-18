@@ -269,7 +269,29 @@ void codegen::call(Node::Expr *expr) {
     for (size_t i = 0; i < e->args.size(); i++) {
       // evaluate them
       codegen::visitExpr(e->args.at(i));
-      popToRegister(argOrder[i]);
+      // Check if the argument was a struct or array
+      // That requires an lea, not a mov (that will be implicitly created here)
+      bool isLea = false;
+      if (e->args[i]->asmType->kind == ND_ARRAY_TYPE) {
+        isLea = true;
+      }
+      if (e->args[i]->asmType->kind == ND_SYMBOL_TYPE) {
+        SymbolType *sym = static_cast<SymbolType *>(e->args[i]->asmType);
+        if (structByteSizes.find(sym->name) != structByteSizes.end()) {
+          isLea = true; // It was in there!
+        }
+      }
+      if (isLea) {
+        // Get rid of the pushexpr
+        PushInstr instr = std::get<PushInstr>(text_section.at(text_section.size() - 1).var);
+        std::string whatWasPushed = instr.what;
+        text_section.pop_back();
+        // NOW we can lea
+        push(Instr{.var = LeaInstr{.size = DataSize::Qword, .dest = argOrder[i], .src = whatWasPushed},
+                   .type = InstrType::Lea},
+             Section::Main);
+      } else
+        popToRegister(argOrder[i]);
     }
     // Call the function
     push(Instr{.var = CallInstr{.name = "usr_" + n->name},
@@ -393,12 +415,12 @@ void codegen::arrayElem(Node::Expr *expr) {
   pushDebug(e->line, expr->file_id, e->pos);
   // Evaluate the arrauy
   // Evaluate the index
-  ArrayExpr *array = static_cast<ArrayExpr *>(e->lhs);
   if (e->rhs->kind == ND_INT) {
     // It's a constant index
     IntExpr *index = static_cast<IntExpr *>(e->rhs);
-    Node::Type *underlying = static_cast<ArrayType *>(array->type)->underlying;
     if (e->lhs->kind == ND_IDENT) {
+      IdentExpr *ident = static_cast<IdentExpr *>(e->lhs);
+      Node::Type *underlying = static_cast<ArrayType *>(e->asmType)->underlying;
       std::string whereBytes = variableTable[static_cast<IdentExpr *>(e->lhs)->name];
       int offset = std::stoi(whereBytes.substr(0, whereBytes.find("("))); // this is the base of the array - the first byte of the first element
       offset -= (index->value * getByteSizeOfType(underlying));
@@ -406,7 +428,7 @@ void codegen::arrayElem(Node::Expr *expr) {
     } else {
       visitExpr(e->lhs);
       popToRegister("%rcx");
-      int byteSize = getByteSizeOfType(underlying);
+      int byteSize = getByteSizeOfType(e->lhs->asmType);
       int offset = -index->value * byteSize;
       if (offset == 0)
         pushRegister("(%rcx)");
@@ -423,13 +445,13 @@ void codegen::arrayElem(Node::Expr *expr) {
     popToRegister("%rax");
     // %rax contains the index
     // Negate rax
-    pushLinker("negq %rax", Section::Main);
+    pushLinker("negq %rax\n\t", Section::Main);
     // Multiply it by the size of the type
-    ArrayExpr *array = static_cast<ArrayExpr *>(e->lhs);
-    int byteSize = getByteSizeOfType(array->type);
+    int byteSize = getByteSizeOfType(e->lhs->asmType);
     switch (byteSize) {
       case 1: {
         // No need to multiply
+        // Ex: []char or []bool
         pushRegister("(%rcx, %rax)");
         break;
       }
@@ -443,7 +465,7 @@ void codegen::arrayElem(Node::Expr *expr) {
 
       default: {
         // Sad, we can't rely on little syntactical sugar of the assembler to cheat our way out :(
-        push(Instr{.var = BinaryInstr{.op = "\nimul", .src = "$" + std::to_string(byteSize), .dst = "%rax"},
+        push(Instr{.var = BinaryInstr{.op = "imul", .src = "$" + std::to_string(byteSize), .dst = "%rax"},
                    .type = InstrType::Binary},
              Section::Main);
         pushRegister("(%rcx, %rax)");
@@ -635,7 +657,7 @@ void codegen::assignStructMember(Node::Expr *expr) {
         // Evaluate the expression
         visitExpr(field.second);
         // Pop the value into a register
-        std::string popExpr = std::to_string(baseBytes + offset + (-8 + fields.at(i).second.second)) + "(%rcx)";
+        std::string popExpr = std::to_string(baseBytes + offset + (fields.at(i).second.second)) + "(%rcx)";
         // optimizer bug fsr
         popToRegister(popExpr);
       }

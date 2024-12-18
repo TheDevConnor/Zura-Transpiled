@@ -99,6 +99,7 @@ using StructMember = std::pair<std::string, std::pair<Node::Type *, unsigned sho
 // <size, <StructMember>>
 using Struct = std::pair<size_t, std::vector<StructMember>>;
 inline std::unordered_map<std::string, Struct> structByteSizes = {}; // Name of a struct and its size in bytes
+
 signed short int getByteSizeOfType(Node::Type *type); // Return the size of a type in bytes, ie pointers are a size_t (os specific macros baby!)
 std::string getUnderlying(Node::Type *type); // Get the underlying type name of a type (ie, int* -> int, []int -> int, int -> int)
 std::string type_to_diename(Node::Type *type);

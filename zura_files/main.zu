@@ -1,29 +1,8 @@
-@template<typename T>
-const Zura := struct {
-  value: T;
+@import "lexer/helper.zu";
 
-  print := fn(self: *Zura) void {
-    dis(self.value);
-  };
-};
-
-@template<typename T>
-const add := fn(a: U, b: U) U {
-  return a + b;
-};
-
-const main := fn() int {
-  have zura: <int>Zura;
-  zura.value = 10;
-  zura.print();
-
-  have zura2: <str>Zura;
-  zura2.value = "Hello, Zura!";
-  zura2.print();
-
-  have zura3: <bool>Zura;
-  zura3.value = true;
-  zura.print();
-
-  return add(10, 20);
+const main := fn () int {
+  have num: [6]int = [1, 2, 3, 4, 5, 0]; # 0 is the terminator
+  have l: int = len(num);
+  dis(l, "\n");
+  return 0;
 };

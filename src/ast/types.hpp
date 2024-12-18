@@ -36,6 +36,8 @@ public:
     if (underlying) {
       underlying->debug(indent);
     } else std::cout << "\n";
+    Node::printIndent(indent + 1);
+    std::cout << "Size: " << (constSize < 1 ? "Any" : std::to_string(constSize)) << "\n";
   }
 
   ~ArrayType() = default;

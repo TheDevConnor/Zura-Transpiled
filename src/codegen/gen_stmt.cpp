@@ -269,7 +269,7 @@ void codegen::block(Node::Stmt *stmt) {
   // TODO: Track the number of variables and pop them off later
   // This should be handled by the IR when i get around to it though
   size_t preSS = stackSize;
-  int64_t preVS = variableCount;
+  size_t preVS = variableCount;
   scopes.push_back(std::pair(preSS, preVS));
   // AHHHH DWARF STUFF ::SOB::::::::::
   // push a .loc
@@ -288,6 +288,7 @@ void codegen::block(Node::Stmt *stmt) {
               "\n.quad .Ldie" + std::to_string(thisDieCount) + "_end - .Ldie" + std::to_string(thisDieCount) + "_begin\n" // High pc
     , Section::DIE);
   }
+  variableCount = 8; // reset local variable count for this
   for (Node::Stmt *stm : s->stmts) {
     codegen::visitStmt(stm);
   }
@@ -865,7 +866,7 @@ void codegen::declareArrayVariable(Node::Expr *expr, short int arrayLength, std:
   }
 
   ArrayExpr *s = static_cast<ArrayExpr *>(expr);
-  int underlyingByteSize = getByteSizeOfType(s->type);
+  int underlyingByteSize = getByteSizeOfType(static_cast<ArrayType *>(s->type)->underlying);
   dwarf::useType(s->type);
 
   int arrayBase = variableCount;

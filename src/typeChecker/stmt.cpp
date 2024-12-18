@@ -299,7 +299,15 @@ void TypeChecker::visitVar(Maps *map, Node::Stmt *stmt) {
   if (var_stmt->type->kind == ND_ARRAY_TYPE) {
     // Set the expr.type to the type of the variable so it can be used
     // in codegen process.
-    static_cast<ArrayExpr *>(var_stmt->expr)->type = var_stmt->type;
+    ArrayExpr *array_expr = static_cast<ArrayExpr *>(var_stmt->expr);
+    ArrayType *array_type = static_cast<ArrayType *>(var_stmt->type);
+    if (array_type->constSize < 1) {
+      // If the array was declared empty...
+      var_stmt->type = array_expr->type = new ArrayType(
+          static_cast<ArrayType *>(var_stmt->type)->underlying, array_expr->elements.size()); // Probably fine?
+    } else {
+      array_expr->type = var_stmt->type;
+    }
   }
   visitExpr(map, var_stmt->expr);
 
