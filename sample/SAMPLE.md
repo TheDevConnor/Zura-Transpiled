@@ -87,13 +87,13 @@ Zura supports the `if`, `else`, `while`, and `for` control structures that you m
 # C for loop
 #    iterator  cond    postfix
 loop (i := 0; i < 10) : (i++) {
-   dis(i, "\n");
+   @dis(i, "\n");
 }
 
 # C while loop
 #    iterator  cond     (no post-loop operator)
 loop (i := 0; i < 10) {
-   dis(i, "\n");
+   @dis(i, "\n");
 }
 ```
 
@@ -102,7 +102,7 @@ You are allowed to have a post-loop operator in the loop syntax without the inli
 ```cpp
 have x: int = 0;
 loop (x < 10) : (x++) {
-   dis(x, "\n");
+   @dis(x, "\n");
 }
 ```
 
@@ -111,9 +111,9 @@ The `if` and `else` statements are similar to other languages.
 ```cpp
 have x: int = 10;
 if (x > 10) {
-   dis("x > 10\n");
+   @dis("x > 10\n");
 } else {
-   dis("x <= 10\n");
+   @dis("x <= 10\n");
 }
 ```
 
@@ -154,7 +154,7 @@ have p: Point;
 p.x = 10;
 p.y = 20;
 
-dis("Point: (", p.x, ", ", p.y, ")\n");
+@dis("Point: (", p.x, ", ", p.y, ")\n");
 ```
 
 Structs can also be defined in one big expression, rather than defining each member individually like the example above.
@@ -180,7 +180,7 @@ const Color := enum {
 };
 
 have c: Color = Color.Red;
-dis("Color: ", c, "\n");
+@dis("Color: ", c, "\n");
 ```
 
 Each member of the enum is treated as the C-like equivalent of a `unsigned long`.
@@ -221,15 +221,15 @@ const main := fn () int {
    have x: int = 10;
    have y: int = 20;
 
-   dis("Integer values: 'x=", x, "' and 'y=", y, "'\n");
+   @dis("Integer values: 'x=", x, "' and 'y=", y, "'\n");
 
    have fx: float = @cast<float>(x);
    have fy: float = @cast<float>(y);
 
-   dis("Float values: 'fx=", fx, "' and 'fy=", fy, "'\n");
+   @dis("Float values: 'fx=", fx, "' and 'fy=", fy, "'\n");
 
    have avg: float = calculate_average(fx, fy);
-   dis("Average of float values: 'avg=", avg, "'\n");
+   @dis("Average of float values: 'avg=", avg, "'\n");
 
    return 0;
 };
@@ -241,16 +241,16 @@ Zura provides a set of built-in functions that do not require the importing of s
 
 ```cpp
 have x: int = 10;
-dis("Value of x: ", x, "\n");
+@dis("Value of x: ", x, "\n");
 
 have s: string = "Hello, World!";
-dis("String value: ", s, "\n");
+@dis("String value: ", s, "\n");
 
 have y: int = @input<int>("Enter a number: ");
-dis("You entered: ", y, "\n");
+@dis("You entered: ", y, "\n");
 
 have x: int = @cast<int>(10.5);
-dis("Casting float to int: ", x, "\n");
+@dis("Casting float to int: ", x, "\n");
 ```
 
 ## Pointers

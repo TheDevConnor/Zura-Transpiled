@@ -12,6 +12,7 @@ enum NodeKind {
   ND_FLOAT, // 12.3
   ND_IDENT, // x
   ND_STRING, // "hello"
+  ND_CHAR, // 'c'
   ND_BINARY, // 12 + 34
   ND_UNARY, // !true
   ND_PREFIX, // ++x

@@ -16,26 +16,37 @@ void codegen::initMaps() {
       {ND_CONTINUE_STMT, _continue}, {ND_STRUCT_STMT, structDecl},
       {ND_ENUM_STMT, enumDecl},      {ND_IMPORT_STMT, importDecl},
       {ND_LINK_STMT, linkFile},      {ND_EXTERN_STMT, externName},
-      {ND_MATCH_STMT, matchStmt}
+      {ND_MATCH_STMT, matchStmt},
   };
   exprHandlers = {
-      {ND_BINARY, binary},   {ND_UNARY, unary},         {ND_CALL, call},
-      {ND_TERNARY, ternary}, {ND_INT, primary},         {ND_FLOAT, primary},
-      {ND_IDENT, primary},   {ND_STRING, primary},      {ND_BOOL, primary},
-      {ND_GROUP, grouping},  {ND_ASSIGN, assign},       {ND_PREFIX, unary},
-      {ND_POSTFIX, unary},   {ND_ARRAY, _arrayExpr},    {ND_INDEX, arrayElem},
-      {ND_CAST, cast},       {ND_MEMBER, memberExpr},   {ND_EXTERNAL_CALL, externalCall},
-      {ND_STRUCT, _struct},  {ND_ADDRESS, addressExpr}, {ND_NULL, nullExpr}
+      {ND_BINARY, binary},
+      {ND_UNARY, unary},
+      {ND_CALL, call},
+      {ND_TERNARY, ternary},
+      {ND_INT, primary},
+      {ND_FLOAT, primary},
+      {ND_IDENT, primary},
+      {ND_STRING, primary},
+      {ND_BOOL, primary},
+      {ND_CHAR, primary},
+      {ND_GROUP, grouping},
+      {ND_ASSIGN, assign},
+      {ND_PREFIX, unary},
+      {ND_POSTFIX, unary},
+      {ND_ARRAY, _arrayExpr},
+      {ND_INDEX, arrayElem},
+      {ND_CAST, cast},
+      {ND_MEMBER, memberExpr},
+      {ND_EXTERNAL_CALL, externalCall},
+      {ND_STRUCT, _struct},
+      {ND_ADDRESS, addressExpr},
+      {ND_NULL, nullExpr},
   };
-  opMap = {
-      {"+", "add"}, {"-", "sub"}, 
-      {"*", "imul"}, {"/", "idiv"}, {"%", "mod"}, // mod is div but special 
-      {"^", "exp"}, 
+  opMap = {{"+", "add"},   {"-", "sub"},    {"*", "imul"}, {"/", "idiv"},
+           {"%", "mod"}, // mod is div but special
+           {"^", "exp"},
 
-      {"==", "sete"}, {"!=", "setne"},
-      {">", "setg"}, {">=", "setge"}, 
-      {"<", "setl"}, {"<=", "setle"},
-      {"||", "lor"}, {"|", "bor"},
-      {"&&", "land"}, {"&", "band"}
-  };
+           {"==", "sete"}, {"!=", "setne"}, {">", "setg"}, {">=", "setge"},
+           {"<", "setl"},  {"<=", "setle"}, {"||", "lor"}, {"|", "bor"},
+           {"&&", "land"}, {"&", "band"}};
 }

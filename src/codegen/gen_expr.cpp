@@ -65,6 +65,12 @@ void codegen::primary(Node::Expr *expr) {
          Section::ReadonlyData);
     break;
   }
+  case ND_CHAR: {
+    CharExpr *charExpr = static_cast<CharExpr *>(expr);
+    pushDebug(charExpr->line, expr->file_id, charExpr->pos);
+    pushRegister("$" + std::to_string((int)charExpr->value));
+    break;
+  }
   case ND_FLOAT: {
     FloatExpr *floating = static_cast<FloatExpr *>(expr);
     std::string label = "float" + std::to_string(floatCount++);
@@ -191,63 +197,6 @@ void codegen::unary(Node::Expr *expr) {
   pushRegister(whatWasPushed);
 }
 
-void codegen::cast(Node::Expr *expr) {
-  CastExpr *e = static_cast<CastExpr *>(expr);
-  SymbolType *toType = static_cast<SymbolType *>(e->castee_type);
-  SymbolType *fromType = static_cast<SymbolType *>(e->castee->asmType);
-
-  if (fromType->name == "str") {
-    std::cerr << "Explicitly casting from string is not allowed" << std::endl;
-    exit(-1);
-  }
-  pushDebug(e->line, expr->file_id, e->pos);
-  visitExpr(e->castee);
-  if (fromType->name == "unknown") {
-    return; // Assume the dev knew what they were doing and push the original value
-  }
-  if (toType->name == "enum") {
-    // Enums are truly just ints under-the-hood
-    if (fromType->name != "int") {
-      std::cerr << "Cannot cast non-int to enum" << std::endl;
-      exit(-1);
-    }
-    return; // Do nothing (essentially just a void cast)
-  }
-  if (toType->name == "float") {
-    // We are casting into a float.
-    popToRegister("%rax"); // This actually doesnt matter but rax is fast and also our garbage disposal
-    // Perform the conversion
-    if (fromType->name == "int") {
-      push(Instr{.var = ConvertInstr{.convType = ConvertType::SI2SS, .from = "%rax", .to = "%xmm1"},
-                .type = InstrType::Convert},
-          Section::Main);
-      // push xmm0
-      push(Instr{.var=PushInstr{.what="%xmm0",.whatSize=DataSize::SS},.type=InstrType::Push},Section::Main);
-    }
-    if (fromType->name == "float") {
-      // Do nothing, it's already a float
-      // Optimizer will know that this redundant push/pop is, of course, redundant
-      pushRegister("%rax");
-    }
-  } else if (toType->name == "int") {
-    if (fromType->name == "int" || fromType->name == "enum") {
-      // Do nothing, it's already an int
-      // Enums are explicitly ints under-the-hood as well
-      return;
-    }
-
-    if (fromType->name == "float") {
-      popToRegister("%xmm0");
-      // Perform the conversion (always truncate for now)
-      push(Instr{.var = ConvertInstr{.convType = ConvertType::TSS2SI, .from = "%xmm0", .to = "%rax"},
-                .type = InstrType::Convert},
-          Section::Main);
-      // push rax - its ok becasue rax holds an int now! it fits on our int-based stack! woohoo!!!!
-      pushRegister("%rax");
-    }
-  }
-}
-
 void codegen::grouping(Node::Expr *expr) {
   GroupExpr *e = static_cast<GroupExpr *>(expr);
   // Visit the expression inside the grouping
@@ -299,6 +248,7 @@ void codegen::call(Node::Expr *expr) {
               .optimize = false},
         Section::Main);
     pushRegister("%rax");
+    push(Instr{.var=AddInstr{.lhs="%rsp",.rhs="$"+std::to_string(round(variableCount-8, 8))},.type=InstrType::Sub},Section::Main);
   } else if (e->callee->kind == ND_MEMBER) {
     // Get the struct name
     MemberExpr *member = static_cast<MemberExpr *>(e->callee);
@@ -337,6 +287,7 @@ void codegen::call(Node::Expr *expr) {
               .optimize = false},
         Section::Main);
     pushRegister("%rax");
+    push(Instr{.var=AddInstr{.lhs="%rsp",.rhs="$"+std::to_string(round(variableCount-8, 8))},.type=InstrType::Sub},Section::Main);
   }
 }
 
@@ -369,28 +320,6 @@ void codegen::ternary(Node::Expr *expr) {
   push(Instr{.var = Label{.name = "ternaryEnd" + ternayCount},
              .type = InstrType::Label},Section::Main);
   ternay++;
-}
-
-void codegen::externalCall(Node::Expr *expr) {
-  // Basically like a normal function call
-  // ... Minus the "usr_" prefix
-  ExternalCall *e = static_cast<ExternalCall *>(expr);
-  pushDebug(e->line, expr->file_id, e->pos);
-  // Push each argument one by one.
-  if (e->args.size() > argOrder.size()) {
-    std::cerr << "Too many arguments in call - consider reducing them or moving them to a globally defined space." << std::endl;
-    exit(-1);
-  }
-  for (size_t i = 0; i < e->args.size(); i++) {
-    // evaluate them
-    codegen::visitExpr(e->args.at(i));
-    popToRegister(argOrder[i]);
-  }
-  // Call the function
-  push(Instr{.var = CallInstr{.name = e->name + "@PLT"},
-             .type = InstrType::Call},
-       Section::Main);
-  pushRegister("%rax");
 }
 
 void codegen::assign(Node::Expr *expr) {
@@ -604,8 +533,6 @@ void codegen::addressExpr(Node::Expr *expr) {
   visitExpr(e->right);
   // Good enough
 };
-
-
 
 void codegen::assignStructMember(Node::Expr *expr) {
   AssignmentExpr *e = static_cast<AssignmentExpr *>(expr);

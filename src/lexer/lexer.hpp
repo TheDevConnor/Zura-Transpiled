@@ -51,6 +51,7 @@ enum TokenKind {
   // Literals.
   IDENTIFIER,
   STRING,
+  CHAR,
   INT,
   FLOAT,
 
@@ -152,6 +153,7 @@ private:
   Token identifier();
   Token number();
   Token String();
+  Token Char();
 
   TokenKind checkIdentMap(std::string identifier);
   TokenKind sc_dc_lookup(char c);

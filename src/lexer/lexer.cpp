@@ -88,6 +88,32 @@ Lexer::Token Lexer::String() {
   return makeToken(TokenKind::STRING);
 }
 
+Lexer::Token Lexer::Char() {
+  if (isAtEnd())
+    return errorToken("Unterminated character literal.");
+
+  char value = advance(); // Get the character value.
+
+  // Check for escaped characters.
+  if (value == '\\') {
+    if (isAtEnd())
+      return errorToken("Unterminated escape sequence in character literal.");
+    value = advance(); // Consume the escaped character.
+  }
+
+  // Ensure the closing quote is present.
+  if (peek() != '\'')
+    return errorToken("Unterminated character literal.");
+  
+  advance(); // Consume the closing quote.
+  
+  // Validate the length of the character.
+  if (scanner.current - scanner.start > 3) // 3: opening `'`, the char, and closing `'`
+    return errorToken("Character literal must contain exactly one character.");
+
+  return makeToken(TokenKind::CHAR);
+}
+
 Lexer::Token Lexer::identifier() {
   while (isalpha(peek()) || isdigit(peek()) || peek() == '_')
     advance();
@@ -116,16 +142,14 @@ Lexer::Token Lexer::scanToken() {
 
   char c = Lexer::advance();
 
-  Token res = isalpha(c)   ? makeToken(identifier().kind)
-                          : c == '@'  ? makeToken(at_keywords[identifier().value])
-                          : isdigit(c) ? makeToken(number().kind)
-                          : c == '"'   ? makeToken(String().kind)
-                          : makeToken(sc_dc_lookup(c));
+  if (isalpha(c)) return makeToken(identifier().kind);
+  if (c == '@')   return makeToken(at_keywords[identifier().value]);
+  if (isdigit(c)) return makeToken(number().kind);
+  if (c == '"')   return makeToken(String().kind);
+  if (c == '\'')  return makeToken(Char().kind);
 
-  if (res.kind == TokenKind::UNKNOWN) {
-    std::string msg = "Unexpected character: " + std::string(1, c);
-    return errorToken(msg);
-  }
+  auto kind = sc_dc_lookup(c);
+  if (kind != TokenKind::UNKNOWN) return makeToken(kind);
 
-  return res;
+  return errorToken("Unexpected character: " + std::string(1, c));
 }

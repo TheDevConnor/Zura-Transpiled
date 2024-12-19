@@ -472,52 +472,6 @@ void codegen::structDecl(Node::Stmt *stmt) {
   }
 }
 
-void codegen::print(Node::Stmt *stmt) {
-  PrintStmt *print = static_cast<PrintStmt *>(stmt);
-
-  push(Instr{.var = Comment{.comment = "print stmt"}, .type = InstrType::Comment}, Section::Main);
-  nativeFunctionsUsed[NativeASMFunc::strlen] = true;
-  pushDebug(print->line, stmt->file_id);
-
-  for (Node::Expr *arg : print->args) {
-    std::string argType = getUnderlying(arg->asmType);
-    if (argType == "") continue;
-    if (argType == "str") {
-      visitExpr(arg);
-      popToRegister("%rsi"); // String address
-      moveRegister("%rdi", "%rsi", DataSize::Qword, DataSize::Qword);
-      push(Instr{.var = CallInstr{.name = "native_strlen"}, .type = InstrType::Call}, Section::Main);
-      moveRegister("%rdx", "%rax", DataSize::Qword, DataSize::Qword); // Length of string
-
-      // syscall id for write on x86 is 1
-      moveRegister("%rax", "$1", DataSize::Qword, DataSize::Qword);
-      // set rdi to 1 (file descriptor for stdout)
-      moveRegister("%rdi", "$1", DataSize::Qword, DataSize::Qword);
-
-      // Make syscall to write
-      push(Instr{.var = Syscall{.name = "SYS_WRITE"}, .type = InstrType::Syscall}, Section::Main);
-    } else if (argType == "int") {
-      nativeFunctionsUsed[NativeASMFunc::itoa] = true;
-      visitExpr(arg);
-      popToRegister("%rdi");
-      push(Instr{.var = CallInstr{.name = "native_itoa"}, .type = InstrType::Call}, Section::Main); // Convert int to string
-      moveRegister("%rdi", "%rax", DataSize::Qword, DataSize::Qword);
-      moveRegister("%rsi", "%rdi", DataSize::Qword, DataSize::Qword);
-      // Now we have the integer string in %rax (assuming %rax holds the pointer to the result)
-      push(Instr{.var = CallInstr{.name = "native_strlen"}, .type = InstrType::Call}, Section::Main);
-      moveRegister("%rdx", "%rax", DataSize::Qword, DataSize::Qword); // Length of number string
-      
-      // syscall id for write on x86 is 1
-      moveRegister("%rax", "$1", DataSize::Qword, DataSize::Qword);
-      // set rdi to 1 (file descriptor for stdout)
-      moveRegister("%rdi", "$1", DataSize::Qword, DataSize::Qword);
-
-      // Make syscall to write
-      push(Instr{.var = Syscall({.name = "SYS_WRITE"}), .type = InstrType::Syscall}, Section::Main);
-    }
-  }
-}
-
 void codegen::_return(Node::Stmt *stmt) {
   ReturnStmt *returnStmt = static_cast<ReturnStmt *>(stmt);
 
@@ -637,54 +591,6 @@ void codegen::_continue(Node::Stmt *stmt) {
   }
 };
 
-void codegen::importDecl(Node::Stmt *stmt) {
-  // Lex, parse, and generate code for the imported file
-  // Keep track of its imports to ensure there are no circular dependencies.
-  
-  ImportStmt *s = static_cast<ImportStmt *>(stmt);
-  push(Instr{.var = Comment{.comment = "Import file '" + s->name + "'."}, .type = InstrType::Comment}, Section::Main);
-  codegen::program(s->stmt);
-};
-
-void codegen::linkFile(Node::Stmt *stmt) {
-  LinkStmt *s = static_cast<LinkStmt *>(stmt);
-  if (linkedFiles.find(s->name) != linkedFiles.end()) {
-    // It's not the end of the world.
-    std::cout << "Warning: File '" << s->name << "' already @link'd." << std::endl;
-  } else {
-    linkedFiles.insert(s->name);
-  }
-}
-
-void codegen::externName(Node::Stmt *stmt) {
-  ExternStmt *s = static_cast<ExternStmt *>(stmt);
-  push(Instr{.var = Comment{.comment = "Extern name '" + s->name + "'."}, .type = InstrType::Comment}, Section::Main);
-  // Push the extern directive to the front of the section
-  if (externalNames.find(s->name) != externalNames.end()) { 
-    std::cout << "Error: Name '" << s->name << "' already @extern'd." << std::endl;
-    return;
-  } 
-  // i did, it works we don't touch now lmao
-  if (s->externs.size() > 0) {
-    for (std::string &ext : s->externs) {
-      text_section.emplace(text_section.begin(), Instr{.var = LinkerDirective{.value = ".extern " + ext + "\n"}, .type = InstrType::Linker});
-      externalNames.insert(ext);
-    }
-  } else {
-    text_section.emplace(text_section.begin(), Instr{.var = LinkerDirective{.value = ".extern " + s->name + "\n"}, .type = InstrType::Linker});
-    externalNames.insert(s->name);
-  }
-  if (debug) text_section.emplace(text_section.begin(), Instr{.var = LinkerDirective{ // NOTE: I'm not sure if this .loc will be registered properly.
-    .value = 
-      ".loc " + std::to_string(s->file_id) + 
-      " " + std::to_string(s->line) + 
-      " " + std::to_string(s->pos) + 
-      "\n\t"},
-    .type = InstrType::Linker});
-  text_section.emplace(text_section.begin(), Instr{.var = Comment{.comment = "Include external function name '" + s->name + "'."}, .type = InstrType::Comment});
-  externalNames.insert(s->name);
-}
-
 void codegen::matchStmt(Node::Stmt *stmt) {
   MatchStmt *s = static_cast<MatchStmt *>(stmt);
   push(Instr{.var = Comment{.comment = "match statement"}, .type = InstrType::Comment}, Section::Main);
@@ -748,8 +654,6 @@ void codegen::matchStmt(Node::Stmt *stmt) {
   push(Instr{.var = Label{.name = matchEndWhere}, .type = InstrType::Label}, Section::Main);
   conditionalCount += s->cases.size();
 };
-
-
 
 // Structname passed by the varStmt's "type" field
 void codegen::declareStructVariable(Node::Expr *expr, std::string structName, int whereToPut) {

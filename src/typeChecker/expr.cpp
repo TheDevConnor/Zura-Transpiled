@@ -62,6 +62,12 @@ void TypeChecker::visitString(Maps *map, Node::Expr *expr) {
   expr->asmType = return_type.get();
 }
 
+void TypeChecker::visitChar(Maps *map, Node::Expr *expr) {
+  CharExpr *character = static_cast<CharExpr *>(expr);
+  return_type = std::make_shared<SymbolType>("char");
+  expr->asmType = return_type.get();
+}
+
 void TypeChecker::visitAddress(Maps *map, Node::Expr *expr) {
   AddressExpr *address = static_cast<AddressExpr *>(expr);
   visitExpr(map, address->right);

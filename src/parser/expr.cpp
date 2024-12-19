@@ -42,6 +42,9 @@ Node::Expr *Parser::primary(PStruct *psr) {
   case TokenKind::STRING: {
     return new StringExpr(line, column, psr->advance(psr).value, codegen::getFileID(psr->current_file));
   }
+  case TokenKind::CHAR: {
+    return new CharExpr(line, column, psr->advance(psr).value[1], codegen::getFileID(psr->current_file));
+  }
   default:
     ErrorClass::error(psr->current(psr).line, psr->current(psr).column,
                       "Could not parse primary expression!", "", "Parser Error",

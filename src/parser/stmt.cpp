@@ -180,7 +180,11 @@ Node::Stmt *Parser::ifStmt(PStruct *psr, std::string name) {
   int column = psr->tks[psr->pos].column;
 
   psr->expect(psr, TokenKind::IF, "Expected an IF keyword to start an if stmt");
+  psr->expect(psr, TokenKind::LEFT_PAREN,
+              "Expected a L_PAREN to start the condition in an if stmt");
   Node::Expr *condition = parseExpr(psr, BindingPower::defaultValue);
+  psr->expect(psr, TokenKind::RIGHT_PAREN,
+              "Expected a R_PAREN to end the condition in an if stmt");
 
   Node::Stmt *thenStmt = parseStmt(psr, name);
   Node::Stmt *elseStmt = nullptr;

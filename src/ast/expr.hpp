@@ -122,6 +122,24 @@ public:
   }
 };
 
+class CharExpr : public Node::Expr {
+public:
+  int line, pos;
+  char value;
+
+  CharExpr(int line, int pos, char value, int file)
+      : line(line), pos(pos), value(value) {
+    file_id = file;
+    kind = NodeKind::ND_CHAR;
+    this->asmType = new SymbolType("char");
+  }
+
+  void debug(int indent = 0) const override {
+    Node::printIndent(indent);
+    std::cout << "CharExpr: " << value << "\n";
+  }
+};
+
 class CastExpr : public Node::Expr {
 public: 
   int line, pos;

@@ -31,7 +31,7 @@ int main() {
     {SEMICOLON, ";"},
     {_EOF, ""},
   };
-
+  
   for (int i = 0; !is_eof(tokens[i]); i++) {
     print(tokens[i]);
   }

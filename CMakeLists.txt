@@ -63,6 +63,7 @@ set(ZURA_SOURCE_FILES
     # Code Gen Files
     src/codegen/optimizer/optimize.cpp
     src/codegen/optimizer/compiler.cpp
+    src/codegen/builtin.cpp
     src/codegen/gen_expr.cpp
     src/codegen/gen_stmt.cpp
     src/codegen/gen_type.cpp

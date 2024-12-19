@@ -74,7 +74,7 @@ void Parser::createMaps() {
       {TokenKind::TR, bool_expr},          {TokenKind::FAL, bool_expr},
       {TokenKind::CAST, cast_expr},        {TokenKind::CALL, externalCall},
       {TokenKind::LEFT_BRACE, structExpr}, {TokenKind::LAND, address},
-      {TokenKind::NIL, null_type}
+      {TokenKind::NIL, null_type},       {TokenKind::CHAR, primary},
   };
   led_lu = {
       {TokenKind::PLUS, binary},
@@ -158,6 +158,7 @@ void Parser::createMaps() {
       {TokenKind::INT, BindingPower::defaultValue},
       {TokenKind::FLOAT, BindingPower::defaultValue},
       {TokenKind::STRING, BindingPower::defaultValue},
+      {TokenKind::CHAR, BindingPower::defaultValue},
 
       {TokenKind::RANGE, BindingPower::range},
 

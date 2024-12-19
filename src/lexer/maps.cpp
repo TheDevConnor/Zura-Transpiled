@@ -53,15 +53,15 @@ void Lexer::initMap() {
   at_keywords = {
       {"@template", TokenKind::TEMPLATE}, {"@cast", TokenKind::CAST},
       {"@import", TokenKind::IMPORT},     {"@link", TokenKind::LINK},
-      {"@extern", TokenKind::EXTERN},     {"@call", TokenKind::CALL}
+      {"@extern", TokenKind::EXTERN},     {"@call", TokenKind::CALL},
+      {"@dis", TokenKind::PRINT},
   };
 
   keywords = {
       {"and", TokenKind::AND},            {"else", TokenKind::ELSE},
       {"false", TokenKind::FAL},          {"fn", TokenKind::FUN},
       {"loop", TokenKind::LOOP},          {"if", TokenKind::IF},
-      {"nil", TokenKind::NIL},            {"or", TokenKind::OR},
-      {"dis", TokenKind::PRINT},          {"return", TokenKind::RETURN},
+      {"nil", TokenKind::NIL},            {"or", TokenKind::OR}, 
       {"exit", TokenKind::EXIT},          {"super", TokenKind::SUPER},
       {"true", TokenKind::TR},            {"have", TokenKind::VAR},
       {"pkg", TokenKind::PKG},            {"in", TokenKind::IN},
@@ -72,6 +72,7 @@ void Lexer::initMap() {
       {"break", TokenKind::BREAK},        {"continue", TokenKind::CONTINUE},
       {"typename", TokenKind::TYPEALIAS}, {"match", TokenKind::MATCH},
       {"default", TokenKind::DEFAULT},    {"case", TokenKind::CASE},
+      {"return", TokenKind::RETURN}, 
   };
 
   scMap = {

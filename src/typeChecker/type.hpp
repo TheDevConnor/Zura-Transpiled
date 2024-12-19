@@ -173,6 +173,7 @@ void visitExpr(Maps *map, Node::Expr *expr);
 void visitInt(Maps *map, Node::Expr *expr);
 void visitFloat(Maps *map, Node::Expr *expr);
 void visitString(Maps *map, Node::Expr *expr);
+void visitChar(Maps *map, Node::Expr *expr);
 void visitIdent(Maps *map, Node::Expr *expr);
 void visitBinary(Maps *map, Node::Expr *expr);
 void visitUnary(Maps *map, Node::Expr *expr);
