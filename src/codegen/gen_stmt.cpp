@@ -5,6 +5,7 @@
 #include "gen.hpp"
 
 #include <iostream>
+#include <string>
 #include <sys/cdefs.h>
 
 void codegen::visitStmt(Node::Stmt *stmt) {
@@ -148,8 +149,10 @@ void codegen::funcDecl(Node::Stmt *stmt) {
   for (size_t i = 0; i < s->params.size(); i++) {
     // Move the argument to the stack
     // This is the same as a variable declaration, kinda
-    moveRegister(std::to_string(-variableCount-getByteSizeOfType(s->params.at(i).second)) + "(%rbp)", argOrder.at(i), DataSize::Qword, DataSize::Qword);
-    variableTable.insert({s->params.at(i).first, std::to_string(-variableCount-getByteSizeOfType(s->params.at(i).second)) + "(%rbp)"});
+    std::string where = std::to_string(-variableCount) + "(%rbp)";
+    moveRegister(where, argOrder.at(i), DataSize::Qword, DataSize::Qword);
+    variableTable.insert({s->params.at(i).first, where});
+    variableCount += getByteSizeOfType(s->params.at(i).second);
 
     if (debug) {
       // Use the parameter type

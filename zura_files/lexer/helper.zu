@@ -1,7 +1,7 @@
-const len := fn (s: []int) int {
+const len_int := fn (s: []int) int {
     loop (i = 0; i < 1000) : (i++) {
-        if (s[i] == 0) return i;
+        if (s[i] == 100) return i;
     }
-    dis("Error: len() reached the end of the array.");
-    return 1000;
+    dis("Error: Array is to long; for the given limit!\n");
+    return 0;
 };

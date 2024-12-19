@@ -1,8 +1,9 @@
 @import "lexer/helper.zu";
 
 const main := fn () int {
-  have num: [6]int = [1, 2, 3, 4, 5, 0]; # 0 is the terminator
-  have l: int = len(num);
-  dis(l, "\n");
+  have num: [6]int = [0, 1, 2, 3, 4, 100]; # 0 is the terminator
+  have li: int = len_int(num);
+  dis(li, " -> is the length of the array.\n");
+
   return 0;
 };
