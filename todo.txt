@@ -1,6 +1,10 @@
 Add in control flow to the codegen (done => if, for, switch; still need => while)
 NOTE: Read into switch statements "jump tables", and how to emit them in ASM. => Kind of done. Need more research.
 
+Add bool type to debug DIEs.
+Fix random bug where only in debug mode that function calls on structs are incorrect
+Fix random bug that some functions start with bad %rbp offsets
+
 Add and recognize more int types in asm. (Ex. byte, short, long, quad).
  - IMPORTANT - Update stmt::enumDecl IMMEDIATELY after adding longs
 

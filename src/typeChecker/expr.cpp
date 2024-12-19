@@ -344,7 +344,7 @@ void TypeChecker::visitArray(Maps *map, Node::Expr *expr) {
 
 void TypeChecker::visitArrayType(Maps *map, Node::Type *type) {
   ArrayType *array = static_cast<ArrayType *>(type);
-  return_type = std::make_shared<SymbolType>("[]" + type_to_string(array->underlying));
+  return_type = std::make_shared<ArrayType>(array->underlying, array->constSize);
 }
 
 void TypeChecker::visitIndex(Maps *map, Node::Expr *expr) {
@@ -360,7 +360,7 @@ void TypeChecker::visitIndex(Maps *map, Node::Expr *expr) {
     handleError(index->line, index->pos, msg, "", "Type Error");
   }
 
-  if (type_to_string(array.get()).find("[]") == std::string::npos) {
+  if (array.get()->kind == ND_ARRAY_TYPE) {
     std::string msg =
         "Indexing requires the lhs to be of type array but got '" +
         type_to_string(array.get()) + "'";

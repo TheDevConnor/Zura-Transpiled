@@ -132,10 +132,8 @@ void codegen::funcDecl(Node::Stmt *stmt) {
   pushDebug(s->line, stmt->file_id, s->pos);
   push(Instr{.var=LinkerDirective{.value=".cfi_startproc\n\t"},.type=InstrType::Linker},Section::Main);
 
-  stackSize = 0;
   // Define literally (do not adjust cfa for this)
   push(Instr{.var = PushInstr{.what = "%rbp", .whatSize = DataSize::Qword},.type = InstrType::Push},Section::Main);
-  stackSize++;
   push(Instr{.var=LinkerDirective{.value=".cfi_def_cfa_offset 16\n\t"},.type=InstrType::Linker},Section::Main);
   push(Instr{.var = MovInstr{.dest = "%rbp",
     .src = "%rsp",
@@ -311,15 +309,13 @@ void codegen::ifStmt(Node::Stmt *stmt) {
   push(Instr{.var = Comment{.comment = "if statement"}, .type = InstrType::Comment}, Section::Main);
   pushDebug(s->line, stmt->file_id, s->pos);
 
-  BinaryExpr *cond = nullptr;
-  if (s->condition->kind == ND_GROUP) {
-    GroupExpr *group = static_cast<GroupExpr *>(s->condition);
-    cond = (group->expr->kind == ND_BINARY) ? static_cast<BinaryExpr *>(group->expr) : nullptr;
-  } else {
-    cond = static_cast<BinaryExpr *>(s->condition);
+  Node::Expr *cond = CompileOptimizer::optimizeExpr(s->condition);
+  if (cond == nullptr) {
+    // If the condition is always false, don't bother with the if statement
+    return;
   }
 
-  if (!cond) {
+  if (cond->kind != ND_BINARY) {
     // Handle non-binary conditions
     visitExpr(s->condition);
     popToRegister("%rcx");
@@ -330,7 +326,7 @@ void codegen::ifStmt(Node::Stmt *stmt) {
     push(Instr{.var = JumpInstr{.op = JumpCondition::NotZero, .label = ".Lconditional" + preconCount}, .type = InstrType::Jmp}, Section::Main);
   } else {
     // Process binary expression
-    processBinaryExpression(cond, preconCount, ".Lconditional");
+    processBinaryExpression(static_cast<BinaryExpr *>(cond), preconCount, ".Lconditional");
   }
 
   // Jump to "main" label if condition is false (fall through)
@@ -781,6 +777,14 @@ void codegen::declareArrayVariable(Node::Expr *expr, short int arrayLength, std:
   for (int i = 0; i < s->elements.size(); i++) {
     Node::Expr *element = s->elements.at(i);
     // Evaluate the expression
+    if (element->kind == ND_STRUCT) {
+      // Structs cannot be generated in the expr.
+      // We must assign each value to its place in the array.
+      ArrayType *at = static_cast<ArrayType *>(s->type);
+      int startingPoint = arrayBase + (i * getByteSizeOfType(at->underlying));
+      declareStructVariable(element, getUnderlying(at), startingPoint);
+      continue;
+    }
     visitExpr(element);
     // Pop the value into a register
     popToRegister(std::to_string(-(arrayBase + i * underlyingByteSize)) + "(%rbp)");

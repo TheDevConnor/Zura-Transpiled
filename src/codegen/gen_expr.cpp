@@ -5,26 +5,10 @@
 
 void codegen::visitExpr(Node::Expr *expr) {
   // Optimize the expression before we handle it!
-  // Node::Expr *realExpr = CompileOptimizer::optimizeExpr(expr);
-  Node::Expr *realExpr = expr;
-  /*
-  Expr: 5
-  Expr: 17
-  Expr: 0
-  Expr: 2
-  Expr: 0
-  Expr: 19
-  Unreachable code ... well, reached!
-  1718576479 <- I think it might be the &Token[i] maybe? 
-  Expr: 11
-  Expr: 2
-  Expr: 2
-
-  */
+  Node::Expr *realExpr = CompileOptimizer::optimizeExpr(expr);
   if (int(realExpr->kind) > (int)NodeKind::ND_NULL) { // im dumb ignore me i put the wrong sign :sob: ya
     std::cout << "stinky node D:" << std::endl; // bp here if the nodekind is something weird 
   }
-  std::cout << "Expr: " << realExpr->kind << std::endl;
   ExprHandler handler = lookup(exprHandlers, realExpr->kind); 
   if (handler) {
     handler(realExpr);
@@ -269,8 +253,8 @@ void codegen::call(Node::Expr *expr) {
   } else if (e->callee->kind == ND_MEMBER) {
     // Get the struct name
     MemberExpr *member = static_cast<MemberExpr *>(e->callee);
-    IdentExpr *name = static_cast<IdentExpr *>(member->lhs);
-    std::string structName = getUnderlying(name->asmType);
+    std::string structName = getUnderlying(member->lhs->asmType);
+    if (structName.find("[]") == 0) structName = structName.substr(2);
     std::string fnName = static_cast<IdentExpr *>(member->rhs)->name;
     pushDebug(e->line, expr->file_id, e->pos);
     // Push each argument one by one.
@@ -281,7 +265,7 @@ void codegen::call(Node::Expr *expr) {
     }
 
     // Evaluate the struct
-    visitExpr(name);
+    visitExpr(member->lhs);
     // Weeellll
     // We want this to be an lea, so let's get the pushexpr of the last instruction
     // and change it to an lea
@@ -292,7 +276,8 @@ void codegen::call(Node::Expr *expr) {
     push(Instr{.var = LeaInstr{.size = DataSize::Qword, .dest = argOrder[0], .src = whatWasPushed},
                .type = InstrType::Lea},
          Section::Main);
-    push(Instr{.var=SubInstr{.lhs="%rsp",.rhs="$"+std::to_string(round(variableCount-8, 8))},.type=InstrType::Sub},Section::Main);
+    int offsetAmount = round(variableCount-8, 8);
+    if (offsetAmount) push(Instr{.var=SubInstr{.lhs="%rsp",.rhs="$"+std::to_string(offsetAmount)},.type=InstrType::Sub},Section::Main);
     for (size_t i = 0; i < e->args.size(); i++) {
       // evaluate them
       codegen::visitExpr(e->args.at(i));
@@ -304,7 +289,7 @@ void codegen::call(Node::Expr *expr) {
               .optimize = false},
         Section::Main);
     pushRegister("%rax");
-    push(Instr{.var=AddInstr{.lhs="%rsp",.rhs="$"+std::to_string(round(variableCount-8, 8))},.type=InstrType::Sub},Section::Main);
+    if (offsetAmount) push(Instr{.var=AddInstr{.lhs="%rsp",.rhs="$"+std::to_string(offsetAmount)},.type=InstrType::Sub},Section::Main);
   }
 }
 

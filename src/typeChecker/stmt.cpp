@@ -312,6 +312,9 @@ void TypeChecker::visitVar(Maps *map, Node::Stmt *stmt) {
         handleError(var_stmt->line, var_stmt->pos, msg, "", "Type Error");
       }
     }
+    array_expr->type = new ArrayType(array_type->underlying, array_expr->elements.size());
+    return_type = std::make_shared<ArrayType>(array_type->underlying, array_type->constSize);
+    visitExpr(map, var_stmt->expr); // Visit the array, and by extension, its elements
     return_type = std::make_shared<ArrayType>(array_type->underlying, array_type->constSize);
   } else if (var_stmt->type->kind == ND_POINTER_TYPE) {
     PointerType *ptr = static_cast<PointerType *>(var_stmt->type);
@@ -327,12 +330,9 @@ void TypeChecker::visitVar(Maps *map, Node::Stmt *stmt) {
   std::string msg = "Variable '" + var_stmt->name + "' requires type '" +
                     type_to_string(var_stmt->type) + "' but got '" +
                     type_to_string(return_type.get()) + "'";
-
-  if (!checkTypeMatch(std::make_shared<SymbolType>(type_to_string(var_stmt->type)),
+  checkTypeMatch(std::make_shared<SymbolType>(type_to_string(var_stmt->type)),
                       std::make_shared<SymbolType>(type_to_string(return_type.get())),
-                      var_stmt->name, var_stmt->line, var_stmt->pos, msg)) {
-    return_type = std::make_shared<SymbolType>("unknown");
-  }
+                      var_stmt->name, var_stmt->line, var_stmt->pos, msg);
 
   return_type = nullptr;
 }
