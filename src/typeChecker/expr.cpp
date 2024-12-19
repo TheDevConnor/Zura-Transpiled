@@ -72,8 +72,7 @@ void TypeChecker::visitAddress(Maps *map, Node::Expr *expr) {
   AddressExpr *address = static_cast<AddressExpr *>(expr);
   visitExpr(map, address->right);
   return_type = std::make_shared<PointerType>(return_type.get());
-  expr->asmType = return_type.get();
-  std::cout << "We got here TC!" << std::endl;
+  expr->asmType = new PointerType(address->right->asmType);
 }
 
 void TypeChecker::visitIdent(Maps *map, Node::Expr *expr) {
@@ -319,35 +318,14 @@ void TypeChecker::visitArray(Maps *map, Node::Expr *expr) {
   }
 
   for (Node::Expr *elem : array->elements) {
-    switch (elem->kind) {
-    case NodeKind::ND_INT:
-      map->array_table.push_back(new SymbolType("int"));
-      break;
-    case NodeKind::ND_FLOAT:
-      map->array_table.push_back(new SymbolType("float"));
-      break;
-    case NodeKind::ND_STRING:
-      map->array_table.push_back(new SymbolType("str"));
-      break;
-    case NodeKind::ND_BOOL:
-      map->array_table.push_back(new SymbolType("bool"));
-      break;
-    default:
-      visitExpr(map, elem);
-      break;
+    visitExpr(map, elem);
+    std::cout << "Array element type: " << type_to_string(return_type.get()) << std::endl;
+    if (return_type == nullptr) {
+      return_type = std::make_shared<SymbolType>("unknown");
+      expr->asmType = return_type.get();
+      return;
     }
-
-    // check if the type of the element is the same as the previous element
-    if (map->array_table.size() > 1) {
-      if (type_to_string(map->array_table[0]) !=
-          type_to_string(map->array_table[map->array_table.size() - 1])) {
-        std::string msg =
-            "Array elements must be of the same type but got '" +
-            type_to_string(map->array_table[0]) + "' and '" +
-            type_to_string(map->array_table[map->array_table.size() - 1]) + "'";
-        handleError(array->line, array->pos, msg, "", "Type Error");
-      }
-    }
+    map->array_table.push_back(return_type.get());
   }
 
   if (map->array_table.empty()) {
@@ -419,9 +397,18 @@ void TypeChecker::visitCast(Maps *map, Node::Expr *expr) {
 
 void TypeChecker::visitStructExpr(Maps *map, Node::Expr *expr) {
   StructExpr *struct_expr = static_cast<StructExpr *>(expr);
-  std::string struct_name = type_to_string(return_type.get()); 
+  
+  std::string struct_name = "";
+  if (return_type.get() == nullptr) {
+    return_type = std::make_shared<SymbolType>("unknown");
+  } else if (return_type.get()->kind == ND_ARRAY_TYPE) {
+    // The struct name will actually have to be the underlying, because obviously you cannot define a struct's name with `[]`.
+    struct_name = type_to_string(static_cast<ArrayType *>(return_type.get())->underlying);
+  } else {
+    struct_name = type_to_string(return_type.get());
+  }
 
-  // find the struct in the struct table
+  // find the struct in the struct table (no it does not work) I know why
   if (map->struct_table.find(struct_name) ==
       map->struct_table.end()) {
     std::string msg = "Struct '" + struct_name +
@@ -492,8 +479,10 @@ void TypeChecker::visitStructExpr(Maps *map, Node::Expr *expr) {
     }
     // find if the type of the struct expression element is a nested struct of a
     // bigger one
-    if (elem.second->kind == ND_STRUCT)
+    if (elem.second->kind == ND_STRUCT) {
       return_type = std::make_shared<SymbolType>(elem_type);
+      struct_expr->asmType = new SymbolType(elem_type);
+    }
 
     visitExpr(map, elem.second);
     // check for enums

@@ -4,26 +4,27 @@ void codegen::print(Node::Stmt *stmt) {
   PrintStmt *print = static_cast<PrintStmt *>(stmt);
 
   push(Instr{.var = Comment{.comment = "print stmt"}, .type = InstrType::Comment}, Section::Main);
-  nativeFunctionsUsed[NativeASMFunc::strlen] = true;
   pushDebug(print->line, stmt->file_id);
 
   for (Node::Expr *arg : print->args) {
     std::string argType = getUnderlying(arg->asmType);
-    if (argType == "") continue;
-    if (argType == "char") {
-      std::cout << "char" << std::endl;
-      visitExpr(arg);
-      popToRegister("%rax");
-      moveRegister("%rax", "%rdi", DataSize::Qword, DataSize::Qword);
-      // syscall id for write on x86 is 1
-      moveRegister("%rax", "$1", DataSize::Qword, DataSize::Qword);
-      // set rdi to 1 (file descriptor for stdout)
-      moveRegister("%rdi", "$1", DataSize::Qword, DataSize::Qword);
+    if (argType.find("*") == 0) {
+      if (argType.find("char") == 1) { // Printing a char* will only print the first character. Printing full strings is reserved for the `str` type.
+        visitExpr(arg);
+        popToRegister("%rsi");
+        // syscall id for write on x86 is 1
+        moveRegister("%rax", "$1", DataSize::Qword, DataSize::Qword);
+        // set rdi to 1 (file descriptor for stdout)
+        moveRegister("%rdi", "$1", DataSize::Qword, DataSize::Qword);
 
-      // Make syscall to write
-      push(Instr{.var = Syscall({.name = "SYS_WRITE"}), .type = InstrType::Syscall}, Section::Main);
+        // Make syscall to write
+        push(Instr{.var = Syscall({.name = "SYS_WRITE"}), .type = InstrType::Syscall}, Section::Main);
+      } else {
+        handleError(print->line, print->pos, "Cannot print pointer type. Dereference first or print as address.", "Codegen Error");
+      }
     } else
     if (argType == "str") {
+      nativeFunctionsUsed[NativeASMFunc::strlen] = true;
       visitExpr(arg);
       popToRegister("%rsi"); // String address
       moveRegister("%rdi", "%rsi", DataSize::Qword, DataSize::Qword);
@@ -37,7 +38,8 @@ void codegen::print(Node::Stmt *stmt) {
 
       // Make syscall to write
       push(Instr{.var = Syscall{.name = "SYS_WRITE"}, .type = InstrType::Syscall}, Section::Main);
-    } else if (argType == "int") {
+    } else if (argType == "int" || argType == "char") { // Char's will be treated as the byte they are. They will be printed as their ASCII value.
+      nativeFunctionsUsed[NativeASMFunc::strlen] = true;
       nativeFunctionsUsed[NativeASMFunc::itoa] = true;
       visitExpr(arg);
       popToRegister("%rdi");

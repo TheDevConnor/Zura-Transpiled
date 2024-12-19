@@ -16,19 +16,24 @@ void TypeChecker::handleError(int line, int pos, std::string msg,
 }
 
 std::string TypeChecker::type_to_string(Node::Type *type) {
+  if (type == nullptr)
+    return "unknown";
   switch (type->kind) {
   case NodeKind::ND_SYMBOL_TYPE:
     return static_cast<SymbolType *>(type)->name;
   case NodeKind::ND_ARRAY_TYPE:
     return "[]" + type_to_string(static_cast<ArrayType *>(type)->underlying);
-  case NodeKind::ND_POINTER_TYPE:
+  case NodeKind::ND_POINTER_TYPE: 
     return "*" + type_to_string(static_cast<PointerType *>(type)->underlying);
   case NodeKind::ND_TEMPLATE_STRUCT_TYPE: {
     TemplateStructType *temp = static_cast<TemplateStructType *>(type);
     return type_to_string(temp->name);
   }
-  default:
-    return "Unknown type";
+  default: // Should never happen, but Connor (aka I) wrote this terrible code so anything is possable
+    std::cout << "Nodekind: " << std::to_string((int)type->kind) << std::endl;
+    handleError(0, 0, "Unknown type for type_to_string", "", "Type Error");
+    return_type = std::make_shared<SymbolType>("unknown");
+    return "unknown";
   }
 }
 

@@ -1,9 +1,0 @@
-const len_int := fn (s: []int) int {
-    loop (i = 0; i < 1000) : (i++) {
-        if (s[i] == 100) {
-            return i;
-        }
-    }
-    @dis("Error: Array is to long; for the given limit!\n");
-    return 0;
-};

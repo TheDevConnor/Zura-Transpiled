@@ -316,6 +316,10 @@ std::string codegen::getUnderlying(Node::Type *type) {
     SymbolType *s = static_cast<SymbolType *>(type);
     return s->name; // The end!
   }
+  if (type->kind == ND_TEMPLATE_STRUCT_TYPE) {
+    TemplateStructType *t = static_cast<TemplateStructType *>(type);
+    return getUnderlying(t->underlying);
+  }
   // Unreachable!
   std::cout << "Unreachable code ... well, reached!" << std::endl;
   std::cout << std::to_string((int)type->kind) << std::endl;

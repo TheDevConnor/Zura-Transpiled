@@ -290,34 +290,48 @@ void TypeChecker::visitVar(Maps *map, Node::Stmt *stmt) {
 
     // Now we can set the type of the variable to the underlying type
     var_stmt->type = temp->underlying;
-  }
-
-  // check if the variable is initialized
-  if (var_stmt->expr == nullptr) {
+  } else if (var_stmt->expr == nullptr) { // check if the variable is initialized
     return;
-  }
-  if (var_stmt->type->kind == ND_ARRAY_TYPE) {
+  } else if (var_stmt->type->kind == ND_ARRAY_TYPE) {
     // Set the expr.type to the type of the variable so it can be used
     // in codegen process.
     ArrayExpr *array_expr = static_cast<ArrayExpr *>(var_stmt->expr);
     ArrayType *array_type = static_cast<ArrayType *>(var_stmt->type);
     if (array_type->constSize < 1) {
-      // If the array was declared empty...
-      var_stmt->type = array_expr->type = new ArrayType(
-          static_cast<ArrayType *>(var_stmt->type)->underlying, array_expr->elements.size()); // Probably fine?
+      // If the array was declared but its type was []
+      // we assume the constSize is the size of the array expr
+      var_stmt->type = new ArrayType(array_type->underlying, array_expr->elements.size());
     } else {
-      array_expr->type = var_stmt->type;
+      // If the array was declared with a size we need to check if the size
+      // of the array expr is the same as the size of the array type
+      if (array_type->constSize != array_expr->elements.size()) {
+        std::string msg = "Array '" + var_stmt->name + "' requires " +
+                          std::to_string(array_type->constSize) +
+                          " elements but got " +
+                          std::to_string(array_expr->elements.size());
+        handleError(var_stmt->line, var_stmt->pos, msg, "", "Type Error");
+      }
     }
-  }
-  visitExpr(map, var_stmt->expr);
+    return_type = std::make_shared<ArrayType>(array_type->underlying, array_type->constSize);
+  } else if (var_stmt->type->kind == ND_POINTER_TYPE) {
+    PointerType *ptr = static_cast<PointerType *>(var_stmt->type);
+    if (var_stmt->expr->kind == NodeKind::ND_NULL) {
+      return_type = std::make_shared<PointerType>(ptr->underlying);
+    } else {
+      visitExpr(map, var_stmt->expr);
+      return_type = std::make_shared<PointerType>(ptr->underlying);
+    }
+  } else { visitExpr(map, var_stmt->expr); }
 
-  if (return_type != nullptr) {
-    if (type_to_string(return_type.get()) != type_to_string(var_stmt->type)) {
-      std::string msg = "Variable '" + var_stmt->name + "' must be a '" +
-                        type_to_string(var_stmt->type) + "' but got '" +
-                        type_to_string(return_type.get()) + "'";
-      handleError(var_stmt->line, var_stmt->pos, msg, "", "Type Error");
-    }
+  // check if the variable type is the same as the expr type
+  std::string msg = "Variable '" + var_stmt->name + "' requires type '" +
+                    type_to_string(var_stmt->type) + "' but got '" +
+                    type_to_string(return_type.get()) + "'";
+
+  if (!checkTypeMatch(std::make_shared<SymbolType>(type_to_string(var_stmt->type)),
+                      std::make_shared<SymbolType>(type_to_string(return_type.get())),
+                      var_stmt->name, var_stmt->line, var_stmt->pos, msg)) {
+    return_type = std::make_shared<SymbolType>("unknown");
   }
 
   return_type = nullptr;

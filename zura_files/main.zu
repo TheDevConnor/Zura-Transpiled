@@ -1,8 +1,43 @@
-# @import "lexer/helper.zu";
+const TokenKind := enum {
+    IDENTIFIER,
+    VARIABLE,
+    EQUALS,
+    SEMICOLON,
+
+    EOF,
+};
+
+const Token := struct {
+    kind: TokenKind;
+    value: str; 
+
+    is_eof := fn (self: *Token) bool { # This function here is the problem
+      if (self.kind == TokenKind.EOF) return true;
+      return false;
+    };
+};
+
+const len_int := fn (s: []Token) int {
+    loop (i = 0; i < 1000) : (i++) {
+        if (s[i].is_eof()) return i;
+    }
+    @dis("Error: Array is to long; for the given limit!\n");
+    return 0;
+};
 
 const main := fn () int {
-  have c: char = 'a';
-  @dis(c);
+   have Tokens: []Token = [
+    {kind: TokenKind.IDENTIFIER, value: "x"},
+    {kind: TokenKind.EQUALS, value: "="},
+    {kind: TokenKind.VARIABLE, value: "10"},
+    {kind: TokenKind.SEMICOLON, value: ";"},
+    {kind: TokenKind.EOF, value: ""},
+  ]; 
+
+  loop (i = 0; i < len_int(Tokens)) : (i++) {
+    have token: *Token = &Tokens[i];
+    @dis("Token: ", token.value, "\n");
+  }
 
   return 0;
 };

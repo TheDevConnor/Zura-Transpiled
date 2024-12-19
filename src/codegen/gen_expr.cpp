@@ -7,7 +7,25 @@ void codegen::visitExpr(Node::Expr *expr) {
   // Optimize the expression before we handle it!
   // Node::Expr *realExpr = CompileOptimizer::optimizeExpr(expr);
   Node::Expr *realExpr = expr;
-  ExprHandler handler = lookup(exprHandlers, realExpr->kind);
+  /*
+  Expr: 5
+  Expr: 17
+  Expr: 0
+  Expr: 2
+  Expr: 0
+  Expr: 19
+  Unreachable code ... well, reached!
+  1718576479 <- I think it might be the &Token[i] maybe? 
+  Expr: 11
+  Expr: 2
+  Expr: 2
+
+  */
+  if (int(realExpr->kind) > (int)NodeKind::ND_NULL) { // im dumb ignore me i put the wrong sign :sob: ya
+    std::cout << "stinky node D:" << std::endl; // bp here if the nodekind is something weird 
+  }
+  std::cout << "Expr: " << realExpr->kind << std::endl;
+  ExprHandler handler = lookup(exprHandlers, realExpr->kind); 
   if (handler) {
     handler(realExpr);
   }
@@ -22,7 +40,7 @@ void codegen::primary(Node::Expr *expr) {
     pushDebug(e->line, expr->file_id, e->pos);
     pushRegister("$" + std::to_string(e->value));
     break;
-  }
+  } // It happened here in the ident
   case NodeKind::ND_IDENT: {
     IdentExpr *e = static_cast<IdentExpr *>(expr);
     std::string res = variableTable[e->name];
@@ -35,15 +53,14 @@ void codegen::primary(Node::Expr *expr) {
 
     // Push the result
     // Check for struct
-    if (getUnderlying(e->asmType).find("struct") == 0) {
-      // It is a struct type!
-      // We MUST use lea here.
-      // Like seriously, this is its JOB.
-      push(Instr{.var = LeaInstr { .size = DataSize::Qword, .dest = "%rcx", .src = res }, .type = InstrType::Lea}, Section::Main);
-      pushRegister("%rcx");
-    } else {
-      pushRegister(res);
+    if (e->asmType->kind == ND_SYMBOL_TYPE) {
+      if (structByteSizes.find(static_cast<SymbolType *>(e->asmType)->name) != structByteSizes.end()) {
+        push(Instr{.var = LeaInstr { .size = DataSize::Qword, .dest = "%rcx", .src = res }, .type = InstrType::Lea}, Section::Main);
+        pushRegister("%rcx");
+        break;
+      }
     }
+    pushRegister(res);
     break;
   }
   case ND_STRING: {
@@ -498,7 +515,36 @@ void codegen::memberExpr(Node::Expr *expr) {
     }
     return;
   }
-  
+
+  if (e->lhs->kind == ND_INDEX) {
+    visitExpr(e->lhs);
+    // Should push the value of the array element. If not, then I'm dumb and it pushed its addr
+    // Pop the value into a register
+    popToRegister("%rcx");
+    // Now we can access the member
+    IndexExpr *index = static_cast<IndexExpr* >(e->lhs);
+    // get the member
+    IdentExpr *member = static_cast<IdentExpr *>(e->rhs);
+    // get the type of whatever we are indexing
+    Node::Type *indexType = index->asmType;
+    // if type was a struct
+    if (indexType->kind == ND_SYMBOL_TYPE) {
+      SymbolType *sym = static_cast<SymbolType *>(indexType);
+      if (structByteSizes.find(sym->name) != structByteSizes.end()) {
+        int offset = 0; // im gonna do something about that later
+        std::string structName = sym->name;
+        std::vector<StructMember> fields = structByteSizes[structName].second;
+        for (int i = 0; i < fields.size(); i++) {
+          if (fields[i].first == member->name) break;
+          offset += fields[i].second.second;
+        }
+        // now we can access the member
+        pushRegister(std::to_string(offset) + "(%rcx)");
+      }
+      // if type was an array (not dealing with this today)
+    }
+    return;
+  };
 
   std::cerr
       << "No fancy error for this, beg Connor... (Soviet Pancakes speaking)"
@@ -519,19 +565,18 @@ void codegen::_struct(Node::Expr *expr) {
 
 void codegen::addressExpr(Node::Expr *expr) {
   AddressExpr *e = static_cast<AddressExpr *>(expr);
-  if (getByteSizeOfType(e->right->asmType) <= 8) {
-    // It is small enough to fit in a register or stack
-    // so it can be passed by value (pointing to it is useless)
-
-    // NOTE: This also makes pointer pointers (**int)s useless and optimizable!
-    visitExpr(e->right);
-    return;
-  }
-
   // It was a struct or something like that
   // Get the address of it. The address is the return type (becuase it's a pointer)
   visitExpr(e->right);
-  // Good enough
+  // We don't want that push!
+  PushInstr instr = std::get<PushInstr>(text_section.at(text_section.size() - 1).var);
+  std::string whatWasPushed = instr.what;
+  text_section.pop_back();
+  // Now we can lea
+  push(Instr{.var = LeaInstr{.size = DataSize::Qword, .dest = "%rcx", .src = whatWasPushed},
+             .type = InstrType::Lea},
+       Section::Main);
+  pushRegister("%rcx");
 };
 
 void codegen::assignStructMember(Node::Expr *expr) {

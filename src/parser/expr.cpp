@@ -127,7 +127,12 @@ Node::Expr *Parser::array(PStruct *psr) {
   std::vector<Node::Expr *> elements;
 
   while (psr->current(psr).kind != TokenKind::RIGHT_BRACKET) {
-    elements.push_back(parseExpr(psr, defaultValue));
+    if (psr->current(psr).kind == TokenKind::LEFT_BRACE) {
+      elements.push_back(structExpr(psr));
+    } else {
+      elements.push_back(parseExpr(psr, defaultValue));
+    }
+
     if (psr->current(psr).kind == TokenKind::COMMA)
       psr->expect(psr, TokenKind::COMMA,
                   "Expected a COMMA after an element in an array expr!");
@@ -371,7 +376,7 @@ Node::Expr *Parser::address(PStruct *psr) {
   int line = psr->tks[psr->pos].line;
   int column = psr->tks[psr->pos].column;
   Lexer::Token op = psr->advance(psr);
-  std::cout << "we got here parser" << std::endl;
+
   // Expect an rhs expression
   Node::Expr *expr = parseExpr(psr, defaultValue);
 
