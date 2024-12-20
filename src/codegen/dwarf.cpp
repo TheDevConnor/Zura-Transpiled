@@ -161,7 +161,7 @@ std::string codegen::dwarf::generateAbbreviations() {
                          "\n.uleb128 0x25 # AT_producer"
                          "\n.uleb128 0xe # FORM_strp"
                          "\n.uleb128 0x13 # AT_language"
-                         "\n.uleb128 0xb # FORM_data1"
+                         "\n.uleb128 0x05 # FORM_data2" // Language code -- custom ones start at 0x8000, which needs the range of a short or larger
                          "\n.uleb128 0x3 # AT_name"
                          "\n.uleb128 0x1f # FORM_line_strp"
                          "\n.uleb128 0x1b # AT_comp_dir"
@@ -326,28 +326,37 @@ void codegen::dwarf::useType(Node::Type *type) {
     PointerType *p = static_cast<PointerType *>(type);
     useType(p->underlying);
     std::string underlyingName = type_to_diename(p->underlying);
-    push(Instr{.var = Label{.name = ".L" + dieName + "_debug_type"}, .type = InstrType::Label}, Section::DIE);
+    push(Instr{.var = Label{.name = ".L" + dieName + "_debug_type"}, .type = InstrType::Label}, Section::DIETypes);
     pushLinker(".uleb128 " + std::to_string((int)DIEAbbrev::PointerType) +
                "\n.byte 8 # AT_byte_size (all pointers are 8 bytes)"
                "\n.long .L" + underlyingName + "_debug_type # FORM_ref4"
-               , Section::DIE);
+               , Section::DIETypes);
   } else if (type->kind == NodeKind::ND_ARRAY_TYPE) {
     // Create an ArrayType
     useAbbrev(DIEAbbrev::ArrayType);
     useAbbrev(DIEAbbrev::ArraySubrange);
     ArrayType *a = static_cast<ArrayType *>(type);
-    push(Instr{.var = Label{.name = ".L" + dieName + "_debug_type"}, .type = InstrType::Label}, Section::DIE);
+    push(Instr{.var = Label{.name = ".L" + dieName + "_debug_type"}, .type = InstrType::Label}, Section::DIETypes);
     pushLinker(".uleb128 " + std::to_string((int)DIEAbbrev::ArrayType) +
                "\n.long .L" + type_to_diename(a->underlying) + "_debug_type\n"
-               , Section::DIE);
+               , Section::DIETypes);
     pushLinker(".uleb128 " + std::to_string((int)DIEAbbrev::ArraySubrange) +
                "\n.long .Lint_debug_type" // This is gonna be the type of the index used in arrays - arr[1] - 1 is an int 
                "\n.short " + (a->constSize <= 0 ? std::to_string(32767) : std::to_string(a->constSize - 1)) +
                "\n.byte 0\n" // end of the arrayType
-               , Section::DIE);
+               , Section::DIETypes);
   } else {
     // Nothing can be done if it is a basic type.
     // If it is a struct type, then that will already be handled by the structDecl function
     // This area here is useless!
   }
 };
+
+void codegen::dwarf::useStringP(std::string what) {
+  if (dieStringsUsed.find(what) != dieStringsUsed.end()) return;
+  dieStringsUsed.insert(what);
+
+  // Create the thing :)
+  push(Instr{.var = Label{.name = ".L" + what + "_string"}, .type = InstrType::Label}, Section::DIEString);
+  pushLinker(".string \"" + what + "\"\n", Section::DIEString);
+}

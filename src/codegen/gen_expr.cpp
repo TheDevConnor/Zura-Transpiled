@@ -145,8 +145,7 @@ void codegen::binary(Node::Expr *expr) {
       pushRegister("%rax"); // Push the result
     }
     return; // Done
-  } 
-  else if (returnType->name == "float") {
+  } else if (returnType->name == "float") {
     // Similar logic for floats
     int lhsDepth = getExpressionDepth(static_cast<BinaryExpr *>(e->lhs));
     int rhsDepth = getExpressionDepth(static_cast<BinaryExpr *>(e->rhs));
@@ -172,6 +171,30 @@ void codegen::binary(Node::Expr *expr) {
                .type = InstrType::Binary},
          Section::Main);
     pushRegister("%xmm0"); 
+  } else if (returnType->name == "bool") {
+    // We need to compare the two values
+    // Check depth
+    int lhsDepth = getExpressionDepth(e->lhs);
+    int rhsDepth = getExpressionDepth(e->rhs);
+    if (lhsDepth > rhsDepth) {
+      visitExpr(e->lhs);
+      visitExpr(e->rhs);
+      popToRegister("%rbx"); // Pop RHS into RBX
+      popToRegister("%rax"); // Pop LHS into RAX
+    } else {
+      visitExpr(e->rhs);
+      visitExpr(e->lhs);
+      popToRegister("%rax"); // Pop LHS into RAX
+      popToRegister("%rbx"); // Pop RHS into RBX
+    }
+    // Get the operation
+    std::string op = lookup(opMap, e->op);
+    // Perform the operation
+    // by running a comparison
+    push(Instr{.var = CmpInstr{.lhs = "%rax", .rhs = "%rbx"}, .type = InstrType::Cmp}, Section::Main);
+    pushLinker(op + " %al\n\tmovzbq %al, %rax\n\t", Section::Main); // There is no instruction like `cltq` for bytes
+    // Move the bytes up to 64-bits
+    pushRegister("%rax"); // Push the result
   }
 }
 
@@ -215,7 +238,8 @@ void codegen::call(Node::Expr *expr) {
       std::cerr << "Too many arguments in call - consider reducing them or moving them to a globally defined space." << std::endl;
       exit(-1);
     }
-    push(Instr{.var=SubInstr{.lhs="%rsp",.rhs="$"+std::to_string(round(variableCount-8, 8))},.type=InstrType::Sub},Section::Main);
+    int offsetAmount = round(variableCount - 8, 8);
+    if (offsetAmount) push(Instr{.var=SubInstr{.lhs="%rsp",.rhs="$"+std::to_string(offsetAmount)},.type=InstrType::Sub},Section::Main);
     for (size_t i = 0; i < e->args.size(); i++) {
       // evaluate them
       codegen::visitExpr(e->args.at(i));
@@ -248,13 +272,15 @@ void codegen::call(Node::Expr *expr) {
               .type = InstrType::Call,
               .optimize = false},
         Section::Main);
+    if (offsetAmount) push(Instr{.var=AddInstr{.lhs="%rsp",.rhs="$"+std::to_string(offsetAmount)},.type=InstrType::Sub},Section::Main);
     pushRegister("%rax");
-    push(Instr{.var=AddInstr{.lhs="%rsp",.rhs="$"+std::to_string(round(variableCount-8, 8))},.type=InstrType::Sub},Section::Main);
   } else if (e->callee->kind == ND_MEMBER) {
     // Get the struct name
     MemberExpr *member = static_cast<MemberExpr *>(e->callee);
-    std::string structName = getUnderlying(member->lhs->asmType);
-    if (structName.find("[]") == 0) structName = structName.substr(2);
+    std::string structName;
+    if (member->lhs->kind == ND_INDEX) {
+      structName = getUnderlying(static_cast<IndexExpr *>(member->lhs)->lhs->asmType);
+    } else structName = getUnderlying(member->lhs->asmType);
     std::string fnName = static_cast<IdentExpr *>(member->rhs)->name;
     pushDebug(e->line, expr->file_id, e->pos);
     // Push each argument one by one.
@@ -288,8 +314,8 @@ void codegen::call(Node::Expr *expr) {
               .type = InstrType::Call,
               .optimize = false},
         Section::Main);
-    pushRegister("%rax");
     if (offsetAmount) push(Instr{.var=AddInstr{.lhs="%rsp",.rhs="$"+std::to_string(offsetAmount)},.type=InstrType::Sub},Section::Main);
+    pushRegister("%rax");
   }
 }
 
@@ -358,7 +384,13 @@ void codegen::arrayElem(Node::Expr *expr) {
       pushRegister(std::to_string(offset) + "(%rbp)");
     } else {
       visitExpr(e->lhs);
-      popToRegister("%rcx");
+      // it is an array type so we must actually lea this!
+      PushInstr instr = std::get<PushInstr>(text_section.at(text_section.size() - 1).var);
+      std::string whatWasPushed = instr.what;
+      text_section.pop_back();
+      push(Instr{.var = LeaInstr{.size = DataSize::Qword, .dest = "%rcx", .src = whatWasPushed},
+                 .type = InstrType::Lea},
+           Section::Main);
       int byteSize = getByteSizeOfType(e->lhs->asmType);
       int offset = -index->value * byteSize;
       if (offset == 0)
@@ -369,17 +401,27 @@ void codegen::arrayElem(Node::Expr *expr) {
   } else {
     // This is a little more intricate.
     // We have to evaluate the index and multiply it by the size of the type
-    visitExpr(e->lhs);
-    popToRegister("%rcx");
-    // %rcx contains the base of the array
+    if (e->lhs->kind == ND_IDENT) {
+      push(Instr{.var = LeaInstr{.size=DataSize::Qword, .dest = "%rcx", .src = variableTable[static_cast<IdentExpr *>(e->lhs)->name]}, .type = InstrType::Lea}, Section::Main);
+    } else {
+      visitExpr(e->lhs);
+      // lhs is always gonna be an array, but we need it to hold the addr
+      PushInstr instr = std::get<PushInstr>(text_section.at(text_section.size() - 1).var);
+      std::string whatWasPushed = instr.what;
+      text_section.pop_back();
+      push(Instr{.var = LeaInstr{.size = DataSize::Qword, .dest = "%rcx", .src = whatWasPushed},
+                .type = InstrType::Lea},
+          Section::Main);
+      // %rcx contains the base of the array
+    }
     visitExpr(e->rhs);
     popToRegister("%rax");
     // %rax contains the index
     // Negate rax
     pushLinker("negq %rax\n\t", Section::Main);
     // Multiply it by the size of the type
-    int byteSize = getByteSizeOfType(e->lhs->asmType);
-    switch (byteSize) {
+    int underlyingByteSize = getByteSizeOfType(static_cast<ArrayType *>(e->lhs->asmType)->underlying);
+    switch (underlyingByteSize) {
       case 1: {
         // No need to multiply
         // Ex: []char or []bool
@@ -390,13 +432,13 @@ void codegen::arrayElem(Node::Expr *expr) {
       case 4:
       case 8: {
         // Multiply by the size of the type
-        pushRegister("(%rcx, %rax, " + std::to_string(byteSize) + ")");
+        pushRegister("(%rcx, %rax, " + std::to_string(underlyingByteSize) + ")");
         break;
       }
 
       default: {
         // Sad, we can't rely on little syntactical sugar of the assembler to cheat our way out :(
-        push(Instr{.var = BinaryInstr{.op = "imul", .src = "$" + std::to_string(byteSize), .dst = "%rax"},
+        push(Instr{.var = BinaryInstr{.op = "imul", .src = "$" + std::to_string(underlyingByteSize), .dst = "%rax"},
                    .type = InstrType::Binary},
              Section::Main);
         pushRegister("(%rcx, %rax)");

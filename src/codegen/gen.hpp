@@ -91,6 +91,7 @@ void assignArray(Node::Expr *expr);
 void declareStructVariable(Node::Expr *expr, std::string structName, int whereToPut);
 void declareArrayVariable(Node::Expr *expr, short int arrayLength, std::string varName);
 
+size_t sizeOfLEB(int64_t value);
 int convertFloatToInt(float input); // Float input. Crazy, right?
 int round(int num, int multiple); // Round a number up to the nearest multiple
 
@@ -120,6 +121,7 @@ Section {
     DIE, // Dwarf Information Entries - basically, they're little stinkbombs that tell the debugger what variable its looking at
     DIEString, // String literals referenced by DIE's
     DIEAbbrev, // Abbreviations for DIE's
+    DIETypes, // this will always be at the end of the regular DIE section
 };
 
 enum class NativeASMFunc {
@@ -132,6 +134,7 @@ inline std::vector<Instr> head_section = {};
 inline std::vector<Instr> data_section = {}; // This is only really one of three instructions
 inline std::vector<Instr> rodt_section = {}; // Same as data section
 inline std::vector<Instr> die_section = {}; // Acronym for Dwarf Information Entry
+inline std::vector<Instr> diet_section = {}; // Acronym for Dwarf Information Entry
 inline std::vector<Instr> diea_section = {}; // DIE abbreviation (defines attributes used in DIE's)
 inline std::vector<Instr> dies_section = {}; // Dwarf Information Entries strings, referenced from DIE's
 
@@ -176,7 +179,9 @@ inline std::set<DIEAbbrev> dieAbbrevsUsed = {};
 void useAbbrev(DIEAbbrev abbrev);
 bool isUsed(DIEAbbrev abbrev);
 void useType(Node::Type *type);
+void useStringP(std::string what);
 inline std::set<std::string> dieNamesUsed = {};
+inline std::set<std::string> dieStringsUsed = {};
 std::string generateAbbreviations();
 inline bool nextBlockDIE = true;
 

@@ -238,6 +238,10 @@ void codegen::push(Instr instr, Section section) {
     case Section::DIEAbbrev:
       diea_section.push_back(instr);
       break;
+    case Section::DIETypes: {
+      diet_section.push_back(instr);
+      break;
+    }
   }
 }
 
@@ -274,11 +278,7 @@ signed short int codegen::getByteSizeOfType(Node::Type *type) {
     return 8;
   }
   if (type->kind == NodeKind::ND_ARRAY_TYPE) {
-    // Get the size of the underlying type
-    // multiply by # of elements
-    ArrayType *arr = static_cast<ArrayType *>(type);
-    if (arr->constSize < 1) return getByteSizeOfType(arr->underlying);
-    return getByteSizeOfType(arr->underlying) * arr->constSize; 
+    return 8; // Pointer to first element
   }
   if (type->kind == NodeKind::ND_SYMBOL_TYPE) {
     SymbolType *sym = static_cast<SymbolType *>(type);
@@ -299,6 +299,7 @@ signed short int codegen::getByteSizeOfType(Node::Type *type) {
     return -1;
   }
   // Unreachable!
+  std::cout << "Reached unknown place in the getByteSizeOfType ..." << std::endl;
   return -1;
 };
 
@@ -356,3 +357,23 @@ std::string codegen::type_to_diename(Node::Type *type) {
 int codegen::round(int num, int multiple) {
   return (num + multiple - 1) / multiple * multiple;
 };
+
+// Get the number of bytes that `value` takes up when encoded in the LEB128 format.
+size_t codegen::sizeOfLEB(int64_t value) {
+    size_t size = 0;
+    bool more = true;
+
+    while (more) {
+        uint8_t byte = value & 0x7F; // Extract the least significant 7 bits
+        value >>= 7;                // Arithmetic right shift for signed values
+
+        // Determine if more bytes are needed
+        if ((value == 0 && (byte & 0x40) == 0) || (value == -1 && (byte & 0x40) != 0)) {
+            more = false; // Terminate if no more bytes are needed
+        }
+
+        ++size; // Count the byte
+    }
+
+    return size;
+}

@@ -21,7 +21,7 @@ void codegen::expr(Node::Stmt *stmt) {
   ExprStmt *s = static_cast<ExprStmt *>(stmt);
   // Just evaluate the expression
   codegen::visitExpr(s->expr);
-  text_section.pop_back();
+  text_section.pop_back(); // Get rid of the push that may follow
 };
 
 void codegen::program(Node::Stmt *stmt) {
@@ -57,15 +57,14 @@ void codegen::funcDecl(Node::Stmt *stmt) {
 
   std::string dieLabel = ".Ldie" + std::to_string(dieCount++);
   if (debug) {
-    SymbolType *st = static_cast<SymbolType *>(s->returnType);
-    std::string asmName = st->name;
+    bool isVoid = getUnderlying(s->returnType) == "void";
     if (s->params.size() > 0) {
       dwarf::useAbbrev(dwarf::DIEAbbrev::FunctionParam); // Formal parameter
-      if (st->name == "void") {
+      if (isVoid) {
         dwarf::useAbbrev(dwarf::DIEAbbrev::FunctionWithParamsVoid);
         pushLinker(".uleb128 " + std::to_string((int)dwarf::DIEAbbrev::FunctionWithParamsVoid) +
                   "\n.byte 1" // External - This means "is it a public function?"
-                  "\n.long " + dieLabel + "_string\n"
+                  "\n.long .L" + funcName + "_string\n"
                   ".byte " + std::to_string(s->file_id) + // File ID
                   "\n.byte " + std::to_string(s->line) + "\n" // Line number
                   ".byte " + std::to_string(s->pos) + "\n" // Line column
@@ -77,13 +76,14 @@ void codegen::funcDecl(Node::Stmt *stmt) {
       } else {
         dwarf::useAbbrev(dwarf::DIEAbbrev::Type);
         dwarf::useAbbrev(dwarf::DIEAbbrev::FunctionWithParams);
+        dwarf::useType(s->returnType);
         pushLinker(".uleb128 " + std::to_string((int)dwarf::DIEAbbrev::FunctionWithParams) +
                   "\n.byte 1" // External - This means "is it a public function?"
-                  "\n.long " + dieLabel + "_string\n"
+                  "\n.long .L" + funcName + "_string\n"
                   ".byte " + std::to_string(s->file_id) + // File ID
                   "\n.byte " + std::to_string(s->line) + "\n" // Line number
                   ".byte " + std::to_string(s->pos) + "\n" // Line column
-                  ".long .L" + asmName + "_debug_type\n" // Return type (DW_AT_type)
+                  ".long .L" + type_to_diename(s->returnType) + "_debug_type\n"// Return type (DW_AT_type)
                   ".quad " + dieLabel + "_debug_start\n" // Low pc
                   ".quad " + dieLabel + "_debug_end - " + dieLabel + "_debug_start\n" // high pc
                   ".uleb128 0x01\n" // 1 byte is gonna follow
@@ -91,11 +91,11 @@ void codegen::funcDecl(Node::Stmt *stmt) {
                   , Section::DIE);
       }
     } else {
-      if (st->name == "void") {
+      if (isVoid) {
         dwarf::useAbbrev(dwarf::DIEAbbrev::FunctionNoParamsVoid);
         pushLinker(".uleb128 " + std::to_string((int)dwarf::DIEAbbrev::FunctionNoParamsVoid) +
                   "\n.byte 1"
-                  "\n.long " + dieLabel + "_string\n"
+                  "\n.long .L" + funcName + "_string\n"
                   ".byte " + std::to_string(s->file_id) + // File ID
                   "\n.byte " + std::to_string(s->line) + "\n" // Line number
                   ".byte " + std::to_string(s->pos) + "\n" // Line column
@@ -107,13 +107,14 @@ void codegen::funcDecl(Node::Stmt *stmt) {
       } else {
         dwarf::useAbbrev(dwarf::DIEAbbrev::Type);
         dwarf::useAbbrev(dwarf::DIEAbbrev::FunctionNoParams);
+        dwarf::useType(s->returnType);
         pushLinker(".uleb128 " + std::to_string((int)dwarf::DIEAbbrev::FunctionNoParams) +
                   "\n.byte 1"
-                  "\n.long " + dieLabel + "_string\n"
+                  "\n.long .L" + funcName + "_string\n"
                   ".byte " + std::to_string(s->file_id) + // File ID
                   "\n.byte " + std::to_string(s->line) + "\n" // Line number
                   ".byte " + std::to_string(s->pos) + "\n" // Line column
-                  ".long .L" + asmName + "_debug_type\n" // Return type (DW_AT_type)
+                  ".long .L" + type_to_diename(s->returnType) + "_debug_type\n" // Return type (DW_AT_type)
                   ".quad " + dieLabel + "_debug_start\n" // Low pc
                   ".quad " + dieLabel + "_debug_end - " + dieLabel + "_debug_start\n" // high pc
                   ".uleb128 0x01\n" // 1 byte is gonna follow
@@ -121,7 +122,8 @@ void codegen::funcDecl(Node::Stmt *stmt) {
                   , Section::DIE);
       }
     }
-    pushLinker(dieLabel + "_string: .string \"" + funcName + "\"\n", Section::DIEString);
+    
+    dwarf::useStringP(funcName);
     push(Instr {.var = Label {.name = dieLabel + "_debug_start" }, .type = InstrType::Label }, Section::Main);
   }
   
@@ -144,9 +146,11 @@ void codegen::funcDecl(Node::Stmt *stmt) {
   push(Instr{.var=LinkerDirective{.value=".cfi_def_cfa_register 6\n\t"},.type=InstrType::Linker},Section::Main);
 
   // Function args
+  // Reset the variableCount first, though
+  int preVC = variableCount;
+  variableCount = 8;
   for (size_t i = 0; i < s->params.size(); i++) {
     // Move the argument to the stack
-    // This is the same as a variable declaration, kinda
     std::string where = std::to_string(-variableCount) + "(%rbp)";
     moveRegister(where, argOrder.at(i), DataSize::Qword, DataSize::Qword);
     variableTable.insert({s->params.at(i).first, where});
@@ -176,6 +180,7 @@ void codegen::funcDecl(Node::Stmt *stmt) {
   dwarf::nextBlockDIE = false;
   codegen::visitStmt(s->block);
   dwarf::nextBlockDIE = true; // reset it
+  variableCount = preVC;
   
   // Check if last instruction was a "RET"
   if (text_section.back().type != InstrType::Ret) {
@@ -240,7 +245,6 @@ void codegen::varDecl(Node::Stmt *stmt) {
 
   // Push DWARF DIE for variable declaration!!!!!
   if (!debug) return;
-  std::string dieLabel = ".Ldie" + std::to_string(dieCount);
   // Get the type of the variable
   // (struct, array, pointer, or basic)
   std::string asmName = type_to_diename(s->type); // This handles things like _ptr's and _arr's, too!
@@ -248,20 +252,19 @@ void codegen::varDecl(Node::Stmt *stmt) {
   dwarf::useAbbrev(dwarf::DIEAbbrev::Variable);
   dwarf::useAbbrev(dwarf::DIEAbbrev::Type);
   pushLinker(".uleb128 " + std::to_string((int)dwarf::DIEAbbrev::Variable) +
-            "\n.long " + dieLabel + "_string\n"
+            "\n.long .L" + s->name + "_string\n"
             ".byte " + std::to_string(s->file_id) + "\n" // File index
             ".byte " + std::to_string(s->line) + "\n" // Line number
             ".byte " + std::to_string(s->pos) + "\n" // Line column
             ".long .L" + asmName + "_debug_type\n" // Type - point to the DIE of the DW_TAG_base_type
-            ".uleb128 0x02\n" // Length of data in location definition - 2 bytes long
-            ".byte 0x91\n" // DW_OP_fbreg (first byte)
+            ".uleb128 " + std::to_string(1 + sizeOfLEB(whereBytes - 16)) + // Length of data in location definition - 3 bytes long
+            "\n.byte 0x91\n" // DW_OP_fbreg (first byte)
 
             ".sleb128 " + std::to_string(whereBytes - 16) + "\n"
   , Section::DIE);
 
   // DIE String pointer
-  push(Instr{.var = Label{.name = dieLabel + "_string"}, .type = InstrType::Label}, Section::DIEString);
-  pushLinker(".string \"" + s->name + "\"\n", Section::DIEString);
+  dwarf::useStringP(s->name);
   dieCount++;
 }
 
@@ -289,7 +292,6 @@ void codegen::block(Node::Stmt *stmt) {
               "\n.quad .Ldie" + std::to_string(thisDieCount) + "_end - .Ldie" + std::to_string(thisDieCount) + "_begin\n" // High pc
     , Section::DIE);
   }
-  variableCount = 8; // reset local variable count for this
   for (Node::Stmt *stm : s->stmts) {
     codegen::visitStmt(stm);
   }
@@ -365,7 +367,7 @@ void codegen::enumDecl(Node::Stmt *stmt) {
     push(Instr{.var = Label{.name = ".L" + s->name + "_debug_type"}, .type = InstrType::Label}, Section::DIE);
     // die data
     pushLinker(".uleb128 " + std::to_string((int)dwarf::DIEAbbrev::EnumType) +
-               "\n.long .L" + s->name + "_enum_debug_type"
+               "\n.long .L" + s->name + "_string"
                "\n.byte " + std::to_string(s->file_id) + // File ID
                "\n.byte " + std::to_string(s->line) + // Line number
                "\n.byte " + std::to_string(s->pos) + // Line column
@@ -373,8 +375,7 @@ void codegen::enumDecl(Node::Stmt *stmt) {
                "\n.byte 7" // encoding - DW_ATE_signed is 7
                "\n.long .Llong_debug_type\n" // And yes, for some reason, this is still required.
               , Section::DIE);
-    push(Instr{.var = Label{.name = ".L" + s->name + "_enum_debug_type"}, .type = InstrType::Label}, Section::DIEString);
-    pushLinker(".string \"" + s->name + "\"\n", Section::DIEString);
+    dwarf::useStringP(s->name);
   }
   int fieldCount = 0;
   for (std::string &field : s->fields) {
@@ -387,13 +388,12 @@ void codegen::enumDecl(Node::Stmt *stmt) {
     if (debug) {
       // Push the enum member DIE
       pushLinker(".uleb128 " + std::to_string((int)dwarf::DIEAbbrev::EnumMember) +
-                 "\n.long .L" + s->name + "_" + field + "_debug_enum_type"
+                 "\n.long .L" + field + "_string"
                  "\n.byte " + std::to_string(fieldCount - 1) + // Value of the enum member
                  "\n"
       , Section::DIE);
       // Push the name of the enum member
-      push(Instr{.var = Label{.name = ".L" + s->name + "_" + field + "_debug_enum_type"}, .type = InstrType::Label}, Section::DIEString);
-      pushLinker(".string \"" + field + "\"\n", Section::DIEString);
+      dwarf::useStringP(field);
     }
   }
 
@@ -432,8 +432,10 @@ void codegen::structDecl(Node::Stmt *stmt) {
     dwarf::useAbbrev(dwarf::DIEAbbrev::PointerType);
     
     // Push struct type first
+    // push label
+    push(Instr{.var = Label{.name = ".L" + s->name + "_debug_type"}, .type = InstrType::Label}, Section::DIE);
     pushLinker(".uleb128 " + std::to_string((int)dwarf::DIEAbbrev::StructType) +
-               "\n.long .L" + s->name + "_debug_type\n"
+               "\n.long .L" + s->name + "_string\n"
                ".byte " + std::to_string(s->file_id) + // File ID
                "\n.byte " + std::to_string(s->line) + // Line number
                "\n.byte " + std::to_string(s->pos) + // Line column
@@ -441,23 +443,20 @@ void codegen::structDecl(Node::Stmt *stmt) {
                "\n",
                 Section::DIE);
     // Push name
-    push(Instr{.var = Label{.name = ".L" + s->name + "_debug_type"}, .type = InstrType::Label}, Section::DIEString);
-    pushLinker(".string \"" + s->name + "\"\n", Section::DIEString);
+    dwarf::useStringP(s->name);
 
     int currentByte = 0;
     for (std::pair<std::string, Node::Type *> field : s->fields) {
       // Push member DIE
       dwarf::useType(field.second);
-      std::string fieldName = ".L" + s->name + "_" + field.first + "_debug_struct_type";
       pushLinker(".uleb128 " + std::to_string((int)dwarf::DIEAbbrev::StructMember) +
-                 "\n.long " + fieldName +
+                 "\n.long .L" + field.first + "_string"
                  "\n.long .L" + type_to_diename(field.second) + "_debug_type"
                  "\n.byte " + std::to_string(currentByte) + // Offset in struct
                  "\n",
                   Section::DIE);
       // push name in string
-      push(Instr{.var = Label{.name = fieldName}, .type = InstrType::Label}, Section::DIEString);
-      pushLinker(".string \"" + field.first + "\"\n", Section::DIEString);
+      dwarf::useStringP(field.first);
 
       // Add the byte size of this to the current byte
       currentByte += getByteSizeOfType(field.second);
@@ -508,9 +507,27 @@ void codegen::forLoop(Node::Stmt *stmt) {
   IdentExpr *assignee = static_cast<IdentExpr *>(assign->assignee);
 
   push(Instr{.var = Comment{.comment = "For loop variable declaration"}, .type = InstrType::Comment}, Section::Main);
-  variableCount += 8;
-  variableTable.insert({assignee->name, std::to_string(-variableCount) + "(%rbp)"}); // Track the variable in the stack table
   pushDebug(s->line, stmt->file_id, s->pos);
+  variableTable.insert({assignee->name, std::to_string(-variableCount) + "(%rbp)"}); // Track the variable in the stack table
+  // Push a variable declaration for the loop variable
+  if (debug) {
+    dwarf::useAbbrev(dwarf::DIEAbbrev::Variable);
+    dwarf::useAbbrev(dwarf::DIEAbbrev::Type);
+    // we know the type is always int
+    pushLinker(".uleb128 " + std::to_string((int)dwarf::DIEAbbrev::Variable) +
+               "\n.long .L" + assignee->name + "_string\n"
+               "\n.byte " + std::to_string(s->file_id) + // File ID
+               "\n.byte " + std::to_string(s->line) + // Line number
+               "\n.byte " + std::to_string(s->pos) + // Line column
+               "\n.long .Lint_debug_type\n" // Type - point to the DIE of the DW_TAG_base_type
+               "\n.uleb128 " + std::to_string(1 + sizeOfLEB(-variableCount - 16)) + // 1 byte is gonna follow
+               "\n.byte 0x91\n" // DW_OP_fbreg (first byte)
+               "\n.sleb128 " + std::to_string(-variableCount - 16) + "\n",
+              Section::DIE);
+    // Push the name of the variable
+    dwarf::useStringP(assignee->name);
+  }
+  variableCount += 8;
   visitExpr(assign);  // Process the initial loop assignment (e.g., i = 0)
   // Remove the last instruction!! Its a push and thats bad!
   text_section.pop_back();
@@ -518,7 +535,11 @@ void codegen::forLoop(Node::Stmt *stmt) {
   // Set loop start label
   push(Instr{.var = Label{.name = preLoopLabel}, .type = InstrType::Label}, Section::Main);
   // Evaluate the loop condition
-  processBinaryExpression(static_cast<BinaryExpr *>(s->condition), preconCount, postLoopLabel, true);
+  visitExpr(s->condition);  // Process the loop condition
+  popToRegister("%rcx");  // Pop the condition value to a register
+  pushLinker("testq %rcx, %rcx\n\t", Section::Main);  // Test the condition value
+  // Jump to the end of the loop if the condition is false
+  push(Instr{.var = JumpInstr{.op = JumpCondition::Zero, .label = postLoopLabel}, .type = InstrType::Jmp}, Section::Main);
 
   // Execute the loop body (if condition is true)
   visitStmt(s->block);  // Visit the statements inside the loop body
@@ -537,6 +558,7 @@ void codegen::forLoop(Node::Stmt *stmt) {
 
   // Pop the loop variable from the stack
   variableTable.erase(assignee->name);
+  variableCount -= 8; // We now have room for another variable!
   stackSize -= 8;
 };
 

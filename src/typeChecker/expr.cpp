@@ -132,7 +132,7 @@ void TypeChecker::visitBinary(Maps *map, Node::Expr *expr) {
       expr->asmType = lhs.get();
     } else if (map->boolOps.find(binary->op) != map->boolOps.end()) {
       return_type = std::make_shared<SymbolType>("bool");
-      expr->asmType = return_type.get();
+      expr->asmType = new SymbolType("bool");
     } else {
       std::string msg = "Unsupported binary operator: " + binary->op;
       handleError(binary->line, binary->pos, msg, "", "Type Error");
@@ -319,7 +319,6 @@ void TypeChecker::visitArray(Maps *map, Node::Expr *expr) {
 
   for (Node::Expr *elem : array->elements) {
     visitExpr(map, elem);
-    std::cout << "Array element type: " << type_to_string(return_type.get()) << std::endl;
     if (return_type == nullptr) {
       return_type = std::make_shared<SymbolType>("unknown");
       expr->asmType = return_type.get();

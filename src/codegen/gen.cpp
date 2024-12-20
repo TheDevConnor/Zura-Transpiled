@@ -160,7 +160,7 @@ void codegen::gen(Node::Stmt *stmt, bool isSaved, std::string output_filename,
             "\n"
             "\n.uleb128 " + std::to_string((int)dwarf::DIEAbbrev::CompileUnit) + // Compilation unit name
             "\n.long .Ldebug_producer_string - .Ldebug_str_start" // Producer - command or program that created this stinky assembly code
-            "\n.byte 0x8042" // Custom Language (ZU) - not standardized in DWARF so we're allowed ot use it for "custom" purposes
+            "\n.short 0x8042" // Custom Language (ZU) - not standardized in DWARF so we're allowed ot use it for "custom" purposes
             "\n.long .Ldebug_file_string - .Ldebug_line_str_start" // Filename
             "\n.long .Ldebug_file_dir - .Ldebug_line_str_start" // Filepath
             "\n.quad .Ltext0" // Low PC (beginning of .text)
@@ -169,6 +169,7 @@ void codegen::gen(Node::Stmt *stmt, bool isSaved, std::string output_filename,
             "\n";
     // Attributes or whatever that follow
     file << Stringifier::stringifyInstrs(die_section) << "\n";
+    file << Stringifier::stringifyInstrs(diet_section) << "\n";
     // Ensure that these TYPES are public
     // If they are INSIDE the compile unit (before the byte 0 above here),
     // then they are not visible to other CU's (other files)
@@ -180,13 +181,18 @@ void codegen::gen(Node::Stmt *stmt, bool isSaved, std::string output_filename,
             ".string \"int\"\n";
       file << ".Llong_debug_type:\n"
             ".uleb128 " + std::to_string((int)dwarf::DIEAbbrev::Type) +
-            "\n.byte 4\n" // 8 bytes
+            "\n.byte 4\n" // 4 bytes
             ".byte 7\n" // DW_ATE_unsigned - basically `unsigned long int` in c
             ".string \"long\"\n";
+      file << ".Lbool_debug_type:\n"
+            ".uleb128 " + std::to_string((int)dwarf::DIEAbbrev::Type) +
+            "\n.byte 1\n" // 1 byte
+            ".byte 0x02\n" // DW_ATE_boolean - basically `bool` in c
+            ".string \"bool\"\n";
     file << ".Lfloat_debug_type:\n"
             ".uleb128 " + std::to_string((int)dwarf::DIEAbbrev::Type) +
             "\n.byte 4" // 4 bytes
-            "\n.byte 4" // DW_ATE_float - basically `float` in c, or a "single precision" float in 🤓 CPU terms
+            "\n.byte 4" // DW_ATE_float - basically `float` in c, or a "single precision, scalar" float in 🤓 CPU terms
             "\n.string \"float\"\n";
     // Str type is a pointer type
     // Might as well just let it in.
