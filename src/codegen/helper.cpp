@@ -2,6 +2,7 @@
 #include "gen.hpp"
 #include "optimizer/instr.hpp"
 #include <fstream>
+#include <cstdint>
 
 
 void codegen::handleError(int line, int pos, std::string msg,
@@ -364,7 +365,7 @@ size_t codegen::sizeOfLEB(int64_t value) {
     bool more = true;
 
     while (more) {
-        uint8_t byte = value & 0x7F; // Extract the least significant 7 bits
+        uint8_t byte = value & 0x7F; // Get the lowest 7 bits 
         value >>= 7;                // Arithmetic right shift for signed values
 
         // Determine if more bytes are needed
