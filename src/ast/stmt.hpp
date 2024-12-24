@@ -115,9 +115,10 @@ class BlockStmt : public Node::Stmt {
 public:
   int line, pos;
   std::vector<Node::Stmt *> stmts;
+  std::vector<Node::Type *> varDeclTypes; // If there are 2 int declarations in this scope, this will be 16.
 
-  BlockStmt(int line, int pos, std::vector<Node::Stmt *> stmts, int file)
-      : line(line), pos(pos), stmts(stmts) {
+  BlockStmt(int line, int pos, std::vector<Node::Stmt *> stmts, std::vector<Node::Type *> varDeclTypes, int file)
+      : line(line), pos(pos), varDeclTypes(std::move(varDeclTypes)), stmts(stmts) {
     file_id = file;
     kind = NodeKind::ND_BLOCK_STMT;
   }
@@ -125,6 +126,14 @@ public:
   void debug(int indent = 0) const override {
     Node::printIndent(indent);
     std::cout << "BlockStmt: \n";
+    for (Node::Type *t : varDeclTypes) {
+      Node::printIndent(indent + 1);
+      std::cout << "VarDeclType: \n";
+      t->debug(indent + 2);
+    }
+    std::cout << "\n";
+    Node::printIndent(indent + 1);
+    std::cout << "Body: \n";
     for (Node::Stmt *s : stmts) {
       s->debug(indent + 1);
     }

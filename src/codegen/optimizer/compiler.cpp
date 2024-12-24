@@ -89,5 +89,15 @@ Node::Expr *CompileOptimizer::optimizeBinary(BinaryExpr *expr) {
     return expr;
   }
 
+  if (lhs->kind == ND_FLOAT && rhs->kind == ND_FLOAT) {
+    float lhsVal = static_cast<FloatExpr *>(lhs)->value;
+    float rhsVal = static_cast<FloatExpr *>(rhs)->value;
+    float result = 0;
+    if (op == "+") result = lhsVal + rhsVal;
+    if (op == "-") result = lhsVal - rhsVal;
+    if (op == "*") result = lhsVal * rhsVal;
+    if (op == "/") result = lhsVal / rhsVal;
+    return new FloatExpr(expr->line, expr->pos, result, expr->file_id);
+  };
   return expr;
 };

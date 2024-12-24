@@ -170,7 +170,8 @@ void codegen::binary(Node::Expr *expr) {
     push(Instr{.var = BinaryInstr{.op = op, .src = "%xmm1", .dst = "%xmm0"},
                .type = InstrType::Binary},
          Section::Main);
-    pushRegister("%xmm0"); 
+    pushRegister("%xmm0");
+    return;
   } else if (returnType->name == "bool") {
     // We need to compare the two values
     // Check depth
@@ -234,7 +235,7 @@ void codegen::call(Node::Expr *expr) {
     IdentExpr *n = static_cast<IdentExpr *>(e->callee);
     pushDebug(e->line, expr->file_id, e->pos);
     // Push each argument one by one.
-    if (e->args.size() > argOrder.size()) {
+    if (e->args.size() > intArgOrder.size()) {
       std::cerr << "Too many arguments in call - consider reducing them or moving them to a globally defined space." << std::endl;
       exit(-1);
     }
@@ -261,11 +262,11 @@ void codegen::call(Node::Expr *expr) {
         std::string whatWasPushed = instr.what;
         text_section.pop_back();
         // NOW we can lea
-        push(Instr{.var = LeaInstr{.size = DataSize::Qword, .dest = argOrder[i], .src = whatWasPushed},
+        push(Instr{.var = LeaInstr{.size = DataSize::Qword, .dest = intArgOrder[i], .src = whatWasPushed},
                    .type = InstrType::Lea},
              Section::Main);
       } else
-        popToRegister(argOrder[i]);
+        popToRegister(intArgOrder[i]);
     }
     // Call the function
     push(Instr{.var = CallInstr{.name = "usr_" + n->name},
@@ -284,7 +285,7 @@ void codegen::call(Node::Expr *expr) {
     std::string fnName = static_cast<IdentExpr *>(member->rhs)->name;
     pushDebug(e->line, expr->file_id, e->pos);
     // Push each argument one by one.
-    if (e->args.size() + 1 > argOrder.size()) {
+    if (e->args.size() + 1 > intArgOrder.size()) {
       // 1 arg will be 'self', a pointer to the struct being called and always in argOrder[0]
       std::cerr << "Too many arguments in call - consider reducing them or moving them to a globally defined space." << std::endl;
       exit(-1);
@@ -299,7 +300,7 @@ void codegen::call(Node::Expr *expr) {
     std::string whatWasPushed = instr.what;
     text_section.pop_back();
     // NOW we can lea
-    push(Instr{.var = LeaInstr{.size = DataSize::Qword, .dest = argOrder[0], .src = whatWasPushed},
+    push(Instr{.var = LeaInstr{.size = DataSize::Qword, .dest = intArgOrder[0], .src = whatWasPushed},
                .type = InstrType::Lea},
          Section::Main);
     int offsetAmount = round(variableCount-8, 8);
@@ -307,7 +308,7 @@ void codegen::call(Node::Expr *expr) {
     for (size_t i = 0; i < e->args.size(); i++) {
       // evaluate them
       codegen::visitExpr(e->args.at(i));
-      popToRegister(argOrder[i + 1]);
+      popToRegister(intArgOrder[i + 1]);
     }
     // Call the function
     push(Instr{.var = CallInstr{.name = "usrstruct_" + structName + "_" + fnName},
@@ -379,8 +380,11 @@ void codegen::arrayElem(Node::Expr *expr) {
       IdentExpr *ident = static_cast<IdentExpr *>(e->lhs);
       Node::Type *underlying = static_cast<ArrayType *>(e->asmType)->underlying;
       std::string whereBytes = variableTable[static_cast<IdentExpr *>(e->lhs)->name];
-      int offset = std::stoi(whereBytes.substr(0, whereBytes.find("("))); // this is the base of the array - the first byte of the first element
-      offset -= (index->value * getByteSizeOfType(underlying));
+      int offset = std::stoi(whereBytes.substr(0, whereBytes.find("("))); // this is the base of the array - the first byte of the lsat element
+      int totalElements = static_cast<ArrayType *>(e->lhs->asmType)->constSize;
+      if (totalElements < 1)
+        handleError(e->line, e->pos, "Unable to index array with unknown/implicit length", "Codegen Error", true); // how do you even continue from here? Make it fatal
+      offset -= ((totalElements - index->value) * getByteSizeOfType(underlying));
       pushRegister(std::to_string(offset) + "(%rbp)");
     } else {
       visitExpr(e->lhs);
@@ -392,7 +396,8 @@ void codegen::arrayElem(Node::Expr *expr) {
                  .type = InstrType::Lea},
            Section::Main);
       int byteSize = getByteSizeOfType(e->lhs->asmType);
-      int offset = -index->value * byteSize;
+      int totalElements = static_cast<ArrayType *>(e->lhs->asmType)->constSize;
+      int offset = -((totalElements - index->value) * byteSize);
       if (offset == 0)
         pushRegister("(%rcx)");
       else
@@ -417,10 +422,11 @@ void codegen::arrayElem(Node::Expr *expr) {
     visitExpr(e->rhs);
     popToRegister("%rax");
     // %rax contains the index
-    // Negate rax
-    pushLinker("negq %rax\n\t", Section::Main);
     // Multiply it by the size of the type
-    int underlyingByteSize = getByteSizeOfType(static_cast<ArrayType *>(e->lhs->asmType)->underlying);
+    ArrayType *array = static_cast<ArrayType *>(e->lhs->asmType);
+    if (array->constSize < 1)
+      handleError(e->line, e->pos, "Unable to index array with unknown/implicit length", "Codegen Error", true); // how do you even continue from here? Make it fatal
+    int underlyingByteSize = getByteSizeOfType(array->underlying);
     switch (underlyingByteSize) {
       case 1: {
         // No need to multiply
@@ -529,9 +535,9 @@ void codegen::memberExpr(Node::Expr *expr) {
           return;
         }
         // push the value at this offset
-        int offset = 0;
-        if (i != 0) for (int j = 0; j < i; j++) {
-          offset += fields[j].second.second;
+        int offset = size;
+        for (int j = i; j >= 0; j--) {
+          offset -= fields[j].second.second;
         }
         if (offset == 0)
           pushRegister("(%rcx)");
@@ -756,7 +762,7 @@ void codegen::assignArray(Node::Expr *expr) {
       text_section.pop_back();
       push(Instr{.var=LeaInstr{.size=DataSize::Qword,.dest="%rcx",.src=instr.what}, .type = InstrType::Lea},Section::Main);
       ArrayExpr *rhs = static_cast<ArrayExpr *>(assign->rhs);
-      for (int i = 0; i < rhs->elements.size(); i++) {
+      for (int i = rhs->elements.size(); i >= 0; i--) {
         visitExpr(rhs->elements.at(i));
         popToRegister(std::to_string(-i * getByteSizeOfType(rhs->type)) + "(%rcx)");
       }

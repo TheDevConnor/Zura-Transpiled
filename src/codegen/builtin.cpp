@@ -1,5 +1,9 @@
 #include "gen.hpp"
 
+// This file includes the codegen for the builtin functions, which is mostly just the mapping of a syscall
+// ex: `@dis` -> `codegen::print` -> SYS_WRITE (automatically maps to the fd for stdout)
+// ex: `@exit` -> `codegen::exit` -> SYS_EXIT
+// `@import` -> `codegen::importDecl` -> `codegen::program` (the entry point of the new file)
 void codegen::print(Node::Stmt *stmt) {
   PrintStmt *print = static_cast<PrintStmt *>(stmt);
 
@@ -20,7 +24,7 @@ void codegen::print(Node::Stmt *stmt) {
         // Make syscall to write
         push(Instr{.var = Syscall({.name = "SYS_WRITE"}), .type = InstrType::Syscall}, Section::Main);
       } else {
-        handleError(print->line, print->pos, "Cannot print pointer type. Dereference first or print as address.", "Codegen Error");
+        handleError(print->line, print->pos, "Cannot print pointer type. Dereference first or print as an address (int cast).", "Codegen Error");
       }
     } else
     if (argType == "str") {
@@ -38,7 +42,7 @@ void codegen::print(Node::Stmt *stmt) {
 
       // Make syscall to write
       push(Instr{.var = Syscall{.name = "SYS_WRITE"}, .type = InstrType::Syscall}, Section::Main);
-    } else if (argType == "int" || argType == "char") { // Char's will be treated as the byte they are. They will be printed as their ASCII value.
+    } else if (argType == "int" || argType == "char") { // Char's will be treated as the byte they are. They will be printed as their ASCII value. Ex: `@dis('A')` -> `65`
       nativeFunctionsUsed[NativeASMFunc::strlen] = true;
       nativeFunctionsUsed[NativeASMFunc::itoa] = true;
       visitExpr(arg);
@@ -172,16 +176,27 @@ void codegen::externalCall(Node::Expr *expr) {
   ExternalCall *e = static_cast<ExternalCall *>(expr);
   pushDebug(e->line, expr->file_id, e->pos);
   // Push each argument one by one.
-  if (e->args.size() > argOrder.size()) {
+  if (e->args.size() > intArgOrder.size()) {
     std::cerr << "Too many arguments in call - consider reducing them or moving them to a globally defined space." << std::endl;
     exit(-1);
   }
+  int intArgCount = 0;
+  int floatArgCount = 0;
   for (size_t i = 0; i < e->args.size(); i++) {
     // evaluate them
     codegen::visitExpr(e->args.at(i));
-    popToRegister(argOrder[i]);
+    // check if it is considered a float
+    if (e->args[i]->asmType->kind == ND_SYMBOL_TYPE && getUnderlying(e->args[i]->asmType) == "float") {
+      // it is a float
+      popToRegister(floatArgOrder[floatArgCount++]); // ++ operator returns the original, so starting at 0 :smile:
+    } else
+      popToRegister(intArgOrder[intArgCount++]);
   }
-  // Call the function
+  // In short, the PLT is a table of function pointers that are resolved at runtime.
+  // This is used for dynamically linked executables, which is by default what we are doing.
+  // https://stackoverflow.com/questions/5469274/what-does-plt-mean-here
+  
+  // NOTE: This is what linkers are for. They include these functions and resolve them. This means that @link's are always required for an @call.
   push(Instr{.var = CallInstr{.name = e->name + "@PLT"},
              .type = InstrType::Call},
        Section::Main);

@@ -1,46 +1,13 @@
-const TokenKind := enum {
-    IDENTIFIER,
-    VARIABLE,
-    EQUALS,
-    SEMICOLON,
-
-    EOF,
-};
-
-const Token := struct {
-    kind: TokenKind;
-    value: str; 
-
-    is_eof := fn (self: *Token) bool { # This function here is the problem
-      return self.kind == TokenKind.EOF;
-    };
-};
-
-const len_int := fn (s: []Token) int {
-    loop (i = 0; i < 1000) : (i++) {
-        if (s[i].is_eof()) {
-          return i;
-        }
-    }
-    @dis("Error: Array is to long; for the given limit!\n");
-    return 0;
+const HEHEHEHA := struct {
+  x: int;
+  y: int;
 };
 
 const main := fn () int {
-   have Tokens: []Token = [
-    {kind: TokenKind.IDENTIFIER, value: "x"},
-    {kind: TokenKind.EQUALS, value: "="},
-    {kind: TokenKind.VARIABLE, value: "10"},
-    {kind: TokenKind.SEMICOLON, value: ";"},
-    {kind: TokenKind.EOF, value: ""},
-  ];
+  have test: HEHEHEHA = {
+    x: 1, # Declared at -16(%rbp)
+    y: 2, # Declared at - 8(%rbp) !!! YIPEE
+  };
 
-  len_int(Tokens);
-
-  loop (i = 0; i < len_int(Tokens)) : (i++) {
-    have token: *Token = &Tokens[i];
-    @dis("Token: ", token.value, "\n");
-  }
-
-  return 0;
+  return test.y;
 };
