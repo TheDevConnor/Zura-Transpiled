@@ -123,13 +123,13 @@ void TypeChecker::visitBinary(Maps *map, Node::Expr *expr) {
                       type_to_string(rhs.get()) + "'";
     if (!checkTypeMatch(lhs, rhs, binary->op, binary->line, binary->pos, msg)) {
         return_type = std::make_shared<SymbolType>("unknown");
-        expr->asmType = return_type.get();
+        expr->asmType = new SymbolType("unknown");
         return;
     }
 
     if (map->mathOps.find(binary->op) != map->mathOps.end()) {
       return_type = lhs;
-      expr->asmType = lhs.get();
+      expr->asmType = new SymbolType(lhs.get()->name); // This, for some reason, is needed, and only in debug mode?????
     } else if (map->boolOps.find(binary->op) != map->boolOps.end()) {
       return_type = std::make_shared<SymbolType>("bool");
       expr->asmType = new SymbolType("bool");

@@ -9,5 +9,14 @@ const main := fn () int {
     y: 2, # Declared at - 8(%rbp) !!! YIPEE
   };
 
-  return test.y;
+  have test3: int = 4;
+
+  have test2: HEHEHEHA = {
+    x: 3,
+    y: test3,
+  };
+
+  have test4: int = test2.x + test2.y;
+
+  return test4;
 };

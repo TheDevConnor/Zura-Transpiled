@@ -79,7 +79,7 @@ void codegen::gen(Node::Stmt *stmt, bool isSaved, std::string output_filename,
           "  xorq %rdi, %rdi\n"
           "  movq $60, %rax\n"
           "  syscall\n";
-  file << Stringifier::stringifyInstrs(text_section);
+  file << Stringifier::stringifyInstrs(text_section, debug);
   if (nativeFunctionsUsed.size() > 0) file << "\n# zura functions\n";
   if (nativeFunctionsUsed[NativeASMFunc::strlen] == true) {
     file << ".type native_strlen, @function"
@@ -133,17 +133,17 @@ void codegen::gen(Node::Stmt *stmt, bool isSaved, std::string output_filename,
     file << ".Ldebug_text0:\n";
   if (head_section.size() > 0) {
     file << "\n# non-main user functions" << std::endl;
-    file << Stringifier::stringifyInstrs(head_section);
+    file << Stringifier::stringifyInstrs(head_section, debug);
   }
   if (rodt_section.size() > 0) {
     file << "\n# readonly data section - contains constant strings and floats (for now)"
             "\n.section .rodata\n";
-    file << Stringifier::stringifyInstrs(rodt_section);
+    file << Stringifier::stringifyInstrs(rodt_section, debug);
   }
   if (data_section.size() > 0) {
     file << "\n# data section for pre-allocated, mutable data"
             "\n.data\n";
-    file << Stringifier::stringifyInstrs(data_section);
+    file << Stringifier::stringifyInstrs(data_section, debug);
   }
 
   // DWARF debug yayy
@@ -168,8 +168,8 @@ void codegen::gen(Node::Stmt *stmt, bool isSaved, std::string output_filename,
             "\n.long .Ldebug_line0"
             "\n";
     // Attributes or whatever that follow
-    file << Stringifier::stringifyInstrs(die_section) << "\n";
-    file << Stringifier::stringifyInstrs(diet_section) << "\n";
+    file << Stringifier::stringifyInstrs(die_section, debug) << "\n";
+    file << Stringifier::stringifyInstrs(diet_section, debug) << "\n";
     // Ensure that these TYPES are public
     // If they are INSIDE the compile unit (before the byte 0 above here),
     // then they are not visible to other CU's (other files)
@@ -225,7 +225,7 @@ void codegen::gen(Node::Stmt *stmt, bool isSaved, std::string output_filename,
     file << ".section .debug_str,\"MS\",@progbits,1\n"
             ".Ldebug_str_start:\n"
             ".Ldebug_producer_string: .string \"Zura compiler " + ZuraVersion + "\"\n";
-    file << Stringifier::stringifyInstrs(dies_section) << "\n";
+    file << Stringifier::stringifyInstrs(dies_section, debug) << "\n";
     // debug_line_str
     std::string fileRelPath = static_cast<ProgramStmt *>(stmt)->inputPath;
     std::string fileName = fileRelPath.substr(fileRelPath.find_last_of("/") + 1);

@@ -539,6 +539,7 @@ void codegen::memberExpr(Node::Expr *expr) {
         for (int j = i; j >= 0; j--) {
           offset -= fields[j].second.second;
         }
+        if (i == 0) offset = 0;
         if (offset == 0)
           pushRegister("(%rcx)");
         else

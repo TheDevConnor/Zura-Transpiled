@@ -80,15 +80,13 @@ Node::Expr *CompileOptimizer::optimizeBinary(BinaryExpr *expr) {
     } else {
       return expr;
     }
-  }
-  if (lhs->kind == ND_INT && op == "/") {
-    int rhsVal = static_cast<IntExpr *>(rhs)->value;
-    if (rhsVal == 2) {
-      return new BinaryExpr(expr->line, expr->pos, lhs, rhs, ">>", expr->file_id);
+  } else if (rhs->kind == ND_INT && expr->op == "/") {
+    IntExpr *rhsInt = static_cast<IntExpr *>(rhs);
+    if (rhsInt->value == 2) {
+      // Convert to a right shift
+      return new BinaryExpr(expr->line, expr->pos, lhs, new IntExpr(rhsInt->line, rhsInt->pos, 1, rhsInt->file_id), "shr", expr->file_id);
     }
-    return expr;
   }
-
   if (lhs->kind == ND_FLOAT && rhs->kind == ND_FLOAT) {
     float lhsVal = static_cast<FloatExpr *>(lhs)->value;
     float rhsVal = static_cast<FloatExpr *>(rhs)->value;

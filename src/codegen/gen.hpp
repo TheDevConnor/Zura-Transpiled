@@ -121,7 +121,9 @@ Section {
     DIE, // Dwarf Information Entries - basically, they're little stinkbombs that tell the debugger what variable its looking at
     DIEString, // String literals referenced by DIE's
     DIEAbbrev, // Abbreviations for DIE's
-    DIETypes, // this will always be at the end of the regular DIE section
+    // This is not a seperate section in terms of assembly. This is a list of DIE's that are types, organized to be at the bottom of the file
+    // structure_type, enumeration, base_type, pointer_type, or array_type.
+    DIETypes,
 };
 
 enum class NativeASMFunc {
@@ -134,7 +136,7 @@ inline std::vector<Instr> head_section = {};
 inline std::vector<Instr> data_section = {}; // This is only really one of three instructions
 inline std::vector<Instr> rodt_section = {}; // Same as data section
 inline std::vector<Instr> die_section = {}; // Acronym for Dwarf Information Entry
-inline std::vector<Instr> diet_section = {}; // Acronym for Dwarf Information Entry
+inline std::vector<Instr> diet_section = {}; // DIE types - NOT a seperate assembly section, just a list of DIEs that are, themselves, types
 inline std::vector<Instr> diea_section = {}; // DIE abbreviation (defines attributes used in DIE's)
 inline std::vector<Instr> dies_section = {}; // Dwarf Information Entries strings, referenced from DIE's
 
@@ -185,6 +187,9 @@ inline std::set<std::string> dieStringsUsed = {};
 std::string generateAbbreviations();
 inline bool nextBlockDIE = true;
 
+// FORM_exprloc - this location expression is dependent on the first byte, which could mean "on stack" or "in register" or anywhere tf else
+// in the case that it is "in register", the following byte is a sort of "ID" for that register.
+// In a single Google Search followed by my own testing, this is the byte corresponding to each (common general-puprose) register
 inline static const std::unordered_map<std::string, int> argOP_regs = {
   {"%rax", 0},
   {"%rdx", 1},
@@ -212,7 +217,6 @@ inline unsigned char loopDepth = 0;
 inline std::vector<std::string> fileIDs = {};
 inline bool isEntryPoint = false;
 inline size_t dieCount = 1; // Labels! Labels galore! Im not counting bytes, man! Let LD do it !!!
-inline size_t howBadIsRbp = 0;
 inline size_t conditionalCount = 0;
 inline size_t stringCount = 0;
 inline size_t floatCount = 0;
@@ -230,7 +234,7 @@ void pushCompAsExpr(); // assuming compexpr's will already do the "cmp" and "jmp
 
 inline const char* file_name;
 
-inline bool debug = false;
+inline bool debug = false; // Was the "-debug" flag passed in to the executable?
 
 // Function argument order
 inline static const std::vector<std::string> intArgOrder = {  "%rdi", "%rsi", "%rdx", "%rcx", "%r8",  "%r9"}; // push the rest to the stack 
