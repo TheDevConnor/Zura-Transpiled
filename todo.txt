@@ -17,3 +17,29 @@ Pointers implemented now. Still backwards from C declarations tho but shh
       - Accept Syscall #: SYS_accept 43
       - Read Syscall #:   SYS_read 0
       - Write Syscall #:  SYS_WRITE 1 (Already implemented in the form of 'dis')
+
+
+If you are reading this, then hello! This is just a little note on why I did what I did in this commit:
+C code like this produces "backwards-declared variables" like this:
+int main() {
+  int x; # -24(%rbp)
+  int y; # -16(%rbp)
+  int z; # - 8(%rbp)
+  # Notice going from greatest to least
+  return 0;
+}
+
+However, if you add a scope for some reason, the variables will be declared forwards, like they always have.
+int main() {
+  int x;   # - 8(%rbp)
+  int y;   # -16(%rbp)
+  if (x) {
+    int z; # -24(%rbp)
+  }
+  return 0;
+}
+
+This is why I made a global `declareVariablesForward` boolean in gen.hpp, is because of this.
+Although right now, the aim is not for full compatibility with C, but rather just to get something working,
+I thought that I should try my best to get as close as possible to C during the process right now,
+rather than making many big, painful changes later.

@@ -233,15 +233,25 @@ void codegen::varDecl(Node::Stmt *stmt) {
       // Basically ignore the part where we allocate memory for this thing.
       declareStructVariable(s->expr, getUnderlying(s->type), variableCount);
       int structSize = structByteSizes[getUnderlying(s->type)].first;
-      variableTable.insert({s->name, where});
-      variableCount -= structSize;
+      if (declareVariablesForward) {
+        variableCount += structSize;
+        variableTable.insert({s->name, where});
+      } else {
+        variableTable.insert({s->name, where});
+        variableCount -= structSize;
+      }
     } else if (s->type->kind == ND_ARRAY_TYPE || s->type->kind == ND_ARRAY_AUTO_FILL) {
       declareArrayVariable(s->expr, static_cast<ArrayType *>(s->type)->constSize, s->name); // s->name so it can be inserted to variableTable, s->type so we know the byte sizes.
     } else {
       visitExpr(s->expr);
       popToRegister(where); // For values small enough to fit in a register.
-      variableTable.insert({s->name, where});
-      variableCount -= getByteSizeOfType(s->type);
+      if (declareVariablesForward) {
+        variableCount += getByteSizeOfType(s->type);
+        variableTable.insert({s->name, where});
+      } else {
+        variableTable.insert({s->name, where});
+        variableCount -= getByteSizeOfType(s->type);
+      }
     }
   } else {
     // Subtract from the stack pointer
@@ -281,7 +291,7 @@ void codegen::varDecl(Node::Stmt *stmt) {
 void codegen::block(Node::Stmt *stmt) {
   BlockStmt *s = static_cast<BlockStmt *>(stmt);
   // This should be handled by the IR when i get around to it though
-
+  declareVariablesForward = false;
   if (s->varDeclTypes.size() > 0) {
     /*
     // -----  C  -----
@@ -305,6 +315,8 @@ void codegen::block(Node::Stmt *stmt) {
       vc += getByteSizeOfType(t);
     }
     variableCount = vc;
+  } else {
+    declareVariablesForward = true;
   }
   size_t preSS = stackSize;
   size_t preVS = variableCount;
@@ -747,10 +759,18 @@ void codegen::declareStructVariable(Node::Expr *expr, std::string structName, in
           }
         }
         */
-        int offset = structByteSizes[structName].second.at(i).second.second;
+        int offset;
         // Go backwards
-        for (int j = i; j >= 0; j--) {
-          offset -= structByteSizes[structName].second.at(j).second.second;
+        if (declareVariablesForward) {
+          offset = 0;
+          for (int j = 0; j < i; j++) {
+            offset += structByteSizes[structName].second.at(j).second.second;
+          }
+        } else {
+          offset = structByteSizes[structName].second.at(i).second.second;
+          for (int j = i; j >= 0; j--) {
+            offset -= structByteSizes[structName].second.at(j).second.second;
+          }
         }
         // Avoid doing extra work even though we are literally recursioning
         declareStructVariable(field.second, getUnderlying(fieldType), whereToPut + offset);
@@ -766,9 +786,17 @@ void codegen::declareStructVariable(Node::Expr *expr, std::string structName, in
         std::string where = variableTable[ident->name];
         int structFieldSize = structByteSizes[structName].second.at(i).second.second;
         // Get the offset - this will be the sum of all previous fieldSizes
-        int offset = 0;
-        if (i != 0) for (int j = 0; j < i; j++) {
-          offset += structByteSizes[structName].second.at(j).second.second;
+        int offset;
+        if (declareVariablesForward) {
+          offset = 0;
+          for (int j = 0; j < i; j++) {
+            offset += structByteSizes[structName].second.at(j).second.second;
+          }
+        } else {
+          offset = structByteSizes[structName].second.at(i).second.second;
+          for (int j = i; j >= 0; j--) {
+            offset -= structByteSizes[structName].second.at(j).second.second;
+          }
         }
         int fieldVarOffset = std::stoi(where.substr(0, where.find('(')));
         // Put the identifer address into rcx
@@ -783,10 +811,18 @@ void codegen::declareStructVariable(Node::Expr *expr, std::string structName, in
           // From - relative to rcx, the base of the identifier struct
           std::string from = std::to_string(-(fieldVarOffset + structByteSizes[getUnderlying(fieldType)].second[j].second.second)) + "(%rcx)";
           // To - relative to rbp, PLUS the base of the new struct
-          int subFieldOffset = 0;
-          if (j != 0) for (int k = 0; k < j; k++) {
-            // Don't ask. Please, this is so bad...
-            subFieldOffset += structByteSizes[getUnderlying(structByteSizes[structName].second[i].second.first)].second[i].second.second;
+          int subFieldOffset;
+          if (declareVariablesForward) {
+            subFieldOffset = 0;
+            if (j != 0) for (int k = 0; k < j; k++) {
+              // Don't ask. Please, this is so bad...
+              subFieldOffset += structByteSizes[getUnderlying(structByteSizes[structName].second[i].second.first)].second[i].second.second;
+            }
+          } else {
+            subFieldOffset = structByteSizes[structName].second[i].second.second;
+            if (j != 0) for (int k = j; k >= 0; k--) {
+              subFieldOffset -= structByteSizes[structName].second[i].second.second;
+            }
           }
           std::string to = std::to_string(-(whereToPut+subFieldOffset)) + "(%rbp)";
           pushRegister(from);
@@ -802,12 +838,20 @@ void codegen::declareStructVariable(Node::Expr *expr, std::string structName, in
     int offset = structByteSizes[structName].first;
     // Go BACKWARDS through the fields
     // if i == 0, then offset should be 0
-    for (int j = orderedFields.size() - 1; j >= 0; j--) {
-      offset -= structByteSizes[structName].second[j].second.second;
-      if (j == orderedFields.size() - 1 - i) break;
+    if (declareVariablesForward) {
+      offset = 0;
+      for (int j = 0; j < i; j++) {
+        offset += structByteSizes[structName].second[j].second.second;
+      }
+      popToRegister(std::to_string(-(structBase + offset)) + "(%rbp)");
+    } else {
+      offset = structByteSizes[structName].second[i].second.second;
+      for (int j = i; j >= 0; j--) {
+        offset -= structByteSizes[structName].second[j].second.second;
+      }
+      popToRegister(std::to_string((-structBase - offset)) + "(%rbp)");
     }
     // Pop the value into a register
-    popToRegister(std::to_string((-structBase - offset)) + "(%rbp)");
   }
 }
 
@@ -851,6 +895,11 @@ void codegen::declareArrayVariable(Node::Expr *expr, short int arrayLength, std:
     popToRegister(std::to_string(-(arrayBase - i * underlyingByteSize)) + "(%rbp)");
   }
   // Add the struct to the variable table
-  variableTable.insert({varName, std::to_string(-arrayBase) + "(%rbp)"});
-  variableCount -= s->elements.size() * underlyingByteSize;
+  if (declareVariablesForward) {
+    variableCount += s->elements.size() * underlyingByteSize;
+    variableTable.insert({varName, std::to_string(-arrayBase) + "(%rbp)"});
+  } else {
+    variableTable.insert({varName, std::to_string(-arrayBase) + "(%rbp)"});
+    variableCount -= s->elements.size() * underlyingByteSize;
+  }
 }

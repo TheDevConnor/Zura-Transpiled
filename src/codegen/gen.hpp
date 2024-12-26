@@ -226,6 +226,7 @@ inline size_t arrayCount = 0;
 inline std::vector<std::pair<size_t, size_t>> arrayCounts = {};
 
 inline size_t funcBlockStart = -1; // Set to "stackSize" on FuncDecl blocks, will be set to crazy value when not used
+inline bool declareVariablesForward = false; // Declare variables incrementally (-8, -16, -24 (%rbp)) or decrementally (-24, -16, -8 (%rbp))
 void push(Instr instr, Section section = Section::Main);
 void pushLinker(std::string val, Section section);
 

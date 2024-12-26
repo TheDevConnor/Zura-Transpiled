@@ -34,17 +34,16 @@ Node::Stmt *Parser::blockStmt(PStruct *psr, std::string name) {
               "Expected a L_BRACE to start a block stmt");
   std::vector<Node::Stmt *> stmts;
   std::vector<Node::Type *> varDeclTypes;
+  bool shouldDeclareBackwards = true;
   while (psr->current(psr).kind != TokenKind::RIGHT_BRACE) {
     stmts.push_back(parseStmt(psr, name));
     // Check if the latest statemnt was a return statement
-    if (stmts.back()->kind == NodeKind::ND_RETURN_STMT
-     || stmts.back()->kind == NodeKind::ND_BREAK_STMT
-     || stmts.back()->kind == NodeKind::ND_CONTINUE_STMT) {
+    if (stmts.back()->kind == NodeKind::ND_RETURN_STMT) {
       break; // Why continue? We can't get any further, anyway
     }
 
     // Check if the latest statement was a variable declaration
-    if (stmts.back()->kind == NodeKind::ND_VAR_STMT) {
+    if (stmts.back()->kind == NodeKind::ND_VAR_STMT && shouldDeclareBackwards) {
       VarStmt *var = static_cast<VarStmt *>(stmts.back());
       if (var->isConst)
         continue; // Const variables don't get pushed back on the stack
@@ -52,19 +51,24 @@ Node::Stmt *Parser::blockStmt(PStruct *psr, std::string name) {
       // Push back the size of the variable to the block statement's size
       varDeclTypes.push_back(var->type);
     }
-    if (stmts.back()->kind == ND_BLOCK_STMT) {
-      BlockStmt *block = static_cast<BlockStmt *>(stmts.back());
-      for (Node::Type *t : block->varDeclTypes) {
-        varDeclTypes.push_back(t);
-      }
-      block->varDeclTypes = {}; // Nested structs should not have these
-      // This also ensures that only "top-level" scopes have a variableTotalSize :D
+    NodeKind pastKind = stmts.back()->kind;
+    if (pastKind == NodeKind::ND_IF_STMT
+     || pastKind == NodeKind::ND_WHILE_STMT
+     || pastKind == NodeKind::ND_FOR_STMT
+     || pastKind == NodeKind::ND_BLOCK_STMT
+     || pastKind == NodeKind::ND_FN_STMT
+    ) {
+      // This means that we have nested scopes
+      // So in that case, we should declare variables forward
+      // Fuck you, C. Why do you do it this way?
+      shouldDeclareBackwards = false;
+      varDeclTypes.clear();
     }
   }
 
   psr->expect(psr, TokenKind::RIGHT_BRACE,
               "Expected a R_BRACE to end a block stmt");
-  return new BlockStmt(line, column, stmts, varDeclTypes, codegen::getFileID(psr->current_file));
+  return new BlockStmt(line, column, stmts, !shouldDeclareBackwards, varDeclTypes, codegen::getFileID(psr->current_file));
 }
 
 Node::Stmt *Parser::varStmt(PStruct *psr, std::string name) {

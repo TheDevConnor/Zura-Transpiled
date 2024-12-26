@@ -116,9 +116,10 @@ public:
   int line, pos;
   std::vector<Node::Stmt *> stmts;
   std::vector<Node::Type *> varDeclTypes; // If there are 2 int declarations in this scope, this will be 16.
+  bool shouldDeclareForward;
 
-  BlockStmt(int line, int pos, std::vector<Node::Stmt *> stmts, std::vector<Node::Type *> varDeclTypes, int file)
-      : line(line), pos(pos), varDeclTypes(std::move(varDeclTypes)), stmts(stmts) {
+  BlockStmt(int line, int pos, std::vector<Node::Stmt *> stmts, bool declareForward, std::vector<Node::Type *> varDeclTypes, int file)
+      : line(line), pos(pos), shouldDeclareForward(declareForward), varDeclTypes(std::move(varDeclTypes)), stmts(stmts) {
     file_id = file;
     kind = NodeKind::ND_BLOCK_STMT;
   }

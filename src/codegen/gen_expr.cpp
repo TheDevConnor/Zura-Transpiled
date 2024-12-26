@@ -421,6 +421,9 @@ void codegen::arrayElem(Node::Expr *expr) {
     }
     visitExpr(e->rhs);
     popToRegister("%rax");
+    if (declareVariablesForward) {
+      pushLinker("negq %rax\n\t", Section::Main); // Negate the index, so we go backwards (forwards in memory) through the array
+    }
     // %rax contains the index
     // Multiply it by the size of the type
     ArrayType *array = static_cast<ArrayType *>(e->lhs->asmType);
@@ -506,10 +509,18 @@ void codegen::memberExpr(Node::Expr *expr) {
             embedded: *Nested;
           }
           */
-
-          int offset = 0;
-          if (i != 0) for (int j = 0; j < i; j++) {
-            offset += fields[j].second.second;
+          int offset;
+          if (declareVariablesForward) {
+            offset = 0;
+            if (i != 0) for (int j = 0; j < i; j++) {
+              offset += fields[j].second.second;
+            }
+          } else {
+            offset = size;
+            for (int j = i; j >= 0; j--) {
+              offset -= fields[j].second.second;
+            }
+            if (i == 0) offset = 0;
           }
           push(Instr{.var=LeaInstr{.size=DataSize::Qword,.dest="%rcx",.src=std::to_string(offset)+"(%rcx)"}, .type=InstrType::Lea},Section::Main);
           pushRegister("%rcx");
@@ -525,9 +536,18 @@ void codegen::memberExpr(Node::Expr *expr) {
           */
 
           // Get the field offset
-          int offset = 0;
-          if (i != 0) for (int j = 0; j < i; j++) {
-            offset += fields[j].second.second;
+          int offset;
+          if (declareVariablesForward) {
+            offset = 0;
+            if (i != 0) for (int j = 0; j < i; j++) {
+              offset += fields[j].second.second;
+            }
+          } else {
+            offset = size;
+            for (int j = i; j >= 0; j--) {
+              offset -= fields[j].second.second;
+            }
+            if (i == 0) offset = 0;
           }
           // Push the value at this offset
           push(Instr{.var=LeaInstr{.size=DataSize::Qword,.dest="%rcx",.src=std::to_string(offset)+"(%rcx)"}, .type=InstrType::Lea},Section::Main);
@@ -535,11 +555,19 @@ void codegen::memberExpr(Node::Expr *expr) {
           return;
         }
         // push the value at this offset
-        int offset = size;
-        for (int j = i; j >= 0; j--) {
-          offset -= fields[j].second.second;
+        int offset;
+        if (declareVariablesForward) {
+          offset = 0;
+          if (i != 0) for (int j = 0; j < i; j++) {
+            offset += fields[j].second.second;
+          }
+        } else {
+          offset = size;
+          for (int j = i; j >= 0; j--) {
+            offset -= fields[j].second.second;
+          }
+          if (i == 0) offset = 0;
         }
-        if (i == 0) offset = 0;
         if (offset == 0)
           pushRegister("(%rcx)");
         else
