@@ -127,16 +127,19 @@ public:
   void debug(int indent = 0) const override {
     Node::printIndent(indent);
     std::cout << "BlockStmt: \n";
+    Node::printIndent(indent + 1);
+    std::cout << "ShouldDeclareForward: " << (shouldDeclareForward ? "Yes" : "No") << "\n";
+    Node::printIndent(indent + 1);
+    std::cout << "VarDeclTypes: \n";
     for (Node::Type *t : varDeclTypes) {
-      Node::printIndent(indent + 1);
-      std::cout << "VarDeclType: \n";
+      Node::printIndent(indent + 2);
       t->debug(indent + 2);
     }
-    std::cout << "\n";
+    // new line automatically printed
     Node::printIndent(indent + 1);
     std::cout << "Body: \n";
     for (Node::Stmt *s : stmts) {
-      s->debug(indent + 1);
+      s->debug(indent + 2);
     }
     Node::printIndent(indent);
     std::cout << "End of BlockStmt\n";

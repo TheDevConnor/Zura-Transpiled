@@ -156,11 +156,13 @@ public:
   void debug(int indent = 0) const override {
     Node::printIndent(indent);
     std::cout << "CastExpr: \n";
-    castee->debug(indent + 1);
     Node::printIndent(indent + 1);
-    std::cout << "Type: ";
-    castee_type->debug(indent + 1);
-    std::cout << std::endl;
+    std::cout << "From: \n";
+    castee->debug(indent + 2);
+    Node::printIndent(indent + 1);
+    std::cout << "To: \n";
+    Node::printIndent(indent + 2); // for some reason this does not happen from within the type
+    castee_type->debug(indent + 2);
   }
 
   ~CastExpr() = default; // rule of threes
@@ -677,13 +679,16 @@ public:
   void debug(int indent = 0) const override {
     Node::printIndent(indent);
     std::cout << "StructExpr: \n";
-    for (std::pair<Node::Expr *, Node::Expr *> pair : values) {
+    for (int i = 0; i < values.size(); i++) {
+      std::pair<Node::Expr *, Node::Expr *> pair = *std::next(values.begin(), i); // :sob:
       Node::printIndent(indent + 1);
+      std::cout << "Field #" + std::to_string(i) + ": \n";
+      Node::printIndent(indent + 2);
       std::cout << "Name: \n";
-      pair.first->debug(indent + 2);
-      Node::printIndent(indent + 1);
+      pair.first->debug(indent + 3);
+      Node::printIndent(indent + 2);
       std::cout << "Value: \n";
-      pair.second->debug(indent + 2);
+      pair.second->debug(indent + 3);
     }
   }
 

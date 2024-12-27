@@ -177,24 +177,35 @@ void codegen::binary(Node::Expr *expr) {
     // Check depth
     int lhsDepth = getExpressionDepth(e->lhs);
     int rhsDepth = getExpressionDepth(e->rhs);
+    SymbolType *lhsType = static_cast<SymbolType *>(e->lhs->asmType);
+    SymbolType *rhsType = static_cast<SymbolType *>(e->rhs->asmType);
+    bool isFloat = lhsType->name == "float" || rhsType->name == "float";
+    std::string lhsReg = isFloat ? "%xmm0" : "%rax";
+    std::string rhsReg = isFloat ? "%xmm1" : "%rbx";
     if (lhsDepth > rhsDepth) {
       visitExpr(e->lhs);
       visitExpr(e->rhs);
-      popToRegister("%rbx"); // Pop RHS into RBX
-      popToRegister("%rax"); // Pop LHS into RAX
+      popToRegister(rhsReg); // Pop RHS into RBX
+      popToRegister(lhsReg); // Pop LHS into RAX
     } else {
       visitExpr(e->rhs);
       visitExpr(e->lhs);
-      popToRegister("%rax"); // Pop LHS into RAX
-      popToRegister("%rbx"); // Pop RHS into RBX
+      popToRegister(lhsReg); // Pop LHS into RAX
+      popToRegister(rhsReg); // Pop RHS into RBX
     }
     // Get the operation
     std::string op = lookup(opMap, e->op);
-    // Perform the operation
-    // by running a comparison
-    push(Instr{.var = CmpInstr{.lhs = "%rax", .rhs = "%rbx"}, .type = InstrType::Cmp}, Section::Main);
-    pushLinker(op + " %al\n\tmovzbq %al, %rax\n\t", Section::Main); // There is no instruction like `cltq` for bytes
-    // Move the bytes up to 64-bits
+    // Let's see if one of them was a float
+    if (lhsType->name == "float" || lhsType->name == "float") {
+      // This does not work on a simple "cmp" instruction!
+      // We need a "ucomiss" instruction - short for "unordered compare of single-precision #'s"
+      push(Instr{.var = LinkerDirective{.value = "ucomiss " + rhsReg + ", " + lhsReg + "\n\t"}, .type = InstrType::Linker}, Section::Main);
+    } else {
+      // Regular old comparison
+      push(Instr{.var = CmpInstr{.lhs = lhsReg, .rhs = rhsReg}, .type = InstrType::Cmp}, Section::Main);
+    }
+    // Ex: If "==", this becomes "sete %al", setting %al equal to the result of the comparison
+    pushLinker(op + " %al\n\tmovzbq %al, %rax\n\t", Section::Main); // Extend the byte up to 64-bits
     pushRegister("%rax"); // Push the result
   }
 }
@@ -327,7 +338,7 @@ void codegen::ternary(Node::Expr *expr) {
   int ternay = 0;
   std::string ternayCount = std::to_string(ternay);
 
-  visitExpr(e->condition);
+  visitExpr(e->condition); // If a comparison, this will be a binaryExpr.
   popToRegister("%rax");
 
   push(Instr{.var = CmpInstr{.lhs = "%rax", .rhs = "$0"},

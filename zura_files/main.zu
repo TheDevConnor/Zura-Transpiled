@@ -1,22 +1,26 @@
-const HEHEHEHA := struct {
+const HelpMe := struct {
   x: int;
-  y: int;
+  y: float;
 };
 
-const main := fn () int {
-  have test: HEHEHEHA = {
-    x: 1, # Declared at -16(%rbp)
-    y: 2, # Declared at - 8(%rbp) !!! YIPEE
+const main := fn() int {
+  have Test: HelpMe = {
+    x: 5,
+    y: 3.0
   };
-
-  have test3: int = 4;
-
-  have test2: HEHEHEHA = {
-    x: 3,
-    y: test3,
-  };
-
-  have test4: int = test2.x + test2.y;
-
-  return test4;
+  return @cast<int>(Test.y); # 3
 };
+
+
+# const main := fn() int {
+#   @dis("x is ");
+#   have x: float = 5.0;
+#   have y: float = 3.0;
+#   if (x > y) {
+#     @dis("greater\n");
+#   } else {
+#     @dis("less\n");
+#   }
+#   # 👍
+#   return 0;
+# };
