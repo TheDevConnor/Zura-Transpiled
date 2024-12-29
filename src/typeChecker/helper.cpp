@@ -39,20 +39,14 @@ std::string TypeChecker::type_to_string(Node::Type *type) {
 
 std::shared_ptr<SymbolType> TypeChecker::checkReturnType(Node::Expr *expr, const std::string &defaultType) {
     if (return_type == nullptr) {
-        expr->asmType = return_type.get();
+        expr->asmType = new SymbolType(defaultType);
         return std::make_shared<SymbolType>(defaultType);
     }
 
     // check if we have a return type of any
     if (type_to_string(return_type.get()) == "any") {
-        expr->asmType = return_type.get();
+        expr->asmType = new SymbolType(defaultType);
         return std::make_shared<SymbolType>(defaultType); // return the default type
-    }
-
-    // NullExpr is valid for all pointer types
-    if (expr->kind == NodeKind::ND_NULL) {
-        expr->asmType = return_type.get();
-        return std::make_shared<SymbolType>(defaultType);
     }
     return std::static_pointer_cast<SymbolType>(return_type);
 }
@@ -103,7 +97,7 @@ void TypeChecker::processStructMember(Maps *map, MemberExpr *member, const std::
       if (res == stmts.end()) {
       } else {
         return_type = std::make_shared<SymbolType>(type_to_string(res->first.second));
-        member->asmType = return_type.get();
+        member->asmType = createDuplicate(return_type.get());
         return;
       }
     }
@@ -124,7 +118,7 @@ void TypeChecker::processStructMember(Maps *map, MemberExpr *member, const std::
       return;
     }
     return_type = std::make_shared<SymbolType>(type_to_string(res->second));
-    member->asmType = return_type.get();
+    member->asmType = createDuplicate(return_type.get());
   }
 }
 
@@ -143,7 +137,7 @@ void TypeChecker::processEnumMember(Maps *map, MemberExpr *member, const std::st
     }
 
     return_type = std::make_shared<SymbolType>(lhsType);
-    member->asmType = return_type.get();
+    member->asmType = createDuplicate(return_type.get());
 }
 
 void TypeChecker::handleUnknownType(MemberExpr *member, const std::string &lhsType) {
@@ -199,4 +193,31 @@ bool TypeChecker::validateArgumentTypes(Maps *map, CallExpr *call, Node::Expr *c
     }
   }
   return true;
+}
+
+
+Node::Type *TypeChecker::createDuplicate(Node::Type *type) {
+  switch(type->kind) {
+    case NodeKind::ND_SYMBOL_TYPE: {
+      SymbolType *sym = static_cast<SymbolType *>(type);
+      return new SymbolType(sym->name);
+    }
+    case NodeKind::ND_ARRAY_TYPE: {
+      ArrayType *arr = static_cast<ArrayType *>(type);
+      return new ArrayType(createDuplicate(arr->underlying), arr->constSize);
+    }
+    case NodeKind::ND_POINTER_TYPE: {
+      PointerType *ptr = static_cast<PointerType *>(type);
+      return new PointerType(createDuplicate(ptr->underlying));
+    }
+    case NodeKind::ND_TEMPLATE_STRUCT_TYPE: {
+      TemplateStructType *temp = static_cast<TemplateStructType *>(type);
+      return new TemplateStructType(createDuplicate(temp->name), createDuplicate(temp->underlying));
+    }
+    default: {
+      std::string msg = "Unknown type";
+      TypeChecker::handleError(0, 0, msg, "", "Type Error");
+      return nullptr;
+    }
+  }
 }

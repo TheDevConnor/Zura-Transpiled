@@ -337,38 +337,12 @@ void TypeChecker::visitVar(Maps *map, Node::Stmt *stmt) {
   return_type = nullptr;
 }
 
-// Why, oh why, C++, is this the solution?
-Node::Type *createDuplicate(Node::Type *original) {
-  switch(original->kind) {
-    case NodeKind::ND_SYMBOL_TYPE: {
-      SymbolType *sym = static_cast<SymbolType *>(original);
-      return new SymbolType(sym->name);
-    }
-    case NodeKind::ND_ARRAY_TYPE: {
-      ArrayType *arr = static_cast<ArrayType *>(original);
-      return new ArrayType(createDuplicate(arr->underlying), arr->constSize);
-    }
-    case NodeKind::ND_POINTER_TYPE: {
-      PointerType *ptr = static_cast<PointerType *>(original);
-      return new PointerType(createDuplicate(ptr->underlying));
-    }
-    case NodeKind::ND_TEMPLATE_STRUCT_TYPE: {
-      TemplateStructType *temp = static_cast<TemplateStructType *>(original);
-      return new TemplateStructType(createDuplicate(temp->name), createDuplicate(temp->underlying));
-    }
-    default: {
-      std::string msg = "Unknown type";
-      TypeChecker::handleError(0, 0, msg, "", "Type Error");
-      return nullptr;
-    }
-  }
-}
 
 void TypeChecker::visitPrint(Maps *map, Node::Stmt *stmt) {
   PrintStmt *print_stmt = static_cast<PrintStmt *>(stmt);
   for (int i = 0; i < print_stmt->args.size(); i++) {
     visitExpr(map, print_stmt->args[i]);
-    print_stmt->args[i]->asmType = createDuplicate(return_type.get());
+    print_stmt->args[i]->asmType = createDuplicate(return_type.get());;
   }
   return_type = nullptr;
 }

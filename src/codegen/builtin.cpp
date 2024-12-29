@@ -115,50 +115,86 @@ void codegen::externName(Node::Stmt *stmt) {
 
 void codegen::cast(Node::Expr *expr) {
   CastExpr *e = static_cast<CastExpr *>(expr);
-  SymbolType *toType = static_cast<SymbolType *>(e->castee_type);
-  SymbolType *fromType = static_cast<SymbolType *>(e->castee->asmType);
-
-  if (fromType->name == "str") {
-    std::cerr << "Explicitly casting from string is not allowed" << std::endl;
-    exit(-1);
-  }
+  Node::Type *toType = e->castee_type;
+  std::string underlyingTo = getUnderlying(toType);
+  Node::Type *fromType = e->castee->asmType;
+  std::string underlyingFrom = getUnderlying(fromType);
   pushDebug(e->line, expr->file_id, e->pos);
   visitExpr(e->castee);
-  if (fromType->name == "unknown") {
+  if (toType->kind == ND_POINTER_TYPE && fromType->kind == ND_POINTER_TYPE) {
+    // We are casting a pointer to a pointer
+    // This is a no-op
+    return;
+  }
+  if (toType->kind == ND_ARRAY_TYPE && fromType->kind == ND_ARRAY_TYPE) {
+    // Array casted to an array? How does that work?
+    if (getByteSizeOfType(toType) != getByteSizeOfType(fromType))
+      handleError(e->line, e->pos, "Unable to cast arrays of different type sizes.", "Codegen Error", true);
+    ArrayType *toArr = static_cast<ArrayType *>(toType);
+    ArrayType *fromArr = static_cast<ArrayType *>(fromType);
+    if (toArr->constSize != fromArr->constSize)
+      handleError(e->line, e->pos, "Unable to cast arrays of different lengths.", "Codegen Error", true);
+    // Well, since clearly the developer knew what they were doing, we will just give it to them!
+    return;
+  }
+  // There are more pairs of types that can NOT be casted to one another
+  if (fromType->kind == toType->kind && underlyingFrom == underlyingTo) return;
+  if (fromType->kind == ND_SYMBOL_TYPE && toType->kind == ND_POINTER_TYPE && underlyingFrom == underlyingTo) {
+    handleError(e->line, e->pos, "Cannot cast a symbol to a pointer. Please use the '&' operator instead.", "Codegen Error", true);
+  }
+  if (fromType->kind == ND_SYMBOL_TYPE && toType->kind == ND_POINTER_TYPE) {
+    handleError(e->line, e->pos, "Cannot cast symbol to a pointer of different type. Please use the '&' operator and cast the result instead.", "Codegen Error", true);
+  }
+  if (fromType->kind == ND_POINTER_TYPE && toType->kind == ND_SYMBOL_TYPE && underlyingFrom == underlyingTo) {
+    handleError(e->line, e->pos, "Cannot cast a pointer to a symbol. Please dereference instead.", "Codegen Error", true);
+  }
+  if (fromType->kind == ND_POINTER_TYPE && toType->kind == ND_SYMBOL_TYPE) {
+    handleError(e->line, e->pos, "Cannot cast pointer to a symbol of different type. Please dereference and cast the result instead.", "Codegen Error", true);
+  }
+  if ((fromType->kind == ND_ARRAY_TYPE && toType->kind == ND_POINTER_TYPE)
+   || (fromType->kind == ND_POINTER_TYPE && toType->kind == ND_ARRAY_TYPE)) {
+    handleError(e->line, e->pos, "Unable to cast arrays and pointers.", "Codegen Error", true);
+  }
+  if ((toType->kind == ND_FUNCTION_TYPE)
+   || (fromType->kind == ND_FUNCTION_TYPE)) {
+    handleError(e->line, e->pos, "It is illegal to cast function types.", "Codegen Error", true);
+  }
+  // Great! At this point, we now know that the underlying types are symbol types (if not, they would be handled already)
+  if (getUnderlying(fromType) == "unknown") {
     return; // Assume the dev knew what they were doing and push the original value
   }
-  if (toType->name == "enum") {
+  if (underlyingTo == "enum") {
     // Enums are truly just ints under-the-hood
-    if (fromType->name != "int") {
+    if (underlyingFrom != "int") {
       std::cerr << "Cannot cast non-int to enum" << std::endl;
       exit(-1);
     }
     return; // Do nothing (essentially just a void cast)
   }
-  if (toType->name == "float") {
+  if (underlyingTo == "float") {
     // We are casting into a float.
     popToRegister("%rax"); // This actually doesnt matter but rax is fast and also our garbage disposal
     // Perform the conversion
-    if (fromType->name == "int") {
+    if (underlyingFrom == "int") {
       push(Instr{.var = ConvertInstr{.convType = ConvertType::SI2SS, .from = "%rax", .to = "%xmm1"},
                 .type = InstrType::Convert},
           Section::Main);
       // push xmm0
       push(Instr{.var=PushInstr{.what="%xmm0",.whatSize=DataSize::SS},.type=InstrType::Push},Section::Main);
     }
-    if (fromType->name == "float") {
+    if (underlyingFrom == "float") {
       // Do nothing, it's already a float
       // Optimizer will know that this redundant push/pop is, of course, redundant
       pushRegister("%rax");
     }
-  } else if (toType->name == "int") {
-    if (fromType->name == "int" || fromType->name == "enum") {
+  } else if (underlyingTo == "int") {
+    if (underlyingFrom == "int" || underlyingFrom == "enum") {
       // Do nothing, it's already an int
       // Enums are explicitly ints under-the-hood as well
       return;
     }
 
-    if (fromType->name == "float") {
+    if (underlyingFrom == "float") {
       popToRegister("%xmm0");
       // Perform the conversion (always truncate for now)
       push(Instr{.var = ConvertInstr{.convType = ConvertType::TSS2SI, .from = "%xmm0", .to = "%rax"},

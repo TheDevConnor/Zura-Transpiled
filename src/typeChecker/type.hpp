@@ -144,6 +144,8 @@ extern std::vector<std::pair<NodeKind, ExprNodeHandler>> exprs;
 Node::Stmt *StmtAstLookup(Node::Stmt *node, Maps *map);
 Node::Expr *ExprAstLookup(Node::Expr *node, Maps *map);
 
+Node::Type *createDuplicate(Node::Type *type);
+
 // !Stmt functions
 void visitStmt(Maps *map, Node::Stmt *stmt);
 void visitExprStmt(Maps *map, Node::Stmt *stmt);
