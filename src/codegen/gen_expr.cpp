@@ -196,7 +196,7 @@ void codegen::binary(Node::Expr *expr) {
     // Get the operation
     std::string op = lookup(opMap, e->op);
     // Let's see if one of them was a float
-    if (lhsType->name == "float" || lhsType->name == "float") {
+    if (isFloat) {
       // This does not work on a simple "cmp" instruction!
       // We need a "ucomiss" instruction - short for "unordered compare of single-precision #'s"
       push(Instr{.var = LinkerDirective{.value = "ucomiss " + rhsReg + ", " + lhsReg + "\n\t"}, .type = InstrType::Linker}, Section::Main);
