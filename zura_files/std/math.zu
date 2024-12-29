@@ -1,7 +1,21 @@
-const power := fn(n: int, m: int) int {
-    have result: int = 1;
-    loop (i = 0; i < m) : (i++) {
-        result = result * n;
-    }
-    return result;
+# Implemented from the now deleted power.cpp file
+const pow := fn(base: int, exponent: int) int {
+  if (exponent == 0) {
+    return 1;
+  }
+  if (exponent == 1) {
+    return base;
+  }
+  if (base == 0) {
+    return 0;
+  }
+  if (base == 1) {
+    return 1;
+  }
+  # Haha, that's all the optimizations we get.
+  if (n % 2 == 0) {
+    return pow(base * base, exponent / 2);
+  } else {
+    return base * pow(base, exponent - 1);
+  }
 };

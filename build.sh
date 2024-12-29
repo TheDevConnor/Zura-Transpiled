@@ -37,6 +37,7 @@ run() {
   # "$executable" build zura_files/main.zu -save -debug -name main|| die
   echo "Running..." || die
   if [ "$DEBUG_TYPE" == "debug" ]; then
+    # Enable the zura-built-in debug mode
     "$executable" build zura_files/main.zu -save -debug -name main || die
   else
     "$executable" build zura_files/main.zu -save -name main || die

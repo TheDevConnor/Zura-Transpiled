@@ -214,7 +214,10 @@ void codegen::unary(Node::Expr *expr) {
   UnaryExpr *e = static_cast<UnaryExpr *>(expr);
   pushDebug(e->line, expr->file_id, e->pos);
   visitExpr(e->expr);
-  // Its gonna be a pop guys
+  // instead of doing "pushq -8(%rbp), popq %rax, incq %rax, pushq %rax" which is verbose...
+  // just do "incq -8(%rbp)" and be done with it- inc, dec, and neg works on effective addresses too!
+  // Because of visiting the expression, the last instruction was "push"
+  // We need to know what was pushed in order to perform the operation
   PushInstr instr = std::get<PushInstr>(text_section.at(text_section.size() - 1).var);
   std::string whatWasPushed = instr.what;
 
@@ -226,10 +229,13 @@ void codegen::unary(Node::Expr *expr) {
     // Dear code reader, i apologize
     push(Instr {
       .var = LinkerDirective{ .value = res + "q " + whatWasPushed + "\n\t" },
-      .type = InstrType::Linker   // Hey do you know why this infinatly loops? show asm
+      .type = InstrType::Linker
     }, Section::Main);
   }
-  // Push the result
+  // Push the result- again
+  // NOTE: sometimes the result of the operation is not needed, but rather only the effect of the operation was wanted
+  // NOTE: meaning that the push here will not be needed. cases like this are handled in other places, however, like
+  // NOTE: gen_stmt:codegen::expr or in the loops (the optional increment of the loop variable in ForStmt should pop there, not here) 
   pushRegister(whatWasPushed);
 }
 

@@ -8,19 +8,7 @@ const main := fn() int {
     x: 5,
     y: 3.0
   };
-  return @cast<int>(Test.y); # 3
+  # have f: float = Test.y;
+  # return @cast<int>(f);    # This works
+  return @cast<int>(Test.y); # This doesn't work (run valgrind on it)
 };
-
-
-# const main := fn() int {
-#   @dis("x is ");
-#   have x: float = 5.0;
-#   have y: float = 3.0;
-#   if (x > y) {
-#     @dis("greater\n");
-#   } else {
-#     @dis("less\n");
-#   }
-#   # 👍
-#   return 0;
-# };

@@ -551,6 +551,9 @@ void codegen::forLoop(Node::Stmt *stmt) {
 
   push(Instr{.var = Comment{.comment = "For loop variable declaration"}, .type = InstrType::Comment}, Section::Main);
   pushDebug(s->line, stmt->file_id, s->pos);
+  if (variableTable.find(assignee->name) != variableTable.end())
+    // Warn, not error- but you should know that "i" will be re-declared as 0!
+    handleError(assignee->line, assignee->pos, "Variable '" + assignee->name + "' already declared in this scope", "Codegen Error", false);
   variableTable.insert({assignee->name, std::to_string(-variableCount) + "(%rbp)"}); // Track the variable in the stack table
   // Push a variable declaration for the loop variable
   if (debug) {
@@ -570,17 +573,18 @@ void codegen::forLoop(Node::Stmt *stmt) {
     // Push the name of the variable
     dwarf::useStringP(assignee->name);
   }
-  variableCount += 8;
+  if (declareVariablesForward) variableCount += 8; else variableCount -= 8;
   visitExpr(assign);  // Process the initial loop assignment (e.g., i = 0)
   // Remove the last instruction!! Its a push and thats bad!
-  text_section.pop_back();
+  if (text_section[text_section.size() - 1].type == InstrType::Push)
+    text_section.pop_back();
 
   // Set loop start label
   push(Instr{.var = Label{.name = preLoopLabel}, .type = InstrType::Label}, Section::Main);
   // Evaluate the loop condition
   visitExpr(s->condition);  // Process the loop condition
   popToRegister("%rcx");  // Pop the condition value to a register
-  pushLinker("testq %rcx, %rcx\n\t", Section::Main);  // Test the condition value
+  pushLinker("testq %rcx, %rcx\n\t", Section::Main);  // Test the condition value (not compare- we want to know the Zero flag in this case)
   // Jump to the end of the loop if the condition is false
   push(Instr{.var = JumpInstr{.op = JumpCondition::Zero, .label = postLoopLabel}, .type = InstrType::Jmp}, Section::Main);
 
@@ -601,8 +605,7 @@ void codegen::forLoop(Node::Stmt *stmt) {
 
   // Pop the loop variable from the stack
   variableTable.erase(assignee->name);
-  variableCount -= 8; // We now have room for another variable!
-  stackSize -= 8;
+  if (declareVariablesForward) variableCount -= 8; else variableCount += 8; // Undo the variable declaration- leave more room for more variables
 };
 
 void codegen::whileLoop(Node::Stmt *stmt) {
