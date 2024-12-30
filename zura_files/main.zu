@@ -6,9 +6,10 @@ const HelpMe := struct {
 const main := fn() int {
   have Test: HelpMe = {
     x: 5,
-    y: 3.0
+    y: 3.5
   };
   # have f: float = Test.y;
   # return @cast<int>(f);    # This works
+  @dis("Test.y: ", Test.y, "\n");
   return @cast<int>(Test.y); # This doesn't work (run valgrind on it)
 };

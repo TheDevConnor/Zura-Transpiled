@@ -129,6 +129,66 @@ void codegen::gen(Node::Stmt *stmt, bool isSaved, std::string output_filename,
           "\n"
           ".size native_itoa, .-native_itoa\n";
   }
+  if (nativeFunctionsUsed[NativeASMFunc::ftoa] == true) {
+    file << ".type native_ftoa, @function\n"
+            "native_ftoa:\n"
+            "    subq $64, %rsp          # Allocate 64 bytes for the buffer\n"
+            "    movq %rsp, %rcx         # Save buffer address in %rcx\n"
+            "    addq $63, %rcx          # Point to the end of the buffer\n"
+            "    movb $0, (%rcx)         # Null-terminate the string\n"
+
+            "    # Handle the integer part\n"
+            "    cvttsd2si %xmm0, %rax   # Convert float to integer\n"
+            "    testq %rax, %rax        # Check if integer part is zero\n"
+            "    jnz .ftoa_int_loop      # Process digits if non-zero\n"
+
+            "    # Special case for zero\n"
+            "    movb $'0', -1(%rcx)     # Store '0'\n"
+            "    leaq -1(%rcx), %rax     # Return pointer\n"
+            "    addq $64, %rsp          # Restore stack\n"
+            "    ret\n"
+
+            ".ftoa_int_loop:\n"
+            "    movq $10, %rbx          # Divisor\n"
+            ".ftoa_int_div:\n"
+            "    xorq %rdx, %rdx         # Clear %rdx for division\n"
+            "    divq %rbx               # Divide %rax by 10\n"
+            "    addb $'0', %dl          # Convert remainder to ASCII\n"
+            "    decq %rcx               # Move buffer pointer\n"
+            "    movb %dl, (%rcx)        # Store ASCII digit\n"
+            "    testq %rax, %rax        # Check if quotient is zero\n"
+            "    jnz .ftoa_int_div       # Repeat if non-zero\n"
+
+            "    # Add decimal point\n"
+            "    movb $'.', -1(%rcx)\n"
+            "    decq %rcx\n"
+
+            "    # Handle fractional part\n"
+            "    movsd %xmm0, %xmm1      # Copy original float\n"
+            "    roundsd $0b00000000, %xmm1, %xmm1 # Truncate\n"
+            "    subsd %xmm1, %xmm0      # Subtract integer part\n"
+            "    movq $10, %rax          # Multiplier\n"
+            "    movq $6, %rsi           # Precision = 6 decimal places\n"
+
+            ".ftoa_frac_loop:\n"
+            "    mulsd %xmm0, %xmm0      # Multiply fractional part by 10\n"
+            "    cvttsd2si %xmm0, %rdi   # Convert to integer\n"
+            "    addb $'0', %dil         # Convert to ASCII\n"
+            "    movb %dil, -1(%rcx)     # Store digit\n"
+            "    decq %rcx\n"
+            "    movsd %xmm0, %xmm1      # Truncate fractional part\n"
+            "    roundsd $0b00000000, %xmm1, %xmm1\n"
+            "    subsd %xmm1, %xmm0      # Subtract integer part\n"
+            "    decq %rsi               # Decrease precision\n"
+            "    jnz .ftoa_frac_loop     # Repeat\n"
+
+            "    # Return result\n"
+            "    leaq (%rcx), %rax\n"
+            "    addq $64, %rsp\n"
+            "    ret\n"
+            "\n"
+            ".size native_ftoa, .-native_ftoa\n";
+  }
   if (debug) 
     file << ".Ldebug_text0:\n";
   if (head_section.size() > 0) {

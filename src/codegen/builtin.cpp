@@ -4,6 +4,10 @@
 // ex: `@dis` -> `codegen::print` -> SYS_WRITE (automatically maps to the fd for stdout)
 // ex: `@exit` -> `codegen::exit` -> SYS_EXIT
 // `@import` -> `codegen::importDecl` -> `codegen::program` (the entry point of the new file)
+// `@link` -> `codegen::linkFile` -> `linkedFiles` (a set of files that have been linked)
+// `@extern` -> `codegen::externName` -> `externalNames` (a set of external names that have been declared)
+// `@cast<Type>(Expr)` -> `codegen::cast` -> `codegen::visitExpr` (the expression to be casted)
+
 void codegen::print(Node::Stmt *stmt) {
   PrintStmt *print = static_cast<PrintStmt *>(stmt);
 
@@ -12,56 +16,17 @@ void codegen::print(Node::Stmt *stmt) {
 
   for (Node::Expr *arg : print->args) {
     std::string argType = getUnderlying(arg->asmType);
-    if (argType.find("*") == 0) {
-      if (argType.find("char") == 1) { // Printing a char* will only print the first character. Printing full strings is reserved for the `str` type.
-        visitExpr(arg);
-        popToRegister("%rsi");
-        // syscall id for write on x86 is 1
-        moveRegister("%rax", "$1", DataSize::Qword, DataSize::Qword);
-        // set rdi to 1 (file descriptor for stdout)
-        moveRegister("%rdi", "$1", DataSize::Qword, DataSize::Qword);
-
-        // Make syscall to write
-        push(Instr{.var = Syscall({.name = "SYS_WRITE"}), .type = InstrType::Syscall}, Section::Main);
-      } else {
-        handleError(print->line, print->pos, "Cannot print pointer type. Dereference first or print as an address (int cast).", "Codegen Error");
-      }
-    } else
-    if (argType == "str") {
-      nativeFunctionsUsed[NativeASMFunc::strlen] = true;
-      visitExpr(arg);
-      popToRegister("%rsi"); // String address
-      moveRegister("%rdi", "%rsi", DataSize::Qword, DataSize::Qword);
-      push(Instr{.var = CallInstr{.name = "native_strlen"}, .type = InstrType::Call}, Section::Main);
-      moveRegister("%rdx", "%rax", DataSize::Qword, DataSize::Qword); // Length of string
-
-      // syscall id for write on x86 is 1
-      moveRegister("%rax", "$1", DataSize::Qword, DataSize::Qword);
-      // set rdi to 1 (file descriptor for stdout)
-      moveRegister("%rdi", "$1", DataSize::Qword, DataSize::Qword);
-
-      // Make syscall to write
-      push(Instr{.var = Syscall{.name = "SYS_WRITE"}, .type = InstrType::Syscall}, Section::Main);
-    } else if (argType == "int" || argType == "char") { // Char's will be treated as the byte they are. They will be printed as their ASCII value. Ex: `@dis('A')` -> `65`
-      nativeFunctionsUsed[NativeASMFunc::strlen] = true;
-      nativeFunctionsUsed[NativeASMFunc::itoa] = true;
-      visitExpr(arg);
-      popToRegister("%rdi");
-      push(Instr{.var = CallInstr{.name = "native_itoa"}, .type = InstrType::Call}, Section::Main); // Convert int to string
-      moveRegister("%rdi", "%rax", DataSize::Qword, DataSize::Qword);
-      moveRegister("%rsi", "%rdi", DataSize::Qword, DataSize::Qword);
-      // Now we have the integer string in %rax (assuming %rax holds the pointer to the result)
-      push(Instr{.var = CallInstr{.name = "native_strlen"}, .type = InstrType::Call}, Section::Main);
-      moveRegister("%rdx", "%rax", DataSize::Qword, DataSize::Qword); // Length of number string
-      
-      // syscall id for write on x86 is 1
-      moveRegister("%rax", "$1", DataSize::Qword, DataSize::Qword);
-      // set rdi to 1 (file descriptor for stdout)
-      moveRegister("%rdi", "$1", DataSize::Qword, DataSize::Qword);
-
-      // Make syscall to write
-      push(Instr{.var = Syscall({.name = "SYS_WRITE"}), .type = InstrType::Syscall}, Section::Main);
-    }
+    if (argType.find("*") == 0)
+      handlePtrType(arg, print);
+    else if (argType == "str")
+      handleStrType(arg);
+    else if (argType == "int" || argType == "char")
+      handlePrimType(arg);
+    else if (argType == "float")
+      handleFloatType(arg);
+    else
+      handleError(print->line, print->pos,
+                  "Cannot print type '" + argType + "'.", "Codegen Error");
   }
 }
 

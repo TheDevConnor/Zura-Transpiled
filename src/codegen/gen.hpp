@@ -129,6 +129,7 @@ Section {
 enum class NativeASMFunc {
     strlen,
     itoa,
+    ftoa,
 };
 
 inline std::vector<Instr> text_section = {};
@@ -240,6 +241,13 @@ inline bool debug = false; // Was the "-debug" flag passed in to the executable?
 // Function argument order
 inline static const std::vector<std::string> intArgOrder = {  "%rdi", "%rsi", "%rdx", "%rcx", "%r8",  "%r9"}; // push the rest to the stack 
 inline static const std::vector<std::string> floatArgOrder = {"%xmm0","%xmm1","%xmm2","%xmm3","%xmm4","%xmm5","%xmm6","%xmm7"};
+
+// Helper functions for printing to the console
+void prepareSyscallWrite();
+void handlePtrType(Node::Expr *arg, PrintStmt *print);
+void handleStrType(Node::Expr *arg);
+void handlePrimType(Node::Expr *arg);
+void handleFloatType(Node::Expr *arg);
 
 // Helper function to pop the value from the stack to a register
 void moveRegister(const std::string &dest, const std::string &src, DataSize dest_size, DataSize src_size);
