@@ -258,7 +258,7 @@ void handleExitSyscall();
 void handleReturnCleanup();
 
 // Helper for the if statement condition
-void processBinaryExpression(BinaryExpr *cond, const std::string &preconCount, const std::string &name, bool isLoop = false);
+void processComparison(Node::Expr *cond, const std::string &whereToJump);
 int getExpressionDepth(Node::Expr *e);
 JumpCondition getJumpCondition(const std::string &op);
 

@@ -1,5 +1,6 @@
 #include "../helper/error/error.hpp"
 #include "gen.hpp"
+#include "optimizer/compiler.hpp"
 #include "optimizer/instr.hpp"
 #include <fstream>
 #include <cstdint>
@@ -98,67 +99,54 @@ int codegen::getExpressionDepth(Node::Expr *e) {
   return lhsDepth > rhsDepth ? lhsDepth : rhsDepth;
 }
 
-void codegen::processBinaryExpression(BinaryExpr *cond,
-                                      const std::string &preconCount,
-                                      const std::string &name, bool isLoop) {
-  // TODO: Float comparisons
-  // Evaluate LHS first, store in %rax
-  visitExpr(cond->lhs);
-  popToRegister("%rax");
-
-  // Evaluate RHS, store in %rbx
-  visitExpr(cond->rhs);
-  popToRegister("%rbx");
-
-  if (isLoop) {
-    // Perform comparison (this order ensures LHS > RHS works correctly)(loops)
-    push(Instr{.var = CmpInstr{.lhs = "%rax", .rhs = "%rbx"},
-               .type = InstrType::Cmp},
-         Section::Main);
-
-    // Jump based on the correct condition
-    JumpCondition jmpCond = getJumpCondition(cond->op);
-
-    // Recerse the condition for loops (e.g., for i = 0; i < 10; i++) to jump if i >= 10
-    switch (jmpCond) {
-      case JumpCondition::Less:
-        jmpCond = JumpCondition::GreaterEqual;
-        break;
-      case JumpCondition::LessEqual:
-        jmpCond = JumpCondition::Greater;
-        break;
-      case JumpCondition::Greater:
-        jmpCond = JumpCondition::LessEqual;
-        break;
-      case JumpCondition::GreaterEqual:
-        jmpCond = JumpCondition::Less;
-        break;
-      case JumpCondition::NotEqual:
-        jmpCond = JumpCondition::Equal;
-        break;
-      case JumpCondition::Equal:
-        jmpCond = JumpCondition::NotEqual;
-        break;
-      default:
-        break;
-      }
-
-    push(Instr{.var = JumpInstr{.op = jmpCond, .label = name },
-               .type = InstrType::Jmp},
-         Section::Main);
-    return;
-  } else {
-    // Perform comparison (this order ensures LHS > RHS works correctly)(ifs)
-    push(Instr{.var = CmpInstr{.lhs = "%rax", .rhs = "%rbx"},
-               .type = InstrType::Cmp},
-         Section::Main);
+// whereToJump if TRUE...
+void codegen::processComparison(Node::Expr *cond, const std::string &whereToJump) {
+  // Evaluate the 'cond' as a regular expression, but do not push the result to the stack and compare to 0:
+  // just jump to the label if binary
+  Node::Expr *simpleCond = CompileOptimizer::optimizeExpr(cond);
+  if (simpleCond->kind == ND_BINARY) {
+    // Check if its a BOOL operation
+    BinaryExpr *expr = static_cast<BinaryExpr *>(simpleCond);
+    if (boolOperations.find(expr->op) == boolOperations.end()) {
+      // do the default
+      visitExpr(simpleCond);
+      PushInstr prevPush = std::get<PushInstr>(text_section[text_section.size() - 1].var);
+      text_section.pop_back();
+      pushLinker("testq " + prevPush.what + ", " + prevPush.what + "\n\t", Section::Main);
+      push(Instr{.var=JumpInstr{.op=JumpCondition::NotEqual, .label=whereToJump}, .type=InstrType::Jmp}, Section::Main);
+      return;
+    }
+    // It does not matter which side we check for SymbolType, since they will both be enforced to be the same type
+    bool isFloat = expr->lhs->asmType->kind == ND_SYMBOL_TYPE && (getUnderlying(expr->lhs->asmType) == "float");
+    std::string lhsReg = isFloat ? "%xmm0" : "%rax";
+    std::string rhsReg = isFloat ? "%xmm1" : "%rbx";
+    if (getExpressionDepth(expr->lhs) > getExpressionDepth(expr->rhs)) {
+      visitExpr(expr->lhs);
+      visitExpr(expr->rhs);
+      popToRegister(rhsReg);
+      popToRegister(lhsReg);
+    } else {
+      visitExpr(expr->rhs);
+      visitExpr(expr->lhs);
+      popToRegister(lhsReg);
+      popToRegister(rhsReg);
+    }
+    if (isFloat) {
+      pushLinker("ucomiss %xmm1, %xmm0\n\t", Section::Main);
+    } else {
+      push(Instr{.var = CmpInstr{.lhs = lhsReg, .rhs = rhsReg}, .type = InstrType::Cmp}, Section::Main);
+    }
+    push(Instr{.var=JumpInstr{.op=getJumpCondition(expr->op), .label=whereToJump}, .type=InstrType::Jmp}, Section::Main);
+    return; // the good ending 
   }
-
-  // Jump based on the correct condition
-  JumpCondition jmpCond = getJumpCondition(cond->op);
-  push(Instr{.var = JumpInstr{.op = jmpCond, .label = name + preconCount},
-             .type = InstrType::Jmp},
-       Section::Main);
+  // check if the regular expression is 0
+  visitExpr(simpleCond);
+  PushInstr prevPush = std::get<PushInstr>(text_section[text_section.size() - 1].var);
+  text_section.pop_back();
+  pushLinker("testq " + prevPush.what + ", " + prevPush.what + "\n\t", Section::Main);
+  push(Instr{.var=JumpInstr{.op=JumpCondition::NotEqual, .label=whereToJump}, .type=InstrType::Jmp}, Section::Main);
+  // sadge
+  return;
 }
 
 void codegen::handleExitSyscall() {

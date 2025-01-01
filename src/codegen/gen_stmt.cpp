@@ -349,51 +349,24 @@ void codegen::block(Node::Stmt *stmt) {
 
 void codegen::ifStmt(Node::Stmt *stmt) {
   IfStmt *s = static_cast<IfStmt *>(stmt);
-  std::string preconCount = std::to_string(conditionalCount++);
-
-  push(Instr{.var = Comment{.comment = "if statement"}, .type = InstrType::Comment}, Section::Main);
-  pushDebug(s->line, stmt->file_id, s->pos);
-
-  Node::Expr *cond = CompileOptimizer::optimizeExpr(s->condition);
-  if (cond == nullptr) {
-    // If the condition is always false, don't bother with the if statement
-    return;
+  std::string ifLabel = ".Lifthen" + std::to_string(conditionalCount);
+  std::string elseLabel = ".Lifelse" + std::to_string(conditionalCount);
+  std::string endLabel = ".Lifend" + std::to_string(conditionalCount);
+  conditionalCount++;
+  processComparison(s->condition, ifLabel);
+  if (s->elseStmt != nullptr)
+    push(Instr{.var = JumpInstr{.op=JumpCondition::Unconditioned, .label = elseLabel}, .type = InstrType::Jmp}, Section::Main);
+  push(Instr{.var = Label{.name = ifLabel}, .type = InstrType::Label}, Section::Main);
+  codegen::visitStmt(s->thenStmt);
+  // jump to the end of the if
+  push(Instr{.var = JumpInstr{.op=JumpCondition::Unconditioned, .label = endLabel}, .type = InstrType::Jmp}, Section::Main);
+  if (s->elseStmt != nullptr) {
+    push(Instr{.var = Label{.name = elseLabel}, .type = InstrType::Label}, Section::Main);
+    codegen::visitStmt(s->elseStmt);
+    push(Instr{.var = JumpInstr{.op=JumpCondition::Unconditioned, .label = endLabel}, .type = InstrType::Jmp}, Section::Main);
   }
-
-  if (cond->kind != ND_BINARY) {
-    // Handle non-binary conditions
-    visitExpr(s->condition);
-    popToRegister("%rcx");
-    pushLinker("testq %rcx, %rcx\n\t", Section::Main);
-    // Jump-if-zero only works when the zero flag is set.
-    // ZF is only set when using "test" rather than "cmp", which affects
-    // totally different flags for some reason.
-    push(Instr{.var = JumpInstr{.op = JumpCondition::NotZero, .label = ".Lconditional" + preconCount}, .type = InstrType::Jmp}, Section::Main);
-  } else {
-    // Process binary expression
-    processBinaryExpression(static_cast<BinaryExpr *>(cond), preconCount, ".Lconditional");
-  }
-
-  // Jump to "main" label if condition is false (fall through)
-  std::string elseLabel = ".Lelse" + preconCount;
-  push(Instr{.var = JumpInstr{.op = JumpCondition::Unconditioned, .label = elseLabel}, .type = InstrType::Jmp}, Section::Main);
-
-  // True condition block: label and code for 'thenStmt'
-  push(Instr{.var = Label{.name = ".Lconditional" + preconCount}, .type = InstrType::Label}, Section::Main);
-  visitStmt(s->thenStmt);
-
-  // After executing 'thenStmt', jump to the end to avoid executing 'elseStmt'
-  std::string endLabel = ".Lmain" + preconCount;
-  push(Instr{.var = JumpInstr{.op = JumpCondition::Unconditioned, .label = endLabel},.type = InstrType::Jmp}, Section::Main);
-
-  // False condition block (else case): label and code for 'elseStmt'
-  push(Instr{.var = Label{.name = elseLabel}, .type = InstrType::Label}, Section::Main);
-  if (s->elseStmt) {
-    visitStmt(s->elseStmt);
-  }
-
-  // End label (where both 'thenStmt' and 'elseStmt' converge)
   push(Instr{.var = Label{.name = endLabel}, .type = InstrType::Label}, Section::Main);
+  return;
 }
 
 void codegen::enumDecl(Node::Stmt *stmt) {

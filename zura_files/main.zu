@@ -1,15 +1,9 @@
-const HelpMe := struct {
-  x: int;
-  y: float;
-};
-
-const main := fn() int {
-  have Test: HelpMe = {
-    x: 5,
-    y: 3.5
-  };
-  # have f: float = Test.y;
-  # return @cast<int>(f);    # This works
-  @dis("Test.y: ", Test.y, "\n");
-  return @cast<int>(Test.y); # This doesn't work (run valgrind on it)
+const main := fn () int {
+  have a: int = 1;
+  if (a == 1) {
+    return 1;
+  } else {
+    return 5;
+  }
+  return 0;
 };
