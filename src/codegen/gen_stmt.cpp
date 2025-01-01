@@ -11,6 +11,7 @@
 void codegen::visitStmt(Node::Stmt *stmt) {
   // compiler optimize the statement
   Node::Stmt *realStmt = CompileOptimizer::optimizeStmt(stmt);
+  if (realStmt == nullptr) return; // the statement was optimized out, it was redundant
   StmtHandler handler = lookup(stmtHandlers, realStmt->kind);
   if (handler) {
     handler(realStmt);

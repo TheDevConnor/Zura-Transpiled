@@ -1,9 +1,6 @@
 const main := fn () int {
-  have a: int = 1;
-  if (a == 1) {
+  if (6 < 5) {
     return 1;
-  } else {
-    return 5;
   }
   return 0;
 };
