@@ -35,9 +35,7 @@ const char *Lexer::lineStart(int line) {
 }
 
 bool Lexer::match(char expected) {
-  if (isAtEnd())
-    return false;
-  if (*scanner.current != expected)
+  if ((*scanner.current != expected) || isAtEnd())
     return false;
 
   scanner.current++;

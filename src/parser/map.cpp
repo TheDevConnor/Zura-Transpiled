@@ -264,15 +264,20 @@ Node::Expr *Parser::led(PStruct *psr, Node::Expr *left, BindingPower bp) {
  * statement is found.
  */
 Node::Stmt *Parser::stmt(PStruct *psr, std::string name) {
-  std::vector<std::pair<TokenKind, Parser::StmtHandler>>::iterator stmt_it = std::find_if(stmt_lu.begin(), stmt_lu.end(), [psr](std::pair<TokenKind, Parser::StmtHandler> &p) {
-    return p.first == psr->current(psr).kind;
-  });
+  std::vector<std::pair<TokenKind, Parser::StmtHandler>>::iterator stmt_it =
+      std::find_if(stmt_lu.begin(), stmt_lu.end(),
+                   [psr](std::pair<TokenKind, Parser::StmtHandler> &p) {
+                     return p.first == psr->current(psr).kind;
+                   });
   return stmt_it != stmt_lu.end() ? stmt_it->second(psr, name) : nullptr;
 }
 
 BindingPower Parser::getBP(TokenKind tk) {
-  std::vector<std::pair<TokenKind, BindingPower>>::iterator bp_it = std::find_if(bp_lu.begin(), bp_lu.end(),
-                            [tk](std::pair<TokenKind, BindingPower> &p) { return p.first == tk; });
+  std::vector<std::pair<TokenKind, BindingPower>>::iterator bp_it =
+      std::find_if(bp_lu.begin(), bp_lu.end(),
+                   [tk](std::pair<TokenKind, BindingPower> &p) {
+                     return p.first == tk;
+                   });
 
   return bp_it != bp_lu.end() ? bp_it->second : BindingPower::defaultValue;
 }

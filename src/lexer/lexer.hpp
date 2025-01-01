@@ -109,8 +109,7 @@ public:
     int current;
     int column;
     int line;
-  };
-  Token token;
+  } token;
 
   struct Scanner {
     const char *current;
@@ -119,8 +118,7 @@ public:
     std::string file;
     int column;
     int line;
-  };
-  Scanner scanner;
+  } scanner;
 
   void initLexer(const char *source, std::string file);
 

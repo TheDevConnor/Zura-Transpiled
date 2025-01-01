@@ -46,6 +46,7 @@ set(ZURA_SOURCE_FILES
     src/lexer/maps.cpp
 
     # Parser Files
+    src/parser/helper.cpp
     src/parser/parser.cpp
     src/parser/expr.cpp
     src/parser/stmt.cpp
