@@ -148,8 +148,10 @@ void codegen::funcDecl(Node::Stmt *stmt) {
 
   // Function args
   // Reset the variableCount first, though
-  int preVC = variableCount;
-  variableCount = 8;
+  for (size_t i = 0; i < s->params.size(); i++) {
+    variableCount += getByteSizeOfType(s->params.at(i).second);
+  }
+
   for (size_t i = 0; i < s->params.size(); i++) {
     // Move the argument to the stack
     std::string where = std::to_string(-variableCount) + "(%rbp)";
@@ -193,7 +195,6 @@ void codegen::funcDecl(Node::Stmt *stmt) {
   dwarf::nextBlockDIE = false;
   codegen::visitStmt(s->block);
   dwarf::nextBlockDIE = true; // reset it
-  variableCount = preVC;
   
   // Check if last instruction was a "RET"
   if (text_section.back().type != InstrType::Ret) {
@@ -354,7 +355,7 @@ void codegen::ifStmt(Node::Stmt *stmt) {
   std::string elseLabel = ".Lifelse" + std::to_string(conditionalCount);
   std::string endLabel = ".Lifend" + std::to_string(conditionalCount);
   conditionalCount++;
-  processComparison(s->condition, ifLabel);
+  processComparison(s->condition, ifLabel, elseLabel);
   if (s->elseStmt != nullptr)
     push(Instr{.var = JumpInstr{.op=JumpCondition::Unconditioned, .label = elseLabel}, .type = InstrType::Jmp}, Section::Main);
   push(Instr{.var = Label{.name = ifLabel}, .type = InstrType::Label}, Section::Main);
@@ -583,18 +584,29 @@ void codegen::forLoop(Node::Stmt *stmt) {
 };
 
 void codegen::whileLoop(Node::Stmt *stmt) {
-  std::cerr
-      << "No fancy error for this, beg Connor... (Soviet Pancakes speaking)"
-      << std::endl;
-  std::cerr << "While loops not implemented!" << std::endl;
-  exit(-1);
-  /*
   WhileStmt *s = static_cast<WhileStmt *>(stmt);
   loopDepth++;
   pushDebug(s->line, stmt->file_id, s->pos);
-  // Do something
+  // Do basically the same thing as a for loop. No variable declaration, though.
+  std::string preLoop = ".Lwhile_pre" + std::to_string(loopCount);
+  std::string postLoop = ".Lwhile_post" + std::to_string(loopCount);
+  loopCount++;
+  // Evaluate condition
+  push(Instr{.var = Label{.name = preLoop}, .type = InstrType::Label}, Section::Main);
+  processComparison(s->condition, "", postLoop);
+  // yummers, now just do the block
+  visitStmt(s->block);
+
+  // Eval the optional ': ()' part
+  if (s->optional != nullptr) {
+    visitExpr(s->optional);
+    text_section.pop_back();
+  }
+
+  // Jump back to the start of the loop
+  push(Instr{.var = JumpInstr{.op = JumpCondition::Unconditioned, .label = preLoop}, .type = InstrType::Jmp}, Section::Main);
+  push(Instr{.var = Label{.name = postLoop}, .type = InstrType::Label}, Section::Main);
   loopDepth--;
-  */
 };
 
 void codegen::_break(Node::Stmt *stmt) {
@@ -695,6 +707,22 @@ void codegen::matchStmt(Node::Stmt *stmt) {
 
 // Structname passed by the varStmt's "type" field
 void codegen::declareStructVariable(Node::Expr *expr, std::string structName, int whereToPut) {
+  if (expr->kind != ND_STRUCT) {
+    IndexExpr *index = static_cast<IndexExpr *>(expr);
+    // copy each value from the ident's struct to the new struct
+    visitExpr(expr);
+    PushInstr prevPush = std::get<PushInstr>(text_section[text_section.size() - 1].var);
+    text_section.pop_back();
+    std::string where = prevPush.what;
+    push(Instr{.var=LeaInstr{.size=DataSize::Qword,.dest="%rcx",.src=where}, .type=InstrType::Lea}, Section::Main);
+    int structSize = structByteSizes[structName].first;
+    for (int i = 0; i < structByteSizes[structName].first; i++) {
+      // move, byte for byte, the value from the ident's struct to the new struct
+      push(Instr{.var=PushInstr{.what=std::to_string(-i)+"(%rcx)",.whatSize=DataSize::Byte},.type=InstrType::Push}, Section::Main);
+      push(Instr{.var=PopInstr{.where=std::to_string(whereToPut-i)+"(%rbp)",.whereSize=DataSize::Byte},.type=InstrType::Pop}, Section::Main);
+    }
+    return;
+  }
   StructExpr *s = static_cast<StructExpr *>(expr);
   // At the end, we are gonna load the effective address into
   // garbage register and put that into the variable table.
@@ -869,7 +897,11 @@ void codegen::declareArrayVariable(Node::Expr *expr, short int arrayLength, std:
     }
     visitExpr(element);
     // Pop the value into a register
-    popToRegister(std::to_string(-(arrayBase - i * underlyingByteSize)) + "(%rbp)");
+    if (declareVariablesForward) {
+      popToRegister(std::to_string(-(arrayBase + i * underlyingByteSize)) + "(%rbp)");
+    } else {
+      popToRegister(std::to_string(-(arrayBase - i * underlyingByteSize)) + "(%rbp)");
+    }
   }
   // Add the struct to the variable table
   if (declareVariablesForward) {

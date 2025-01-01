@@ -103,13 +103,13 @@ void TypeChecker::processStructMember(Maps *map, MemberExpr *member, const std::
     }
     const std::vector<std::pair<std::string, Node::Type *>> &fields =
         map->struct_table[realType];
-    std::string mname = static_cast<IdentExpr *>(member->rhs)->name;
     const std::vector<std::pair<std::string, Node::Type *>>::const_iterator
         res = std::find_if(
             fields.begin(), fields.end(),
-            [&mname](const std::pair<std::string, Node::Type *> &field) {
-              return field.first == mname;
+            [&name](const std::pair<std::string, Node::Type *> &field) {
+              return field.first == name;
             });
+    // this cannot be fields.end() because that is actually a valid return
     if (res == fields.end()) {
       std::string msg =
           "Type '" + lhsType + "' does not have member '" + name + "'";
@@ -123,20 +123,21 @@ void TypeChecker::processStructMember(Maps *map, MemberExpr *member, const std::
 }
 
 void TypeChecker::processEnumMember(Maps *map, MemberExpr *member, const std::string &lhsType) {
-    const std::vector<std::pair<std::string, int>> &fields = map->enum_table[lhsType];
+    std::string realType = static_cast<IdentExpr *>(member->lhs)->name;
+    const std::vector<std::pair<std::string, int>> &fields = map->enum_table[realType];
     const std::vector<std::pair<std::string, int>>::const_iterator res = std::find_if(fields.begin(), fields.end(),
                             [&member](const std::pair<std::string, int> &field) {
                                 return field.first == static_cast<IdentExpr *>(member->rhs)->name;
                             });
     if (res == fields.end()) {
-        std::string msg = "Type '" + lhsType + "' does not have member '" +
+        std::string msg = "Type '" + realType + "' does not have member '" +
                           static_cast<IdentExpr *>(member->rhs)->name + "'";
         handleError(member->line, member->pos, msg, "", "Type Error");
         return_type = std::make_shared<SymbolType>("unknown");
         return;
     }
 
-    return_type = std::make_shared<SymbolType>(lhsType);
+    return_type = std::make_shared<SymbolType>(realType);
     member->asmType = createDuplicate(return_type.get());
 }
 
@@ -197,6 +198,7 @@ bool TypeChecker::validateArgumentTypes(Maps *map, CallExpr *call, Node::Expr *c
 
 
 Node::Type *TypeChecker::createDuplicate(Node::Type *type) {
+  if (type == nullptr) return nullptr;
   switch(type->kind) {
     case NodeKind::ND_SYMBOL_TYPE: {
       SymbolType *sym = static_cast<SymbolType *>(type);

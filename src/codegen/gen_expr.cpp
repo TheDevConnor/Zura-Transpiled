@@ -36,7 +36,11 @@ void codegen::primary(Node::Expr *expr) {
     pushDebug(e->line, expr->file_id, e->pos);
 
     // Push the result
-    // Check for struct
+    // Check for struct // Type of identifier 'i' is unknown
+    if (e->asmType == nullptr || e->type == nullptr) {
+      std::cerr << "Type of identifier '" << e->name << "' is unknown" << std::endl;
+      exit(-1);
+    }
     if (e->asmType->kind == ND_SYMBOL_TYPE) {
       if (structByteSizes.find(static_cast<SymbolType *>(e->asmType)->name) != structByteSizes.end()) {
         push(Instr{.var = LeaInstr { .size = DataSize::Qword, .dest = "%rcx", .src = res }, .type = InstrType::Lea}, Section::Main);
@@ -399,8 +403,9 @@ void codegen::arrayElem(Node::Expr *expr) {
       std::string whereBytes = variableTable[static_cast<IdentExpr *>(e->lhs)->name];
       int offset = std::stoi(whereBytes.substr(0, whereBytes.find("("))); // this is the base of the array - the first byte of the lsat element
       int totalElements = static_cast<ArrayType *>(e->lhs->asmType)->constSize;
-      if (totalElements < 1)
-        handleError(e->line, e->pos, "Unable to index array with unknown/implicit length", "Codegen Error", true); // how do you even continue from here? Make it fatal
+      // NOTE: You know what? if the programmer wanted this, then it is hell if I care when their program segfaults.
+      // if (totalElements < 1)
+      //   handleError(e->line, e->pos, "Unable to index array with unknown/implicit length", "Codegen Error", true); // how do you even continue from here? Make it fatal
       offset -= ((totalElements - index->value) * getByteSizeOfType(underlying));
       pushRegister(std::to_string(offset) + "(%rbp)");
     } else {
@@ -438,14 +443,14 @@ void codegen::arrayElem(Node::Expr *expr) {
     }
     visitExpr(e->rhs);
     popToRegister("%rax");
-    if (declareVariablesForward) {
+    if (!declareVariablesForward) {
       pushLinker("negq %rax\n\t", Section::Main); // Negate the index, so we go backwards (forwards in memory) through the array
     }
     // %rax contains the index
     // Multiply it by the size of the type
     ArrayType *array = static_cast<ArrayType *>(e->lhs->asmType);
-    if (array->constSize < 1)
-      handleError(e->line, e->pos, "Unable to index array with unknown/implicit length", "Codegen Error", true); // how do you even continue from here? Make it fatal
+    // if (array->constSize < 1)
+    //   handleError(e->line, e->pos, "Unable to index array with unknown/implicit length", "Codegen Error", true); // how do you even continue from here? Make it fatal
     int underlyingByteSize = getByteSizeOfType(array->underlying);
     switch (underlyingByteSize) {
       case 1: {

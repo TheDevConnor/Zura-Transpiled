@@ -57,6 +57,26 @@ void codegen::pushLinker(std::string val, Section section) {
   }, section);
 }
 
+JumpCondition codegen::getOpposite(JumpCondition in) {
+  switch (in) {
+    case JumpCondition::Equal:
+      return JumpCondition::NotEqual;
+    case JumpCondition::NotEqual:
+      return JumpCondition::Equal;
+    case JumpCondition::Greater:
+      return JumpCondition::LessEqual;
+    case JumpCondition::GreaterEqual:
+      return JumpCondition::Less;
+    case JumpCondition::Less:
+      return JumpCondition::GreaterEqual;
+    case JumpCondition::LessEqual:
+      return JumpCondition::Greater;
+    case JumpCondition::Unconditioned:
+    default:
+      return JumpCondition::Unconditioned;
+  }
+};
+
 JumpCondition codegen::getJumpCondition(const std::string &op) {
   if (op == ">")
     return JumpCondition::Greater;
@@ -100,7 +120,7 @@ int codegen::getExpressionDepth(Node::Expr *e) {
 }
 
 // whereToJump if TRUE...
-void codegen::processComparison(Node::Expr *cond, const std::string &whereToJump) {
+void codegen::processComparison(Node::Expr *cond, const std::string &jumpTrue, const std::string &jumpFalse) {
   // Evaluate the 'cond' as a regular expression, but do not push the result to the stack and compare to 0:
   // just jump to the label if binary
   Node::Expr *simpleCond = CompileOptimizer::optimizeExpr(cond);
@@ -113,7 +133,10 @@ void codegen::processComparison(Node::Expr *cond, const std::string &whereToJump
       PushInstr prevPush = std::get<PushInstr>(text_section[text_section.size() - 1].var);
       text_section.pop_back();
       pushLinker("testq " + prevPush.what + ", " + prevPush.what + "\n\t", Section::Main);
-      push(Instr{.var=JumpInstr{.op=JumpCondition::NotEqual, .label=whereToJump}, .type=InstrType::Jmp}, Section::Main);
+      if (jumpTrue != "")
+        push(Instr{.var=JumpInstr{.op=JumpCondition::NotEqual, .label=jumpTrue}, .type=InstrType::Jmp}, Section::Main);
+      else if (jumpFalse != "")
+        push(Instr{.var=JumpInstr{.op=JumpCondition::Equal, .label=jumpFalse}, .type=InstrType::Jmp}, Section::Main);
       return;
     }
     // It does not matter which side we check for SymbolType, since they will both be enforced to be the same type
@@ -136,7 +159,10 @@ void codegen::processComparison(Node::Expr *cond, const std::string &whereToJump
     } else {
       push(Instr{.var = CmpInstr{.lhs = lhsReg, .rhs = rhsReg}, .type = InstrType::Cmp}, Section::Main);
     }
-    push(Instr{.var=JumpInstr{.op=getJumpCondition(expr->op), .label=whereToJump}, .type=InstrType::Jmp}, Section::Main);
+    if (jumpTrue != "")
+      push(Instr{.var=JumpInstr{.op=getJumpCondition(expr->op), .label=jumpTrue}, .type=InstrType::Jmp}, Section::Main);
+    else if (jumpFalse != "")
+      push(Instr{.var=JumpInstr{.op=getOpposite(getJumpCondition(expr->op)), .label=jumpFalse}, .type=InstrType::Jmp}, Section::Main);
     return; // the good ending 
   }
   // check if the regular expression is 0
@@ -144,7 +170,10 @@ void codegen::processComparison(Node::Expr *cond, const std::string &whereToJump
   PushInstr prevPush = std::get<PushInstr>(text_section[text_section.size() - 1].var);
   text_section.pop_back();
   pushLinker("testq " + prevPush.what + ", " + prevPush.what + "\n\t", Section::Main);
-  push(Instr{.var=JumpInstr{.op=JumpCondition::NotEqual, .label=whereToJump}, .type=InstrType::Jmp}, Section::Main);
+  if (jumpTrue != "")
+    push(Instr{.var=JumpInstr{.op=JumpCondition::NotEqual, .label=jumpTrue}, .type=InstrType::Jmp}, Section::Main);
+  else if (jumpFalse != "")
+    push(Instr{.var=JumpInstr{.op=JumpCondition::Equal, .label=jumpFalse}, .type=InstrType::Jmp}, Section::Main);
   // sadge
   return;
 }

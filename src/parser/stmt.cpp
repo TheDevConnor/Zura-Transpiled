@@ -49,7 +49,20 @@ Node::Stmt *Parser::blockStmt(PStruct *psr, std::string name) {
         continue; // Const variables don't get pushed back on the stack
       
       // Push back the size of the variable to the block statement's size
-      varDeclTypes.push_back(var->type);
+      if (var->type->kind == NodeKind::ND_ARRAY_TYPE) {
+        ArrayType *arr = static_cast<ArrayType *>(var->type);
+        if (arr->constSize > 0) {
+          for (int i = 0; i < arr->constSize; i++) {
+            varDeclTypes.push_back(arr->underlying);
+          }
+        } else {
+          ArrayExpr *arrExpr = static_cast<ArrayExpr *>(var->expr);
+          for (Node::Expr *e : arrExpr->elements) {
+            varDeclTypes.push_back(arr->underlying);
+          }
+        }
+      } else
+        varDeclTypes.push_back(var->type);
     }
     NodeKind pastKind = stmts.back()->kind;
     if (pastKind == NodeKind::ND_IF_STMT

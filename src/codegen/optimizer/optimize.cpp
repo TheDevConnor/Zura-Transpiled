@@ -129,15 +129,32 @@ void Optimizer::simplifyPushPopPair(std::vector<Instr> *output, Instr &prev, Ins
         // movq (%rax), %rdx
         // movq %rdx, (%rbx)
         // I hate that this is the solution, Intel go fix your stinky x86
+        std::string interReg = "";
+        switch (prevAsPush.whatSize) {
+            case DataSize::Byte:
+                interReg = "%r13b";
+                break;
+            case DataSize::Word:
+                interReg = "%r13w";
+                break;
+            case DataSize::Dword:
+                interReg = "%r13d";
+                break;
+            case DataSize::Qword:
+                interReg = "%r13";
+                break;
+            default:
+                break;
+        }
         Instr newInstr = {
-            .var = MovInstr{.dest="%r13",.src=prevAsPush.what,.destSize=DataSize::Qword,.srcSize=prevAsPush.whatSize},
-            .type = InstrType::Lea
+            .var = MovInstr{.dest=interReg,.src=prevAsPush.what,.destSize=DataSize::Qword,.srcSize=prevAsPush.whatSize},
+            .type = InstrType::Mov
         };
         prev = newInstr;
         output->push_back(newInstr);
 
         Instr anotherNewInstr = {
-            .var = MovInstr{.dest = currAsPop.where, .src = "%r13", .destSize = currAsPop.whereSize, .srcSize = DataSize::Qword},
+            .var = MovInstr{.dest = currAsPop.where, .src = interReg, .destSize = currAsPop.whereSize, .srcSize = DataSize::Qword},
             .type = InstrType::Mov
         };
         prev = newInstr;

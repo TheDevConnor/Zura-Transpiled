@@ -81,10 +81,10 @@ void TypeChecker::visitIdent(Maps *map, Node::Expr *expr) {
 
   if (map->local_symbol_table.find(ident->name) != map->local_symbol_table.end()) {
     res = map->local_symbol_table[ident->name];
-    ident->asmType = res;
+    ident->asmType = createDuplicate(res);
   } else if (map->global_symbol_table.find(ident->name) != map->global_symbol_table.end()) {
     res = map->global_symbol_table[ident->name];
-    ident->asmType = res;
+    ident->asmType = createDuplicate(res);
   }
   
   // check if we found something in the local symbol table if not return error
@@ -286,7 +286,7 @@ void TypeChecker::visitMember(Maps *map, Node::Expr *expr) {
     if (member->lhs->kind == ND_MEMBER) {
       name = static_cast<IdentExpr *>(static_cast<MemberExpr *>(member->lhs)->rhs)->name;
     } else {
-      name = static_cast<IdentExpr *>(member->lhs)->name;
+      name = static_cast<IdentExpr *>(member->rhs)->name;
     }
     // Determine if lhs is a struct or enum
     std::string typeKind = determineTypeKind(map, lhsType);

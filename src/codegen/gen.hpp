@@ -258,8 +258,9 @@ void handleExitSyscall();
 void handleReturnCleanup();
 
 // Helper for the if statement condition
-void processComparison(Node::Expr *cond, const std::string &whereToJump);
+void processComparison(Node::Expr *cond, const std::string &jumpTrue, const std::string &jumpFalse);
 int getExpressionDepth(Node::Expr *e);
+JumpCondition getOpposite(JumpCondition in);
 JumpCondition getJumpCondition(const std::string &op);
 
 bool execute_command(const std::string &command, const std::string &log_file);
