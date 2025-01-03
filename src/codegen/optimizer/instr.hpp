@@ -15,6 +15,7 @@ enum class DataSize {
   SS,    // 24-bits - yes its weird. Scalar single-precision float.
 };
 
+// Dest, src, dSize, sSize
 struct MovInstr {
   std::string dest;
   std::string src;
@@ -22,104 +23,126 @@ struct MovInstr {
   DataSize srcSize = DataSize::Qword;  // "movq $15, 0(%rsp)"
 };
 
+// Size, dest, src
 struct LeaInstr {
   DataSize size; // "leaq", "leaw", etc...
   std::string dest;
   std::string src;
 };
 
+// what, wSize
 struct PushInstr {
   std::string what;
   DataSize whatSize = DataSize::Qword;
 };
 
+// where, wSize
 struct PopInstr {
   std::string where;
   DataSize whereSize = DataSize::Qword; // "popq", "popb", etc..
 };
 
+// lhs, rhs
 struct XorInstr {
   std::string lhs;
   std::string rhs;
 };
 
+// op, src, dst
 struct BinaryInstr {
   std::string op;
   std::string src;
   std::string dst;
 };
 
+// lhs, rhs
 struct AddInstr {
   std::string lhs;
   std::string rhs;
 };
 
+// lhs, rhs
 struct SubInstr {
   std::string lhs;
   std::string rhs;
 };
 
+// from
 struct MulInstr {
   std::string from;
 };
 
+// from
 struct DivInstr {
   std::string from;
 };
 
+// name
 struct Label {
   std::string name;
 };
 
+// lhs, rhs
 struct CmpInstr {
   std::string lhs;
   std::string rhs;
 };
 
+// what
 struct NegInstr {
   std::string what;
 };
 
+// what
 struct NotInstr {
   std::string what;
 };
 
+// op, label
 struct JumpInstr {
   JumpCondition op;
   std::string label;
 };
 
+// what, where
 // struct SetInstr {
 //   std::string what;
 //   std::string where;
 // };
 
+// bytesToDefine, what
 struct DataSectionInstr {
   DataSize bytesToDefine;
   std::string what;
 };
 
+// name
 struct CallInstr {
   std::string name;
 };
 
+// name (SYS_EXIT, SYS_WRITE, etc.)
 struct Syscall {
   std::string name;
 };
 
+// fromWhere
 struct Ret {
   std::string fromWhere;
 };
 
+// comment
 struct Comment {
   std::string comment;
 };
 
+// value
 struct LinkerDirective {
   std::string
       value; // This instruction is effectively pushing a string to the file.
 };
 
+// what
 struct AscizInstr {
   std::string what;
 };
@@ -133,8 +156,10 @@ enum class ConvertType {
   SD2SS,  // scalar double-precision to scalar single-precision
   SS2SI,  // scalar single-precision to single int
   SD2SI   // scalar double-precision to single int
+  // NOTE: packed registers are not supported because they are too complicated to work with
 };
 
+// convType, from, to
 struct ConvertInstr {
   ConvertType convType;
   std::string from;

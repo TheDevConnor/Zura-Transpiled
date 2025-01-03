@@ -41,17 +41,11 @@ void codegen::primary(Node::Expr *expr) {
       std::cerr << "Type of identifier '" << e->name << "' is unknown" << std::endl;
       exit(-1);
     }
-    if (e->asmType->kind == ND_SYMBOL_TYPE) {
-      if (structByteSizes.find(static_cast<SymbolType *>(e->asmType)->name) != structByteSizes.end()) {
-        push(Instr{.var = LeaInstr { .size = DataSize::Qword, .dest = "%rcx", .src = res }, .type = InstrType::Lea}, Section::Main);
-        pushRegister("%rcx");
-        break;
-      }
-    }
+    // dont worry about what it is, this right here is probably fine
     pushRegister(res);
     break;
   }
-  case ND_STRING: {
+  case NodeKind::ND_STRING: {
     StringExpr *string = static_cast<StringExpr *>(expr);
     std::string label = "string" + std::to_string(stringCount++);
 
@@ -70,13 +64,13 @@ void codegen::primary(Node::Expr *expr) {
          Section::ReadonlyData);
     break;
   }
-  case ND_CHAR: {
+  case NodeKind::ND_CHAR: {
     CharExpr *charExpr = static_cast<CharExpr *>(expr);
     pushDebug(charExpr->line, expr->file_id, charExpr->pos);
     pushRegister("$" + std::to_string((int)charExpr->value));
     break;
   }
-  case ND_FLOAT: {
+  case NodeKind::ND_FLOAT: {
     FloatExpr *floating = static_cast<FloatExpr *>(expr);
     std::string label = "float" + std::to_string(floatCount++);
     pushDebug(floating->line, expr->file_id, floating->pos);
@@ -95,7 +89,7 @@ void codegen::primary(Node::Expr *expr) {
          Section::ReadonlyData);
     break;
   }
-  case ND_BOOL: {
+  case NodeKind::ND_BOOL: {
     BoolExpr *boolExpr = static_cast<BoolExpr *>(expr);
     // Technically just an int but SHHHHHHHH.............................
     pushRegister("$" + std::to_string((int)boolExpr->value));
@@ -268,9 +262,8 @@ void codegen::call(Node::Expr *expr) {
       // Check if the argument was a struct or array
       // That requires an lea, not a mov (that will be implicitly created here)
       bool isLea = false;
-      if (e->args[i]->asmType->kind == ND_ARRAY_TYPE) {
-        isLea = true;
-      }
+      // Arrays will no longer need an 'lea' because when they are passed around, they are already * type!
+      // so just pass them as a pointer and it will be ok :D
       if (e->args[i]->asmType->kind == ND_SYMBOL_TYPE) {
         SymbolType *sym = static_cast<SymbolType *>(e->args[i]->asmType);
         if (structByteSizes.find(sym->name) != structByteSizes.end()) {

@@ -240,7 +240,7 @@ inline bool debug = false; // Was the "-debug" flag passed in to the executable?
 
 // Function argument order
 inline static const std::vector<std::string> intArgOrder = {  "%rdi", "%rsi", "%rdx", "%rcx", "%r8",  "%r9"}; // push the rest to the stack 
-inline static const std::vector<std::string> floatArgOrder = {"%xmm0","%xmm1","%xmm2","%xmm3","%xmm4","%xmm5","%xmm6","%xmm7"};
+inline static const std::vector<std::string> floatArgOrder = {"%xmm0","%xmm1","%xmm2","%xmm3","%xmm4","%xmm5","%xmm6","%xmm7"}; // Real creative, SYSV ABI
 
 // Helper functions for printing to the console
 void prepareSyscallWrite();

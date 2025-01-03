@@ -200,11 +200,10 @@ void codegen::funcDecl(Node::Stmt *stmt) {
   if (text_section.back().type != InstrType::Ret) {
     // Push a ret anyway
     // Otherwise we SEGFAULTT
-    popToRegister("%rbp");
-    push(Instr{.var = Ret{.fromWhere=funcName},.type = InstrType::Ret},Section::Main);
+    handleReturnCleanup();
   }
 
-  // Function ends with ret so we can't really push any other instructions.
+  // Function ends with ret so we can't really push any other (code) instructions.
   if (debug) {
     pushLinker(dieLabel + "_debug_end:\n", Section::Main);
     pushLinker(".byte 0\n", Section::DIE); // End of children
@@ -243,7 +242,29 @@ void codegen::varDecl(Node::Stmt *stmt) {
         variableCount -= structSize;
       }
     } else if (s->type->kind == ND_ARRAY_TYPE || s->type->kind == ND_ARRAY_AUTO_FILL) {
-      declareArrayVariable(s->expr, static_cast<ArrayType *>(s->type)->constSize, s->name); // s->name so it can be inserted to variableTable, s->type so we know the byte sizes.
+      ArrayType *at = static_cast<ArrayType *>(s->type);
+      if (s->expr->kind != ND_ARRAY) {
+        if (s->expr->kind == ND_IDENT) {
+          // We must know the size of the first array stored in the ident
+          // If that, too, is any or unknown, just error
+
+          // ... we will do that later. for now, just error!
+          handleError(s->line, s->pos, "Unable to set array variable to an identifier.", "Codegen Error", false);
+        } else {
+          // Exhausted all other options. Just error
+          handleError(s->line, s->pos, "Unable to set array variable.", "Codegen Error", false);
+        }
+      } else {
+        declareArrayVariable(s->expr, at->constSize, s->name); // s->name so it can be inserted to variableTable, s->type so we know the byte sizes.
+        // move the first element's address into the variable for when we refer to this thing later
+        push(Instr{.var=LeaInstr{ .size=DataSize::Qword, .dest="%r13", .src=where},.type=InstrType::Lea}, Section::Main);
+        moveRegister(where, "%r13", DataSize::Qword, DataSize::Qword);
+        variableTable.insert({s->name, where});
+        if (at->constSize < 1) {
+          variableCount += getByteSizeOfType(at->underlying) * static_cast<ArrayExpr *>(s->expr)->elements.size();
+        } else
+          variableCount += getByteSizeOfType(at->underlying) * at->constSize;
+      }
     } else {
       visitExpr(s->expr);
       popToRegister(where); // For values small enough to fit in a register.
@@ -314,6 +335,11 @@ void codegen::block(Node::Stmt *stmt) {
     */
     int vc = 0;
     for (Node::Type *t : s->varDeclTypes) {
+      if (t->kind == ND_ARRAY_TYPE) {
+        ArrayType *at = static_cast<ArrayType *>(t);
+        vc += getByteSizeOfType(at->underlying) * at->constSize; // for the definition
+        continue;
+      }
       vc += getByteSizeOfType(t);
     }
     variableCount = vc;
@@ -883,7 +909,7 @@ void codegen::declareArrayVariable(Node::Expr *expr, short int arrayLength, std:
   dwarf::useType(s->type);
 
   int arrayBase = variableCount;
-  // Evaluate the orderedFields and store them in the struct!!!!
+  // Evaluate the elements of the array
   for (int i = 0; i < s->elements.size(); i++) {
     Node::Expr *element = s->elements.at(i);
     // Evaluate the expression
@@ -891,8 +917,13 @@ void codegen::declareArrayVariable(Node::Expr *expr, short int arrayLength, std:
       // Structs cannot be generated in the expr.
       // We must assign each value to its place in the array.
       ArrayType *at = static_cast<ArrayType *>(s->type);
-      int startingPoint = arrayBase - (i * getByteSizeOfType(at->underlying));
-      declareStructVariable(element, getUnderlying(at), startingPoint);
+      int startingPoint;
+      if (declareVariablesForward) {
+        startingPoint = -arrayBase - (i * getByteSizeOfType(at->underlying));
+      } else {
+        startingPoint = -arrayBase + (i * getByteSizeOfType(at->underlying));
+      }
+      declareStructVariable(element, getUnderlying(at), -startingPoint);
       continue;
     }
     visitExpr(element);
@@ -902,13 +933,5 @@ void codegen::declareArrayVariable(Node::Expr *expr, short int arrayLength, std:
     } else {
       popToRegister(std::to_string(-(arrayBase - i * underlyingByteSize)) + "(%rbp)");
     }
-  }
-  // Add the struct to the variable table
-  if (declareVariablesForward) {
-    variableCount += s->elements.size() * underlyingByteSize;
-    variableTable.insert({varName, std::to_string(-arrayBase) + "(%rbp)"});
-  } else {
-    variableTable.insert({varName, std::to_string(-arrayBase) + "(%rbp)"});
-    variableCount -= s->elements.size() * underlyingByteSize;
   }
 }

@@ -147,14 +147,14 @@ void Optimizer::simplifyPushPopPair(std::vector<Instr> *output, Instr &prev, Ins
                 break;
         }
         Instr newInstr = {
-            .var = MovInstr{.dest=interReg,.src=prevAsPush.what,.destSize=DataSize::Qword,.srcSize=prevAsPush.whatSize},
+            .var = MovInstr{.dest=interReg,.src=prevAsPush.what,.destSize=prevAsPush.whatSize,.srcSize=prevAsPush.whatSize},
             .type = InstrType::Mov
         };
         prev = newInstr;
         output->push_back(newInstr);
 
         Instr anotherNewInstr = {
-            .var = MovInstr{.dest = currAsPop.where, .src = interReg, .destSize = currAsPop.whereSize, .srcSize = DataSize::Qword},
+            .var = MovInstr{.dest = currAsPop.where, .src = interReg, .destSize = currAsPop.whereSize, .srcSize = prevAsPush.whatSize},
             .type = InstrType::Mov
         };
         prev = newInstr;
