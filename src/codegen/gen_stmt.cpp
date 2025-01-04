@@ -584,10 +584,7 @@ void codegen::forLoop(Node::Stmt *stmt) {
   push(Instr{.var = Label{.name = preLoopLabel}, .type = InstrType::Label}, Section::Main);
   // Evaluate the loop condition
   visitExpr(s->condition);  // Process the loop condition
-  popToRegister("%rcx");  // Pop the condition value to a register
-  pushLinker("testq %rcx, %rcx\n\t", Section::Main);  // Test the condition value (not compare- we want to know the Zero flag in this case)
-  // Jump to the end of the loop if the condition is false
-  push(Instr{.var = JumpInstr{.op = JumpCondition::Zero, .label = postLoopLabel}, .type = InstrType::Jmp}, Section::Main);
+  processComparison(s->condition, postLoopLabel, ".Lloop_end" + std::to_string(loopCount - 1), true);
 
   // Execute the loop body (if condition is true)
   visitStmt(s->block);  // Visit the statements inside the loop body
@@ -619,7 +616,8 @@ void codegen::whileLoop(Node::Stmt *stmt) {
   loopCount++;
   // Evaluate condition
   push(Instr{.var = Label{.name = preLoop}, .type = InstrType::Label}, Section::Main);
-  processComparison(s->condition, "", postLoop);
+  visitExpr(s->condition);
+  processComparison(s->condition, postLoop, ".Lwhile_end" + std::to_string(loopCount - 1), true);
   // yummers, now just do the block
   visitStmt(s->block);
 

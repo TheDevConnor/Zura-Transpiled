@@ -1,49 +1,6 @@
-
-const TokenKind := enum {
-    IDENTIFIER,
-    VARIABLE,
-    EQUALS,
-    SEMICOLON,
-
-    EOF,
-};
-
-const Token := struct {
-    kind: TokenKind;
-    value: str;
-
-    is_not_eof := fn (self: *Token) bool {
-      return self.kind != TokenKind.EOF;
-    };
-
-    is := fn (self: *Token, kind: TokenKind) bool {
-      return self.kind == kind;
-    };
-};
-
-
-const len_int := fn (arr: []Token) int {
-  have res: int = 0;
-  loop (arr[res].is_not_eof()) { 
-    res++;
-  }
-  return res;
-};
-
 const main := fn () int {
-  have Tokens: []Token = [
-    {kind: TokenKind.IDENTIFIER, value: "x"},
-    {kind: TokenKind.EQUALS, value: "="},
-    {kind: TokenKind.VARIABLE, value: "10"},
-    {kind: TokenKind.SEMICOLON, value: ";"},
-    {kind: TokenKind.EOF, value: ""}
-  ];
-
-  have len: int = len_int(Tokens);
-  loop (i = 0; i < len) : (i++) {
-    have token: *Token = &Tokens[i];
-    @dis("Token: ", token.value, "\n");
+  loop (i = 0; i < 10) : (i++) {
+    @dis(i, "\n");
   }
-
   return 0;
 };

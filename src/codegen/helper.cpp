@@ -120,13 +120,25 @@ int codegen::getExpressionDepth(Node::Expr *e) {
 }
 
 // whereToJump if TRUE...
-void codegen::processComparison(Node::Expr *cond, const std::string &jumpTrue, const std::string &jumpFalse) {
+void codegen::processComparison(Node::Expr *cond, const std::string &jumpTrue, const std::string &jumpFalse, bool isLoop) {
   // Evaluate the 'cond' as a regular expression, but do not push the result to the stack and compare to 0:
   // just jump to the label if binary
   Node::Expr *simpleCond = CompileOptimizer::optimizeExpr(cond);
   if (simpleCond->kind == ND_BINARY) {
     // Check if its a BOOL operation
     BinaryExpr *expr = static_cast<BinaryExpr *>(simpleCond);
+    if (isLoop) {
+      JumpCondition jump = getJumpCondition(expr->op);
+      visitExpr(expr->lhs);
+      visitExpr(expr->rhs);
+      popToRegister("%rax");
+      popToRegister("%rbx");
+      // Compare them LHS > RHS
+      push(Instr{.var = CmpInstr{.lhs = "%rax", .rhs = "%rbx"}, .type = InstrType::Cmp}, Section::Main);
+      // Jump if the condition is met
+      push(Instr{.var=JumpInstr{.op=jump, .label=jumpTrue}, .type=InstrType::Jmp}, Section::Main);
+      return;
+    }
     if (boolOperations.find(expr->op) == boolOperations.end()) {
       // do the default
       visitExpr(simpleCond);
