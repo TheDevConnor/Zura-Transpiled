@@ -27,14 +27,22 @@ ErrorClass::formatLineWithTokens(int line, int pos,
                                  const std::vector<Lexer::Token> &tokens,
                                  bool highlightPos = false) {
   std::string formattedLine = lineNumber(line) + std::to_string(line) + " | ";
+  int errorPos = formattedLine.size();
+  ErrorPos = 0;
+
   for (const Lexer::Token &tk : tokens) {
-    if (tk.line == line) {
-      if (highlightPos && tk.column == pos) {
-        formattedLine += col.color("_", Color::RED, true, true);
-      }
+    if (tk.line != line) continue;
+
+    if (highlightPos && tk.column == pos) {
+      formattedLine += col.color("_", Color::RED, false, true) + " " + tk.value + " ";
+      ErrorPos = errorPos;
+    } else {
       formattedLine += tk.value + " ";
     }
+
+    errorPos += tk.value.size() + 1;
   }
+
   formattedLine += "\n";
   return formattedLine;
 }
@@ -57,8 +65,9 @@ std::string ErrorClass::error(int line, int pos, const std::string &msg,
                               const std::vector<Lexer::Token> &tokens,
                               bool isParser, bool isWarning, bool isFatal,
                               bool isMain, bool isTypeError, bool isGeneration) {
-  std::string line_error =
-      "[" + std::to_string(line) + "::" + std::to_string(pos) + "] (";
+
+  std::string line_error = "[" + std::to_string(line) + "::" + std::to_string(pos) + "] (";
+
   if (isWarning) {
     line_error += col.color("Warning", Color::YELLOW, false, true);
   } else if (isFatal) {
@@ -66,15 +75,21 @@ std::string ErrorClass::error(int line, int pos, const std::string &msg,
   } else {
     line_error += col.color("Error", Color::RED);
   }
+
   line_error += ") (" + filename + ")\n ↳ ";
-  line_error +=
-      (errorType.empty() ? col.color("Error", Color::RED, false, true)
-                         : col.color(errorType, Color::MAGENTA, true, true)) +
-      ": " + msg + "\n";
+  line_error += (errorType.empty() ? col.color("Error", Color::RED, false, true)
+                                   : col.color(errorType, Color::MAGENTA, true, true)) + ": ";
+  // check if the msg begins with 'No value found for key'
+  if (msg.find("No value found for key") != std::string::npos) {
+    line_error += msg + "\n";
+    errors[line] = line_error;
+    return line_error; // return early so we don't print lines
+  } else {
+    line_error += msg + "\n";
+  }
 
   if (isMain) {
-    line_error +=
-        "\t" + col.color("Note", Color::CYAN, false, true) + ": " + note + "\n";
+    line_error += "\t" + col.color("Note", Color::CYAN, false, true) + ": " + note + "\n";
     errors[line] = line_error;
     return line_error;
   }
@@ -85,12 +100,10 @@ std::string ErrorClass::error(int line, int pos, const std::string &msg,
       typeErros.push_back(line_error);
       return line_error;
     }
-    line_error += (line > 1) ? currentLine(line - 1, 0, lexer, isParser,
-                                           isTypeError, tokens)
+    line_error += (line > 1) ? currentLine(line - 1, 0, lexer, isParser, isTypeError, tokens)
                              : "";
     line_error += currentLine(line, pos, lexer, isParser, isTypeError, tokens);
-    line_error +=
-        currentLine(line + 1, 0, lexer, isParser, isTypeError, tokens);
+    line_error += currentLine(line + 1, 0, lexer, isParser, isTypeError, tokens);
     typeErros.push_back(line_error);
     return line_error;
   }
@@ -100,12 +113,13 @@ std::string ErrorClass::error(int line, int pos, const std::string &msg,
     return line_error;
   }
 
-  if (!note.empty()) {
-    line_error += " ↳ " + note + "\n";
-  }
+  if (!note.empty()) line_error += " ↳ " + note + "\n";
 
-  line_error +=
-      currentLine(line, pos, lexer, isParser, isTypeError, tokens) + "\n";
+  line_error += (line > 1) ? currentLine(line - 1, 0, lexer, isParser, isTypeError, tokens)
+                           : "";
+  line_error += currentLine(line, pos, lexer, isParser, isTypeError, tokens);
+  line_error += std::string(ErrorPos, ' ') + col.color("^", Color::RED, false, true) + "\n";
+  line_error += currentLine(line + 1, 0, lexer, isParser, isTypeError, tokens);
 
   if (errors.find(line) == errors.end()) {
     errors[line] = line_error;

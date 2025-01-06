@@ -10,6 +10,7 @@
 namespace ErrorClass {
 inline static std::unordered_map<int, std::string> errors;
 inline static std::vector<std::string> typeErros;
+inline int ErrorPos = 0;
 
 std::string formatLineWithTokens(int line, int pos,
                                  const std::vector<Lexer::Token> &tokens,

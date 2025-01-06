@@ -167,6 +167,10 @@ Node::Stmt *Parser::funStmt(PStruct *psr, std::string name) {
     psr->expect(psr, TokenKind::COLON,
                 "Expected a COLON after the parameter name in a function stmt");
     Node::Type *paramType = parseType(psr, BindingPower::defaultValue);
+    if (paramType == nullptr)
+      ErrorClass::error(line, column, "Expected a type for the parameter",
+                        "", "Parser Error", psr->current_file.c_str(), lexer,
+                        psr->tks, true, false, false, false, false, false);
     params.push_back({paramName, paramType});
 
     if (psr->current(psr).kind == TokenKind::COMMA)
@@ -177,6 +181,10 @@ Node::Stmt *Parser::funStmt(PStruct *psr, std::string name) {
               "Expected a R_PAREN to end the parameters in a function stmt");
 
   Node::Type *returnType = parseType(psr, BindingPower::defaultValue);
+  if (returnType == nullptr)
+    ErrorClass::error(line, column, "Expected a return type for the function",
+                      "", "Parser Error", psr->current_file.c_str(), lexer,
+                      psr->tks, true, false, false, false, false, false);
 
   Node::Stmt *body = parseStmt(psr, name);
   psr->expect(psr, TokenKind::SEMICOLON,

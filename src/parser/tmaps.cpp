@@ -92,9 +92,9 @@ Node::Type *Parser::type_nud(PStruct *psr) {
   Lexer::Token op = psr->current(psr);
   try {
     return Parser::lookup(psr, type_nud_lu, op.kind)(psr);
-  } catch (std::exception &e) {
+  } catch (std::exception &e) { // Return type is nullptr (aka there is non)
     ErrorClass::error(psr->current(psr).line, psr->current(psr).column,
-                      "Error in type_nud: " + std::string(e.what()), "",
+                      "There is no type specified or type is not valid", "",
                       "Parser Error", psr->current_file, lexer, psr->tks, true,
                       false, false, false, false, false);
     return nullptr;
