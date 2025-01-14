@@ -47,6 +47,6 @@ void codegen::initMaps() {
            {"^", "exp"},
 
            {"==", "sete"}, {"!=", "setne"}, {">", "setg"}, {">=", "setge"},
-           {"<", "setl"},  {"<=", "setle"}, {"||", "lor"}, {"|", "bor"}, // logic or, bit or
-           {"&&", "land"}, {"&", "band"}}; // logic and, bit and
+           {"<", "setl"},  {"<=", "setle"}, {"||", "lor"}, {"|", "bor"},
+           {"&&", "land"}, {"&", "band"}};
 }

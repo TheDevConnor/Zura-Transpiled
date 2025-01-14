@@ -1,13 +1,5 @@
 #include "gen.hpp"
 
-// This file includes the codegen for the builtin functions, which is mostly just the mapping of a syscall
-// ex: `@dis` -> `codegen::print` -> SYS_WRITE (automatically maps to the fd for stdout)
-// ex: `@exit` -> `codegen::exit` -> SYS_EXIT
-// `@import` -> `codegen::importDecl` -> `codegen::program` (the entry point of the new file)
-// `@link` -> `codegen::linkFile` -> `linkedFiles` (a set of files that have been linked)
-// `@extern` -> `codegen::externName` -> `externalNames` (a set of external names that have been declared)
-// `@cast<Type>(Expr)` -> `codegen::cast` -> `codegen::visitExpr` (the expression to be casted)
-
 void codegen::print(Node::Stmt *stmt) {
   PrintStmt *print = static_cast<PrintStmt *>(stmt);
 
@@ -80,86 +72,50 @@ void codegen::externName(Node::Stmt *stmt) {
 
 void codegen::cast(Node::Expr *expr) {
   CastExpr *e = static_cast<CastExpr *>(expr);
-  Node::Type *toType = e->castee_type;
-  std::string underlyingTo = getUnderlying(toType);
-  Node::Type *fromType = e->castee->asmType;
-  std::string underlyingFrom = getUnderlying(fromType);
+  SymbolType *toType = static_cast<SymbolType *>(e->castee_type);
+  SymbolType *fromType = static_cast<SymbolType *>(e->castee->asmType);
+
+  if (fromType->name == "str") {
+    std::cerr << "Explicitly casting from string is not allowed" << std::endl;
+    exit(-1);
+  }
   pushDebug(e->line, expr->file_id, e->pos);
   visitExpr(e->castee);
-  if (toType->kind == ND_POINTER_TYPE && fromType->kind == ND_POINTER_TYPE) {
-    // We are casting a pointer to a pointer
-    // This is a no-op
-    return;
-  }
-  if (toType->kind == ND_ARRAY_TYPE && fromType->kind == ND_ARRAY_TYPE) {
-    // Array casted to an array? How does that work?
-    if (getByteSizeOfType(toType) != getByteSizeOfType(fromType))
-      handleError(e->line, e->pos, "Unable to cast arrays of different type sizes.", "Codegen Error", true);
-    ArrayType *toArr = static_cast<ArrayType *>(toType);
-    ArrayType *fromArr = static_cast<ArrayType *>(fromType);
-    if (toArr->constSize != fromArr->constSize)
-      handleError(e->line, e->pos, "Unable to cast arrays of different lengths.", "Codegen Error", true);
-    // Well, since clearly the developer knew what they were doing, we will just give it to them!
-    return;
-  }
-  // There are more pairs of types that can NOT be casted to one another
-  if (fromType->kind == toType->kind && underlyingFrom == underlyingTo) return;
-  if (fromType->kind == ND_SYMBOL_TYPE && toType->kind == ND_POINTER_TYPE && underlyingFrom == underlyingTo) {
-    handleError(e->line, e->pos, "Cannot cast a symbol to a pointer. Please use the '&' operator instead.", "Codegen Error", true);
-  }
-  if (fromType->kind == ND_SYMBOL_TYPE && toType->kind == ND_POINTER_TYPE) {
-    handleError(e->line, e->pos, "Cannot cast symbol to a pointer of different type. Please use the '&' operator and cast the result instead.", "Codegen Error", true);
-  }
-  if (fromType->kind == ND_POINTER_TYPE && toType->kind == ND_SYMBOL_TYPE && underlyingFrom == underlyingTo) {
-    handleError(e->line, e->pos, "Cannot cast a pointer to a symbol. Please dereference instead.", "Codegen Error", true);
-  }
-  if (fromType->kind == ND_POINTER_TYPE && toType->kind == ND_SYMBOL_TYPE) {
-    handleError(e->line, e->pos, "Cannot cast pointer to a symbol of different type. Please dereference and cast the result instead.", "Codegen Error", true);
-  }
-  if ((fromType->kind == ND_ARRAY_TYPE && toType->kind == ND_POINTER_TYPE)
-   || (fromType->kind == ND_POINTER_TYPE && toType->kind == ND_ARRAY_TYPE)) {
-    handleError(e->line, e->pos, "Unable to cast arrays and pointers.", "Codegen Error", true);
-  }
-  if ((toType->kind == ND_FUNCTION_TYPE)
-   || (fromType->kind == ND_FUNCTION_TYPE)) {
-    handleError(e->line, e->pos, "It is illegal to cast function types.", "Codegen Error", true);
-  }
-  // Great! At this point, we now know that the underlying types are symbol types (if not, they would be handled already)
-  if (getUnderlying(fromType) == "unknown") {
+  if (fromType->name == "unknown") {
     return; // Assume the dev knew what they were doing and push the original value
   }
-  if (underlyingTo == "enum") {
+  if (toType->name == "enum") {
     // Enums are truly just ints under-the-hood
-    if (underlyingFrom != "int") {
+    if (fromType->name != "int") {
       std::cerr << "Cannot cast non-int to enum" << std::endl;
       exit(-1);
     }
     return; // Do nothing (essentially just a void cast)
   }
-  if (underlyingTo == "float") {
+  if (toType->name == "float") {
     // We are casting into a float.
     popToRegister("%rax"); // This actually doesnt matter but rax is fast and also our garbage disposal
     // Perform the conversion
-    if (underlyingFrom == "int") {
+    if (fromType->name == "int") {
       push(Instr{.var = ConvertInstr{.convType = ConvertType::SI2SS, .from = "%rax", .to = "%xmm1"},
                 .type = InstrType::Convert},
           Section::Main);
       // push xmm0
       push(Instr{.var=PushInstr{.what="%xmm0",.whatSize=DataSize::SS},.type=InstrType::Push},Section::Main);
     }
-    if (underlyingFrom == "float") {
+    if (fromType->name == "float") {
       // Do nothing, it's already a float
       // Optimizer will know that this redundant push/pop is, of course, redundant
       pushRegister("%rax");
     }
-  } else if (underlyingTo == "int") {
-    if (underlyingFrom == "int" || underlyingFrom == "enum") {
+  } else if (toType->name == "int") {
+    if (fromType->name == "int" || fromType->name == "enum") {
       // Do nothing, it's already an int
       // Enums are explicitly ints under-the-hood as well
       return;
     }
 
-    if (underlyingFrom == "float") {
+    if (fromType->name == "float") {
       popToRegister("%xmm0");
       // Perform the conversion (always truncate for now)
       push(Instr{.var = ConvertInstr{.convType = ConvertType::TSS2SI, .from = "%xmm0", .to = "%rax"},
@@ -177,27 +133,16 @@ void codegen::externalCall(Node::Expr *expr) {
   ExternalCall *e = static_cast<ExternalCall *>(expr);
   pushDebug(e->line, expr->file_id, e->pos);
   // Push each argument one by one.
-  if (e->args.size() > intArgOrder.size()) {
+  if (e->args.size() > argOrder.size()) {
     std::cerr << "Too many arguments in call - consider reducing them or moving them to a globally defined space." << std::endl;
     exit(-1);
   }
-  int intArgCount = 0;
-  int floatArgCount = 0;
   for (size_t i = 0; i < e->args.size(); i++) {
     // evaluate them
     codegen::visitExpr(e->args.at(i));
-    // check if it is considered a float
-    if (e->args[i]->asmType->kind == ND_SYMBOL_TYPE && getUnderlying(e->args[i]->asmType) == "float") {
-      // it is a float
-      popToRegister(floatArgOrder[floatArgCount++]); // ++ operator returns the original, so starting at 0 :smile:
-    } else
-      popToRegister(intArgOrder[intArgCount++]);
+    popToRegister(argOrder[i]);
   }
-  // In short, the PLT is a table of function pointers that are resolved at runtime.
-  // This is used for dynamically linked executables, which is by default what we are doing.
-  // https://stackoverflow.com/questions/5469274/what-does-plt-mean-here
-  
-  // NOTE: This is what linkers are for. They include these functions and resolve them. This means that @link's are always required for an @call.
+  // Call the function
   push(Instr{.var = CallInstr{.name = e->name + "@PLT"},
              .type = InstrType::Call},
        Section::Main);

@@ -1,7 +1,7 @@
 #include "../helper/error/error.hpp"
-#include "gen.hpp"
 #include "optimizer/compiler.hpp"
 #include "optimizer/instr.hpp"
+#include "gen.hpp"
 #include <fstream>
 #include <cstdint>
 
@@ -56,7 +56,6 @@ void codegen::pushLinker(std::string val, Section section) {
     .type = InstrType::Linker
   }, section);
 }
-
 JumpCondition codegen::getOpposite(JumpCondition in) {
   switch (in) {
     case JumpCondition::Equal:
@@ -119,7 +118,6 @@ int codegen::getExpressionDepth(Node::Expr *e) {
   return lhsDepth > rhsDepth ? lhsDepth : rhsDepth;
 }
 
-// whereToJump if TRUE...
 void codegen::processComparison(Node::Expr *cond, const std::string &jumpTrue, const std::string &jumpFalse, bool isLoop) {
   // Evaluate the 'cond' as a regular expression, but do not push the result to the stack and compare to 0:
   // just jump to the label if binary
@@ -275,6 +273,63 @@ void codegen::push(Instr instr, Section section) {
   }
 }
 
+/*
+  * Helper functions for printing to the console
+*/
+void codegen::prepareSyscallWrite() {
+  // syscall id for write on x86 is 1
+  moveRegister("%rax", "$1", DataSize::Qword, DataSize::Qword);
+  // set rdi to 1 (file descriptor for stdout)
+  moveRegister("%rdi", "$1", DataSize::Qword, DataSize::Qword);
+  // Make syscall to write
+  push(Instr{.var = Syscall{.name = "SYS_WRITE"}, .type = InstrType::Syscall},
+       Section::Main);
+}
+
+void codegen::handlePtrType(Node::Expr *arg, PrintStmt *print) {
+  if (getUnderlying(arg->asmType).find("char") == 1) {
+    visitExpr(arg);
+    popToRegister("%rsi");
+    prepareSyscallWrite();
+  } else {
+    handleError(print->line, print->pos,
+                "Cannot print pointer type. Dereference first or print as an address (int cast).",
+                "Codegen Error");
+  }
+}
+
+void codegen::handleStrType(Node::Expr *arg) {
+  nativeFunctionsUsed[NativeASMFunc::strlen] = true;
+  visitExpr(arg);
+  popToRegister("%rsi"); // String address
+  moveRegister("%rdi", "%rsi", DataSize::Qword, DataSize::Qword);
+  push(Instr{.var = CallInstr{.name = "native_strlen"}, .type = InstrType::Call},
+       Section::Main);
+  moveRegister("%rdx", "%rax", DataSize::Qword, DataSize::Qword); // Length of string
+  prepareSyscallWrite();
+}
+
+void codegen::handlePrimType(Node::Expr *arg) {
+  nativeFunctionsUsed[NativeASMFunc::strlen] = true;
+  nativeFunctionsUsed[NativeASMFunc::itoa] = true;
+  visitExpr(arg);
+  popToRegister("%rdi");
+  push(Instr{.var = CallInstr{.name = "native_itoa"}, .type = InstrType::Call},
+       Section::Main); // Convert int to string
+  moveRegister("%rdi", "%rax", DataSize::Qword, DataSize::Qword);
+  moveRegister("%rsi", "%rdi", DataSize::Qword, DataSize::Qword);
+  // Now we have the integer string in %rax (assuming %rax holds the pointer to the result)
+  push(Instr{.var = CallInstr{.name = "native_strlen"}, .type = InstrType::Call},
+       Section::Main);
+  moveRegister("%rdx", "%rax", DataSize::Qword, DataSize::Qword); // Length of number string
+  prepareSyscallWrite();
+}
+
+void codegen::handleFloatType(Node::Expr *arg) {
+    std::string msg = "Printing floats is not supported yet.";
+    handleError(0, 0, msg, "Codegen Error");
+}
+
 // Add 1
 int codegen::getFileID(const std::string &file) {
   for (int i = 0; i < fileIDs.size(); i++) {
@@ -406,80 +461,4 @@ size_t codegen::sizeOfLEB(int64_t value) {
     }
 
     return size;
-}
-
-/*
-  * Helper functions for printing to the console
-*/
-
-void codegen::prepareSyscallWrite() {
-  // syscall id for write on x86 is 1
-  moveRegister("%rax", "$1", DataSize::Qword, DataSize::Qword);
-  // set rdi to 1 (file descriptor for stdout)
-  moveRegister("%rdi", "$1", DataSize::Qword, DataSize::Qword);
-  // Make syscall to write
-  push(Instr{.var = Syscall{.name = "SYS_WRITE"}, .type = InstrType::Syscall},
-       Section::Main);
-}
-
-void codegen::handlePtrType(Node::Expr *arg, PrintStmt *print) {
-  if (getUnderlying(arg->asmType).find("char") == 1) {
-    visitExpr(arg);
-    popToRegister("%rsi");
-    prepareSyscallWrite();
-  } else {
-    handleError(print->line, print->pos,
-                "Cannot print pointer type. Dereference first or print as an address (int cast).",
-                "Codegen Error");
-  }
-}
-
-void codegen::handleStrType(Node::Expr *arg) {
-  nativeFunctionsUsed[NativeASMFunc::strlen] = true;
-  visitExpr(arg);
-  popToRegister("%rsi"); // String address
-  moveRegister("%rdi", "%rsi", DataSize::Qword, DataSize::Qword);
-  push(Instr{.var = CallInstr{.name = "native_strlen"}, .type = InstrType::Call},
-       Section::Main);
-  moveRegister("%rdx", "%rax", DataSize::Qword, DataSize::Qword); // Length of string
-  prepareSyscallWrite();
-}
-
-void codegen::handlePrimType(Node::Expr *arg) {
-  nativeFunctionsUsed[NativeASMFunc::strlen] = true;
-  nativeFunctionsUsed[NativeASMFunc::itoa] = true;
-  visitExpr(arg);
-  popToRegister("%rdi");
-  push(Instr{.var = CallInstr{.name = "native_itoa"}, .type = InstrType::Call},
-       Section::Main); // Convert int to string
-  moveRegister("%rdi", "%rax", DataSize::Qword, DataSize::Qword);
-  moveRegister("%rsi", "%rdi", DataSize::Qword, DataSize::Qword);
-  // Now we have the integer string in %rax (assuming %rax holds the pointer to the result)
-  push(Instr{.var = CallInstr{.name = "native_strlen"}, .type = InstrType::Call},
-       Section::Main);
-  moveRegister("%rdx", "%rax", DataSize::Qword, DataSize::Qword); // Length of number string
-  prepareSyscallWrite();
-}
-
-void codegen::handleFloatType(Node::Expr *arg) {
-    nativeFunctionsUsed[NativeASMFunc::strlen] = true;
-    nativeFunctionsUsed[NativeASMFunc::ftoa] = true;
-
-    // Evaluate the expression and get the float value in a register
-    visitExpr(arg);
-    popToRegister("%xmm0"); // Assuming float is stored in an XMM register (common ABI convention)
-
-    // Call ftoa to convert the float to a string
-    push(Instr{.var = CallInstr{.name = "native_ftoa"}, .type = InstrType::Call}, Section::Main);
-
-    // Result (string pointer) is in %rax
-    moveRegister("%rdi", "%rax", DataSize::Qword, DataSize::Qword);
-    moveRegister("%rsi", "%rdi", DataSize::Qword, DataSize::Qword);
-
-    // Get the string length
-    push(Instr{.var = CallInstr{.name = "native_strlen"}, .type = InstrType::Call}, Section::Main);
-    moveRegister("%rdx", "%rax", DataSize::Qword, DataSize::Qword); // Length of float string
-
-    // Perform syscall to print the float
-    prepareSyscallWrite();
 }

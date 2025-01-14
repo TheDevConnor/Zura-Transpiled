@@ -36,16 +36,18 @@ void codegen::primary(Node::Expr *expr) {
     pushDebug(e->line, expr->file_id, e->pos);
 
     // Push the result
-    // Check for struct // Type of identifier 'i' is unknown
-    if (e->asmType == nullptr || e->type == nullptr) {
-      std::cerr << "Type of identifier '" << e->name << "' is unknown" << std::endl;
-      exit(-1);
+    // Check for struct
+    if (e->asmType->kind == ND_SYMBOL_TYPE) {
+      if (structByteSizes.find(static_cast<SymbolType *>(e->asmType)->name) != structByteSizes.end()) {
+        push(Instr{.var = LeaInstr { .size = DataSize::Qword, .dest = "%rcx", .src = res }, .type = InstrType::Lea}, Section::Main);
+        pushRegister("%rcx");
+        break;
+      }
     }
-    // dont worry about what it is, this right here is probably fine
     pushRegister(res);
     break;
   }
-  case NodeKind::ND_STRING: {
+  case ND_STRING: {
     StringExpr *string = static_cast<StringExpr *>(expr);
     std::string label = "string" + std::to_string(stringCount++);
 
@@ -64,13 +66,13 @@ void codegen::primary(Node::Expr *expr) {
          Section::ReadonlyData);
     break;
   }
-  case NodeKind::ND_CHAR: {
+  case ND_CHAR: {
     CharExpr *charExpr = static_cast<CharExpr *>(expr);
     pushDebug(charExpr->line, expr->file_id, charExpr->pos);
     pushRegister("$" + std::to_string((int)charExpr->value));
     break;
   }
-  case NodeKind::ND_FLOAT: {
+  case ND_FLOAT: {
     FloatExpr *floating = static_cast<FloatExpr *>(expr);
     std::string label = "float" + std::to_string(floatCount++);
     pushDebug(floating->line, expr->file_id, floating->pos);
@@ -89,7 +91,7 @@ void codegen::primary(Node::Expr *expr) {
          Section::ReadonlyData);
     break;
   }
-  case NodeKind::ND_BOOL: {
+  case ND_BOOL: {
     BoolExpr *boolExpr = static_cast<BoolExpr *>(expr);
     // Technically just an int but SHHHHHHHH.............................
     pushRegister("$" + std::to_string((int)boolExpr->value));
@@ -168,42 +170,30 @@ void codegen::binary(Node::Expr *expr) {
     push(Instr{.var = BinaryInstr{.op = op, .src = "%xmm1", .dst = "%xmm0"},
                .type = InstrType::Binary},
          Section::Main);
-    pushRegister("%xmm0");
-    return;
+    pushRegister("%xmm0"); 
   } else if (returnType->name == "bool") {
     // We need to compare the two values
     // Check depth
     int lhsDepth = getExpressionDepth(e->lhs);
     int rhsDepth = getExpressionDepth(e->rhs);
-    SymbolType *lhsType = static_cast<SymbolType *>(e->lhs->asmType);
-    SymbolType *rhsType = static_cast<SymbolType *>(e->rhs->asmType);
-    bool isFloat = lhsType->name == "float" || rhsType->name == "float";
-    std::string lhsReg = isFloat ? "%xmm0" : "%rax";
-    std::string rhsReg = isFloat ? "%xmm1" : "%rbx";
     if (lhsDepth > rhsDepth) {
       visitExpr(e->lhs);
       visitExpr(e->rhs);
-      popToRegister(rhsReg); // Pop RHS into RBX
-      popToRegister(lhsReg); // Pop LHS into RAX
+      popToRegister("%rbx"); // Pop RHS into RBX
+      popToRegister("%rax"); // Pop LHS into RAX
     } else {
       visitExpr(e->rhs);
       visitExpr(e->lhs);
-      popToRegister(lhsReg); // Pop LHS into RAX
-      popToRegister(rhsReg); // Pop RHS into RBX
+      popToRegister("%rax"); // Pop LHS into RAX
+      popToRegister("%rbx"); // Pop RHS into RBX
     }
     // Get the operation
     std::string op = lookup(opMap, e->op);
-    // Let's see if one of them was a float
-    if (isFloat) {
-      // This does not work on a simple "cmp" instruction!
-      // We need a "ucomiss" instruction - short for "unordered compare of single-precision #'s"
-      push(Instr{.var = LinkerDirective{.value = "ucomiss " + rhsReg + ", " + lhsReg + "\n\t"}, .type = InstrType::Linker}, Section::Main);
-    } else {
-      // Regular old comparison
-      push(Instr{.var = CmpInstr{.lhs = lhsReg, .rhs = rhsReg}, .type = InstrType::Cmp}, Section::Main);
-    }
-    // Ex: If "==", this becomes "sete %al", setting %al equal to the result of the comparison
-    pushLinker(op + " %al\n\tmovzbq %al, %rax\n\t", Section::Main); // Extend the byte up to 64-bits
+    // Perform the operation
+    // by running a comparison
+    push(Instr{.var = CmpInstr{.lhs = "%rax", .rhs = "%rbx"}, .type = InstrType::Cmp}, Section::Main);
+    pushLinker(op + " %al\n\tmovzbq %al, %rax\n\t", Section::Main); // There is no instruction like `cltq` for bytes
+    // Move the bytes up to 64-bits
     pushRegister("%rax"); // Push the result
   }
 }
@@ -212,10 +202,7 @@ void codegen::unary(Node::Expr *expr) {
   UnaryExpr *e = static_cast<UnaryExpr *>(expr);
   pushDebug(e->line, expr->file_id, e->pos);
   visitExpr(e->expr);
-  // instead of doing "pushq -8(%rbp), popq %rax, incq %rax, pushq %rax" which is verbose...
-  // just do "incq -8(%rbp)" and be done with it- inc, dec, and neg works on effective addresses too!
-  // Because of visiting the expression, the last instruction was "push"
-  // We need to know what was pushed in order to perform the operation
+  // Its gonna be a pop guys
   PushInstr instr = std::get<PushInstr>(text_section.at(text_section.size() - 1).var);
   std::string whatWasPushed = instr.what;
 
@@ -227,13 +214,10 @@ void codegen::unary(Node::Expr *expr) {
     // Dear code reader, i apologize
     push(Instr {
       .var = LinkerDirective{ .value = res + "q " + whatWasPushed + "\n\t" },
-      .type = InstrType::Linker
+      .type = InstrType::Linker   // Hey do you know why this infinatly loops? show asm
     }, Section::Main);
   }
-  // Push the result- again
-  // NOTE: sometimes the result of the operation is not needed, but rather only the effect of the operation was wanted
-  // NOTE: meaning that the push here will not be needed. cases like this are handled in other places, however, like
-  // NOTE: gen_stmt:codegen::expr or in the loops (the optional increment of the loop variable in ForStmt should pop there, not here) 
+  // Push the result
   pushRegister(whatWasPushed);
 }
 
@@ -250,7 +234,7 @@ void codegen::call(Node::Expr *expr) {
     IdentExpr *n = static_cast<IdentExpr *>(e->callee);
     pushDebug(e->line, expr->file_id, e->pos);
     // Push each argument one by one.
-    if (e->args.size() > intArgOrder.size()) {
+    if (e->args.size() > argOrder.size()) {
       std::cerr << "Too many arguments in call - consider reducing them or moving them to a globally defined space." << std::endl;
       exit(-1);
     }
@@ -262,8 +246,9 @@ void codegen::call(Node::Expr *expr) {
       // Check if the argument was a struct or array
       // That requires an lea, not a mov (that will be implicitly created here)
       bool isLea = false;
-      // Arrays will no longer need an 'lea' because when they are passed around, they are already * type!
-      // so just pass them as a pointer and it will be ok :D
+      if (e->args[i]->asmType->kind == ND_ARRAY_TYPE) {
+        isLea = true;
+      }
       if (e->args[i]->asmType->kind == ND_SYMBOL_TYPE) {
         SymbolType *sym = static_cast<SymbolType *>(e->args[i]->asmType);
         if (structByteSizes.find(sym->name) != structByteSizes.end()) {
@@ -276,11 +261,11 @@ void codegen::call(Node::Expr *expr) {
         std::string whatWasPushed = instr.what;
         text_section.pop_back();
         // NOW we can lea
-        push(Instr{.var = LeaInstr{.size = DataSize::Qword, .dest = intArgOrder[i], .src = whatWasPushed},
+        push(Instr{.var = LeaInstr{.size = DataSize::Qword, .dest = argOrder[i], .src = whatWasPushed},
                    .type = InstrType::Lea},
              Section::Main);
       } else
-        popToRegister(intArgOrder[i]);
+        popToRegister(argOrder[i]);
     }
     // Call the function
     push(Instr{.var = CallInstr{.name = "usr_" + n->name},
@@ -299,7 +284,7 @@ void codegen::call(Node::Expr *expr) {
     std::string fnName = static_cast<IdentExpr *>(member->rhs)->name;
     pushDebug(e->line, expr->file_id, e->pos);
     // Push each argument one by one.
-    if (e->args.size() + 1 > intArgOrder.size()) {
+    if (e->args.size() + 1 > argOrder.size()) {
       // 1 arg will be 'self', a pointer to the struct being called and always in argOrder[0]
       std::cerr << "Too many arguments in call - consider reducing them or moving them to a globally defined space." << std::endl;
       exit(-1);
@@ -314,7 +299,7 @@ void codegen::call(Node::Expr *expr) {
     std::string whatWasPushed = instr.what;
     text_section.pop_back();
     // NOW we can lea
-    push(Instr{.var = LeaInstr{.size = DataSize::Qword, .dest = intArgOrder[0], .src = whatWasPushed},
+    push(Instr{.var = LeaInstr{.size = DataSize::Qword, .dest = argOrder[0], .src = whatWasPushed},
                .type = InstrType::Lea},
          Section::Main);
     int offsetAmount = round(variableCount-8, 8);
@@ -322,7 +307,7 @@ void codegen::call(Node::Expr *expr) {
     for (size_t i = 0; i < e->args.size(); i++) {
       // evaluate them
       codegen::visitExpr(e->args.at(i));
-      popToRegister(intArgOrder[i + 1]);
+      popToRegister(argOrder[i + 1]);
     }
     // Call the function
     push(Instr{.var = CallInstr{.name = "usrstruct_" + structName + "_" + fnName},
@@ -341,7 +326,7 @@ void codegen::ternary(Node::Expr *expr) {
   int ternay = 0;
   std::string ternayCount = std::to_string(ternay);
 
-  visitExpr(e->condition); // If a comparison, this will be a binaryExpr.
+  visitExpr(e->condition);
   popToRegister("%rax");
 
   push(Instr{.var = CmpInstr{.lhs = "%rax", .rhs = "$0"},
@@ -394,12 +379,8 @@ void codegen::arrayElem(Node::Expr *expr) {
       IdentExpr *ident = static_cast<IdentExpr *>(e->lhs);
       Node::Type *underlying = static_cast<ArrayType *>(e->asmType)->underlying;
       std::string whereBytes = variableTable[static_cast<IdentExpr *>(e->lhs)->name];
-      int offset = std::stoi(whereBytes.substr(0, whereBytes.find("("))); // this is the base of the array - the first byte of the lsat element
-      int totalElements = static_cast<ArrayType *>(e->lhs->asmType)->constSize;
-      // NOTE: You know what? if the programmer wanted this, then it is hell if I care when their program segfaults.
-      // if (totalElements < 1)
-      //   handleError(e->line, e->pos, "Unable to index array with unknown/implicit length", "Codegen Error", true); // how do you even continue from here? Make it fatal
-      offset -= ((totalElements - index->value) * getByteSizeOfType(underlying));
+      int offset = std::stoi(whereBytes.substr(0, whereBytes.find("("))); // this is the base of the array - the first byte of the first element
+      offset -= (index->value * getByteSizeOfType(underlying));
       pushRegister(std::to_string(offset) + "(%rbp)");
     } else {
       visitExpr(e->lhs);
@@ -411,8 +392,7 @@ void codegen::arrayElem(Node::Expr *expr) {
                  .type = InstrType::Lea},
            Section::Main);
       int byteSize = getByteSizeOfType(e->lhs->asmType);
-      int totalElements = static_cast<ArrayType *>(e->lhs->asmType)->constSize;
-      int offset = -((totalElements - index->value) * byteSize);
+      int offset = -index->value * byteSize;
       if (offset == 0)
         pushRegister("(%rcx)");
       else
@@ -436,15 +416,11 @@ void codegen::arrayElem(Node::Expr *expr) {
     }
     visitExpr(e->rhs);
     popToRegister("%rax");
-    if (!declareVariablesForward) {
-      pushLinker("negq %rax\n\t", Section::Main); // Negate the index, so we go backwards (forwards in memory) through the array
-    }
     // %rax contains the index
+    // Negate rax
+    pushLinker("negq %rax\n\t", Section::Main);
     // Multiply it by the size of the type
-    ArrayType *array = static_cast<ArrayType *>(e->lhs->asmType);
-    // if (array->constSize < 1)
-    //   handleError(e->line, e->pos, "Unable to index array with unknown/implicit length", "Codegen Error", true); // how do you even continue from here? Make it fatal
-    int underlyingByteSize = getByteSizeOfType(array->underlying);
+    int underlyingByteSize = getByteSizeOfType(static_cast<ArrayType *>(e->lhs->asmType)->underlying);
     switch (underlyingByteSize) {
       case 1: {
         // No need to multiply
@@ -524,18 +500,10 @@ void codegen::memberExpr(Node::Expr *expr) {
             embedded: *Nested;
           }
           */
-          int offset;
-          if (declareVariablesForward) {
-            offset = 0;
-            if (i != 0) for (int j = 0; j < i; j++) {
-              offset += fields[j].second.second;
-            }
-          } else {
-            offset = size;
-            for (int j = i; j >= 0; j--) {
-              offset -= fields[j].second.second;
-            }
-            if (i == 0) offset = 0;
+
+          int offset = 0;
+          if (i != 0) for (int j = 0; j < i; j++) {
+            offset += fields[j].second.second;
           }
           push(Instr{.var=LeaInstr{.size=DataSize::Qword,.dest="%rcx",.src=std::to_string(offset)+"(%rcx)"}, .type=InstrType::Lea},Section::Main);
           pushRegister("%rcx");
@@ -551,18 +519,9 @@ void codegen::memberExpr(Node::Expr *expr) {
           */
 
           // Get the field offset
-          int offset;
-          if (declareVariablesForward) {
-            offset = 0;
-            if (i != 0) for (int j = 0; j < i; j++) {
-              offset += fields[j].second.second;
-            }
-          } else {
-            offset = size;
-            for (int j = i; j >= 0; j--) {
-              offset -= fields[j].second.second;
-            }
-            if (i == 0) offset = 0;
+          int offset = 0;
+          if (i != 0) for (int j = 0; j < i; j++) {
+            offset += fields[j].second.second;
           }
           // Push the value at this offset
           push(Instr{.var=LeaInstr{.size=DataSize::Qword,.dest="%rcx",.src=std::to_string(offset)+"(%rcx)"}, .type=InstrType::Lea},Section::Main);
@@ -570,18 +529,9 @@ void codegen::memberExpr(Node::Expr *expr) {
           return;
         }
         // push the value at this offset
-        int offset;
-        if (declareVariablesForward) {
-          offset = 0;
-          if (i != 0) for (int j = 0; j < i; j++) {
-            offset += fields[j].second.second;
-          }
-        } else {
-          offset = size;
-          for (int j = i; j >= 0; j--) {
-            offset -= fields[j].second.second;
-          }
-          if (i == 0) offset = 0;
+        int offset = 0;
+        if (i != 0) for (int j = 0; j < i; j++) {
+          offset += fields[j].second.second;
         }
         if (offset == 0)
           pushRegister("(%rcx)");
@@ -806,7 +756,7 @@ void codegen::assignArray(Node::Expr *expr) {
       text_section.pop_back();
       push(Instr{.var=LeaInstr{.size=DataSize::Qword,.dest="%rcx",.src=instr.what}, .type = InstrType::Lea},Section::Main);
       ArrayExpr *rhs = static_cast<ArrayExpr *>(assign->rhs);
-      for (int i = rhs->elements.size(); i >= 0; i--) {
+      for (int i = 0; i < rhs->elements.size(); i++) {
         visitExpr(rhs->elements.at(i));
         popToRegister(std::to_string(-i * getByteSizeOfType(rhs->type)) + "(%rcx)");
       }

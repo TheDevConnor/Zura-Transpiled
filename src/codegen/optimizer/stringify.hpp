@@ -9,14 +9,9 @@
 
 class Stringifier { // converts Instr structures into AT&T Syntax strings
 public:
-  inline static std::string stringifyInstrs(std::vector<Instr> &input, bool debug = false) {
+  inline static std::string stringifyInstrs(std::vector<Instr> &input) {
     std::string output{};
     for (Instr &instr : input) {
-      // If in normal mode and the intsruction is a comment, skip it
-      // Otherwise, print it
-      // This is because we want as much information as possible in debug mode,
-      // but we do not care about comments when printing regular, optimized assembly.
-      if (!debug && instr.type == InstrType::Comment) continue;
       output += stringify(instr);
     }
     return output;

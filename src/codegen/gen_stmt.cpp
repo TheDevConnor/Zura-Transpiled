@@ -11,7 +11,6 @@
 void codegen::visitStmt(Node::Stmt *stmt) {
   // compiler optimize the statement
   Node::Stmt *realStmt = CompileOptimizer::optimizeStmt(stmt);
-  if (realStmt == nullptr) return; // the statement was optimized out, it was redundant
   StmtHandler handler = lookup(stmtHandlers, realStmt->kind);
   if (handler) {
     handler(realStmt);
@@ -148,28 +147,14 @@ void codegen::funcDecl(Node::Stmt *stmt) {
 
   // Function args
   // Reset the variableCount first, though
-  for (size_t i = 0; i < s->params.size(); i++) {
-    variableCount += getByteSizeOfType(s->params.at(i).second);
-  }
-
+  int preVC = variableCount;
+  variableCount = 8;
   for (size_t i = 0; i < s->params.size(); i++) {
     // Move the argument to the stack
     std::string where = std::to_string(-variableCount) + "(%rbp)";
-    // check if argument is a float or an int
-    int intArgCount = 0;
-    int floatArgCount = 0;
-    std::string argWhere = (getUnderlying(s->params[i].second) == "float") ? floatArgOrder[floatArgCount++] : intArgOrder[intArgCount--];
-    DataSize sz;
-    switch (getByteSizeOfType(s->params[i].second)) {
-      case 1: sz = DataSize::Byte; break;
-      case 2: sz = DataSize::Word; break;
-      case 4: sz = DataSize::Dword; break;
-      case 8: sz = DataSize::Qword; break;
-      default: sz = DataSize::Qword; break;
-    }
-    moveRegister(where, argWhere, sz, sz);
+    moveRegister(where, argOrder.at(i), DataSize::Qword, DataSize::Qword);
     variableTable.insert({s->params.at(i).first, where});
-    variableCount -= getByteSizeOfType(s->params.at(i).second);
+    variableCount += getByteSizeOfType(s->params.at(i).second);
 
     if (debug) {
       // Use the parameter type
@@ -179,7 +164,7 @@ void codegen::funcDecl(Node::Stmt *stmt) {
                  "\n.byte " + std::to_string(s->pos) +
                  "\n.long .L" + type_to_diename(s->params.at(i).second) + "_debug_type\n" +
                  "\n.uleb128 0x1" // 1 byte is gonna follow
-                 "\n.byte " + std::to_string(dwarf::argOP_regs.at(argWhere) + 80) + "\n"
+                 "\n.byte " + std::to_string(dwarf::argOP_regs.at(argOrder.at(i)) + 80) + "\n"
                  "\n"
       , Section::DIE);
     }
@@ -195,15 +180,17 @@ void codegen::funcDecl(Node::Stmt *stmt) {
   dwarf::nextBlockDIE = false;
   codegen::visitStmt(s->block);
   dwarf::nextBlockDIE = true; // reset it
+  variableCount = preVC;
   
   // Check if last instruction was a "RET"
   if (text_section.back().type != InstrType::Ret) {
     // Push a ret anyway
     // Otherwise we SEGFAULTT
-    handleReturnCleanup();
+    popToRegister("%rbp");
+    push(Instr{.var = Ret{.fromWhere=funcName},.type = InstrType::Ret},Section::Main);
   }
 
-  // Function ends with ret so we can't really push any other (code) instructions.
+  // Function ends with ret so we can't really push any other instructions.
   if (debug) {
     pushLinker(dieLabel + "_debug_end:\n", Section::Main);
     pushLinker(".byte 0\n", Section::DIE); // End of children
@@ -223,6 +210,7 @@ void codegen::varDecl(Node::Stmt *stmt) {
   // push another .loc
   pushDebug(s->line, stmt->file_id, s->pos);
 
+
   int whereBytes = -variableCount;
   std::string where = std::to_string(whereBytes) + "(%rbp)";
   if (s->expr != nullptr) {
@@ -234,47 +222,16 @@ void codegen::varDecl(Node::Stmt *stmt) {
       // Basically ignore the part where we allocate memory for this thing.
       declareStructVariable(s->expr, getUnderlying(s->type), variableCount);
       int structSize = structByteSizes[getUnderlying(s->type)].first;
-      if (declareVariablesForward) {
-        variableCount += structSize;
-        variableTable.insert({s->name, where});
-      } else {
-        variableTable.insert({s->name, where});
-        variableCount -= structSize;
-      }
+      variableCount += structSize;
+      variableTable.insert({s->name, where});
     } else if (s->type->kind == ND_ARRAY_TYPE || s->type->kind == ND_ARRAY_AUTO_FILL) {
-      ArrayType *at = static_cast<ArrayType *>(s->type);
-      if (s->expr->kind != ND_ARRAY) {
-        if (s->expr->kind == ND_IDENT) {
-          // We must know the size of the first array stored in the ident
-          // If that, too, is any or unknown, just error
-
-          // ... we will do that later. for now, just error!
-          handleError(s->line, s->pos, "Unable to set array variable to an identifier.", "Codegen Error", false);
-        } else {
-          // Exhausted all other options. Just error
-          handleError(s->line, s->pos, "Unable to set array variable.", "Codegen Error", false);
-        }
-      } else {
-        declareArrayVariable(s->expr, at->constSize, s->name); // s->name so it can be inserted to variableTable, s->type so we know the byte sizes.
-        // move the first element's address into the variable for when we refer to this thing later
-        push(Instr{.var=LeaInstr{ .size=DataSize::Qword, .dest="%r13", .src=where},.type=InstrType::Lea}, Section::Main);
-        moveRegister(where, "%r13", DataSize::Qword, DataSize::Qword);
-        variableTable.insert({s->name, where});
-        if (at->constSize < 1) {
-          variableCount += getByteSizeOfType(at->underlying) * static_cast<ArrayExpr *>(s->expr)->elements.size();
-        } else
-          variableCount += getByteSizeOfType(at->underlying) * at->constSize;
-      }
+      declareArrayVariable(s->expr, static_cast<ArrayType *>(s->type)->constSize, s->name); // s->name so it can be inserted to variableTable, s->type so we know the byte sizes.
     } else {
+      int whereBytes = -variableCount;
       visitExpr(s->expr);
       popToRegister(where); // For values small enough to fit in a register.
-      if (declareVariablesForward) {
-        variableCount += getByteSizeOfType(s->type);
-        variableTable.insert({s->name, where});
-      } else {
-        variableTable.insert({s->name, where});
-        variableCount -= getByteSizeOfType(s->type);
-      }
+      variableCount += getByteSizeOfType(s->type);
+      variableTable.insert({s->name, where});
     }
   } else {
     // Subtract from the stack pointer
@@ -313,44 +270,16 @@ void codegen::varDecl(Node::Stmt *stmt) {
 
 void codegen::block(Node::Stmt *stmt) {
   BlockStmt *s = static_cast<BlockStmt *>(stmt);
+  // TODO: Track the number of variables and pop them off later
   // This should be handled by the IR when i get around to it though
-  declareVariablesForward = false;
-  if (s->varDeclTypes.size() > 0) {
-    /*
-    // -----  C  -----
-    signed long long int x = 0;
-    signed long long int y = 1;
-    // ----- ASM -----
-    movq $0, -16(%rbp)
-    movq $1, -8(%rbp)
-    // ----- IDK -----
-    Notice how we went "backwards" in the stack
-    from -16 to -8, rather than -8 to -16
-    I'm not quite sure why C decides to declare variables on the stack this way,
-    but it could be related to the calling convention (check the SYSV ABI) because syscalls that rely on struct *'s
-    will fill the members of the struct backwards, too.
-
-    Let's be real, the people who made the C compiler are WAYY smarter than I am.
-    I'm just going to copy them because they probably knew what they were doing.
-    */
-    int vc = 0;
-    for (Node::Type *t : s->varDeclTypes) {
-      if (t->kind == ND_ARRAY_TYPE) {
-        ArrayType *at = static_cast<ArrayType *>(t);
-        vc += getByteSizeOfType(at->underlying) * at->constSize; // for the definition
-        continue;
-      }
-      vc += getByteSizeOfType(t);
-    }
-    variableCount = vc;
-  } else {
-    declareVariablesForward = true;
-  }
   size_t preSS = stackSize;
   size_t preVS = variableCount;
   scopes.push_back(std::pair(preSS, preVS));
+  // AHHHH DWARF STUFF ::SOB::::::::::
   // push a .loc
   pushDebug(s->line, stmt->file_id, s->pos);
+  // gotta love the ++i operator bro :D
+  // if this was i++, we'd be fucking dead!!!!!!! YIPEEEE
   size_t thisDieCount = dieCount++;
   if (dwarf::nextBlockDIE) {
     if (debug) push(Instr{.var = Label{.name = ".Ldie" + std::to_string(thisDieCount) + "_begin"}, .type = InstrType::Label}, Section::Main);
@@ -552,9 +481,6 @@ void codegen::forLoop(Node::Stmt *stmt) {
 
   push(Instr{.var = Comment{.comment = "For loop variable declaration"}, .type = InstrType::Comment}, Section::Main);
   pushDebug(s->line, stmt->file_id, s->pos);
-  if (variableTable.find(assignee->name) != variableTable.end())
-    // Warn, not error- but you should know that "i" will be re-declared as 0!
-    handleError(assignee->line, assignee->pos, "Variable '" + assignee->name + "' already declared in this scope", "Codegen Error", false);
   variableTable.insert({assignee->name, std::to_string(-variableCount) + "(%rbp)"}); // Track the variable in the stack table
   // Push a variable declaration for the loop variable
   if (debug) {
@@ -574,11 +500,10 @@ void codegen::forLoop(Node::Stmt *stmt) {
     // Push the name of the variable
     dwarf::useStringP(assignee->name);
   }
-  if (declareVariablesForward) variableCount += 8; else variableCount -= 8;
+  variableCount += 8;
   visitExpr(assign);  // Process the initial loop assignment (e.g., i = 0)
   // Remove the last instruction!! Its a push and thats bad!
-  if (text_section[text_section.size() - 1].type == InstrType::Push)
-    text_section.pop_back();
+  text_section.pop_back();
 
   // Set loop start label
   push(Instr{.var = Label{.name = preLoopLabel}, .type = InstrType::Label}, Section::Main);
@@ -603,34 +528,23 @@ void codegen::forLoop(Node::Stmt *stmt) {
 
   // Pop the loop variable from the stack
   variableTable.erase(assignee->name);
-  if (declareVariablesForward) variableCount -= 8; else variableCount += 8; // Undo the variable declaration- leave more room for more variables
+  variableCount -= 8; // We now have room for another variable!
+  stackSize -= 8;
 };
 
 void codegen::whileLoop(Node::Stmt *stmt) {
+  std::cerr
+      << "No fancy error for this, beg Connor... (Soviet Pancakes speaking)"
+      << std::endl;
+  std::cerr << "While loops not implemented!" << std::endl;
+  exit(-1);
+  /*
   WhileStmt *s = static_cast<WhileStmt *>(stmt);
   loopDepth++;
   pushDebug(s->line, stmt->file_id, s->pos);
-  // Do basically the same thing as a for loop. No variable declaration, though.
-  std::string preLoop = ".Lwhile_pre" + std::to_string(loopCount);
-  std::string postLoop = ".Lwhile_post" + std::to_string(loopCount);
-  loopCount++;
-  // Evaluate condition
-  push(Instr{.var = Label{.name = preLoop}, .type = InstrType::Label}, Section::Main);
-  visitExpr(s->condition);
-  processComparison(s->condition, postLoop, ".Lwhile_end" + std::to_string(loopCount - 1), true);
-  // yummers, now just do the block
-  visitStmt(s->block);
-
-  // Eval the optional ': ()' part
-  if (s->optional != nullptr) {
-    visitExpr(s->optional);
-    text_section.pop_back();
-  }
-
-  // Jump back to the start of the loop
-  push(Instr{.var = JumpInstr{.op = JumpCondition::Unconditioned, .label = preLoop}, .type = InstrType::Jmp}, Section::Main);
-  push(Instr{.var = Label{.name = postLoop}, .type = InstrType::Label}, Section::Main);
+  // Do something
   loopDepth--;
+  */
 };
 
 void codegen::_break(Node::Stmt *stmt) {
@@ -731,22 +645,6 @@ void codegen::matchStmt(Node::Stmt *stmt) {
 
 // Structname passed by the varStmt's "type" field
 void codegen::declareStructVariable(Node::Expr *expr, std::string structName, int whereToPut) {
-  if (expr->kind != ND_STRUCT) {
-    IndexExpr *index = static_cast<IndexExpr *>(expr);
-    // copy each value from the ident's struct to the new struct
-    visitExpr(expr);
-    PushInstr prevPush = std::get<PushInstr>(text_section[text_section.size() - 1].var);
-    text_section.pop_back();
-    std::string where = prevPush.what;
-    push(Instr{.var=LeaInstr{.size=DataSize::Qword,.dest="%rcx",.src=where}, .type=InstrType::Lea}, Section::Main);
-    int structSize = structByteSizes[structName].first;
-    for (int i = 0; i < structByteSizes[structName].first; i++) {
-      // move, byte for byte, the value from the ident's struct to the new struct
-      push(Instr{.var=PushInstr{.what=std::to_string(-i)+"(%rcx)",.whatSize=DataSize::Byte},.type=InstrType::Push}, Section::Main);
-      push(Instr{.var=PopInstr{.where=std::to_string(whereToPut-i)+"(%rbp)",.whereSize=DataSize::Byte},.type=InstrType::Pop}, Section::Main);
-    }
-    return;
-  }
   StructExpr *s = static_cast<StructExpr *>(expr);
   // At the end, we are gonna load the effective address into
   // garbage register and put that into the variable table.
@@ -788,18 +686,9 @@ void codegen::declareStructVariable(Node::Expr *expr, std::string structName, in
           }
         }
         */
-        int offset;
-        // Go backwards
-        if (declareVariablesForward) {
-          offset = 0;
-          for (int j = 0; j < i; j++) {
-            offset += structByteSizes[structName].second.at(j).second.second;
-          }
-        } else {
-          offset = structByteSizes[structName].second.at(i).second.second;
-          for (int j = i; j >= 0; j--) {
-            offset -= structByteSizes[structName].second.at(j).second.second;
-          }
+        int offset = 0;
+        if (i != 0) for (int j = 0; j < i; j++) {
+          offset += structByteSizes[structName].second.at(j).second.second;
         }
         // Avoid doing extra work even though we are literally recursioning
         declareStructVariable(field.second, getUnderlying(fieldType), whereToPut + offset);
@@ -815,17 +704,9 @@ void codegen::declareStructVariable(Node::Expr *expr, std::string structName, in
         std::string where = variableTable[ident->name];
         int structFieldSize = structByteSizes[structName].second.at(i).second.second;
         // Get the offset - this will be the sum of all previous fieldSizes
-        int offset;
-        if (declareVariablesForward) {
-          offset = 0;
-          for (int j = 0; j < i; j++) {
-            offset += structByteSizes[structName].second.at(j).second.second;
-          }
-        } else {
-          offset = structByteSizes[structName].second.at(i).second.second;
-          for (int j = i; j >= 0; j--) {
-            offset -= structByteSizes[structName].second.at(j).second.second;
-          }
+        int offset = 0;
+        if (i != 0) for (int j = 0; j < i; j++) {
+          offset += structByteSizes[structName].second.at(j).second.second;
         }
         int fieldVarOffset = std::stoi(where.substr(0, where.find('(')));
         // Put the identifer address into rcx
@@ -840,18 +721,10 @@ void codegen::declareStructVariable(Node::Expr *expr, std::string structName, in
           // From - relative to rcx, the base of the identifier struct
           std::string from = std::to_string(-(fieldVarOffset + structByteSizes[getUnderlying(fieldType)].second[j].second.second)) + "(%rcx)";
           // To - relative to rbp, PLUS the base of the new struct
-          int subFieldOffset;
-          if (declareVariablesForward) {
-            subFieldOffset = 0;
-            if (j != 0) for (int k = 0; k < j; k++) {
-              // Don't ask. Please, this is so bad...
-              subFieldOffset += structByteSizes[getUnderlying(structByteSizes[structName].second[i].second.first)].second[i].second.second;
-            }
-          } else {
-            subFieldOffset = structByteSizes[structName].second[i].second.second;
-            if (j != 0) for (int k = j; k >= 0; k--) {
-              subFieldOffset -= structByteSizes[structName].second[i].second.second;
-            }
+          int subFieldOffset = 0;
+          if (j != 0) for (int k = 0; k < j; k++) {
+            // Don't ask. Please, this is so bad...
+            subFieldOffset += structByteSizes[getUnderlying(structByteSizes[structName].second[i].second.first)].second[i].second.second;
           }
           std::string to = std::to_string(-(whereToPut+subFieldOffset)) + "(%rbp)";
           pushRegister(from);
@@ -864,23 +737,9 @@ void codegen::declareStructVariable(Node::Expr *expr, std::string structName, in
     }
     // Evaluate the expression
     visitExpr(field.second);
-    int offset = structByteSizes[structName].first;
-    // Go BACKWARDS through the fields
-    // if i == 0, then offset should be 0
-    if (declareVariablesForward) {
-      offset = 0;
-      for (int j = 0; j < i; j++) {
-        offset += structByteSizes[structName].second[j].second.second;
-      }
-      popToRegister(std::to_string(-(structBase + offset)) + "(%rbp)");
-    } else {
-      offset = structByteSizes[structName].second[i].second.second;
-      for (int j = i; j >= 0; j--) {
-        offset -= structByteSizes[structName].second[j].second.second;
-      }
-      popToRegister(std::to_string((-structBase - offset)) + "(%rbp)");
-    }
+    int offset = i == 0 ? 0 : structByteSizes[structName].second.at(i - 1).second.second;
     // Pop the value into a register
+    popToRegister(std::to_string(-(structBase + offset)) + "(%rbp)");
   }
 }
 
@@ -894,8 +753,7 @@ void codegen::declareArrayVariable(Node::Expr *expr, short int arrayLength, std:
       ErrorClass::printError(); // replace with real code lmao
       Exit(ExitValue::GENERATOR_ERROR);
     } 
-    // TODO: This code will no longer work after this backwards-variable thing
-    push(Instr{.var=LeaInstr{.size = DataSize::Qword, .dest="%rdi", .src=std::to_string(-variableCount) + "(%rbp)"}, .type=InstrType::Lea}, Section::Main);
+    push(Instr{.var=LeaInstr{.size = DataSize::Qword, .dest="%rdi", .src="-" + std::to_string(variableCount) + "(%rbp)"}, .type=InstrType::Lea}, Section::Main);
     moveRegister("%rcx", "$" + std::to_string(arrayLength), DataSize::Qword, DataSize::Qword);
     push(Instr{.var=XorInstr{.lhs="%rax", .rhs="%rax"}, .type=InstrType::Xor}, Section::Main);
     pushLinker("rep stosq\n\t", Section::Main); // Ah yes, the good ol' "req stosq"... (what the fuck is this thing again??)
@@ -907,7 +765,7 @@ void codegen::declareArrayVariable(Node::Expr *expr, short int arrayLength, std:
   dwarf::useType(s->type);
 
   int arrayBase = variableCount;
-  // Evaluate the elements of the array
+  // Evaluate the orderedFields and store them in the struct!!!!
   for (int i = 0; i < s->elements.size(); i++) {
     Node::Expr *element = s->elements.at(i);
     // Evaluate the expression
@@ -915,21 +773,15 @@ void codegen::declareArrayVariable(Node::Expr *expr, short int arrayLength, std:
       // Structs cannot be generated in the expr.
       // We must assign each value to its place in the array.
       ArrayType *at = static_cast<ArrayType *>(s->type);
-      int startingPoint;
-      if (declareVariablesForward) {
-        startingPoint = -arrayBase - (i * getByteSizeOfType(at->underlying));
-      } else {
-        startingPoint = -arrayBase + (i * getByteSizeOfType(at->underlying));
-      }
-      declareStructVariable(element, getUnderlying(at), -startingPoint);
+      int startingPoint = arrayBase + (i * getByteSizeOfType(at->underlying));
+      declareStructVariable(element, getUnderlying(at), startingPoint);
       continue;
     }
     visitExpr(element);
     // Pop the value into a register
-    if (declareVariablesForward) {
-      popToRegister(std::to_string(-(arrayBase + i * underlyingByteSize)) + "(%rbp)");
-    } else {
-      popToRegister(std::to_string(-(arrayBase - i * underlyingByteSize)) + "(%rbp)");
-    }
+    popToRegister(std::to_string(-(arrayBase + i * underlyingByteSize)) + "(%rbp)");
   }
+  variableCount += s->elements.size() * underlyingByteSize;
+  // Add the struct to the variable table
+  variableTable.insert({varName, std::to_string(-arrayBase) + "(%rbp)"});
 }
