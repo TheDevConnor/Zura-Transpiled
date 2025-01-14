@@ -306,14 +306,13 @@ void codegen::block(Node::Stmt *stmt) {
 
 void codegen::ifStmt(Node::Stmt *stmt) {
   IfStmt *s = static_cast<IfStmt *>(stmt);
-  std::string ifLabel = ".Lifthen" + std::to_string(conditionalCount);
   std::string elseLabel = ".Lifelse" + std::to_string(conditionalCount);
   std::string endLabel = ".Lifend" + std::to_string(conditionalCount);
   conditionalCount++;
   JumpCondition jc = processComparison(s->condition); // This produces the comparison code for us. We need to jump
   if (s->elseStmt == nullptr) {
     // if () {};
-    push(Instr{.var=JumpInstr{.op=jc,.label=endLabel},.type=InstrType::Jmp},Section::Main);
+    push(Instr{.var=JumpInstr{.op=getOpposite(jc),.label=endLabel},.type=InstrType::Jmp},Section::Main);
     visitStmt(s->thenStmt);
     push(Instr{.var=JumpInstr{.op=JumpCondition::Unconditioned,.label=endLabel},.type=InstrType::Jmp},Section::Main);
   } else {
@@ -321,7 +320,12 @@ void codegen::ifStmt(Node::Stmt *stmt) {
     push(Instr{.var=JumpInstr{.op=getOpposite(jc),.label=elseLabel},.type=InstrType::Jmp},Section::Main);
     visitStmt(s->thenStmt);
     push(Instr{.var=JumpInstr{.op=JumpCondition::Unconditioned,.label=endLabel},.type=InstrType::Jmp},Section::Main);
+    push(Instr{.var=Label{.name=elseLabel},.type=InstrType::Label},Section::Main);
+    visitStmt(s->elseStmt);
+    push(Instr{.var=Label{.name=endLabel},.type=InstrType::Label},Section::Main);
   }
+  // end label
+  push(Instr{.var=Label{.name=endLabel},.type=InstrType::Label},Section::Main);
 }
 
 void codegen::enumDecl(Node::Stmt *stmt) {
