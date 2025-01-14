@@ -222,16 +222,16 @@ void codegen::varDecl(Node::Stmt *stmt) {
       // Basically ignore the part where we allocate memory for this thing.
       declareStructVariable(s->expr, getUnderlying(s->type), variableCount);
       int structSize = structByteSizes[getUnderlying(s->type)].first;
-      variableCount += structSize;
       variableTable.insert({s->name, where});
+      variableCount += structSize;
     } else if (s->type->kind == ND_ARRAY_TYPE || s->type->kind == ND_ARRAY_AUTO_FILL) {
       declareArrayVariable(s->expr, static_cast<ArrayType *>(s->type)->constSize, s->name); // s->name so it can be inserted to variableTable, s->type so we know the byte sizes.
     } else {
       int whereBytes = -variableCount;
       visitExpr(s->expr);
       popToRegister(where); // For values small enough to fit in a register.
-      variableCount += getByteSizeOfType(s->type);
       variableTable.insert({s->name, where});
+      variableCount += getByteSizeOfType(s->type);
     }
   } else {
     // Subtract from the stack pointer
@@ -310,20 +310,18 @@ void codegen::ifStmt(Node::Stmt *stmt) {
   std::string elseLabel = ".Lifelse" + std::to_string(conditionalCount);
   std::string endLabel = ".Lifend" + std::to_string(conditionalCount);
   conditionalCount++;
-  processComparison(s->condition, ifLabel, elseLabel);
-  if (s->elseStmt != nullptr)
-    push(Instr{.var = JumpInstr{.op=JumpCondition::Unconditioned, .label = elseLabel}, .type = InstrType::Jmp}, Section::Main);
-  push(Instr{.var = Label{.name = ifLabel}, .type = InstrType::Label}, Section::Main);
-  codegen::visitStmt(s->thenStmt);
-  // jump to the end of the if
-  push(Instr{.var = JumpInstr{.op=JumpCondition::Unconditioned, .label = endLabel}, .type = InstrType::Jmp}, Section::Main);
-  if (s->elseStmt != nullptr) {
-    push(Instr{.var = Label{.name = elseLabel}, .type = InstrType::Label}, Section::Main);
-    codegen::visitStmt(s->elseStmt);
-    push(Instr{.var = JumpInstr{.op=JumpCondition::Unconditioned, .label = endLabel}, .type = InstrType::Jmp}, Section::Main);
+  JumpCondition jc = processComparison(s->condition); // This produces the comparison code for us. We need to jump
+  if (s->elseStmt == nullptr) {
+    // if () {};
+    push(Instr{.var=JumpInstr{.op=jc,.label=endLabel},.type=InstrType::Jmp},Section::Main);
+    visitStmt(s->thenStmt);
+    push(Instr{.var=JumpInstr{.op=JumpCondition::Unconditioned,.label=endLabel},.type=InstrType::Jmp},Section::Main);
+  } else {
+    // if () {} else {};
+    push(Instr{.var=JumpInstr{.op=getOpposite(jc),.label=elseLabel},.type=InstrType::Jmp},Section::Main);
+    visitStmt(s->thenStmt);
+    push(Instr{.var=JumpInstr{.op=JumpCondition::Unconditioned,.label=endLabel},.type=InstrType::Jmp},Section::Main);
   }
-  push(Instr{.var = Label{.name = endLabel}, .type = InstrType::Label}, Section::Main);
-  return;
 }
 
 void codegen::enumDecl(Node::Stmt *stmt) {
@@ -481,7 +479,9 @@ void codegen::forLoop(Node::Stmt *stmt) {
 
   push(Instr{.var = Comment{.comment = "For loop variable declaration"}, .type = InstrType::Comment}, Section::Main);
   pushDebug(s->line, stmt->file_id, s->pos);
-  variableTable.insert({assignee->name, std::to_string(-variableCount) + "(%rbp)"}); // Track the variable in the stack table
+  // assign var
+  variableTable.insert({assignee->name, std::to_string(-variableCount) + "(%rbp)"});
+  variableCount += 8;
   // Push a variable declaration for the loop variable
   if (debug) {
     dwarf::useAbbrev(dwarf::DIEAbbrev::Variable);
@@ -500,7 +500,6 @@ void codegen::forLoop(Node::Stmt *stmt) {
     // Push the name of the variable
     dwarf::useStringP(assignee->name);
   }
-  variableCount += 8;
   visitExpr(assign);  // Process the initial loop assignment (e.g., i = 0)
   // Remove the last instruction!! Its a push and thats bad!
   text_section.pop_back();
@@ -508,8 +507,8 @@ void codegen::forLoop(Node::Stmt *stmt) {
   // Set loop start label
   push(Instr{.var = Label{.name = preLoopLabel}, .type = InstrType::Label}, Section::Main);
   // Evaluate the loop condition
-  visitExpr(s->condition);  // Process the loop condition
-  processComparison(s->condition, postLoopLabel, ".Lloop_end" + std::to_string(loopCount - 1), true);
+  JumpCondition jc = processComparison(s->condition);
+  push(Instr{.var=JumpInstr{.op=getOpposite(jc),.label=postLoopLabel},.type=InstrType::Jmp},Section::Main);
 
   // Execute the loop body (if condition is true)
   visitStmt(s->block);  // Visit the statements inside the loop body
@@ -529,7 +528,6 @@ void codegen::forLoop(Node::Stmt *stmt) {
   // Pop the loop variable from the stack
   variableTable.erase(assignee->name);
   variableCount -= 8; // We now have room for another variable!
-  stackSize -= 8;
 };
 
 void codegen::whileLoop(Node::Stmt *stmt) {
@@ -781,7 +779,7 @@ void codegen::declareArrayVariable(Node::Expr *expr, short int arrayLength, std:
     // Pop the value into a register
     popToRegister(std::to_string(-(arrayBase + i * underlyingByteSize)) + "(%rbp)");
   }
-  variableCount += s->elements.size() * underlyingByteSize;
   // Add the struct to the variable table
   variableTable.insert({varName, std::to_string(-arrayBase) + "(%rbp)"});
+  variableCount += s->elements.size() * underlyingByteSize;
 }

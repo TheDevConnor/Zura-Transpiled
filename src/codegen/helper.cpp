@@ -118,74 +118,43 @@ int codegen::getExpressionDepth(Node::Expr *e) {
   return lhsDepth > rhsDepth ? lhsDepth : rhsDepth;
 }
 
-void codegen::processComparison(Node::Expr *cond, const std::string &jumpTrue, const std::string &jumpFalse, bool isLoop) {
-  // Evaluate the 'cond' as a regular expression, but do not push the result to the stack and compare to 0:
-  // just jump to the label if binary
-  Node::Expr *simpleCond = CompileOptimizer::optimizeExpr(cond);
-  if (simpleCond->kind == ND_BINARY) {
-    // Check if its a BOOL operation
-    BinaryExpr *expr = static_cast<BinaryExpr *>(simpleCond);
-    if (isLoop) {
-      JumpCondition jump = getJumpCondition(expr->op);
-      visitExpr(expr->lhs);
-      visitExpr(expr->rhs);
-      popToRegister("%rax");
-      popToRegister("%rbx");
-      // Compare them LHS > RHS
-      push(Instr{.var = CmpInstr{.lhs = "%rax", .rhs = "%rbx"}, .type = InstrType::Cmp}, Section::Main);
-      // Jump if the condition is met
-      push(Instr{.var=JumpInstr{.op=jump, .label=jumpTrue}, .type=InstrType::Jmp}, Section::Main);
-      return;
+JumpCondition codegen::processComparison(Node::Expr *cond) {
+  // Evaluate the expression. Return the jump of condition of when the comparison is TRUE
+  Node::Expr *eval = CompileOptimizer::optimizeExpr(cond);
+  if (cond->kind == ND_BINARY) {
+    BinaryExpr *bin = static_cast<BinaryExpr *>(eval);
+    if (boolOperations.find(bin->op) != boolOperations.end()) {
+      // we can do a little bit of optimizing here
+      int lhsDepth = getExpressionDepth(bin->lhs);
+      int rhsDepth = getExpressionDepth(bin->rhs);
+      bool isFloat = bin->asmType->kind == ND_SYMBOL_TYPE && getUnderlying(bin->asmType) == "float";
+      std::string lhsReg = isFloat ? "%xmm0" : "%rax";
+      std::string rhsReg = isFloat ? "%xmm1" : "%rbx";
+      if (lhsDepth > rhsDepth) {
+        visitExpr(bin->lhs);
+        visitExpr(bin->rhs);
+        popToRegister(rhsReg);
+        popToRegister(lhsReg);
+      } else {
+        visitExpr(bin->rhs);
+        visitExpr(bin->lhs);
+        popToRegister(lhsReg);
+        popToRegister(rhsReg);
+      }
+      // perform the compare
+      if (isFloat) {
+        pushLinker("ucomiss %xmm1, %xmm0\n\t", Section::Main);  
+      } else {
+        push(Instr{.var = CmpInstr{.lhs = lhsReg, .rhs = rhsReg}, .type = InstrType::Cmp}, Section::Main);
+      }
+      return getJumpCondition(bin->op); 
     }
-    if (boolOperations.find(expr->op) == boolOperations.end()) {
-      // do the default
-      visitExpr(simpleCond);
-      PushInstr prevPush = std::get<PushInstr>(text_section[text_section.size() - 1].var);
-      text_section.pop_back();
-      pushLinker("testq " + prevPush.what + ", " + prevPush.what + "\n\t", Section::Main);
-      if (jumpTrue != "")
-        push(Instr{.var=JumpInstr{.op=JumpCondition::NotEqual, .label=jumpTrue}, .type=InstrType::Jmp}, Section::Main);
-      else if (jumpFalse != "")
-        push(Instr{.var=JumpInstr{.op=JumpCondition::Equal, .label=jumpFalse}, .type=InstrType::Jmp}, Section::Main);
-      return;
-    }
-    // It does not matter which side we check for SymbolType, since they will both be enforced to be the same type
-    bool isFloat = expr->lhs->asmType->kind == ND_SYMBOL_TYPE && (getUnderlying(expr->lhs->asmType) == "float");
-    std::string lhsReg = isFloat ? "%xmm0" : "%rax";
-    std::string rhsReg = isFloat ? "%xmm1" : "%rbx";
-    if (getExpressionDepth(expr->lhs) > getExpressionDepth(expr->rhs)) {
-      visitExpr(expr->lhs);
-      visitExpr(expr->rhs);
-      popToRegister(rhsReg);
-      popToRegister(lhsReg);
-    } else {
-      visitExpr(expr->rhs);
-      visitExpr(expr->lhs);
-      popToRegister(lhsReg);
-      popToRegister(rhsReg);
-    }
-    if (isFloat) {
-      pushLinker("ucomiss %xmm1, %xmm0\n\t", Section::Main);
-    } else {
-      push(Instr{.var = CmpInstr{.lhs = lhsReg, .rhs = rhsReg}, .type = InstrType::Cmp}, Section::Main);
-    }
-    if (jumpTrue != "")
-      push(Instr{.var=JumpInstr{.op=getJumpCondition(expr->op), .label=jumpTrue}, .type=InstrType::Jmp}, Section::Main);
-    else if (jumpFalse != "")
-      push(Instr{.var=JumpInstr{.op=getOpposite(getJumpCondition(expr->op)), .label=jumpFalse}, .type=InstrType::Jmp}, Section::Main);
-    return; // the good ending 
   }
-  // check if the regular expression is 0
-  visitExpr(simpleCond);
-  PushInstr prevPush = std::get<PushInstr>(text_section[text_section.size() - 1].var);
+  visitExpr(eval);
+  PushInstr instr = std::get<PushInstr>(text_section[text_section.size() - 1].var);
   text_section.pop_back();
-  pushLinker("testq " + prevPush.what + ", " + prevPush.what + "\n\t", Section::Main);
-  if (jumpTrue != "")
-    push(Instr{.var=JumpInstr{.op=JumpCondition::NotEqual, .label=jumpTrue}, .type=InstrType::Jmp}, Section::Main);
-  else if (jumpFalse != "")
-    push(Instr{.var=JumpInstr{.op=JumpCondition::Equal, .label=jumpFalse}, .type=InstrType::Jmp}, Section::Main);
-  // sadge
-  return;
+  pushLinker("test " + instr.what + ", " + instr.what + "\n\t", Section::Main);
+  return JumpCondition::NotZero;
 }
 
 void codegen::handleExitSyscall() {
@@ -303,8 +272,12 @@ void codegen::handleStrType(Node::Expr *arg) {
   visitExpr(arg);
   popToRegister("%rsi"); // String address
   moveRegister("%rdi", "%rsi", DataSize::Qword, DataSize::Qword);
+  // calls might mess up any variables on the stack
+  // lets make sure that does not happen by subtracting from stack
+  push(Instr{.var=SubInstr{.lhs="%rsp",.rhs="$"+std::to_string(variableCount)},.type=InstrType::Sub},Section::Main);
   push(Instr{.var = CallInstr{.name = "native_strlen"}, .type = InstrType::Call},
        Section::Main);
+  push(Instr{.var=AddInstr{.lhs="%rsp",.rhs="$"+std::to_string(variableCount)},.type=InstrType::Sub},Section::Main);
   moveRegister("%rdx", "%rax", DataSize::Qword, DataSize::Qword); // Length of string
   prepareSyscallWrite();
 }
@@ -314,6 +287,8 @@ void codegen::handlePrimType(Node::Expr *arg) {
   nativeFunctionsUsed[NativeASMFunc::itoa] = true;
   visitExpr(arg);
   popToRegister("%rdi");
+  // subtract rsp
+  push(Instr{.var=SubInstr{.lhs="%rsp",.rhs="$"+std::to_string(variableCount)},.type=InstrType::Sub},Section::Main);
   push(Instr{.var = CallInstr{.name = "native_itoa"}, .type = InstrType::Call},
        Section::Main); // Convert int to string
   moveRegister("%rdi", "%rax", DataSize::Qword, DataSize::Qword);
@@ -321,6 +296,7 @@ void codegen::handlePrimType(Node::Expr *arg) {
   // Now we have the integer string in %rax (assuming %rax holds the pointer to the result)
   push(Instr{.var = CallInstr{.name = "native_strlen"}, .type = InstrType::Call},
        Section::Main);
+  push(Instr{.var=AddInstr{.lhs="%rsp",.rhs="$"+std::to_string(variableCount)},.type=InstrType::Sub},Section::Main);
   moveRegister("%rdx", "%rax", DataSize::Qword, DataSize::Qword); // Length of number string
   prepareSyscallWrite();
 }

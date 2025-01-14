@@ -251,7 +251,7 @@ void handleExitSyscall();
 void handleReturnCleanup();
 
 // Helper for the if statement condition
-void processComparison(Node::Expr *cond, const std::string &jumpTrue, const std::string &jumpFalse, bool isLoop = false);
+JumpCondition processComparison(Node::Expr *cond);
 int getExpressionDepth(Node::Expr *e);
 JumpCondition getOpposite(JumpCondition in);
 JumpCondition getJumpCondition(const std::string &op);
