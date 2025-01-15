@@ -1,6 +1,6 @@
-#include "../helper/error/error.hpp"
 #include "../ast/stmt.hpp"
 #include "../ast/types.hpp"
+#include "../helper/error/error.hpp"
 #include "type.hpp"
 
 #include <iostream>
@@ -55,12 +55,13 @@ void TypeChecker::visitFn(Maps *map, Node::Stmt *stmt) {
   declare(map->local_symbol_table, fn_stmt->name, fn_stmt->returnType,
           fn_stmt->line, fn_stmt->pos);
   for (std::pair<std::string, Node::Type *> &param : fn_stmt->params) {
+    map->function_params.push_back(param.first);
     declare(map->local_symbol_table, param.first, param.second, fn_stmt->line,
             fn_stmt->pos);
   }
-  
-  declare_fn(map, {fn_stmt->name, fn_stmt->returnType},
-                 fn_stmt->params, fn_stmt->line, fn_stmt->pos);
+
+  declare_fn(map, {fn_stmt->name, fn_stmt->returnType}, fn_stmt->params,
+             fn_stmt->line, fn_stmt->pos);
 
   visitStmt(map, fn_stmt->block);
 
@@ -73,7 +74,7 @@ void TypeChecker::visitFn(Maps *map, Node::Stmt *stmt) {
   if (type_to_string(fn_stmt->returnType) == "void") {
     // also add the function name to the global table and function table
     declare(map->global_symbol_table, fn_stmt->name, fn_stmt->returnType,
-                 fn_stmt->line, fn_stmt->pos);
+            fn_stmt->line, fn_stmt->pos);
 
     return_type = nullptr;
     map->local_symbol_table
@@ -83,7 +84,8 @@ void TypeChecker::visitFn(Maps *map, Node::Stmt *stmt) {
 
   // Verify that we have a return stmt in the function
   if (!needsReturn && type_to_string(fn_stmt->returnType) != "void") {
-    std::string msg = "Function '" + fn_stmt->name + "' requeries a return stmt "
+    std::string msg = "Function '" + fn_stmt->name +
+                      "' requeries a return stmt "
                       "but none was found";
     handleError(fn_stmt->line, fn_stmt->pos, msg, "", "Type Error");
     return;
@@ -104,7 +106,7 @@ void TypeChecker::visitFn(Maps *map, Node::Stmt *stmt) {
 
   // also add the function name to the global table and function table
   declare(map->global_symbol_table, fn_stmt->name, fn_stmt->returnType,
-               fn_stmt->line, fn_stmt->pos);
+          fn_stmt->line, fn_stmt->pos);
 
   return_type = nullptr;
   map->local_symbol_table
@@ -124,17 +126,15 @@ void TypeChecker::visitStruct(Maps *map, Node::Stmt *stmt) {
 
   // add the struct name to the local table and global table
   declare(map->local_symbol_table, struct_stmt->name,
-               static_cast<Node::Type *>(type), struct_stmt->line,
-               struct_stmt->pos);
+          static_cast<Node::Type *>(type), struct_stmt->line, struct_stmt->pos);
   declare(map->global_symbol_table, struct_stmt->name,
-               static_cast<Node::Type *>(type), struct_stmt->line,
-               struct_stmt->pos);
-  
+          static_cast<Node::Type *>(type), struct_stmt->line, struct_stmt->pos);
+
   // visit the fields Aka the variables
   for (std::pair<std::string, Node::Type *> &field : struct_stmt->fields) {
     // check if the field is a template type change the field type to "any"
-    if (std::find(map->template_table.begin(), map->template_table.end(), type_to_string(field.second)) !=
-        map->template_table.end()) {
+    if (std::find(map->template_table.begin(), map->template_table.end(),
+                  type_to_string(field.second)) != map->template_table.end()) {
       field.second = new SymbolType("any");
     }
     map->struct_table[struct_stmt->name].push_back(field);
@@ -144,16 +144,16 @@ void TypeChecker::visitStruct(Maps *map, Node::Stmt *stmt) {
   std::vector<std::pair<std::string, Node::Type *>> params;
   for (Node::Stmt *stmt : struct_stmt->stmts) {
     FnStmt *fn_stmt = static_cast<FnStmt *>(stmt);
-  
+
     for (std::pair<std::string, Node::Type *> &param : fn_stmt->params) {
       params.push_back({param.first, param.second});
       // add the params to the local table
-      declare(map->local_symbol_table, param.first, param.second,
-              fn_stmt->line, fn_stmt->pos);
+      declare(map->local_symbol_table, param.first, param.second, fn_stmt->line,
+              fn_stmt->pos);
     }
 
-    declare_struct_fn(map, {fn_stmt->name, fn_stmt->returnType},
-                      params, fn_stmt->line, fn_stmt->pos, struct_stmt->name);
+    declare_struct_fn(map, {fn_stmt->name, fn_stmt->returnType}, params,
+                      fn_stmt->line, fn_stmt->pos, struct_stmt->name);
 
     visitStmt(map, fn_stmt->block);
     params.clear();
@@ -173,7 +173,8 @@ void TypeChecker::visitStruct(Maps *map, Node::Stmt *stmt) {
 
     // Verify that we have a return stmt in the function
     if (!needsReturn && type_to_string(fn_stmt->returnType) != "void") {
-      std::string msg = "Function '" + fn_stmt->name + "' requeries a return stmt "
+      std::string msg = "Function '" + fn_stmt->name +
+                        "' requeries a return stmt "
                         "but none was found";
       handleError(fn_stmt->line, fn_stmt->pos, msg, "", "Type Error");
       return;
@@ -194,13 +195,12 @@ void TypeChecker::visitStruct(Maps *map, Node::Stmt *stmt) {
 
     // also add the function name to the global table and function table
     declare(map->global_symbol_table, fn_stmt->name, fn_stmt->returnType,
-                 fn_stmt->line, fn_stmt->pos);
+            fn_stmt->line, fn_stmt->pos);
 
     return_type = nullptr;
     map->local_symbol_table
         .clear(); // clear the local table for the next function
   }
-
 
   return_type = std::make_shared<SymbolType>("struct");
 }
@@ -208,17 +208,16 @@ void TypeChecker::visitStruct(Maps *map, Node::Stmt *stmt) {
 void TypeChecker::visitEnum(Maps *map, Node::Stmt *stmt) {
   EnumStmt *enum_stmt = static_cast<EnumStmt *>(stmt);
   SymbolType *type = new SymbolType("enum");
-  
+
   // add the enum name to the local table and global table
   declare(map->local_symbol_table, enum_stmt->name,
-               static_cast<Node::Type *>(type), enum_stmt->line,
-               enum_stmt->pos);
+          static_cast<Node::Type *>(type), enum_stmt->line, enum_stmt->pos);
   declare(map->global_symbol_table, enum_stmt->name,
-                static_cast<Node::Type *>(type), enum_stmt->line,
-                enum_stmt->pos);
+          static_cast<Node::Type *>(type), enum_stmt->line, enum_stmt->pos);
 
   if (enum_stmt->fields.empty()) {
-    std::string msg = "Enum '" + enum_stmt->name + "' must have at least one field";
+    std::string msg =
+        "Enum '" + enum_stmt->name + "' must have at least one field";
     handleError(enum_stmt->line, enum_stmt->pos, msg, "", "Type Error");
   }
 
@@ -230,7 +229,7 @@ void TypeChecker::visitEnum(Maps *map, Node::Stmt *stmt) {
     // add the field to the struct table
     map->enum_table[enum_stmt->name].push_back({enum_stmt->fields[i], i});
   }
-  
+
   // set return type to the name of the enum
   return_type = std::make_shared<SymbolType>(enum_stmt->name);
 }
@@ -253,7 +252,7 @@ void TypeChecker::visitVar(Maps *map, Node::Stmt *stmt) {
   VarStmt *var_stmt = static_cast<VarStmt *>(stmt);
 
   declare(map->local_symbol_table, var_stmt->name, var_stmt->type,
-               var_stmt->line, var_stmt->pos);
+          var_stmt->line, var_stmt->pos);
 
   // check if the type is a struct or enum
   if (map->struct_table.find(type_to_string(var_stmt->type)) !=
@@ -266,18 +265,24 @@ void TypeChecker::visitVar(Maps *map, Node::Stmt *stmt) {
 
   // Now check if we have a template struct
   if (var_stmt->type->kind == ND_TEMPLATE_STRUCT_TYPE) {
-    TemplateStructType *temp = static_cast<TemplateStructType *>(var_stmt->type);
-    
+    TemplateStructType *temp =
+        static_cast<TemplateStructType *>(var_stmt->type);
+
     auto res = map->struct_table.find(type_to_string(temp->name));
     if (res == nullptr) {
-      std::string msg = "Template struct '" + type_to_string(temp->name) + "' is not defined";
+      std::string msg =
+          "Template struct '" + type_to_string(temp->name) + "' is not defined";
       handleError(var_stmt->line, var_stmt->pos, msg, "", "Type Error");
     }
 
-    // If we found the struct now lets go through the fields and find the value with the template type and change that to the underlying type
-    for (std::pair<std::string, Node::Type *> &field : map->struct_table[type_to_string(temp->name)]) {
+    // If we found the struct now lets go through the fields and find the value
+    // with the template type and change that to the underlying type
+    for (std::pair<std::string, Node::Type *> &field :
+         map->struct_table[type_to_string(temp->name)]) {
       // see if the type is a template type
-      auto res = std::find(map->template_table.begin(), map->template_table.end(), type_to_string(field.second));
+      auto res =
+          std::find(map->template_table.begin(), map->template_table.end(),
+                    type_to_string(field.second));
       if (res != map->template_table.end()) {
         printTables(map);
         field.second = temp->underlying;
@@ -286,11 +291,13 @@ void TypeChecker::visitVar(Maps *map, Node::Stmt *stmt) {
     }
 
     // Now we can set the return type to the underlying type
-    return_type = std::make_shared<SymbolType>(type_to_string(temp->underlying));
+    return_type =
+        std::make_shared<SymbolType>(type_to_string(temp->underlying));
 
     // Now we can set the type of the variable to the underlying type
     var_stmt->type = temp->underlying;
-  } else if (var_stmt->expr == nullptr) { // check if the variable is initialized
+  } else if (var_stmt->expr ==
+             nullptr) { // check if the variable is initialized
     return;
   } else if (var_stmt->type->kind == ND_ARRAY_TYPE) {
     // Set the expr.type to the type of the variable so it can be used
@@ -300,7 +307,8 @@ void TypeChecker::visitVar(Maps *map, Node::Stmt *stmt) {
     if (array_type->constSize < 1) {
       // If the array was declared but its type was []
       // we assume the constSize is the size of the array expr
-      var_stmt->type = new ArrayType(array_type->underlying, array_expr->elements.size());
+      var_stmt->type =
+          new ArrayType(array_type->underlying, array_expr->elements.size());
     } else {
       // If the array was declared with a size we need to check if the size
       // of the array expr is the same as the size of the array type
@@ -312,10 +320,14 @@ void TypeChecker::visitVar(Maps *map, Node::Stmt *stmt) {
         handleError(var_stmt->line, var_stmt->pos, msg, "", "Type Error");
       }
     }
-    array_expr->type = new ArrayType(array_type->underlying, array_expr->elements.size());
-    return_type = std::make_shared<ArrayType>(array_type->underlying, array_type->constSize);
-    visitExpr(map, var_stmt->expr); // Visit the array, and by extension, its elements
-    return_type = std::make_shared<ArrayType>(array_type->underlying, array_type->constSize);
+    array_expr->type =
+        new ArrayType(array_type->underlying, array_expr->elements.size());
+    return_type = std::make_shared<ArrayType>(array_type->underlying,
+                                              array_type->constSize);
+    visitExpr(
+        map, var_stmt->expr); // Visit the array, and by extension, its elements
+    return_type = std::make_shared<ArrayType>(array_type->underlying,
+                                              array_type->constSize);
   } else if (var_stmt->type->kind == ND_POINTER_TYPE) {
     PointerType *ptr = static_cast<PointerType *>(var_stmt->type);
     if (var_stmt->expr->kind == NodeKind::ND_NULL) {
@@ -324,25 +336,28 @@ void TypeChecker::visitVar(Maps *map, Node::Stmt *stmt) {
       visitExpr(map, var_stmt->expr);
       return_type = std::make_shared<PointerType>(ptr->underlying);
     }
-  } else { visitExpr(map, var_stmt->expr); }
+  } else {
+    visitExpr(map, var_stmt->expr);
+  }
 
   // check if the variable type is the same as the expr type
   std::string msg = "Variable '" + var_stmt->name + "' requires type '" +
                     type_to_string(var_stmt->type) + "' but got '" +
                     type_to_string(return_type.get()) + "'";
-  checkTypeMatch(std::make_shared<SymbolType>(type_to_string(var_stmt->type)),
-                      std::make_shared<SymbolType>(type_to_string(return_type.get())),
-                      var_stmt->name, var_stmt->line, var_stmt->pos, msg);
+  checkTypeMatch(
+      std::make_shared<SymbolType>(type_to_string(var_stmt->type)),
+      std::make_shared<SymbolType>(type_to_string(return_type.get())),
+      var_stmt->name, var_stmt->line, var_stmt->pos, msg);
 
   return_type = nullptr;
 }
-
 
 void TypeChecker::visitPrint(Maps *map, Node::Stmt *stmt) {
   PrintStmt *print_stmt = static_cast<PrintStmt *>(stmt);
   for (int i = 0; i < print_stmt->args.size(); i++) {
     visitExpr(map, print_stmt->args[i]);
-    print_stmt->args[i]->asmType = createDuplicate(return_type.get());;
+    print_stmt->args[i]->asmType = createDuplicate(return_type.get());
+    ;
   }
   return_type = nullptr;
 }
@@ -367,7 +382,7 @@ void TypeChecker::visitTemplateStmt(Maps *map, Node::Stmt *stmt) {
   for (std::string &name : templateStmt->typenames) {
     SymbolType *type = new SymbolType("any");
     declare(map->global_symbol_table, name, static_cast<Node::Type *>(type),
-                 templateStmt->line, templateStmt->pos);
+            templateStmt->line, templateStmt->pos);
   }
 }
 
@@ -378,7 +393,7 @@ void TypeChecker::visitFor(Maps *map, Node::Stmt *stmt) {
   // the type of the for loop is the type of the for loop
   SymbolType *type = new SymbolType("int");
   declare(map->local_symbol_table, for_stmt->name,
-               static_cast<Node::Type *>(type), for_stmt->line, for_stmt->pos);
+          static_cast<Node::Type *>(type), for_stmt->line, for_stmt->pos);
 
   // now we visit the for loop and assign the type to the return type
   visitExpr(map, for_stmt->forLoop);
@@ -425,13 +440,15 @@ void TypeChecker::visitWhile(Maps *map, Node::Stmt *stmt) {
 
 void TypeChecker::visitImport(Maps *map, Node::Stmt *stmt) {
   ImportStmt *import_stmt = static_cast<ImportStmt *>(stmt);
-  
+
   // store the current file name
   std::string file_name = node.current_file;
-  node.current_file = import_stmt->name; // set the current file name to the import name
-  
+  node.current_file =
+      import_stmt->name; // set the current file name to the import name
+
   // check if the import is already in the global table
-  std::unordered_map<std::string, Node::Type *>::iterator res = map->global_symbol_table.find(import_stmt->name);
+  std::unordered_map<std::string, Node::Type *>::iterator res =
+      map->global_symbol_table.find(import_stmt->name);
   if (res != map->global_symbol_table.end()) {
     std::string msg = "'" + import_stmt->name + "' has already been imported.";
     handleError(import_stmt->line, import_stmt->pos, msg, "", "Type Error");
@@ -439,7 +456,7 @@ void TypeChecker::visitImport(Maps *map, Node::Stmt *stmt) {
 
   // add the import to the global table
   declare(map->global_symbol_table, import_stmt->name, return_type.get(),
-               import_stmt->line, import_stmt->pos);
+          import_stmt->line, import_stmt->pos);
 
   // type check the import
   visitStmt(map, import_stmt->stmt);
@@ -453,7 +470,10 @@ void TypeChecker::visitMatch(Maps *map, Node::Stmt *stmt) {
   visitExpr(map, match_stmt->coverExpr);
 
   for (std::pair<Node::Expr *, Node::Stmt *> &pair : match_stmt->cases) {
-    visitExpr(map, pair.first); // Implement actual jump tables and math later. For now, all return_types for case expressions are allowed.
+    visitExpr(
+        map,
+        pair.first); // Implement actual jump tables and math later. For now,
+                     // all return_types for case expressions are allowed.
     visitStmt(map, pair.second);
   }
 

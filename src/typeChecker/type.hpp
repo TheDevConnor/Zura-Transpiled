@@ -28,6 +28,8 @@ public:
   std::vector<std::pair<std::pair<std::string, Node::Type *>,
                         std::vector<std::pair<std::string, Node::Type *>>>>
       function_table = {};
+  // store the function parameters to make sure they are not redefined
+  std::vector<std::string> function_params = {};
   /// Array content table
   std::vector<Node::Type *> array_table = {};
   /// Template Table
