@@ -196,13 +196,30 @@ inline static const std::unordered_map<std::string, int> argOP_regs = {
   {"%rsp", 7},
   {"%r8", 8},
   {"%r9", 9},
-  {"%r10", 1},
-  {"%r11", 1},
-  {"%r12", 1},
-  {"%r13", 1},
-  {"%r14", 1},
-  {"%r15", 1},
-  {"%rip", 1}
+  {"%r10", 10},
+  {"%r11", 11},
+  {"%r12", 12},
+  {"%r13", 13},
+  {"%r14", 14},
+  {"%r15", 15},
+  {"%rip", 16},
+  // xmmX registers
+  {"%xmm0", 17},
+  {"%xmm1", 18},
+  {"%xmm2", 19},
+  {"%xmm3", 20},
+  {"%xmm4", 21},
+  {"%xmm5", 22},
+  {"%xmm6", 23},
+  {"%xmm7", 24},
+  {"%xmm8", 25},
+  {"%xmm9", 26},
+  {"%xmm10", 27},
+  {"%xmm11", 28},
+  {"%xmm12", 29},
+  {"%xmm13", 30},
+  {"%xmm14", 31},
+  {"%xmm15", 32},
 };
 }
 // Stack count, Variable count
@@ -233,7 +250,8 @@ inline const char* file_name;
 inline bool debug = false;
 
 // Function argument order
-inline static const std::vector<std::string> argOrder = {"%rdi", "%rsi", "%rdx", "%rcx", "%r8", "%r9"};
+inline static const std::vector<std::string> intArgOrder = {"%rdi", "%rsi", "%rdx", "%rcx", "%r8", "%r9"};
+inline static const std::vector<std::string> floatArgOrder = {"%xmm0", "%xmm1", "%xmm2", "%xmm3", "%xmm4", "%xmm5"};
 
 // Helper functions for printing to the console
 void prepareSyscallWrite();

@@ -1,45 +1,28 @@
-const power := fn (base: int, exp: int) int {
-  if (exp == 0) return 1;
-  
-  have b: int = base;
-  loop (i = 1; i < exp) : (i++) {
-    b = base * b;
-  }
+const Hobbies := enum {
+    Cooking,
+    Programming,
+    Drawing,
+    Reading,
+}; 
 
-  return b;
-};
-
-const fib := fn (n: int) int {
-  if (n == 0) return 0;
-  if (n == 1) return 1;
-
-  have a: int = 0;
-  have b: int = 1;
-  have c: int = 0;
-
-  loop (i = 1; i < n) : (i++) {
-    c = a + b;
-    a = b;
-    b = c;
-  }
-
-  return c;
+const Person := struct {
+    name: str;
+    age: int;
+    hobby: Hobbies;
+    
+    greet := fn (self: *Person) void {
+        @dis("Hello, my name is ", self.name, " and I am ", self.age, " years old.");
+    }; 
 };
 
 const main := fn () int {
-  @dis("Using the power function\n");
-  have i: int = 0;
-  loop (i < 10) {
-    @dis("2^", i, " = ", power(2, i), "\n");
-    i = i + 1;
-  }
-  
-  @dis("\nUsing the fibonacci function\n");
-  have i2: int = 0;
-  loop (i2 < 10) {
-    @dis("fib(", i2, ") = ", fib(i2), "\n");
-    i2 = i2 + 1;
-  }
+  have John: Person = {
+    name: "grandfather bro",
+    age: 53,
+    hobby: Hobbies.Drawing
+  };
+
+  John.greet(); # 'self' not included here
 
   return 0;
 };

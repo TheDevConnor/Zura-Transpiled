@@ -133,17 +133,20 @@ void codegen::externalCall(Node::Expr *expr) {
   ExternalCall *e = static_cast<ExternalCall *>(expr);
   pushDebug(e->line, expr->file_id, e->pos);
   // Push each argument one by one.
-  if (e->args.size() > argOrder.size()) {
-    std::cerr << "Too many arguments in call - consider reducing them or moving them to a globally defined space." << std::endl;
-    exit(-1);
-  }
+  int intArgCount = 0;
+  int floatArgCount = 0;
   for (size_t i = 0; i < e->args.size(); i++) {
     // evaluate them
-    codegen::visitExpr(e->args.at(i));
-    popToRegister(argOrder[i]);
+    visitExpr(e->args.at(i));
+    if (getUnderlying(e->args[i]->asmType) == "float" && e->args[i]->asmType->kind == ND_SYMBOL_TYPE) {
+      popToRegister(floatArgOrder[floatArgCount++]);
+    } else {
+      popToRegister(intArgOrder[intArgCount++]);
+    }
   }
   // Call the function
-  push(Instr{.var = CallInstr{.name = e->name + "@PLT"},
+  push(Instr{.var = CallInstr{.name = e->name + "@PLT"}, // the @PLT is for dynamic linking where the function is
+                                                         // not in defined in this current asm file and is imported elsewhere
              .type = InstrType::Call},
        Section::Main);
   pushRegister("%rax");

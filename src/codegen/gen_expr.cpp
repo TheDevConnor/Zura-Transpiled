@@ -234,25 +234,31 @@ void codegen::call(Node::Expr *expr) {
     IdentExpr *n = static_cast<IdentExpr *>(e->callee);
     pushDebug(e->line, expr->file_id, e->pos);
     // Push each argument one by one.
-    if (e->args.size() > argOrder.size()) {
+    if (e->args.size() > intArgOrder.size()) {
       std::cerr << "Too many arguments in call - consider reducing them or moving them to a globally defined space." << std::endl;
       exit(-1);
     }
     int offsetAmount = round(variableCount - 8, 8);
     if (offsetAmount) push(Instr{.var=SubInstr{.lhs="%rsp",.rhs="$"+std::to_string(offsetAmount)},.type=InstrType::Sub},Section::Main);
+    int intArgCount = 0;
+    int floatArgCount = 0;
+
     for (size_t i = 0; i < e->args.size(); i++) {
       // evaluate them
-      codegen::visitExpr(e->args.at(i));
+      visitExpr(e->args.at(i));
       // Check if the argument was a struct or array
       // That requires an lea, not a mov (that will be implicitly created here)
       bool isLea = false;
       if (e->args[i]->asmType->kind == ND_ARRAY_TYPE) {
-        isLea = true;
+        // lea should be false, because the value being processed is already technically a pointer
       }
       if (e->args[i]->asmType->kind == ND_SYMBOL_TYPE) {
         SymbolType *sym = static_cast<SymbolType *>(e->args[i]->asmType);
         if (structByteSizes.find(sym->name) != structByteSizes.end()) {
-          isLea = true; // It was in there!
+          // FIRST we check the size of the struct type
+          if (structByteSizes[sym->name].first > 16) {
+            isLea = true; // It was in there!
+          }
         }
       }
       if (isLea) {
@@ -260,12 +266,21 @@ void codegen::call(Node::Expr *expr) {
         PushInstr instr = std::get<PushInstr>(text_section.at(text_section.size() - 1).var);
         std::string whatWasPushed = instr.what;
         text_section.pop_back();
-        // NOW we can lea
-        push(Instr{.var = LeaInstr{.size = DataSize::Qword, .dest = argOrder[i], .src = whatWasPushed},
-                   .type = InstrType::Lea},
-             Section::Main);
+        // Now we can lea
+        // ... IF what was pushed was an address ...
+        if (whatWasPushed.find('(') == std::string::npos) {
+          // run additional check to see if float or int
+          if (getUnderlying(e->args[i]->asmType) == "float" && e->args[i]->asmType->kind == ND_SYMBOL_TYPE) {
+            popToRegister(floatArgOrder[floatArgCount++]);
+          } else {
+            popToRegister(intArgOrder[intArgCount++]);
+          }
+        } else
+          push(Instr{.var = LeaInstr{.size = DataSize::Qword, .dest = intArgOrder[i], .src = whatWasPushed},
+                    .type = InstrType::Lea},
+              Section::Main);
       } else
-        popToRegister(argOrder[i]);
+        popToRegister(intArgOrder[i]);
     }
     // Call the function
     push(Instr{.var = CallInstr{.name = "usr_" + n->name},
@@ -284,30 +299,22 @@ void codegen::call(Node::Expr *expr) {
     std::string fnName = static_cast<IdentExpr *>(member->rhs)->name;
     pushDebug(e->line, expr->file_id, e->pos);
     // Push each argument one by one.
-    if (e->args.size() + 1 > argOrder.size()) {
-      // 1 arg will be 'self', a pointer to the struct being called and always in argOrder[0]
-      std::cerr << "Too many arguments in call - consider reducing them or moving them to a globally defined space." << std::endl;
-      exit(-1);
-    }
-
     // Evaluate the struct
     visitExpr(member->lhs);
-    // Weeellll
-    // We want this to be an lea, so let's get the pushexpr of the last instruction
-    // and change it to an lea
-    PushInstr instr = std::get<PushInstr>(text_section.at(text_section.size() - 1).var);
-    std::string whatWasPushed = instr.what;
-    text_section.pop_back();
-    // NOW we can lea
-    push(Instr{.var = LeaInstr{.size = DataSize::Qword, .dest = argOrder[0], .src = whatWasPushed},
-               .type = InstrType::Lea},
-         Section::Main);
+    // Note: Removed LEA Because when visiting a struct, we push %rcx, which alr contains the address :P
+    popToRegister(intArgOrder[0]);
+    int intArgCount = 1; // 1st is preserved for struct ptr above
+    int floatArgCount = 0;
     int offsetAmount = round(variableCount-8, 8);
     if (offsetAmount) push(Instr{.var=SubInstr{.lhs="%rsp",.rhs="$"+std::to_string(offsetAmount)},.type=InstrType::Sub},Section::Main);
     for (size_t i = 0; i < e->args.size(); i++) {
       // evaluate them
-      codegen::visitExpr(e->args.at(i));
-      popToRegister(argOrder[i + 1]);
+      visitExpr(e->args.at(i));
+      if (getUnderlying(e->args[i]->asmType) == "float" && e->args[i]->asmType->kind == ND_SYMBOL_TYPE) {
+        popToRegister(floatArgOrder[floatArgCount++]);
+      } else {
+        popToRegister(intArgOrder[intArgCount++]);
+      }
     }
     // Call the function
     push(Instr{.var = CallInstr{.name = "usrstruct_" + structName + "_" + fnName},
@@ -594,12 +601,27 @@ void codegen::addressExpr(Node::Expr *expr) {
   AddressExpr *e = static_cast<AddressExpr *>(expr);
   // It was a struct or something like that
   // Get the address of it. The address is the return type (becuase it's a pointer)
-  visitExpr(e->right);
+  Node::Expr *realRight = CompileOptimizer::optimizeExpr(e->right);
+  visitExpr(realRight);
   // We don't want that push!
   PushInstr instr = std::get<PushInstr>(text_section.at(text_section.size() - 1).var);
   std::string whatWasPushed = instr.what;
   text_section.pop_back();
-  // Now we can lea
+  // check if we did this to a struct
+
+  if (realRight->kind == ND_IDENT) {
+    IdentExpr *ident = static_cast<IdentExpr *>(realRight);
+
+    if (structByteSizes.find(getUnderlying(ident->asmType)) != structByteSizes.end()) {
+      // It was a struct!
+      // It's very likely that what was pushed was "rcx" in this scenario.
+      // That, however, just does not apply to the lea instruction.
+      if (whatWasPushed == "%rcx") {
+        pushRegister("%rcx");
+        return;
+      }
+    }
+  }
   push(Instr{.var = LeaInstr{.size = DataSize::Qword, .dest = "%rcx", .src = whatWasPushed},
              .type = InstrType::Lea},
        Section::Main);

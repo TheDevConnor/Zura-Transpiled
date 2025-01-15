@@ -74,7 +74,7 @@ void TypeChecker::visitAddress(Maps *map, Node::Expr *expr) {
   AddressExpr *address = static_cast<AddressExpr *>(expr);
   visitExpr(map, address->right);
   return_type = std::make_shared<PointerType>(return_type.get());
-  expr->asmType = new PointerType(address->right->asmType);
+  expr->asmType = new PointerType(createDuplicate(address->right->asmType));
 }
 
 void TypeChecker::visitIdent(Maps *map, Node::Expr *expr) {

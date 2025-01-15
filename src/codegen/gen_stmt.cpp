@@ -214,10 +214,19 @@ void codegen::funcDecl(Node::Stmt *stmt) {
   // Reset the variableCount first, though
   int preVC = variableCount;
   variableCount = 8;
+  int intArgCount = 0;
+  int floatArgCount = 0;
   for (size_t i = 0; i < s->params.size(); i++) {
     // Move the argument to the stack
     std::string where = std::to_string(-variableCount) + "(%rbp)";
-    moveRegister(where, argOrder.at(i), DataSize::Qword, DataSize::Qword);
+    if (getUnderlying(s->params.at(i).second) == "float")
+      // Floats are passed in xmm registers
+      moveRegister(where, floatArgOrder[floatArgCount++], DataSize::Qword,
+                   DataSize::Qword);
+    else
+      // Integers are passed in general purpose registers
+      moveRegister(where, intArgOrder[intArgCount++], DataSize::Qword, DataSize::Qword);
+      
     variableTable.insert({s->params.at(i).first, where});
     variableCount += getByteSizeOfType(s->params.at(i).second);
 
@@ -231,7 +240,7 @@ void codegen::funcDecl(Node::Stmt *stmt) {
                      type_to_diename(s->params.at(i).second) + "_debug_type\n" +
                      "\n.uleb128 0x1" // 1 byte is gonna follow
                      "\n.byte " +
-                     std::to_string(dwarf::argOP_regs.at(argOrder.at(i)) + 80) +
+                     std::to_string(dwarf::argOP_regs.at(intArgOrder.at(i)) + 80) +
                      "\n"
                      "\n",
                  Section::DIE);
