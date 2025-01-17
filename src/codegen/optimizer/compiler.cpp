@@ -1,4 +1,5 @@
 #include "compiler.hpp"
+#include "../gen.hpp"
 
 Node::Stmt *CompileOptimizer::optimizeStmt(Node::Stmt *stmt) {
   // May be one day used for optimizations such as...
@@ -88,6 +89,50 @@ Node::Expr *CompileOptimizer::optimizeBinary(BinaryExpr *expr) {
     }
     return expr;
   }
+  if (op == "*") {
+    // check if either side was a useless calculation (0 * x, 1 * x)
+    if (lhs->kind == ND_INT) {
+      int lhsVal = static_cast<IntExpr *>(lhs)->value;
+      if (lhsVal == 0) {
+        return new IntExpr(expr->line, expr->pos, 0, expr->file_id);
+      }
+      if (lhsVal == 1) {
+        return rhs;
+      }
+    }
+    if (rhs->kind == ND_INT) {
+      int rhsVal = static_cast<IntExpr *>(rhs)->value;
+      if (rhsVal == 0) {
+        return new IntExpr(expr->line, expr->pos, 0, expr->file_id);
+      }
+      if (rhsVal == 1) {
+        return lhs;
+      }
+    }
+  }
+  if (op == "/") {
+    // check if the operation was useless (x / 1 or error x / 0)
+    if (rhs->kind == ND_INT) {
+      int rhsVal = static_cast<IntExpr *>(rhs)->value;
+      if (rhsVal == 1) {
+        return lhs;
+      }
+      if (rhsVal == 0) {
+        std::string msg = "Dividing by zero is not allowed!";
+        codegen::handleError(expr->line, expr->pos, msg, "Compile Error");
+      }
+    }
+    // TODO: Check if dividing by an even 1/x float to try optimizing into a Multiply
+  }
+  if (op == "+" || op == "-") {
+    // check if useless (one of the sides is 0)
+    if (lhs->kind == ND_INT) {
+      int lhsVal = static_cast<IntExpr *>(lhs)->value;
+      if (lhsVal == 0) return rhs;
+    }
+  }
+
+  // We've made all the optimizations we can (for now)
 
   return expr;
 };
