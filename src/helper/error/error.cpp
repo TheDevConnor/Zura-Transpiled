@@ -103,9 +103,11 @@ std::string ErrorClass::error(int line, int pos, const std::string &msg,
     if (msg.find("Expected a SEMICOLON") == 0) {
         line_error += currentLine(line - 1, pos, lexer, isParser, isTypeError, tokens, true);
         line_error += " ↳ " + col.color("NOTE", Color::BLUE) + ": If the line above is empty, it's possible that the error is on the line above.\n";
+        if (!note.empty()) line_error += " ↳ " + col.color("NOTE", Color::BLUE) + ": " + note + "\n";
     } else {
         line_error += currentLine(line, pos, lexer, isParser, isTypeError, tokens);
         line_error += std::string(ErrorPos, ' ') + col.color("^", Color::RED, false, true) + "\n";
+        if (!note.empty()) line_error += " ↳ " + col.color("NOTE", Color::BLUE) + ": " + note + "\n";
     }
 
     if (errors.find(line) == errors.end()) {

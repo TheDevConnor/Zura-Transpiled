@@ -1,28 +1,29 @@
-const Hobbies := enum {
-    Cooking,
-    Programming,
-    Drawing,
-    Reading,
-}; 
+const TokenKind := enum {
+  Let,
+  Ident,
+  Equals,
+  Int,
+  Semicolon,
 
-const Person := struct {
-    name: str;
-    age: int;
-    hobby: Hobbies;
-    
-    greet := fn (self: *Person) void {
-        @dis("Hello, my name is ", self.name, " and I am ", self.age, " years old.");
-    }; 
+  EOF
+};
+
+const Token := struct {
+  kind: TokenKind,
+  value: str,
 };
 
 const main := fn () int {
-  have John: Person = {
-    name: "grandfather bro",
-    age: 53,
-    hobby: Hobbies.Drawing
-  };
+  have x: int = 10;
+  have tokens: []Token = [
+    { kind: TokenKind.Let, value: "let" },
+    { kind: TokenKind.Ident, value: "myVar" },
+    { kind: TokenKind.Equals, value: "=" },
+    { kind: TokenKind.Int, value: "10" },
+    { kind: TokenKind.Semicolon, value: ";" },
+    { kind: TokenKind.EOF, value: "" },
+  ];
+  have y: int = 15;
 
-  John.greet(); # 'self' not included here
-
-  return 0;
+  return 0; # It was a success!
 };

@@ -246,6 +246,7 @@ Node::Stmt *Parser::structStmt(PStruct *psr, std::string name) {
 
   std::vector<std::pair<std::string, Node::Type *>> fields;
   std::vector<Node::Stmt *> stmts;
+  bool warnForSemi = true;
 
   while (psr->current(psr).kind != TokenKind::RIGHT_BRACE) {
     TokenKind tokenKind = psr->current(psr).kind;
@@ -279,8 +280,17 @@ Node::Stmt *Parser::structStmt(PStruct *psr, std::string name) {
                   "Expected a COLON after the field name in a struct stmt");
       Node::Type *fieldType = parseType(psr, BindingPower::defaultValue);
       fields.push_back({fieldName, fieldType});
-      psr->expect(psr, TokenKind::SEMICOLON,
-                  "Expected a SEMICOLON after the field type in a struct stmt");
+      if (psr->peek(psr).kind == TokenKind::SEMICOLON) {
+        Lexer::Token semi = psr->advance(psr);
+        if (warnForSemi) {
+          ErrorClass::error(semi.line, semi.column, "Commas are non-standard for struct field lists",
+          "Found while parsing struct '" + name + "'.", "Parser Error", psr->current_file.c_str(),
+          lexer, psr->tks, true, true, false, false, false, false);
+          warnForSemi = false;
+        }
+      }
+      psr->expect(psr, TokenKind::COMMA,
+                  "Expected a COMMA after the field type in a struct stmt");
       break;
     }
     case TokenKind::SEMICOLON: {
@@ -407,6 +417,9 @@ Node::Stmt *Parser::matchStmt(PStruct *psr, std::string name) {
       psr->expect(psr, TokenKind::RIGHT_ARROW,
                   "Expected a RIGHT_ARROW after the DEFAULT keyword in a match stmt");
       defaultCase = blockStmt(psr, name); // Will automatically detect another L_BRACE
+      // This expects a R_BRACE, but the programmer may have made the LINGUISTIC choice to include a semicolon
+      if (psr->current(psr).kind == TokenKind::SEMICOLON)
+        psr->advance(psr);
       continue;
     }
     if (psr->current(psr).kind == TokenKind::CASE) {
@@ -416,6 +429,9 @@ Node::Stmt *Parser::matchStmt(PStruct *psr, std::string name) {
                   "Expected a RIGHT_ARROW after the case expression in a match stmt");
       Node::Stmt *caseStmt = blockStmt(psr, name);
       cases.push_back({caseExpr, caseStmt});
+      // semicolon expectancy
+      if (psr->current(psr).kind == TokenKind::SEMICOLON)
+        psr->advance(psr);
     } else {
       // What the hell token is this?
       // Not creating a case here would result in an infinite loop.
@@ -443,16 +459,31 @@ Node::Stmt *Parser::enumStmt(PStruct *psr, std::string name) {
               "Expected a L_BRACE to start an enum stmt");
 
   std::vector<std::string> fields;
+  bool warnForSemi = true;
   while (psr->current(psr).kind != TokenKind::RIGHT_BRACE) {
+    Lexer::Token ident = psr->expect(psr, TokenKind::IDENTIFIER,
+                    "Expected an IDENTIFIER as a field name in an enum stmt");
+    if (ident.kind != TokenKind::IDENTIFIER)
+      break; // empty the error accumulator
     fields.push_back(
-        psr->expect(psr, TokenKind::IDENTIFIER,
-                    "Expected an IDENTIFIER as a field name in an enum stmt")
-            .value);
+        ident.value);
     // Check if next character is brace - comma not REQUIRED there
     if (psr->current(psr).kind == TokenKind::RIGHT_BRACE)
       break;
-    psr->expect(psr, TokenKind::COMMA,
-                "Expected a COMMA after a field in an enum stmt");
+    if (psr->current(psr).kind == TokenKind::SEMICOLON) {
+      // that's fine too, but warn
+      Lexer::Token semi = psr->advance(psr);
+      if (warnForSemi) {
+        ErrorClass::error(semi.line, semi.column,
+          "Semicolons are non-standard for enumerator lists", "Found while parsing enum '" + name + "'.", "Parser Error", psr->current_file.c_str(), lexer,
+          psr->tks, true, true, false, false, false, false);
+        warnForSemi = false; // only warn once to stop console from filling with all the same error (especially when the programmer only made a simple mistake)
+      }
+    } else
+      if (psr->expect(psr, TokenKind::COMMA,
+                  "Expected a COMMA after a field in an enum stmt").kind != TokenKind::COMMA) {
+        break;
+      }
   }
   psr->expect(psr, TokenKind::RIGHT_BRACE,
               "Expected a R_BRACE to end an enum stmt");

@@ -1058,14 +1058,14 @@ void codegen::declareArrayVariable(Node::Expr *expr, short int arrayLength,
 
   int arrayBase = variableCount;
   // Evaluate the orderedFields and store them in the struct!!!!
-  for (int i = 0; i < s->elements.size(); i++) {
-    Node::Expr *element = s->elements.at(i);
+  for (int i = s->elements.size(); i > 0; i--) {
+    Node::Expr *element = s->elements[s->elements.size() - i];
     // Evaluate the expression
     if (element->kind == ND_STRUCT) {
       // Structs cannot be generated in the expr.
       // We must assign each value to its place in the array.
       ArrayType *at = static_cast<ArrayType *>(s->type);
-      int startingPoint = arrayBase + (i * getByteSizeOfType(at->underlying));
+      int startingPoint = arrayBase + ((i-1) * getByteSizeOfType(at->underlying));
       declareStructVariable(element, getUnderlying(at), startingPoint);
       continue;
     }
