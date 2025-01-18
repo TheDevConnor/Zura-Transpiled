@@ -11,19 +11,39 @@ const TokenKind := enum {
 const Token := struct {
   kind: TokenKind,
   value: str,
+  useless: int
 };
 
 const main := fn () int {
-  have x: int = 10;
-  have tokens: []Token = [
-    { kind: TokenKind.Let, value: "let" },
-    { kind: TokenKind.Ident, value: "myVar" },
-    { kind: TokenKind.Equals, value: "=" },
-    { kind: TokenKind.Int, value: "10" },
-    { kind: TokenKind.Semicolon, value: ";" },
-    { kind: TokenKind.EOF, value: "" },
+  have x: int = 10; # -8
+  have a: int = 18; # -16
+  have test: Token = {kind: TokenKind.Let, value: "let",
+  useless: 4
+  }; # -32
+  have tokens: []Token = [ # -128
+    { kind: TokenKind.Let, value: "let",
+    useless: 4
+    },
+    { kind: TokenKind.Ident, value: "myVar",
+    useless: 4
+    },
+    { kind: TokenKind.Equals, value: "=",
+    useless: 4
+    },
+    { kind: TokenKind.Int, value: "10",
+    useless: 4
+    },
+    { kind: TokenKind.Semicolon, value: ";",
+    useless: 4
+    }
+    { kind: TokenKind.EOF, value: "",
+    useless: 4
+    },
   ];
-  have y: int = 15;
+  have y: int = 15; # -136
+  # It works!!!
+  @dis(x, ", ", a, ", ", test.value, ", ", y);
+  tokens; # not an error lol
 
   return 0; # It was a success!
 };

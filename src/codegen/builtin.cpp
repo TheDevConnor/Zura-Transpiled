@@ -10,6 +10,8 @@ void codegen::print(Node::Stmt *stmt) {
     std::string argType = getUnderlying(arg->asmType);
     if (argType.find("*") == 0)
       handlePtrType(arg, print);
+    else if (arg->kind == ND_INT || arg->kind == ND_BOOL || arg->kind == ND_CHAR || arg->kind == ND_FLOAT)
+      handleLiteral(arg);
     else if (argType == "str")
       handleStrType(arg);
     else if (argType == "int" || argType == "char")

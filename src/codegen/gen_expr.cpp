@@ -496,56 +496,25 @@ void codegen::memberExpr(Node::Expr *expr) {
 
     // Now, we have to do some crazy black magic shit like -8(%rcx) but we find what to replace '8' with.
     std::string fieldName = static_cast<IdentExpr *>(e->rhs)->name;
-    for (int i = 0; i < fields.size(); i++) {
-      if (fields[i].first == fieldName) {
-        // Check if the type of the member is another struct
-        Node::Type *fieldType = fields[i].second.first;
-        if (fieldType->kind == ND_POINTER_TYPE && (structByteSizes.find(getUnderlying(fieldType)) != structByteSizes.end())) {
-          // It was a struct ptr!
-          /*
-          s {
-            embedded: *Nested;
-          }
-          */
-
-          int offset = 0;
-          if (i != 0) for (int j = 0; j < i; j++) {
-            offset += fields[j].second.second;
-          }
-          push(Instr{.var=LeaInstr{.size=DataSize::Qword,.dest="%rcx",.src=std::to_string(offset)+"(%rcx)"}, .type=InstrType::Lea},Section::Main);
-          pushRegister("%rcx");
-          return;
-        } else if (fieldType->kind == ND_SYMBOL_TYPE && (structByteSizes.find(getUnderlying(fieldType)) != structByteSizes.end())) {
-          // This does NOT contain a pointer that requires dereferencing,
-          // however we still need to handle this seperately.
-
-          /*
-          s {
-            embedded: Nested;
-          }
-          */
-
-          // Get the field offset
-          int offset = 0;
-          if (i != 0) for (int j = 0; j < i; j++) {
-            offset += fields[j].second.second;
-          }
-          // Push the value at this offset
-          push(Instr{.var=LeaInstr{.size=DataSize::Qword,.dest="%rcx",.src=std::to_string(offset)+"(%rcx)"}, .type=InstrType::Lea},Section::Main);
-          pushRegister("%rcx");
-          return;
-        }
-        // push the value at this offset
-        int offset = 0;
-        if (i != 0) for (int j = 0; j < i; j++) {
-          offset += fields[j].second.second;
-        }
-        if (offset == 0)
-          pushRegister("(%rcx)");
-        else
-          pushRegister(std::to_string(-offset) + "(%rcx)");
-        break;
-      }
+    
+    // Right now, %rcx points to the beginning of the struct, which contains the last field.
+    // In order to get the field we need, we should just loop over all the fields
+    // and add to an offset.
+    int offset = size;
+    for (int i = fields.size(); i > 0; i--) {
+      offset -= fields[i=1].second.second;
+      if (fields[i-1].first == fieldName) break;
+    }
+    // submit the answer :D
+    std::cout << std::to_string(offset) << ", " << fieldName << ", ";
+    for (int i = 0; i < fields.size(); i ++) {
+      std::cout << fields[i].first << ", ";
+    }
+    std::cout << std::endl;
+    if (offset == 0) {
+      pushRegister("(%rcx)");
+    } else {
+      pushRegister(std::to_string(-offset) + "(%rcx)");
     }
     return;
   }

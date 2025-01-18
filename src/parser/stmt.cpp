@@ -280,6 +280,7 @@ Node::Stmt *Parser::structStmt(PStruct *psr, std::string name) {
                   "Expected a COLON after the field name in a struct stmt");
       Node::Type *fieldType = parseType(psr, BindingPower::defaultValue);
       fields.push_back({fieldName, fieldType});
+      if (psr->peek(psr).kind == TokenKind::RIGHT_BRACE) break; // who cares about the semicolon/comma?
       if (psr->peek(psr).kind == TokenKind::SEMICOLON) {
         Lexer::Token semi = psr->advance(psr);
         if (warnForSemi) {

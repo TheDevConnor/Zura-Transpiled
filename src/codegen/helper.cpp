@@ -3,7 +3,7 @@
 #include "optimizer/instr.hpp"
 #include "gen.hpp"
 #include <fstream>
-#include <cstdint>
+#include <cmath>
 
 
 void codegen::handleError(int line, int pos, std::string msg,
@@ -266,6 +266,37 @@ void codegen::handlePtrType(Node::Expr *arg, PrintStmt *print) {
                 "Codegen Error");
   }
 }
+
+void codegen::handleLiteral(Node::Expr *arg) {
+  // This function effectively just prints the value of the literal
+  std::string strLabel = "string" + std::to_string(stringCount++);
+  std::string stringValue;
+  if (arg->kind == ND_INT) {
+    IntExpr *intExpr = static_cast<IntExpr *>(arg);
+    stringValue = std::to_string(intExpr->value);
+    push(Instr{.var=Comment{.comment="Print integer literal for some reason"},.type=InstrType::Comment},Section::Main);
+  };
+  if (arg->kind == ND_BOOL) {
+    BoolExpr *boolExpr = static_cast<BoolExpr *>(arg);
+    stringValue = boolExpr->value ? "true" : "false";
+    push(Instr{.var=Comment{.comment="Print boolean literal for some reason"},.type=InstrType::Comment},Section::Main);
+  };
+  if (arg->kind == ND_FLOAT) {
+    FloatExpr *floatExpr = static_cast<FloatExpr *>(arg);
+    stringValue = std::to_string(floatExpr->value);
+    push(Instr{.var=Comment{.comment="Print float literal for some reason"},.type=InstrType::Comment},Section::Main);
+  }
+  // Char expr is the same as an intexpr and its kinda unused on its own
+
+  // Define the string in the readonly data section
+  push(Instr{.var=Label{.name=strLabel},.type=InstrType::Label},Section::ReadonlyData);
+  //? This shouldnt be an asciz because we know the length of the str ahead of time but im not implementing the .str/.ascii directive
+  push(Instr{.var=AscizInstr{.what=stringValue},.type=InstrType::Asciz},Section::ReadonlyData);
+  // perform the operation by moving the string into %rsi and the length into %rdx
+  moveRegister("%rsi", strLabel + "(%rip)", DataSize::Qword, DataSize::Qword);
+  moveRegister("%rdx", "$" + std::to_string(stringValue.length()), DataSize::Qword, DataSize::Qword);
+  prepareSyscallWrite(); // The end!
+};
 
 void codegen::handleStrType(Node::Expr *arg) {
   nativeFunctionsUsed[NativeASMFunc::strlen] = true;

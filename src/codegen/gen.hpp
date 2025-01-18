@@ -256,6 +256,7 @@ inline static const std::vector<std::string> floatArgOrder = {"%xmm0", "%xmm1", 
 // Helper functions for printing to the console
 void prepareSyscallWrite();
 void handlePtrType(Node::Expr *arg, PrintStmt *print);
+void handleLiteral(Node::Expr *arg);
 void handleStrType(Node::Expr *arg);
 void handlePrimType(Node::Expr *arg);
 void handleFloatType(Node::Expr *arg);

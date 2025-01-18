@@ -310,10 +310,12 @@ void codegen::varDecl(Node::Stmt *stmt) {
       variableCount += structSize;
     } else if (s->type->kind == ND_ARRAY_TYPE ||
                s->type->kind == ND_ARRAY_AUTO_FILL) {
+      ArrayType *at = static_cast<ArrayType *>(s->type);
       declareArrayVariable(
           s->expr, static_cast<ArrayType *>(s->type)->constSize,
           s->name); // s->name so it can be inserted to variableTable, s->type
                     // so we know the byte sizes.
+      variableCount += getByteSizeOfType(at->underlying) * at->constSize;
     } else {
       int whereBytes = -variableCount;
       visitExpr(s->expr);
@@ -905,12 +907,12 @@ void codegen::declareStructVariable(Node::Expr *expr, std::string structName,
   // The fields of the expression might be out of order from which they are
   // defined in the struct. We need to reorder them.
   std::vector<std::pair<std::string, Node::Expr *>> orderedFields;
-  for (int i = 0; i < structByteSizes[structName].second.size(); i++) {
+  for (int i = structByteSizes[structName].second.size(); i > 0; i--) {
     for (std::pair<Node::Expr *, Node::Expr *> field : s->values) {
       if (static_cast<IdentExpr *>(field.first)->name ==
-          structByteSizes[structName].second.at(i).first) {
+          structByteSizes[structName].second.at(i-1).first) {
         orderedFields.push_back(
-            {structByteSizes[structName].second.at(i).first, field.second});
+            {structByteSizes[structName].second.at(i-1).first, field.second});
         break;
       }
     }
@@ -935,11 +937,9 @@ void codegen::declareStructVariable(Node::Expr *expr, std::string structName,
         }
         */
         int offset = 0;
-        if (i != 0)
-          for (int j = 0; j < i; j++) {
-            offset += structByteSizes[structName].second.at(j).second.second;
-          }
-        // Avoid doing extra work even though we are literally recursioning
+        if (i != 0) for (int j = 0; j < i; j++) offset += structByteSizes[structName].second.at(j).second.second;
+        // Where to put is where to put the last byte of the struct
+        // We need this new value passed in here to be the base of the new struct
         declareStructVariable(field.second, getUnderlying(fieldType),
                               whereToPut + offset);
         continue;
@@ -956,10 +956,7 @@ void codegen::declareStructVariable(Node::Expr *expr, std::string structName,
             structByteSizes[structName].second.at(i).second.second;
         // Get the offset - this will be the sum of all previous fieldSizes
         int offset = 0;
-        if (i != 0)
-          for (int j = 0; j < i; j++) {
-            offset += structByteSizes[structName].second.at(j).second.second;
-          }
+        if (i != 0) for (int j = 0; j < i; j++) offset += structByteSizes[structName].second.at(j).second.second;
         int fieldVarOffset = std::stoi(where.substr(0, where.find('(')));
         // Put the identifer address into rcx
         visitExpr(ident);
@@ -1014,7 +1011,7 @@ void codegen::declareStructVariable(Node::Expr *expr, std::string structName,
     // Evaluate the expression
     visitExpr(field.second);
     int offset =
-        i == 0 ? 0 : structByteSizes[structName].second.at(i - 1).second.second;
+        i == 0 ? 0 : i * structByteSizes[structName].second.at(i - 1).second.second;
     // Pop the value into a register
     popToRegister(std::to_string(-(structBase + offset)) + "(%rbp)");
   }
@@ -1023,8 +1020,7 @@ void codegen::declareStructVariable(Node::Expr *expr, std::string structName,
 void codegen::declareArrayVariable(Node::Expr *expr, short int arrayLength,
                                    std::string varName) {
   if (expr->kind == ND_ARRAY_AUTO_FILL) {
-    // This is an implicit shorthand version of setting an array to [0, 0, 0, 0,
-    // ....]
+    // This is an implicit shorthand version of setting an array to [0, 0, 0, 0, ....]
     ArrayAutoFill *s = static_cast<ArrayAutoFill *>(expr);
     if (arrayLength < 1) {
       std::string msg = "Auto-fill arrays must have an explicitly-defined "
@@ -1052,10 +1048,10 @@ void codegen::declareArrayVariable(Node::Expr *expr, short int arrayLength,
   }
 
   ArrayExpr *s = static_cast<ArrayExpr *>(expr);
-  int underlyingByteSize =
-      getByteSizeOfType(static_cast<ArrayType *>(s->type)->underlying);
+  ArrayType *at = static_cast<ArrayType *>(s->type);
   dwarf::useType(s->type);
-
+  int underlyingByteSize =
+      getByteSizeOfType(at->underlying);
   int arrayBase = variableCount;
   // Evaluate the orderedFields and store them in the struct!!!!
   for (int i = s->elements.size(); i > 0; i--) {
@@ -1064,17 +1060,19 @@ void codegen::declareArrayVariable(Node::Expr *expr, short int arrayLength,
     if (element->kind == ND_STRUCT) {
       // Structs cannot be generated in the expr.
       // We must assign each value to its place in the array.
-      ArrayType *at = static_cast<ArrayType *>(s->type);
-      int startingPoint = arrayBase + ((i-1) * getByteSizeOfType(at->underlying));
+      int startingPoint = arrayBase + ((i-1) * underlyingByteSize);
       declareStructVariable(element, getUnderlying(at), startingPoint);
       continue;
     }
     visitExpr(element);
     // Pop the value into a register
-    popToRegister(std::to_string(-(arrayBase + i * underlyingByteSize)) +
+    popToRegister(std::to_string(-(arrayBase + ((i-1) * underlyingByteSize))) +
                   "(%rbp)");
   }
   // Add the struct to the variable table
-  variableTable.insert({varName, std::to_string(-arrayBase) + "(%rbp)"});
-  variableCount += s->elements.size() * underlyingByteSize;
+
+  // NOTE: The value of arrays, when referencing their variable name, is a pointer to element #1.
+  // NOTE: So let's do the same calculation as earlier to find that very 1st byte.
+  int firstByteOffset = -(arrayBase + ((s->elements.size()) * underlyingByteSize));
+  variableTable.insert({varName, std::to_string(firstByteOffset) + "(%rbp)"});
 }
