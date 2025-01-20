@@ -2,6 +2,8 @@
 #include "optimizer/compiler.hpp"
 #include "optimizer/instr.hpp"
 #include "gen.hpp"
+
+#include <cstdint>
 #include <fstream>
 #include <cmath>
 
