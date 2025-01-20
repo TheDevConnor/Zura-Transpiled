@@ -178,11 +178,10 @@ bool TypeChecker::validateArgumentCount(CallExpr *call, Node::Expr *callee,
 
 bool TypeChecker::validateArgumentTypes(Maps *map, CallExpr *call, Node::Expr *callee,
                                         const std::vector<std::pair<std::string, Node::Type *>> &fnParams) {
-  int starting = callee->kind == ND_MEMBER ? 1 : 0;
-  for (size_t i = starting; i < call->args.size(); ++i) {
+  for (size_t i = 0; i < call->args.size(); ++i) {
     visitExpr(map, call->args[i]);
     std::string argType = type_to_string(return_type.get());
-    std::string expectedType = type_to_string(fnParams[i].second);
+    std::string expectedType = type_to_string(fnParams[i + (callee->kind == ND_MEMBER ? 1 : 0)].second);
 
     if (argType != expectedType) {
       std::string functionName = callee->kind == ND_IDENT ? static_cast<IdentExpr *>(callee)->name : static_cast<IdentExpr *>(static_cast<MemberExpr *>(callee)->lhs)->name;

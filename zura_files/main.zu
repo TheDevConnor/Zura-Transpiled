@@ -1,19 +1,19 @@
 const Timer := struct {
   time: int,
 
-  init := fn (self: *Timer) void {
-    self.time = 0;
+  init := fn (self: *Timer, initial: int) void {
+    self.time = initial;
   };
 
   print := fn (self: *Timer) void {
-    @dis("Time: ", self.time, "\n");
+    @dis("Time: ", self.time);
   };
 };
 
 const main := fn () int {
   have t: Timer;
-  t.init();
 
+  t.init(0);
   t.print();
 
   return 0;

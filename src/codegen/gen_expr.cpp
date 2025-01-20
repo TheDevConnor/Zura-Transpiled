@@ -657,7 +657,7 @@ void codegen::assignStructMember(Node::Expr *expr) {
       visitExpr(lhs);
       popToRegister("%rcx");
       visitExpr(e->rhs);
-      std::string popExpr = std::to_string(8 + offset) + "(%rcx)";
+      std::string popExpr = std::to_string(offset) + "(%rcx)";
       popToRegister(popExpr);
       pushRegister(popExpr); // Return the value (assignments are exprs after all)
     }

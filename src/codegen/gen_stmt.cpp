@@ -281,6 +281,10 @@ void codegen::funcDecl(Node::Stmt *stmt) {
                                              funcName + "\n\t"},
              .type = InstrType::Linker},
        Section::Main);
+  // Remove the function variables from the variable table
+  for (size_t i = 0; i < s->params.size(); i++) {
+    variableTable.erase(s->params.at(i).first);
+  }
 };
 
 void codegen::varDecl(Node::Stmt *stmt) {
@@ -317,7 +321,6 @@ void codegen::varDecl(Node::Stmt *stmt) {
                     // so we know the byte sizes.
       variableCount += getByteSizeOfType(at->underlying) * at->constSize;
     } else {
-      int whereBytes = -variableCount;
       visitExpr(s->expr);
       popToRegister(where); // For values small enough to fit in a register.
       variableTable.insert({s->name, where});
