@@ -324,10 +324,8 @@ void codegen::varDecl(Node::Stmt *stmt) {
       variableCount += getByteSizeOfType(s->type);
     }
   } else {
-    // Subtract from the stack pointer
-    // NOTE: this isn't really where they are stored anyways so this line was
-    // kinda useleess!!! push(Instr{.var = SubInstr{.lhs = "%rsp", .rhs = "$" +
-    // std::to_string(-whereBytes)}, .type = InstrType::Sub}, Section::Main);
+    variableTable.insert({s->name, where});      // Insert into table
+    variableCount += getByteSizeOfType(s->type); // Allocation (leaving space for future variables)
   }
   // Update the symbol table with the variable's position
 

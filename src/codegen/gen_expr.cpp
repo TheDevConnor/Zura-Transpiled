@@ -502,15 +502,10 @@ void codegen::memberExpr(Node::Expr *expr) {
     // and add to an offset.
     int offset = size;
     for (int i = fields.size(); i > 0; i--) {
-      offset -= fields[i=1].second.second;
+      offset -= fields[i-1].second.second;
       if (fields[i-1].first == fieldName) break;
     }
     // submit the answer :D
-    std::cout << std::to_string(offset) << ", " << fieldName << ", ";
-    for (int i = 0; i < fields.size(); i ++) {
-      std::cout << fields[i].first << ", ";
-    }
-    std::cout << std::endl;
     if (offset == 0) {
       pushRegister("(%rcx)");
     } else {
@@ -611,17 +606,18 @@ void codegen::assignStructMember(Node::Expr *expr) {
     int size = structByteSizes[structTypeName].first;
     std::vector<StructMember> fields = structByteSizes[structTypeName].second;
     // Find the position of the field
-    int offset = 0;
-    for (int i = 0; i < fields.size(); i++) {
+    int offset = size;
+    for (int i = fields.size(); i > 0; i--) {
+      offset -= fields[i].second.second;
       if (fields[i].first == rhs->name) {
-        offset = fields[i].second.second;
         break;
       }
     }
     // If it's a pointer, it's very simple.
     // This is if it's NOT simple...
-    if (member->asmType->kind == ND_STRUCT
-      && getUnderlying(member->asmType).find("struct") == 0) {
+    if (structByteSizes.find(getUnderlying(member->asmType)) != structByteSizes.end()
+      && member->asmType->kind == ND_SYMBOL_TYPE
+      && e->rhs->kind == ND_STRUCT) {
       // Find where the inner struct was previously stored
       // so we can override those values
       // step 1: find base address of the whole struct
@@ -653,24 +649,18 @@ void codegen::assignStructMember(Node::Expr *expr) {
       }
       push(Instr{.var=LeaInstr{.size=DataSize::Qword,.dest="%rcx",.src=std::to_string(8 - (size + offset)) + "(%rbp)"},.type=InstrType::Lea},Section::Main);
       pushRegister("%rcx");
-
-      // Offset %rsp by the size of the struct
-      // in case of function calls that push %rip
       return;
     } else {
       // We are setting a memberexpr to a ptr
       // ex. human.pet = dog;
-      // Get 'dog' value (the location of the struct)
+      // Pop the value into a register by evaluating the lhs
+      visitExpr(lhs);
+      popToRegister("%rcx");
       visitExpr(e->rhs);
-      // Pop the value into a register
-      int baseBytes = std::stoi(variableTable[lhs->name].substr(0, variableTable[lhs->name].find('(')));
-      std::string popExpr = std::to_string(baseBytes + 8 - offset) + "(%rbp)";
-      // optimizer bug fsr
+      std::string popExpr = std::to_string(8 + offset) + "(%rcx)";
       popToRegister(popExpr);
+      pushRegister(popExpr); // Return the value (assignments are exprs after all)
     }
-    // Push what's in the field
-    int baseBytes = std::stoi(variableTable[lhs->name].substr(0, variableTable[lhs->name].find('(')));
-    pushRegister(std::to_string(baseBytes + 8 - (size + offset)) + "(%rbp)");
     return;
   } else if (e->rhs->kind == ND_STRUCT) {
     // Just evaluate the struct expression but use the base of the already

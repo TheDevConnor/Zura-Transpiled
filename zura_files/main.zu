@@ -1,49 +1,20 @@
-const TokenKind := enum {
-  Let,
-  Ident,
-  Equals,
-  Int,
-  Semicolon,
+const Timer := struct {
+  time: int,
 
-  EOF
-};
+  init := fn (self: *Timer) void {
+    self.time = 0;
+  };
 
-const Token := struct {
-  kind: TokenKind,
-  value: str,
-  useless: int
+  print := fn (self: *Timer) void {
+    @dis("Time: ", self.time, "\n");
+  };
 };
 
 const main := fn () int {
-  have x: int = 10; # -8
-  have a: int = 18; # -16
-  have test: Token = {kind: TokenKind.Let, value: "let",
-  useless: 4
-  }; # -32
-  have tokens: []Token = [ # -128
-    { kind: TokenKind.Let, value: "let",
-    useless: 4
-    },
-    { kind: TokenKind.Ident, value: "myVar",
-    useless: 4
-    },
-    { kind: TokenKind.Equals, value: "=",
-    useless: 4
-    },
-    { kind: TokenKind.Int, value: "10",
-    useless: 4
-    },
-    { kind: TokenKind.Semicolon, value: ";",
-    useless: 4
-    }
-    { kind: TokenKind.EOF, value: "",
-    useless: 4
-    },
-  ];
-  have y: int = 15; # -136
-  # It works!!!
-  @dis(x, ", ", a, ", ", test.value, ", ", y);
-  tokens; # not an error lol
+  have t: Timer;
+  t.init();
 
-  return 0; # It was a success!
+  t.print();
+
+  return 0;
 };
