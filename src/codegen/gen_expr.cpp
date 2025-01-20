@@ -509,7 +509,7 @@ void codegen::memberExpr(Node::Expr *expr) {
     if (offset == 0) {
       pushRegister("(%rcx)");
     } else {
-      pushRegister(std::to_string(-offset) + "(%rcx)");
+      pushRegister(std::to_string(offset) + "(%rcx)");
     }
     return;
   }
