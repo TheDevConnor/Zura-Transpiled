@@ -10,7 +10,7 @@ const Person := struct {
     age: int;
     
     greet := fn (self: *Person) void {
-        @dis("Hello, my name is ", self.name, " and I am ", self.age, " years old.");
+        @dis("Hello, my name is ", self.name, " and I am ", self.age, " years old.\n");
     }; 
 };
 
