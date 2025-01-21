@@ -95,6 +95,7 @@ Node::Type *parseType(PStruct *psr, BindingPower bp);
 Node::Type *pointer_type(PStruct *psr);
 Node::Expr *null_type(PStruct *psr);
 Node::Type *type_application(PStruct *psr);
+Node::Type *function_type(PStruct *psr);
 
 // Pratt parser functions.
 PStruct *setupParser(PStruct *psr, Lexer *lex, Lexer::Token tk, std::string current_file);

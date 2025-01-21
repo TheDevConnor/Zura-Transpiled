@@ -64,6 +64,7 @@ enum NodeKind {
   ND_CALLABLE_TYPE, // Idk honestly
   ND_FUNCTION_TYPE, // fn (int) int
   ND_TEMPLATE_STRUCT_TYPE, // struct <T> { val = T }
+  ND_FUNCTION_TYPE_PARAM, // fn (int) int
   ND_NULL, // nil
 };
 

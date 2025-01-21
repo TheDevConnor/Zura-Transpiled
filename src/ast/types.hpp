@@ -79,3 +79,26 @@ public:
 
   ~TemplateStructType() = default;
 };
+
+class FunctionType : public Node::Type {
+public:
+  std::vector<Node::Type *> args;
+  Node::Type *ret;
+
+  FunctionType(std::vector<Node::Type *> args, Node::Type *ret)
+      : args(args), ret(ret) {
+    kind = NodeKind::ND_FUNCTION_TYPE;
+  }
+
+  void debug(int indent = 0) const override {
+    std::cout << "fn (";
+    for (auto &arg : args) {
+      arg->debug(indent);
+      std::cout << ", ";
+    }
+    std::cout << ") ";
+    ret->debug(indent);
+  }
+
+  ~FunctionType() = default;
+};

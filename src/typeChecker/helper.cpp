@@ -29,6 +29,8 @@ std::string TypeChecker::type_to_string(Node::Type *type) {
     TemplateStructType *temp = static_cast<TemplateStructType *>(type);
     return type_to_string(temp->name);
   }
+  case NodeKind::ND_FUNCTION_TYPE:
+    return type_to_string(static_cast<FunctionType *>(type)->ret);
   default: // Should never happen, but Connor (aka I) wrote this terrible code so anything is possable
     std::cout << "Nodekind: " << std::to_string((int)type->kind) << std::endl;
     handleError(0, 0, "Unknown type for type_to_string", "", "Type Error");

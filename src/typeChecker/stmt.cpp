@@ -55,9 +55,23 @@ void TypeChecker::visitFn(Maps *map, Node::Stmt *stmt) {
   declare(map->local_symbol_table, fn_stmt->name, fn_stmt->returnType,
           fn_stmt->line, fn_stmt->pos);
   for (std::pair<std::string, Node::Type *> &param : fn_stmt->params) {
+    // check if the type is a function type 'fn () int'
+    if (param.second->kind == ND_FUNCTION_TYPE) {
+      FunctionType *fn = static_cast<FunctionType *>(param.second);
+      
+      // look at the args and if so add the args to the local table
+      std::vector<std::pair<std::string, Node::Type *>> params;
+      for (Node::Type *arg : fn->args) {
+        declare(map->local_symbol_table, param.first, arg, fn_stmt->line, fn_stmt->pos);
+        params.push_back({param.first, arg});
+      }
+
+      declare_fn(map, {param.first, fn->ret}, params, fn_stmt->line, fn_stmt->pos);
+    } else {
+      declare(map->local_symbol_table, param.first, param.second, fn_stmt->line, fn_stmt->pos);
+    }
+
     map->function_params.push_back(param.first);
-    declare(map->local_symbol_table, param.first, param.second, fn_stmt->line,
-            fn_stmt->pos);
   }
 
   declare_fn(map, {fn_stmt->name, fn_stmt->returnType}, fn_stmt->params,

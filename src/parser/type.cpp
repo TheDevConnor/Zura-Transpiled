@@ -62,3 +62,20 @@ Node::Type *Parser::type_application(PStruct *psr) {
   Node::Type *right = parseType(psr, defaultValue);
   return new TemplateStructType(right, left);
 }
+
+Node::Type *Parser::function_type(PStruct *psr) {
+  psr->advance(psr); // Skip the fn
+  psr->expect(psr, TokenKind::LEFT_PAREN,
+              "Expected a left parenthesis after a function type!");
+  std::vector<Node::Type *> args;
+  while (psr->peek(psr).kind != TokenKind::RIGHT_PAREN) {
+    args.push_back(parseType(psr, defaultValue));
+    if (psr->peek(psr).kind == TokenKind::COMMA) {
+      psr->advance(psr);
+    }
+  }
+  psr->advance(psr); // Skip the right parenthesis
+  Node::Type *ret = parseType(psr, defaultValue);
+  
+  return new FunctionType(args, ret);
+}

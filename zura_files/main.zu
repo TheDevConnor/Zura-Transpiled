@@ -1,20 +1,17 @@
-const Timer := struct {
-  time: int,
+const test_with_retries := fn (action: fn () int, retries: int) int {
+  loop (i = 0; i < retries) : (i++) {
+    if (action() == 0) return 0;
+  }
+  return 1;
+};
 
-  init := fn (self: *Timer, initial: int) void {
-    self.time = initial;
-  };
-
-  print := fn (self: *Timer) void {
-    @dis("Time: ", self.time);
-  };
+const test := fn () int {
+  return 0;
 };
 
 const main := fn () int {
-  have t: Timer;
 
-  t.init(0);
-  t.print();
+  test_with_retries(test(), 3);
 
   return 0;
 };

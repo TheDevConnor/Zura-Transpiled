@@ -45,6 +45,9 @@ void Parser::createTypeMaps() {
       {TokenKind::LEFT_BRACKET, array_type},
       {TokenKind::STAR, pointer_type}, // *
       {TokenKind::LESS, type_application}, // <
+
+      // Function types 'fn (args) type'
+      {TokenKind::FUN, function_type},
   };
   type_led_lu = {};
   type_bp_lu = bp_lu;
