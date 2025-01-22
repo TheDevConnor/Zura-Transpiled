@@ -49,6 +49,8 @@ void FlagConfig::print(int argc, char **argv) {
         "\n  -name [name]  Set the name of the output file"
         "\n  -save [path]  Save the output file to a specific path"
         "\n  -clean        Clean the build files [*.asm, *.o]"
+        "\n Zura Lsp Flags:"
+        "\n  -lsp          Start the Language Server Protocol"
     };
 
     for (int i = 0; i < 4; i++) {
@@ -72,11 +74,18 @@ void FlagConfig::runBuild(int argc, char **argv) {
         [](const char *arg) { return strcmp(arg, "-clean") == 0; },
         [](const char *arg) { return strcmp(arg, "-debug") == 0; },
         [](const char *arg) { return strcmp(arg, "-quiet") == 0; },
+        [](const char *arg) { return strcmp(arg, "-lsp") == 0; },
     };
 
     if (argc < 2) {
         std::cout << "No arguments provided" << std::endl;
         Exit(ExitValue::INVALID_FILE);
+    }
+
+    // check if they are running the language server protocol
+    if (buildConditions[6](argv[1])) {
+        std::cout << "This feature is not yet implemented" << std::endl;
+        Exit(ExitValue::_ERROR);
     }
 
     for (int i = 0; i < 4; i++) {
