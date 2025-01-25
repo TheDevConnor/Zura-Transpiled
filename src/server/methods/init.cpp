@@ -1,0 +1,20 @@
+#include "../json.hpp"
+#include "../lsp.hpp"
+
+nlohmann::ordered_json lsp::methods::initialize(nlohmann::json& request) {
+  using namespace nlohmann;
+  ordered_json response = {
+    {"capabilities", {
+      {"completionProvider", {
+        {"resolveProvider", false},
+        {"triggerCharacters", json::array({"@", "."})}
+      }},
+      {"textDocumentSync", TextDocumentSyncKind::Incremental}
+    }},
+    {"serverInfo", {
+      {"name", "zura-lsp"},
+      {"version", "0.0.1"}
+    }}
+  };
+  return response;
+}

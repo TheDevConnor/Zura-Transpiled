@@ -28,6 +28,10 @@ set(ZURA_HEADER_FILES
     # Type Checker Files
     src/typeChecker/type.hpp
 
+    # LSP files
+    src/server/lsp.hpp
+    src/server/json.hpp
+
     # Code Gen Files
     src/codegen/optimizer/optimize.hpp
     src/codegen/optimizer/stringify.hpp
@@ -60,6 +64,13 @@ set(ZURA_SOURCE_FILES
     src/typeChecker/type.cpp
     src/typeChecker/map.cpp
     src/typeChecker/helper.cpp
+
+    # LSP files
+    src/server/lsp.cpp
+    src/server/documents.cpp
+    src/server/methods/init.cpp
+    src/server/methods/deinit.cpp
+    src/server/methods/completions.cpp
 
     # Code Gen Files
     src/codegen/optimizer/optimize.cpp

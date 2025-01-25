@@ -15,6 +15,7 @@ public:
 
 enum ExitValue {
   BUILT = 0,
+  SUCCESS = 0,
   INVALID_FILE_EXTENSION = 1,
   INVALID_FILE = 2,
   LEXER_ERROR = 3,

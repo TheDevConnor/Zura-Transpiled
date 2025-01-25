@@ -341,7 +341,7 @@ void codegen::handleFloatType(Node::Expr *arg) {
 
 // Add 1
 int codegen::getFileID(const std::string &file) {
-  for (int i = 0; i < fileIDs.size(); i++) {
+  for (size_t i = 0; i < fileIDs.size(); i++) {
     if (fileIDs[i] == file) {
       return i;
     }

@@ -9,6 +9,8 @@
 
 #include "common.hpp"
 #include "helper/flags.hpp"
+#include "helper/term_color/color.hpp"
+#include "server/lsp.hpp"
 
 std::string get_version(const char *path) {
     std::ifstream file(path);
@@ -50,7 +52,7 @@ void FlagConfig::print(int argc, char **argv) {
         "\n  -save [path]  Save the output file to a specific path"
         "\n  -clean        Clean the build files [*.asm, *.o]"
         "\n Zura Lsp Flags:"
-        "\n  -lsp          Start the Language Server Protocol"
+        "\n  -lsp          Create an LSP connection via stdio."
     };
 
     for (int i = 0; i < 4; i++) {
@@ -60,7 +62,7 @@ void FlagConfig::print(int argc, char **argv) {
                 Exit(ExitValue::UPDATED);
             }
             std::cout << messages[i] << std::endl;
-            Exit(ExitValue::FLAGS_PRINTED);
+            Exit(ExitValue::SUCCESS); // Why would you error when you printed successfully?
         }
     }
 }
@@ -77,15 +79,23 @@ void FlagConfig::runBuild(int argc, char **argv) {
         [](const char *arg) { return strcmp(arg, "-lsp") == 0; },
     };
 
-    if (argc < 2) {
+    if (argc == 1) {
         std::cout << "No arguments provided" << std::endl;
         Exit(ExitValue::INVALID_FILE);
     }
 
     // check if they are running the language server protocol
     if (buildConditions[6](argv[1])) {
-        std::cout << "This feature is not yet implemented" << std::endl;
-        Exit(ExitValue::_ERROR);
+      // The LSP command option will bascially take over control of the whole process.
+      // We no longer care about any other options.
+      
+      // Colored text
+      // This was causing bugs because of the unexpected output for the Client. It would have been cool to see though!
+      // Color col;
+      // std::cout << col.color("Zura " + ZuraVersion + " LSP", Color::CYAN, false, true) << "\n";
+      // std::cout << col.color("The builtin LSP is made solely for the computers. It is not meant for humans. You have been warned!", Color::RED, false, true) << "\n";
+      lsp::initialize();
+      return;
     }
 
     for (int i = 0; i < 4; i++) {

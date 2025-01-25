@@ -48,7 +48,7 @@ public:
     Node::printIndent(indent + 1);
     std::cout << "WhatExpr: \n";
     coverExpr->debug(indent + 2);
-    for (int i = 0; i < cases.size(); i++) {
+    for (size_t i = 0; i < cases.size(); i++) {
       Node::printIndent(indent + 1);
       std::cout << "Case #" << std::to_string(i) << ": \n";
       Node::printIndent(indent + 2);
