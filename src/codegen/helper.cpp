@@ -293,9 +293,9 @@ void codegen::handleLiteral(Node::Expr *arg) {
   // Define the string in the readonly data section
   push(Instr{.var=Label{.name=strLabel},.type=InstrType::Label},Section::ReadonlyData);
   //? This shouldnt be an asciz because we know the length of the str ahead of time but im not implementing the .str/.ascii directive
-  push(Instr{.var=AscizInstr{.what=stringValue},.type=InstrType::Asciz},Section::ReadonlyData);
+  push(Instr{.var=AscizInstr{.what='"' + stringValue + '"'},.type=InstrType::Asciz},Section::ReadonlyData);
   // perform the operation by moving the string into %rsi and the length into %rdx
-  moveRegister("%rsi", strLabel + "(%rip)", DataSize::Qword, DataSize::Qword);
+  push(Instr{.var=LeaInstr{.size=DataSize::Qword, .dest="%rsi",.src=strLabel+"(%rip)"},.type=InstrType::Lea},Section::Main);
   moveRegister("%rdx", "$" + std::to_string(stringValue.length()), DataSize::Qword, DataSize::Qword);
   prepareSyscallWrite(); // The end!
 };
@@ -373,7 +373,14 @@ signed short int codegen::getByteSizeOfType(Node::Type *type) {
   }
   if (type->kind == NodeKind::ND_ARRAY_TYPE) {
     return 8; // Pointer to first element
+    // In the case where we need to have the size of the array based on type * length, they will do it on their own
   }
+  if (type->kind == NodeKind::ND_FUNCTION_TYPE) {
+    return 8; // Also just a pointer
+  }
+  if (type->kind == NodeKind::ND_FUNCTION_TYPE_PARAM) {
+    return 8; // Also just a pointer lol
+  };
   if (type->kind == NodeKind::ND_SYMBOL_TYPE) {
     SymbolType *sym = static_cast<SymbolType *>(type);
     if (sym->name == "int") {

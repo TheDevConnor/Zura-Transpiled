@@ -1,17 +1,1 @@
-const test_with_retries := fn (action: fn () int, retries: int) int {
-  loop (i = 0; i < retries) : (i++) {
-    if (action() == 0) return 0;
-  }
-  return 1;
-};
-
-const test := fn () int {
-  return 0;
-};
-
-const main := fn () int {
-
-  test_with_retries(test(), 3);
-
-  return 0;
-};
+const a:=struct{x:int,};const main:=fn()int{have b:a={x:72};return b.x;};

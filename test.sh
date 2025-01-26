@@ -9,7 +9,7 @@ all_pass=1
 
 exit_code=$?
 expected_code=5
-echo "const main := fn () int { return 5; };" > zura_files/main.zu
+echo $'const main := fn () int { return 5; };' > zura_files/main.zu
 test1_passed=1
 ./release/zura build zura_files/main.zu -name main -quiet
 ./main
@@ -23,7 +23,7 @@ fi
 
 # Test 2: Expect returned variable 19
 expected_code=10
-echo "const main := fn () int { have a: int = 10; return a; };" > zura_files/main.zu
+echo $'const main := fn () int { have a: int = 10; return a; };' > zura_files/main.zu
 test2_passed=1
 ./release/zura build zura_files/main.zu -name main -quiet
 ./main
@@ -36,7 +36,7 @@ fi
 
 # Test 3: Use 2 variable references
 expected_code=10
-echo "const main := fn () int { have a: int = 10; have b: int = 5; return a; };" > zura_files/main.zu
+echo $'const main := fn () int { have a: int = 10; have b: int = 5; return a; };' > zura_files/main.zu
 test3_passed=1
 ./release/zura build zura_files/main.zu -name main -quiet
 ./main
@@ -49,7 +49,7 @@ fi
 
 # Test 4: Binary operations on literals
 expected_code=20
-echo "const main := fn () int { return 13 + 7; };" > zura_files/main.zu
+echo $'const main := fn () int { return 13 + 7; };' > zura_files/main.zu
 test4_passed=1
 ./release/zura build zura_files/main.zu -name main -quiet
 ./main
@@ -62,7 +62,7 @@ fi
 
 # Test 5: Binary operations on variables
 expected_code=25
-echo "const main := fn () int { have a: int = 13; have b: int = 12; return a + b; };" > zura_files/main.zu
+echo $'const main := fn () int { have a: int = 13; have b: int = 12; return a + b; };' > zura_files/main.zu
 test5_passed=1
 ./release/zura build zura_files/main.zu -name main -quiet
 ./main
@@ -75,7 +75,7 @@ fi
 
 # Test 6: Binary operations on variables and literals
 expected_code=30
-echo "const main := fn () int { have a: int = 13; return a + 17; };" > zura_files/main.zu
+echo $'const main := fn () int { have a: int = 13; return a + 17; };' > zura_files/main.zu
 test6_passed=1
 ./release/zura build zura_files/main.zu -name main -quiet
 ./main
@@ -88,10 +88,10 @@ fi
 
 # Test 7: Print a string literal using dis
 expected_output="Hello, World!"
-echo "const main := fn () int { dis(\"$expected_output\"); return 0; };" > zura_files/main.zu
+echo "const main := fn () int { @dis(\"$expected_output\"); return 0; };" > zura_files/main.zu
 test7_passed=1
 ./release/zura build zura_files/main.zu -name main -quiet
-output=$(./main)
+output=$(./main | tr -d '\0')
 if [ "$output" != "$expected_output" ]; then
     echo "Test 7 failed, program expected '$expected_output' with output '$output'"
     all_pass=0
@@ -100,10 +100,10 @@ fi
 
 # Test 8: Print a string variable from dis
 expected_output="Goodbye, World!"
-echo "const main := fn () int { have a: int = 14; have b: str = \"$expected_output\"; dis(b); return 0; };" > zura_files/main.zu
+echo "const main := fn () int { have a: int = 14; have b: str = \"$expected_output\"; @dis(b); return 0; };" > zura_files/main.zu
 test8_passed=1
 ./release/zura build zura_files/main.zu -name main -quiet
-output=$(./main)
+output=$(./main | tr -d '\0')
 if [ "$output" != "$expected_output" ]; then
     echo "Test 8 failed, program expected '$expected_output' with output '$output'"
     all_pass=0
@@ -112,7 +112,7 @@ fi
 
 # Test 9: Basic function to return constant
 expected_code=35
-echo "const foo := fn () int { return 35; }; const main := fn () int { return foo(); };" > zura_files/main.zu
+echo $'const foo := fn () int { return 35; }; const main := fn () int { return foo(); };' > zura_files/main.zu
 test9_passed=1
 ./release/zura build zura_files/main.zu -name main -quiet
 ./main
@@ -125,7 +125,7 @@ fi
 
 # Test 10: Function returns parameter
 expected_code=40
-echo "const foo := fn (a: int, b: int) int { return b; }; const main := fn () int { return foo(83, 40); };" > zura_files/main.zu
+echo $'const foo := fn (a: int, b: int) int { return b; }; const main := fn () int { return foo(83, 40); };' > zura_files/main.zu
 test10_passed=1
 ./release/zura build zura_files/main.zu -name main -quiet
 ./main
@@ -138,7 +138,7 @@ fi
 
 # Test 11: Function does operation on parameters
 expected_code=45
-echo "const foo := fn (a: int, b: int) int { return a + b; }; const main := fn () int { return foo(20, 25); };" > zura_files/main.zu
+echo $'const foo := fn (a: int, b: int) int { return a + b; }; const main := fn () int { return foo(20, 25); };' > zura_files/main.zu
 test11_passed=1
 ./release/zura build zura_files/main.zu -name main -quiet
 ./main
@@ -151,7 +151,7 @@ fi
 
 # Test 12: Complex binary expressions
 expected_code=28
-echo "const main := fn () int { return 4 + 3 * 8; };" > zura_files/main.zu
+echo $'const main := fn () int { return 4 + 3 * 8; };' > zura_files/main.zu
 test12_passed=1
 ./release/zura build zura_files/main.zu -name main -quiet
 ./main
@@ -164,7 +164,7 @@ fi
 
 # test 13: For loop with variable
 expected_code=10
-echo "const main := fn () int { have a: int = 0; loop (i = 0; i < 10) : (i++) { a = a + 1; } return a; };" > zura_files/main.zu
+echo $'const main := fn () int { have a: int = 0; loop (i = 0; i < 10) : (i++) { a = a + 1; } return a; };' > zura_files/main.zu
 test13_passed=1
 ./release/zura build zura_files/main.zu -name main -quiet
 ./main
@@ -178,10 +178,10 @@ fi
 # test 14: dis on a int variable
 expected_output="10"
 expected_code=0 # expect success
-echo "const main := fn () int { have a: int = 10; dis(a); return 0; };" > zura_files/main.zu
+echo $'const main := fn () int { have a: int = 10; @dis(a); return 0; };' > zura_files/main.zu
 test14_passed=1
 ./release/zura build zura_files/main.zu -name main -quiet
-output=$(./main)
+output=$(./main | tr -d '\0')
 exit_code=$?
 if [ "$output" != "$expected_output" ]; then
     echo "Test 14 failed, program expected '$expected_output' with output '$output'"
@@ -197,7 +197,7 @@ fi
 # test 15: dis on a int literal
 expected_output="12"
 expected_code=1
-echo "const main := fn () int { dis(12); return 1; };" > zura_files/main.zu
+echo $'const main := fn () int { @dis(12); return 1; };' > zura_files/main.zu
 test15_passed=1
 ./release/zura build zura_files/main.zu -name main -quiet
 output=$(./main)
@@ -215,7 +215,7 @@ fi
 
 # test 16: struct with 1 field
 expected_code=72
-echo "const a:=struct{x:int;};const main:=fn()int{have b:a={x:72};return b.x;};" > zura_files/main.zu
+echo $'const a:=struct{x:int,};const main:=fn()int{have b:a={x:72};return b.x;};' > zura_files/main.zu
 test16_passed=1
 ./release/zura build zura_files/main.zu -name main -quiet
 ./main
