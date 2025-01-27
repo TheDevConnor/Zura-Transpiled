@@ -226,6 +226,18 @@ if [ $exit_code -ne $expected_code ]; then
     test16_passed=0
 fi
 
+# test 17: while loop
+expected_code=10
+echo $'const main := fn () int { have a: int = 0; loop (a < 10) { a = a + 1; } return a; };' > zura_files/main.zu
+test17_passed=1
+./release/zura build zura_files/main.zu -name main -quiet
+./main
+exit_code=$?
+if [ $exit_code -ne $expected_code ]; then
+    echo "Test 17 failed, program expected $expected_code with exit code $exit_code"
+    all_pass=0
+    test17_passed=0
+fi
 
 if [ $all_pass -eq 1 ]; then
     echo "All tests passed" && exit 0

@@ -1,8 +1,17 @@
-Add in control flow to the codegen (done => if, for, switch; still need => while)
+Add in control flow to the codegen (done => if, for, switch, while)
 NOTE: Read into switch statements "jump tables", and how to emit them in ASM. => Kind of done. Need more research.
 
 Add and recognize more int types in asm. (Ex. byte, short, long, quad).
  - IMPORTANT - Update stmt::enumDecl IMMEDIATELY after adding longs
+
+ Add in stdin and stdout. As well as read and write (for files)
+ Add in calloc, malloc, realloc, free
+
+ add in the lsp fully
+ NOTE: Read into the calling convention for the lsp to comminicat with vscode and nvim respectfully
+ NOTE: Good source for lsp integration 
+        https://code.visualstudio.com/api/language-extensions/language-server-extension-guide
+        https://microsoft.github.io/language-server-protocol/specifications/lsp/3.17/specification/
 
 A test for if adding TCP/HTTP requests
 Pointers implemented now. Still backwards from C declarations tho but shh
@@ -17,29 +26,3 @@ Pointers implemented now. Still backwards from C declarations tho but shh
       - Accept Syscall #: SYS_accept 43
       - Read Syscall #:   SYS_read 0
       - Write Syscall #:  SYS_WRITE 1 (Already implemented in the form of 'dis')
-
-
-If you are reading this, then hello! This is just a little note on why I did what I did in this commit:
-C code like this produces "backwards-declared variables" like this:
-int main() {
-  int x; # -24(%rbp)
-  int y; # -16(%rbp)
-  int z; # - 8(%rbp)
-  # Notice going from greatest to least
-  return 0;
-}
-
-However, if you add a scope for some reason, the variables will be declared forwards, like they always have.
-int main() {
-  int x;   # - 8(%rbp)
-  int y;   # -16(%rbp)
-  if (x) {
-    int z; # -24(%rbp)
-  }
-  return 0;
-}
-
-This is why I made a global `declareVariablesForward` boolean in gen.hpp, is because of this.
-Although right now, the aim is not for full compatibility with C, but rather just to get something working,
-I thought that I should try my best to get as close as possible to C during the process right now,
-rather than making many big, painful changes later.
