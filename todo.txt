@@ -7,6 +7,8 @@ Add and recognize more int types in asm. (Ex. byte, short, long, quad).
  Add in stdin and stdout. As well as read and write (for files)
  Add in calloc, malloc, realloc, free
 
+ Add in proper support for arrays and index over strings, arrays, etc.
+
  add in the lsp fully
  NOTE: Read into the calling convention for the lsp to comminicat with vscode and nvim respectfully
  NOTE: Good source for lsp integration 
@@ -26,3 +28,5 @@ Pointers implemented now. Still backwards from C declarations tho but shh
       - Accept Syscall #: SYS_accept 43
       - Read Syscall #:   SYS_read 0
       - Write Syscall #:  SYS_WRITE 1 (Already implemented in the form of 'dis')
+
+TRHEN WE AT VERSION 1 BABY!
