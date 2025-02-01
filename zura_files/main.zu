@@ -1,1 +1,29 @@
-const main := fn () int { have a: int = 0; loop (a < 10) { a = a + 1; } return a; };
+const TokenKind := enum {
+    IDENTIFIER,
+    VARIABLE,
+    EQUALS,
+    SEMICOLON,
+    EOF,
+};
+const Token := struct {
+    kind: TokenKind,
+    value: str,
+    is_eof := fn (self: *Token) bool {
+        if (self.kind == TokenKind.EOF) return true;
+        return false;
+    };
+    is := fn (self: *Token, kind: TokenKind) bool {
+        if (self.kind == kind) return true;
+        return false;
+    };
+};
+
+const main := fn () int {
+  have arr: []Token = [
+    {kind: TokenKind.EQUALS, value: "tickle tickle"}
+  ];
+
+  @dis(arr[0].value);
+
+  return 0;
+};

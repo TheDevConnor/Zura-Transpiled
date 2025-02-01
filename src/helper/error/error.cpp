@@ -88,6 +88,11 @@ std::string ErrorClass::error(int line, int pos, const std::string &msg,
                                    : col.color(errorType, Color::MAGENTA, true, true)) + ": ";
   // check if the msg begins with 'No value found for key'
   if (msg.find("No value found for key") != std::string::npos) {
+    // check if fatal and error
+    if (isFatal) {
+      printError();
+      Exit(ExitValue::_ERROR);
+    }
     return line_error; // no need to print the message
   } else {
     line_error += msg + "\n";
@@ -147,21 +152,26 @@ std::string ErrorClass::error(int line, int pos, const std::string &msg,
   line_error += std::string(pos + 5, ' ') + col.color("^", Color::RED, false, true) + "\n";
 
   if (errors.find(line) == errors.end()) errors[line] = line_error;
+  if (isFatal) {
+    std::cout << "Guys its fatal bitch" << std::endl;
+    printError();
+    if (isGeneration) Exit(ExitValue::GENERATOR_ERROR);
+    if (isTypeError) Exit(ExitValue::TYPE_ERROR);
+    if (isParser) Exit(ExitValue::PARSER_ERROR); 
+    Exit(ExitValue::LEXER_ERROR); // Process of elimination
+  }
   return line_error;
 }
 
 void ErrorClass::printError() {
   if (!errors.empty()) {
-    if (!errors.empty()) {
-      std::cout << "\r\033[2K"; // Clear the line and move to start -- overwrite previous garbage
-      std::cout << "Total number of Errors: "
-                << col.color(std::to_string(errors.size()), Color::RED, true,
-                             false)
-                << std::endl;
-      for (const std::pair<int, std::string>& errorPair : errors) {
-        std::cout << errorPair.second << std::endl;
-      }
+    std::cout << "\r\033[2K"; // Clear the line and move to start -- overwrite previous garbage
+    std::cout << "Total number of Errors: "
+              << col.color(std::to_string(errors.size()), Color::RED, true,
+                            false)
+              << std::endl;
+    for (const std::pair<int, std::string>& errorPair : errors) {
+      std::cout << errorPair.second << std::endl;
     }
-    Exit(ExitValue::_ERROR);
   }
 }

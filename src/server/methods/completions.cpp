@@ -52,5 +52,8 @@ nlohmann::ordered_json lsp::methods::completion(nlohmann::json& request) {
       };
   }
   // TODO: Get the TypeChecker to go sicko mode and do this for us
-  return json::array();
+  return ordered_json {
+    {"isIncomplete", false},
+    {"items", ordered_json::array()} // explicitly empty array (there are no values)
+  };
 }

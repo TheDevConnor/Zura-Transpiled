@@ -22,8 +22,9 @@ T Parser::lookup(PStruct *psr, const std::vector<std::pair<U, T>> &lu, U key) {
 
   if (it == lu.end()) {
     ErrorClass::error(0, 0, "No value found for key in Type maps", "",
-                      "Parser Error", node.current_file, lexer, psr->tks, true,
-                      false, false, false, false, false);
+                      "Parser Error", node.current_file, lexer, psr->tks,
+                      true, false, true, false, false, false);
+    // Note: IS FATAL! Do not dereference 'it' if its bad!
   }
 
   return it->second;

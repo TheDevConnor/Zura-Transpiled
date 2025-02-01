@@ -52,12 +52,16 @@ void lsp::main() {
       if (methodMap.contains(request.at("method"))) {
         nlohmann::ordered_json response = methodMap.at(request.at("method"))(request);
         nlohmann::ordered_json finalResult = {
-          {"id", request.at("id")},
+          {"jsonrpc", "2.0"},
           {"result", response}
         };
+        if (request.contains("id")) {
+          finalResult["id"] = request["id"];
+        }
         std::string responseStr = finalResult.dump();
-        logging::log("Content-Length: " +  std::to_string(responseStr.size()) +  "\r\n\r\n" +  responseStr +  "\n");
-        std::cout << "Content-Length: " << std::to_string(responseStr.size()) << "\r\n\r\n" << responseStr << std::endl;
+        std::string header = "Content-Length: " + std::to_string(responseStr.size()) + "\r\n\r\n";
+        logging::log (header + responseStr + "\n");
+        std::cout << (header + responseStr) << std::flush;
       } else if (eventMap.contains(request.at("method"))) {
         // These do not return results and are OK to invoke just like this
         eventMap.at(request.at("method"))(request);
