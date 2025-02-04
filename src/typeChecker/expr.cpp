@@ -81,12 +81,10 @@ void TypeChecker::visitIdent(Maps *map, Node::Expr *expr) {
   IdentExpr *ident = static_cast<IdentExpr *>(expr);
   Node::Type *res = nullptr;
 
-  if (map->local_symbol_table.find(ident->name) !=
-      map->local_symbol_table.end()) {
+  if (map->local_symbol_table.find(ident->name) != map->local_symbol_table.end()) {
     res = map->local_symbol_table[ident->name];
     ident->asmType = createDuplicate(res);
-  } else if (map->global_symbol_table.find(ident->name) !=
-             map->global_symbol_table.end()) {
+  } else if (map->global_symbol_table.find(ident->name) != map->global_symbol_table.end()) {
     res = map->global_symbol_table[ident->name];
     ident->asmType = createDuplicate(res);
   }
@@ -151,18 +149,27 @@ void TypeChecker::visitBinary(Maps *map, Node::Expr *expr) {
 
 void TypeChecker::visitUnary(Maps *map, Node::Expr *expr) {
   UnaryExpr *unary = static_cast<UnaryExpr *>(expr);
+
+  if (unary->op == "-") {
+    // update the bool on the value to be negative
+    IntExpr *integer = static_cast<IntExpr *>(unary->expr);
+    integer->isNegative = true;
+    visitExpr(map, integer);
+
+    if (type_to_string(return_type.get()) != "int") {
+      std::string msg = "Unary operation '" + unary->op +
+                        "' requires the type to be an 'int' but got '" +
+                        type_to_string(return_type.get()) + "'";
+      handleError(unary->line, unary->pos, msg, "", "Type Error");
+    }
+
+    return;
+  }
+
   visitExpr(map, unary->expr);
 
   return_type = checkReturnType(expr, "unknown");
   expr->asmType = createDuplicate(return_type.get());
-  ;
-
-  if (unary->op == "-" && type_to_string(return_type.get()) != "int") {
-    std::string msg = "Unary operation '" + unary->op +
-                      "' requires the type to be an 'int' but got '" +
-                      type_to_string(return_type.get()) + "'";
-    handleError(unary->line, unary->pos, msg, "", "Type Error");
-  }
 
   if (unary->op == "!" && type_to_string(return_type.get()) != "bool") {
     std::string msg = "Unary operation '" + unary->op +

@@ -1077,3 +1077,12 @@ void codegen::declareArrayVariable(Node::Expr *expr, short int arrayLength,
   int firstByteOffset = -(arrayBase + ((s->elements.size()) * underlyingByteSize));
   variableTable.insert({varName, std::to_string(firstByteOffset) + "(%rbp)"});
 }
+
+void codegen::inputStmt(Node::Stmt *stmt) {
+  InputStmt *s = static_cast<InputStmt *>(stmt);
+
+  push(Instr{.var = Comment{.comment = "input statement"}, .type = InstrType::Comment},Section::Main);
+  pushDebug(s->line, stmt->file_id, s->pos);
+
+  std::cerr << "Error: Input statement not yet implemented" << std::endl;
+}

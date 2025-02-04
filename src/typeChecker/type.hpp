@@ -13,6 +13,7 @@
 #include <utility>
 #include <vector>
 
+
 namespace TypeChecker {
 extern std::string struct_name;
 extern bool isType;
@@ -170,6 +171,7 @@ void visitImport(Maps *map, Node::Stmt *stmt);
 void visitLink(Maps *map, Node::Stmt *stmt);
 void visitExtern(Maps *map, Node::Stmt *stmt);
 void visitMatch(Maps *map, Node::Stmt *stmt);
+void visitInput(Maps *map, Node::Stmt *stmt);
 
 // !Expr functions
 void visitTemplateCall(Maps *map, Node::Expr *expr);

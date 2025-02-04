@@ -69,6 +69,7 @@ void _return(Node::Stmt *stmt);
 void linkFile(Node::Stmt *stmt);
 void externName(Node::Stmt *stmt);
 void matchStmt(Node::Stmt *stmt);
+void inputStmt(Node::Stmt *stmt);
 
 void _arrayExpr(Node::Expr *expr);
 void arrayElem(Node::Expr *expr);
@@ -267,6 +268,7 @@ void popToRegister(const std::string &reg);
 void pushRegister(const std::string &reg);
 void pushDebug(int line, int file, int column = -1);
 void handleExitSyscall();
+void handleInputSyscall();
 void handleReturnCleanup();
 
 // Helper for the if statement condition

@@ -1,29 +1,13 @@
-const TokenKind := enum {
-    IDENTIFIER,
-    VARIABLE,
-    EQUALS,
-    SEMICOLON,
-    EOF,
-};
-const Token := struct {
-    kind: TokenKind,
-    value: str,
-    is_eof := fn (self: *Token) bool {
-        if (self.kind == TokenKind.EOF) return true;
-        return false;
-    };
-    is := fn (self: *Token, kind: TokenKind) bool {
-        if (self.kind == kind) return true;
-        return false;
-    };
-};
-
 const main := fn () int {
-  have arr: []Token = [
-    {kind: TokenKind.EQUALS, value: "tickle tickle"}
-  ];
+    have name: str = "";
+    have age: str = "";
 
-  @dis(arr[0].value);
+    @input("What is your name? ", name, 256);
+    @input("How old are you? ", age, 256);
 
-  return 0;
+    have ageInt: int = @cast<int>(age);
+
+    @dis("hello, ", name, "! You are ", ageInt, " years old.");
+
+    return 0;
 };

@@ -575,3 +575,31 @@ public:
     std::cout << "ContinueStmt\n";
   }
 };
+
+class InputStmt : public Node::Stmt {
+public: 
+  int line, pos;
+  Node::Expr *msg;
+  Node::Expr *name;
+  Node::Expr *sysCall;
+
+  InputStmt(int line, int pos, Node::Expr * msg, Node::Expr *name, Node::Expr * sysCall, int file)
+      : line(line), pos(pos), msg(msg), name(name), sysCall(sysCall) {
+    file_id = file;
+    kind = NodeKind::ND_INPUT_STMT;
+  }
+
+  void debug(int indent = 0) const override {
+    Node::printIndent(indent);
+    std::cout << "InputStmt: \n";
+    Node::printIndent(indent + 1);
+    std::cout << "Msg: \n";
+    msg->debug(indent + 2);
+    Node::printIndent(indent + 1);
+    std::cout << "Name: \n";
+    name->debug(indent + 2);
+    Node::printIndent(indent + 1);
+    std::cout << "SysCall: \n";
+    sysCall->debug(indent + 2);
+  }
+};

@@ -59,9 +59,7 @@ bool TypeChecker::checkTypeMatch(const std::shared_ptr<SymbolType> &lhs,
                                  int pos, std::string &msg) {
   if (type_to_string(lhs.get()) != type_to_string(rhs.get())) {
     // if one side is of type 'any' let the other side be the type so it is not an error
-    if (type_to_string(lhs.get()) == "any" || type_to_string(rhs.get()) == "any") {
-      return true;
-    }
+    if (type_to_string(lhs.get()) == "any" || type_to_string(rhs.get()) == "any") return true;
     handleError(line, pos, msg, "", "Type Error");
     return false;
   }

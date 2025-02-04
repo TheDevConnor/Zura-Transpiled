@@ -5,6 +5,7 @@
 
 #include <iostream>
 #include <memory>
+#include <string>
 #include <vector>
 
 void TypeChecker::visitStmt(Maps *map, Node::Stmt *stmt) {
@@ -508,4 +509,40 @@ void TypeChecker::visitBreak(Maps *map, Node::Stmt *stmt) {
 
 void TypeChecker::visitContinue(Maps *map, Node::Stmt *stmt) {
   // nothing to do here
+}
+
+//         msg,       varName,      sysCall
+// @input(str, (str, char*, []char), int)
+void TypeChecker::visitInput(Maps *map, Node::Stmt *stmt) {
+  InputStmt *input_stmt = static_cast<InputStmt *>(stmt);
+
+  Node::Expr *msg = input_stmt->msg;
+  Node::Expr *varName = input_stmt->name;
+  Node::Expr *sysCall = input_stmt->sysCall;
+
+  visitExpr(map, msg);
+  if (type_to_string(return_type.get()) != "str") {
+    std::string msg = "Input message must be a 'string' but got '" +
+                      type_to_string(return_type.get()) + "'";
+    handleError(input_stmt->line, input_stmt->pos, msg, "", "Type Error");
+  }
+
+  visitExpr(map, varName); // str, char*, char[]
+  if (type_to_string(return_type.get()) != "str" &&
+      type_to_string(return_type.get()) != "*char" &&
+      type_to_string(return_type.get()) != "[]char") {
+    std::string msg = "Input variable name must be a 'string', 'char*' or "
+                      "'char[]' but got '" +
+                      type_to_string(return_type.get()) + "'";
+    handleError(input_stmt->line, input_stmt->pos, msg, "", "Type Error");
+  }
+
+  visitExpr(map, sysCall);
+  if (type_to_string(return_type.get()) != "int") {
+    std::string msg = "Input system call must be a 'int' but got '" +
+                      type_to_string(return_type.get()) + "'";
+    handleError(input_stmt->line, input_stmt->pos, msg, "", "Type Error");
+  }
+
+  return_type = nullptr;
 }

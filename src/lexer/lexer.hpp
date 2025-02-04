@@ -91,6 +91,9 @@ enum TokenKind {
   MATCH, // a C-like switch statement
   DEFAULT,
   CASE,
+  INPUT,
+  READ,
+  WRITE,
 
   // Error
   ERROR_,

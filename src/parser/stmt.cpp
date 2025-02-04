@@ -639,3 +639,24 @@ Node::Stmt *Parser::continueStmt(PStruct *psr, std::string name) {
               "Expected a SEMICOLON at the end of a continue stmt");
   return new ContinueStmt(line, column, codegen::getFileID(psr->current_file));
 }
+
+Node::Stmt *Parser::inputStmt(PStruct *psr, std::string name) {
+  int line = psr->tks[psr->pos].line;
+  int column = psr->tks[psr->pos].column;
+
+  psr->expect(psr, TokenKind::INPUT, "Expected an INPUT keyword to start an input stmt");
+  psr->expect(psr, TokenKind::LEFT_PAREN, "Expected a L_PAREN to start an input stmt");
+  // msg, name, syscall
+  Node::Expr *msg = parseExpr(psr, BindingPower::defaultValue);
+  if (psr->current(psr).kind == TokenKind::COMMA)
+    psr->expect(psr, TokenKind::COMMA, "Expected a COMMA after the message in an input stmt");
+
+  Node::Expr *var = parseExpr(psr, BindingPower::defaultValue);
+  if (psr->current(psr).kind == TokenKind::COMMA)
+    psr->expect(psr, TokenKind::COMMA, "Expected a COMMA after the variable in an input stmt");
+
+  Node::Expr *syscall = parseExpr(psr, BindingPower::defaultValue);
+  psr->expect(psr, TokenKind::RIGHT_PAREN, "Expected a R_PAREN to end an input stmt");
+  psr->expect(psr, TokenKind::SEMICOLON, "Expected a SEMICOLON at the end of an input stmt");
+  return new InputStmt(line, column, msg, var, syscall, codegen::getFileID(psr->current_file));
+}

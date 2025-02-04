@@ -31,7 +31,8 @@ std::vector<std::pair<NodeKind, TypeChecker::StmtNodeHandler>>
         {NodeKind::ND_IMPORT_STMT, visitImport},
         {NodeKind::ND_LINK_STMT, visitLink},
         {NodeKind::ND_EXTERN_STMT, visitExtern},
-        {NodeKind::ND_MATCH_STMT, visitMatch}
+        {NodeKind::ND_MATCH_STMT, visitMatch},
+        {NodeKind::ND_INPUT_STMT, visitInput},
 };
 
 std::vector<std::pair<NodeKind, TypeChecker::ExprNodeHandler>>
@@ -99,7 +100,7 @@ void TypeChecker::declare_fn(Maps *maps, const std::pair<std::string, Node::Type
       handleError(line, pos, msg, "", "Type Error");
     }
     if (type_to_string(pair.second) != "int") {
-      std::string msg = "Main function must return an int";
+      std::string msg = "Main function must return an uint";
       handleError(line, pos, msg, "", "Type Error");
     }
     if (paramTypes.size() != 0) {

@@ -9,6 +9,8 @@ Add and recognize more int types in asm. (Ex. byte, short, long, quad).
 
  Add in proper support for arrays and index over strings, arrays, etc.
 
+ Add in uint and int types.
+
  add in the lsp fully
  NOTE: Read into the calling convention for the lsp to comminicat with vscode and nvim respectfully
  NOTE: Good source for lsp integration 
