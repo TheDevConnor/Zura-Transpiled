@@ -516,18 +516,18 @@ void TypeChecker::visitContinue(Maps *map, Node::Stmt *stmt) {
 void TypeChecker::visitInput(Maps *map, Node::Stmt *stmt) {
   InputStmt *input_stmt = static_cast<InputStmt *>(stmt);
 
-  Node::Expr *msg = input_stmt->msg;
-  Node::Expr *varName = input_stmt->name;
-  Node::Expr *sysCall = input_stmt->sysCall;
+  Node::Expr *toDisplay = input_stmt->toDisplay;
+  Node::Expr *bufferOut = input_stmt->bufferOut;
+  Node::Expr *MaxBytes = input_stmt->maxBytes;
 
-  visitExpr(map, msg);
+  visitExpr(map, toDisplay);
   if (type_to_string(return_type.get()) != "str") {
     std::string msg = "Input message must be a 'string' but got '" +
                       type_to_string(return_type.get()) + "'";
     handleError(input_stmt->line, input_stmt->pos, msg, "", "Type Error");
   }
 
-  visitExpr(map, varName); // str, char*, char[]
+  visitExpr(map, bufferOut); // str, char*, char[]
   if (type_to_string(return_type.get()) != "str" &&
       type_to_string(return_type.get()) != "*char" &&
       type_to_string(return_type.get()) != "[]char") {
@@ -537,7 +537,7 @@ void TypeChecker::visitInput(Maps *map, Node::Stmt *stmt) {
     handleError(input_stmt->line, input_stmt->pos, msg, "", "Type Error");
   }
 
-  visitExpr(map, sysCall);
+  visitExpr(map, MaxBytes);
   if (type_to_string(return_type.get()) != "int") {
     std::string msg = "Input system call must be a 'int' but got '" +
                       type_to_string(return_type.get()) + "'";

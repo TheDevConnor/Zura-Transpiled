@@ -353,6 +353,7 @@ void TypeChecker::visitArray(Maps *map, Node::Expr *expr) {
       expr->asmType = createDuplicate(return_type.get());
       return;
     }
+    array->type = return_type.get(); // update the type of the array
     map->array_table.push_back(return_type.get());
   }
 
@@ -404,15 +405,16 @@ void TypeChecker::visitIndex(Maps *map, Node::Expr *expr) {
 void TypeChecker::visitArrayAutoFill(Maps *map, Node::Expr *expr) {
   ArrayExpr *array = static_cast<ArrayExpr *>(expr);
 
-  // confirm that we have an elem and that is it 0
-  if (array->elements.size() != 1) {
-    std::string msg =
-        "Auto-fill arrays must have an explicitly-defined length.";
-    handleError(array->line, array->pos, msg, "", "Type Error");
-    return_type = std::make_shared<ArrayType>(new SymbolType("unknown"), 0);
-    expr->asmType = createDuplicate(return_type.get());
-    return;
+  // assign the fill type to the array type
+  visitExpr(map, array->elements[0]); // To get the type of the elements
+  if (return_type.get()->kind == ND_SYMBOL_TYPE && 
+    map->struct_table.find(type_to_string(return_type.get())) != map->struct_table.end()) {
+    // mmmm you cant do that
+    handleError(array->line, array->pos, "Auto-filled arrays cannot have a pre-determined struct to copy.", "", "Type Error");
   }
+  // auto fills dont really have elements now do they
+  return_type = std::make_shared<ArrayType>(createDuplicate(static_cast<ArrayType *>(array->type)->underlying), 0); 
+  expr->asmType = createDuplicate(return_type.get());
 }
 
 void TypeChecker::visitCast(Maps *map, Node::Expr *expr) {

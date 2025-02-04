@@ -647,16 +647,16 @@ Node::Stmt *Parser::inputStmt(PStruct *psr, std::string name) {
   psr->expect(psr, TokenKind::INPUT, "Expected an INPUT keyword to start an input stmt");
   psr->expect(psr, TokenKind::LEFT_PAREN, "Expected a L_PAREN to start an input stmt");
   // msg, name, syscall
-  Node::Expr *msg = parseExpr(psr, BindingPower::defaultValue);
+  Node::Expr *toDisplay = parseExpr(psr, BindingPower::defaultValue);
   if (psr->current(psr).kind == TokenKind::COMMA)
     psr->expect(psr, TokenKind::COMMA, "Expected a COMMA after the message in an input stmt");
 
-  Node::Expr *var = parseExpr(psr, BindingPower::defaultValue);
+  Node::Expr *bufferOut = parseExpr(psr, BindingPower::defaultValue);
   if (psr->current(psr).kind == TokenKind::COMMA)
     psr->expect(psr, TokenKind::COMMA, "Expected a COMMA after the variable in an input stmt");
 
-  Node::Expr *syscall = parseExpr(psr, BindingPower::defaultValue);
+  Node::Expr *maxBytes = parseExpr(psr, BindingPower::defaultValue); 
   psr->expect(psr, TokenKind::RIGHT_PAREN, "Expected a R_PAREN to end an input stmt");
   psr->expect(psr, TokenKind::SEMICOLON, "Expected a SEMICOLON at the end of an input stmt");
-  return new InputStmt(line, column, msg, var, syscall, codegen::getFileID(psr->current_file));
+  return new InputStmt(line, column, toDisplay, bufferOut, maxBytes, codegen::getFileID(psr->current_file));
 }

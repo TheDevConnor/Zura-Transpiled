@@ -1,6 +1,6 @@
 const main := fn () int {
-    have name: str = "";
-    have age: str = "";
+    have name: [256]char = [0];
+    have age: [256]char = [0]; # lol
 
     @input("What is your name? ", name, 256);
     @input("How old are you? ", age, 256);

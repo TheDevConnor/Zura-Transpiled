@@ -1030,21 +1030,28 @@ void codegen::declareArrayVariable(Node::Expr *expr, short int arrayLength,
                   true);        // overload not exist
       ErrorClass::printError(); // replace with real code lmao
       Exit(ExitValue::GENERATOR_ERROR);
+    } 
+    // i need help with the AutoFillArray class and shit
+    // because i need that class to be able to have the type of the array in it okay that should just be passing it the return type when we are at it
+    push(Instr{.var = LeaInstr{.size = DataSize::Qword, .dest = "%rdx", .src = "-" + std::to_string(variableCount + arrayLength) + "(%rbp)"}, .type = InstrType::Lea}, Section::Main);
+    push(Instr{.var = XorInstr{.lhs = "%rax", .rhs = "%rax"}, .type = InstrType::Xor}, Section::Main);
+    if ((arrayLength * getByteSizeOfType(s->fillType)) % 8 == 0) {
+      moveRegister("%rcx", "$" + std::to_string((arrayLength * getByteSizeOfType(s->fillType)) / 8), DataSize::Qword,
+                  DataSize::Qword);
+      pushLinker("rep stosq\n\t",Section::Main); // Repeat %rcx times to fill ptr %rdx with the value of %rax (every 8 bytes)
+    } else if ((arrayLength * getByteSizeOfType(s->fillType)) % 4 == 0) {
+      moveRegister("%rcx", "$" + std::to_string((arrayLength * getByteSizeOfType(s->fillType)) / 4), DataSize::Qword,
+                  DataSize::Qword);
+      pushLinker("rep stosd\n\t",Section::Main); // Repeat %rcx times to fill ptr %rdx with the value of %rax (every 8 bytes)
+    } else if ((arrayLength * getByteSizeOfType(s->fillType)) % 2 == 0) {
+      moveRegister("%rcx", "$" + std::to_string((arrayLength * getByteSizeOfType(s->fillType)) / 2), DataSize::Qword,
+                  DataSize::Qword);
+      pushLinker("rep stosw\n\t",Section::Main); // Repeat %rcx times to fill ptr %rdx with the value of %rax (every 8 bytes)
+    } else {
+      moveRegister("%rcx", "$" + std::to_string((arrayLength * getByteSizeOfType(s->fillType))), DataSize::Qword,
+                  DataSize::Qword);
+      pushLinker("rep stosb\n\t",Section::Main); // Repeat %rcx times to fill ptr %rdx with the value of %rax (every 8 bytes)
     }
-    push(Instr{.var = LeaInstr{.size = DataSize::Qword,
-                               .dest = "%rdi",
-                               .src = "-" + std::to_string(variableCount) +
-                                      "(%rbp)"},
-               .type = InstrType::Lea},
-         Section::Main);
-    moveRegister("%rcx", "$" + std::to_string(arrayLength), DataSize::Qword,
-                 DataSize::Qword);
-    push(Instr{.var = XorInstr{.lhs = "%rax", .rhs = "%rax"},
-               .type = InstrType::Xor},
-         Section::Main);
-    pushLinker("rep stosq\n\t",
-               Section::Main); // Ah yes, the good ol' "req stosq"... (what the
-                               // fuck is this thing again??)
     return;
   }
 
@@ -1081,8 +1088,20 @@ void codegen::declareArrayVariable(Node::Expr *expr, short int arrayLength,
 void codegen::inputStmt(Node::Stmt *stmt) {
   InputStmt *s = static_cast<InputStmt *>(stmt);
 
+  int labelCount = 0;
+
   push(Instr{.var = Comment{.comment = "input statement"}, .type = InstrType::Comment},Section::Main);
   pushDebug(s->line, stmt->file_id, s->pos);
 
-  std::cerr << "Error: Input statement not yet implemented" << std::endl;
+  handleStrType(s->bufferOut); // Literally prints for us, 10/10 Connor never-nester
+
+  // Now that we printed the "prompt", we now have to make the syscall using the values
+  visitExpr(s->bufferOut);
+  visitExpr(s->maxBytes);
+  popToRegister("%rdx");
+  popToRegister("%rsi");
+  // RAX and RDI are constant in this case- constant syscall number and constant file descriptor (fd of stdin is 0)
+  push(Instr{.var=XorInstr{.lhs="%rax",.rhs="%rax"},.type=InstrType::Xor},Section::Main);
+  push(Instr{.var=XorInstr{.lhs="%rdi",.rhs="%rdi"},.type=InstrType::Xor},Section::Main);
+  push(Instr{.var=Syscall{.name="read"},.type=InstrType::Syscall},Section::Main);
 }

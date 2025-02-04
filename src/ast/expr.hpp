@@ -386,18 +386,20 @@ public:
 class ArrayAutoFill : public Node::Expr {
 public:
   int line, pos;
+  Node::Type *fillType;
 
-  ArrayAutoFill(int line, int pos, int file)
-      : line(line), pos(pos) {
+  ArrayAutoFill(int line, int pos, int file, Node::Type *fillType)
+      : line(line), pos(pos), fillType(fillType) {
     file_id = file;
     kind = NodeKind::ND_ARRAY_AUTO_FILL;
-    asmType = new SymbolType("int");
+    asmType = new ArrayType(fillType, 0);
   }
 
   void debug(int indent = 0) const override {
     Node::printIndent(indent);
     std::cout << "ArrayAutoFill: \n";
     Node::printIndent(indent + 1);
+    fillType->debug(indent + 2);
   }
 
   ~ArrayAutoFill() = default; // rule of threes
