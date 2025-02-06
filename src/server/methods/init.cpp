@@ -7,7 +7,10 @@ nlohmann::ordered_json lsp::methods::initialize(nlohmann::json& request) {
     {"capabilities", {
       {"completionProvider", {
         {"resolveProvider", false},
-        {"triggerCharacters", json::array({"@", "."})}
+        {"triggerCharacters", json::array({"@", "."})},
+        {"completionItem", {
+          {"snippetSupport", true}
+        }}
       }},
       {"textDocumentSync", TextDocumentSyncKind::Incremental}
     }},

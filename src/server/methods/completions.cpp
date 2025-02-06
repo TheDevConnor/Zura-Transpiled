@@ -46,7 +46,9 @@ nlohmann::ordered_json lsp::methods::completion(nlohmann::json& request) {
             {"label", "import",},
             {"detail", "Import the global functions from another source file",},
             {"kind", 2,},
-            {"documentation", "By declaring functions as public, they will be globally accessible to any other source file that imports them. The global namespace of the two files will be joined together in the outputted assembly."}
+            {"documentation", "By declaring functions as public, they will be globally accessible to any other source file that imports them. The global namespace of the two files will be joined together in the outputted assembly."},
+            {"insertText", "import \"\";"},
+            {"insertTextFormat", 2}
           }
         })}
       };
