@@ -7,7 +7,7 @@ const main := fn () int {
   @output("What about your age? ");
   @input(age, 256);
   
-  @dis("\nNice to meet you, ", name, ". Happy ", age, "th birthday!\n");
+  @output("\nNice to meet you, ", name, ". Happy ", age, "th birthday!\n");
   
   return 0;
 };

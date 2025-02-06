@@ -246,7 +246,7 @@ void codegen::gen(Node::Stmt *stmt, bool isSaved, std::string output_filename,
   // Compile, but do not link main.o
   std::string assembler = // "Dont include standard libraries"
       (isDebug)
-        ? "gcc -g -e _start -nostdlib -nostartfiles -no-pie " + output_filename + ".s -o " + output_filename
+        ? "gcc -g -e _start -nostdlib -nostartfiles " + output_filename + ".s -o " + output_filename
         : "gcc -e _start -nostdlib -nostartfiles " + output_filename + ".s -o " + output_filename;
   std::string assembler_log = output_filename + "_assembler.log";
   // loop over linkedFiles set and link them with gcc
