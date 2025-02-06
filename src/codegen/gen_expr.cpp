@@ -37,12 +37,16 @@ void codegen::primary(Node::Expr *expr) {
 
     // Push the result
     // Check for struct
-    if (e->asmType->kind == ND_SYMBOL_TYPE) {
+    if (e->type->kind == ND_SYMBOL_TYPE) {
       if (structByteSizes.find(static_cast<SymbolType *>(e->asmType)->name) != structByteSizes.end()) {
         push(Instr{.var = LeaInstr { .size = DataSize::Qword, .dest = "%rcx", .src = res }, .type = InstrType::Lea}, Section::Main);
         pushRegister("%rcx");
         break;
       }
+    } else if (e->type->kind == ND_ARRAY_TYPE) {
+      push(Instr{.var = LeaInstr { .size = DataSize::Qword, .dest = "%rcx", .src = res }, .type = InstrType::Lea}, Section::Main);
+      pushRegister("%rcx");
+      break;
     }
     pushRegister(res);
     break;
@@ -86,6 +90,7 @@ void codegen::primary(Node::Expr *expr) {
          Section::ReadonlyData);
 
     // Push the string onto the data section
+    push(Instr{.var=Comment{.comment=std::to_string(floating->value)},.type=InstrType::Comment},Section::ReadonlyData);
     push(Instr{.var = DataSectionInstr{.bytesToDefine = DataSize::Dword /* long, aka 32-bits */, .what=std::to_string(convertFloatToInt(floating->value))},
                .type = InstrType::DB},
          Section::ReadonlyData);
@@ -94,7 +99,7 @@ void codegen::primary(Node::Expr *expr) {
   case ND_BOOL: {
     BoolExpr *boolExpr = static_cast<BoolExpr *>(expr);
     // Technically just an int but SHHHHHHHH.............................
-    pushRegister("$" + std::to_string((int)boolExpr->value));
+    push(Instr{.var=PushInstr{.what="$"+std::to_string(boolExpr->value),.whatSize=DataSize::Byte},.type=InstrType::Push},Section::Main);
     break;
   }
   default: {
@@ -131,14 +136,15 @@ void codegen::binary(Node::Expr *expr) {
     // Perform the operation
     std::string op = lookup(opMap, e->op);
     if (op == "idiv" || op == "div" || op == "mod") {
-      // Division requires special handling
+      // Division requires special handling because of RDX:RAX input
+      pushLinker("cqto\n\t", Section::Main);
       push(Instr {.var = DivInstr{.from = "%rbx"}, .type = InstrType::Div}, Section::Main);
       if (op == "mod")
         pushRegister("%rdx"); // Push remainder
       else
         pushRegister("%rax"); // Push result
     } else {
-      // General binary operations
+      // Every other operation ...
       push(Instr{.var = BinaryInstr{.op = op, .src = "%rbx", .dst = "%rax"},
                  .type = InstrType::Binary},
            Section::Main);
@@ -288,7 +294,20 @@ void codegen::call(Node::Expr *expr) {
               .optimize = false},
         Section::Main);
     if (offsetAmount) push(Instr{.var=AddInstr{.lhs="%rsp",.rhs="$"+std::to_string(offsetAmount)},.type=InstrType::Sub},Section::Main);
-    pushRegister("%rax");
+    // What we push as the result depends on the return type of the function
+    if (e->asmType->kind == ND_POINTER_TYPE ||
+        e->asmType->kind == ND_ARRAY_TYPE ||
+        e->asmType->kind == ND_FUNCTION_TYPE ||
+        e->asmType->kind == ND_FUNCTION_TYPE_PARAM) {
+      pushRegister("%rax");
+    } else {
+      SymbolType *st = static_cast<SymbolType *>(e->asmType);
+      if (st->name == "float" || st->name == "double") {
+        push(Instr{.var=PushInstr{.what="%xmm0",.whatSize=DataSize::SS},.type=InstrType::Push},Section::Main); // abi standard (can hold many bytes of data, so its fine for both floats AND doubles to fit in here)
+      } else if (structByteSizes.find(st->name) != structByteSizes.end()) {
+        pushRegister("%rax"); // When tossing this thing around, its handled basically as a pointer
+      }
+    }
   } else if (e->callee->kind == ND_MEMBER) {
     // Get the struct name
     MemberExpr *member = static_cast<MemberExpr *>(e->callee);

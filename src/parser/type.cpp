@@ -24,7 +24,7 @@ Node::Type *Parser::symbol_table(PStruct *psr) {
 Node::Type *Parser::array_type(PStruct *psr) {
   psr->advance(psr);
   // Check if the next token is an integer (const size)
-  signed short int size = -1;
+  signed short int size = 0; // 0 is default, uninitialized
   if (psr->peek(psr).kind == TokenKind::INT) {
     // There will be warnings and possible
     // overflow because stoi returns a 32-bit
@@ -45,7 +45,7 @@ Node::Type *Parser::array_type(PStruct *psr) {
    
   // Else you are good and can continue
   Node::Type *underlying = parseType(psr, defaultValue);
-  return new ArrayType(underlying, -1); // -1 is a any-length array
+  return new ArrayType(underlying, size);
 }
 
 Node::Type *Parser::pointer_type(PStruct *psr) {

@@ -61,10 +61,12 @@ struct SubInstr {
 
 struct MulInstr {
   std::string from;
+  bool isSigned; // IMUL or MUL
 };
 
 struct DivInstr {
   std::string from;
+  bool isSigned; // IDIV or DIV
 };
 
 struct Label {

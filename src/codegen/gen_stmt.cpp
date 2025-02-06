@@ -197,7 +197,7 @@ void codegen::funcDecl(Node::Stmt *stmt) {
   push(Instr{.var = PushInstr{.what = "%rbp", .whatSize = DataSize::Qword},
              .type = InstrType::Push},
        Section::Main);
-  push(Instr{.var = LinkerDirective{.value = ".cfi_def_cfa_offset 16\n\t"},
+  push(Instr{.var = LinkerDirective{.value = ".cfi_def_cfa_offset 16\n\t.cfi_offset 6, -16\n\t"},
              .type = InstrType::Linker},
        Section::Main);
   push(Instr{.var = MovInstr{.dest = "%rbp",
@@ -253,7 +253,7 @@ void codegen::funcDecl(Node::Stmt *stmt) {
     dwarf::useType(s->params.at(i).second);
   }
 
-  // Do not push the lexical block
+  // Do not push the lexical block to the dwarf stack
   dwarf::nextBlockDIE = false;
   codegen::visitStmt(s->block);
   dwarf::nextBlockDIE = true; // reset it
@@ -611,26 +611,42 @@ void codegen::_return(Node::Stmt *stmt) {
   ReturnStmt *returnStmt = static_cast<ReturnStmt *>(stmt);
 
   pushDebug(returnStmt->line, stmt->file_id, returnStmt->pos);
-  if (returnStmt->expr != nullptr) {
-    // Generate return value for the function
-    codegen::visitExpr(returnStmt->expr);
+  if (returnStmt->expr == nullptr) {
     if (isEntryPoint) {
-      popToRegister("%rdi");
+      moveRegister("%rdi", "$0", DataSize::Qword, DataSize::Qword);
       handleExitSyscall();
+      return;
     } else {
-      popToRegister("%rax");
-      handleReturnCleanup();
+      handleReturnCleanup(); // We don't care about rax! We're exiting. We already
+                             // know that nothing is being returned therefore we
+                             // know that this is ok.
+      return;
     }
+  }
+  // Generate return value for the function
+  codegen::visitExpr(returnStmt->expr);
+  // Check the type of what the hell was returned
+  if (isEntryPoint) {
+    popToRegister("%rdi");
+    handleExitSyscall();
     return;
   }
-  if (isEntryPoint) {
-    moveRegister("%rax", "$0", DataSize::Qword, DataSize::Qword);
-    handleExitSyscall();
-  } else {
-    handleReturnCleanup(); // We don't care about rax! We're exiting. We already
-                           // know that nothing is being returned therefore we
-                           // know that this is ok.
+  if (returnStmt->expr->asmType->kind == ND_POINTER_TYPE ||
+      returnStmt->expr->asmType->kind == ND_ARRAY_TYPE || 
+      returnStmt->expr->asmType->kind == ND_FUNCTION_TYPE ||
+      returnStmt->expr->asmType->kind == ND_FUNCTION_TYPE_PARAM) {
+    popToRegister("%rax"); // rax is fine in this case- it is ALWAYS 8 bytes
+    handleReturnCleanup();
+    return;
   }
+  // Probably a symbol type!
+  SymbolType *st = static_cast<SymbolType *>(returnStmt->expr->asmType);
+  if (st->name == "float" || st->name == "double") {
+    push(Instr{.var=PopInstr{.where="%xmm0",.whereSize=DataSize::SS},.type=InstrType::Pop},Section::Main); // abi standard (can hold many bytes of data, so its fine for both floats AND doubles to fit in here)
+  } else if (structByteSizes.find(st->name) != structByteSizes.end()) {
+    popToRegister("%rax");
+  }
+  handleReturnCleanup();
 }
 
 void codegen::forLoop(Node::Stmt *stmt) {
@@ -1023,16 +1039,6 @@ void codegen::declareArrayVariable(Node::Expr *expr, short int arrayLength,
   if (expr->kind == ND_ARRAY_AUTO_FILL) {
     // This is an implicit shorthand version of setting an array to [0, 0, 0, 0, ....]
     ArrayAutoFill *s = static_cast<ArrayAutoFill *>(expr);
-    if (arrayLength < 1) {
-      std::string msg = "Auto-fill arrays must have an explicitly-defined "
-                        "length."; // the tc should catch this, but just in case
-      handleError(s->line, s->pos, msg, "Codegen Error",
-                  true);        // overload not exist
-      ErrorClass::printError(); // replace with real code lmao
-      Exit(ExitValue::GENERATOR_ERROR);
-    } 
-    // i need help with the AutoFillArray class and shit
-    // because i need that class to be able to have the type of the array in it okay that should just be passing it the return type when we are at it
     push(Instr{.var = LeaInstr{.size = DataSize::Qword, .dest = "%rdx", .src = "-" + std::to_string(variableCount + arrayLength) + "(%rbp)"}, .type = InstrType::Lea}, Section::Main);
     push(Instr{.var = XorInstr{.lhs = "%rax", .rhs = "%rax"}, .type = InstrType::Xor}, Section::Main);
     if ((arrayLength * getByteSizeOfType(s->fillType)) % 8 == 0) {
@@ -1052,6 +1058,8 @@ void codegen::declareArrayVariable(Node::Expr *expr, short int arrayLength,
                   DataSize::Qword);
       pushLinker("rep stosb\n\t",Section::Main); // Repeat %rcx times to fill ptr %rdx with the value of %rax (every 8 bytes)
     }
+    // Add the array to the variable table
+    variableTable.insert({varName, std::to_string(-(variableCount + arrayLength)) + "(%rbp)"});
     return;
   }
 
@@ -1093,13 +1101,12 @@ void codegen::inputStmt(Node::Stmt *stmt) {
   push(Instr{.var = Comment{.comment = "input statement"}, .type = InstrType::Comment},Section::Main);
   pushDebug(s->line, stmt->file_id, s->pos);
 
-  handleStrType(s->bufferOut); // Literally prints for us, 10/10 Connor never-nester
-
   // Now that we printed the "prompt", we now have to make the syscall using the values
-  visitExpr(s->bufferOut);
-  visitExpr(s->maxBytes);
-  popToRegister("%rdx");
-  popToRegister("%rsi");
+  // do in reverse order because one of these may screw up the values of the registers
+  visitExpr(s->bufferOut); // rsi (should be leaq'd)
+  visitExpr(s->maxBytes);  // rdx
+  popToRegister("%rdx");   // rdx
+  popToRegister("%rsi");   // rsi
   // RAX and RDI are constant in this case- constant syscall number and constant file descriptor (fd of stdin is 0)
   push(Instr{.var=XorInstr{.lhs="%rax",.rhs="%rax"},.type=InstrType::Xor},Section::Main);
   push(Instr{.var=XorInstr{.lhs="%rdi",.rhs="%rdi"},.type=InstrType::Xor},Section::Main);

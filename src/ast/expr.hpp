@@ -386,13 +386,13 @@ public:
 class ArrayAutoFill : public Node::Expr {
 public:
   int line, pos;
+  int fillCount;
   Node::Type *fillType;
 
-  ArrayAutoFill(int line, int pos, int file, Node::Type *fillType)
-      : line(line), pos(pos), fillType(fillType) {
+  ArrayAutoFill(int line, int pos, int file)
+      : line(line), pos(pos) {
     file_id = file;
     kind = NodeKind::ND_ARRAY_AUTO_FILL;
-    asmType = new ArrayType(fillType, 0);
   }
 
   void debug(int indent = 0) const override {

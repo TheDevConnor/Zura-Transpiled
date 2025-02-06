@@ -129,9 +129,10 @@ JumpCondition codegen::processComparison(Node::Expr *cond) {
       // we can do a little bit of optimizing here
       int lhsDepth = getExpressionDepth(bin->lhs);
       int rhsDepth = getExpressionDepth(bin->rhs);
-      bool isFloat = bin->asmType->kind == ND_SYMBOL_TYPE && getUnderlying(bin->asmType) == "float";
-      std::string lhsReg = isFloat ? "%xmm0" : "%rax";
-      std::string rhsReg = isFloat ? "%xmm1" : "%rbx";
+      bool isFloat =  bin->asmType->kind == ND_SYMBOL_TYPE && getUnderlying(bin->asmType) == "float";
+      bool isDouble = bin->asmType->kind == ND_SYMBOL_TYPE && getUnderlying(bin->asmType) == "double";
+      std::string lhsReg = (isFloat || isDouble) ? "%xmm0" : "%rax";
+      std::string rhsReg = (isFloat || isDouble) ? "%xmm1" : "%rbx";
       if (lhsDepth > rhsDepth) {
         visitExpr(bin->lhs);
         visitExpr(bin->rhs);
@@ -144,7 +145,7 @@ JumpCondition codegen::processComparison(Node::Expr *cond) {
         popToRegister(rhsReg);
       }
       // perform the compare
-      if (isFloat) {
+      if (isFloat || isDouble) {
         pushLinker("ucomiss %xmm1, %xmm0\n\t", Section::Main);  
       } else {
         push(Instr{.var = CmpInstr{.lhs = lhsReg, .rhs = rhsReg}, .type = InstrType::Cmp}, Section::Main);
@@ -167,13 +168,14 @@ void codegen::handleExitSyscall() {
 
 void codegen::handleReturnCleanup() {
   popToRegister("%rbp");
+  pushLinker(".cfi_def_cfa 7, 8\n\t", Section::Main);
   push(Instr{.var = Ret{}, .type = InstrType::Ret}, Section::Main);
 }
 
 int codegen::convertFloatToInt(float input) {
   union {
-    float f;
-    int i;
+    float f; // 32-bit float
+    int i;   // 32-bit int
   } u;
   u.f = input;
   return u.i;
@@ -208,7 +210,7 @@ bool codegen::execute_command(const std::string &command,
   if (result != 0) {
     handleError(0, 0,
                  "Error executing command: " + command + "\n\t" + log_contents,
-                 "Codegen Error");
+                 "Codegen Error", true);
     return false;
   }
   return true;
@@ -257,19 +259,29 @@ void codegen::prepareSyscallWrite() {
        Section::Main);
 }
 
-void codegen::handlePtrType(Node::Expr *arg, PrintStmt *print) {
+void codegen::handlePtrDisplay(Node::Expr *arg, int line, int pos) {
   if (getUnderlying(arg->asmType).find("char") == 1) {
+    // Printing a char*
     visitExpr(arg);
     popToRegister("%rsi");
     prepareSyscallWrite();
   } else {
-    handleError(print->line, print->pos,
+    handleError(line, pos,
                 "Cannot print pointer type. Dereference first or print as an address (int cast).",
                 "Codegen Error");
   }
 }
 
-void codegen::handleLiteral(Node::Expr *arg) {
+void codegen::handleArrayDisplay(Node::Expr *arg, int line, int pos) {
+  // this function will only ever happen in a []char and never anywhere else
+  ArrayType *at = static_cast<ArrayType *>(arg->asmType);
+  visitExpr(arg);
+  popToRegister("%rsi");
+  moveRegister("%rdx", "$" + std::to_string(at->constSize), DataSize::Qword, DataSize::Qword);
+  prepareSyscallWrite();
+}
+
+void codegen::handleLiteralDisplay(Node::Expr *arg) {
   // This function effectively just prints the value of the literal
   std::string strLabel = "string" + std::to_string(stringCount++);
   std::string stringValue;
@@ -300,7 +312,7 @@ void codegen::handleLiteral(Node::Expr *arg) {
   prepareSyscallWrite(); // The end!
 };
 
-void codegen::handleStrType(Node::Expr *arg) {
+void codegen::handleStrDisplay(Node::Expr *arg) {
   nativeFunctionsUsed[NativeASMFunc::strlen] = true;
   visitExpr(arg);
   popToRegister("%rsi"); // String address
@@ -315,7 +327,7 @@ void codegen::handleStrType(Node::Expr *arg) {
   prepareSyscallWrite();
 }
 
-void codegen::handlePrimType(Node::Expr *arg) {
+void codegen::handlePrimitiveDisplay(Node::Expr *arg) {
   nativeFunctionsUsed[NativeASMFunc::strlen] = true;
   nativeFunctionsUsed[NativeASMFunc::itoa] = true;
   visitExpr(arg);
@@ -334,7 +346,7 @@ void codegen::handlePrimType(Node::Expr *arg) {
   prepareSyscallWrite();
 }
 
-void codegen::handleFloatType(Node::Expr *arg) {
+void codegen::handleFloatDisplay(Node::Expr *arg) {
     std::string msg = "Printing floats is not supported yet.";
     handleError(0, 0, msg, "Codegen Error");
 }

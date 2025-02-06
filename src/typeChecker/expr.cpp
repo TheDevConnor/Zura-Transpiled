@@ -380,41 +380,42 @@ void TypeChecker::visitArrayType(Maps *map, Node::Type *type) {
 void TypeChecker::visitIndex(Maps *map, Node::Expr *expr) {
   IndexExpr *index = static_cast<IndexExpr *>(expr);
   visitExpr(map, index->lhs);
-  std::shared_ptr<Node::Type> array = return_type;
+  Node::Type *array = createDuplicate(return_type.get());
   visitExpr(map, index->rhs);
-  std::shared_ptr<Node::Type> idx = return_type;
+  Node::Type *idx = createDuplicate(return_type.get());
 
-  if (type_to_string(idx.get()) != "int") {
+  if (type_to_string(idx) != "int") {
     std::string msg = "Array index must be of type 'int' but got '" +
-                      type_to_string(idx.get()) + "'";
+                      type_to_string(idx) + "'";
     handleError(index->line, index->pos, msg, "", "Type Error");
   }
 
-  if (array.get()->kind == ND_ARRAY_TYPE) {
+  if (array->kind == ND_ARRAY_TYPE) {
     std::string msg =
         "Indexing requires the lhs to be of type array but got '" +
-        type_to_string(array.get()) + "'";
+        type_to_string(array) + "'";
     handleError(index->line, index->pos, msg, "", "Type Error");
   }
 
   return_type =
-      std::make_shared<SymbolType>(type_to_string(array.get()).substr(2));
+      std::make_shared<SymbolType>(type_to_string(static_cast<ArrayType *>(array)->underlying));
   expr->asmType = createDuplicate(return_type.get());
 }
 
 void TypeChecker::visitArrayAutoFill(Maps *map, Node::Expr *expr) {
-  ArrayExpr *array = static_cast<ArrayExpr *>(expr);
+  ArrayAutoFill *array = static_cast<ArrayAutoFill *>(expr);
 
+  ArrayType *arrayType = static_cast<ArrayType *>(createDuplicate(return_type.get()));
+  array->fillType = createDuplicate(arrayType->underlying);
+  array->fillCount = arrayType->constSize;
+  return_type = std::make_shared<ArrayType>(array->fillType, array->fillCount);
+  expr->asmType = createDuplicate(return_type.get());
   // assign the fill type to the array type
-  visitExpr(map, array->elements[0]); // To get the type of the elements
-  if (return_type.get()->kind == ND_SYMBOL_TYPE && 
+  if (array->fillType->kind == ND_SYMBOL_TYPE && 
     map->struct_table.find(type_to_string(return_type.get())) != map->struct_table.end()) {
     // mmmm you cant do that
     handleError(array->line, array->pos, "Auto-filled arrays cannot have a pre-determined struct to copy.", "", "Type Error");
   }
-  // auto fills dont really have elements now do they
-  return_type = std::make_shared<ArrayType>(createDuplicate(static_cast<ArrayType *>(array->type)->underlying), 0); 
-  expr->asmType = createDuplicate(return_type.get());
 }
 
 void TypeChecker::visitCast(Maps *map, Node::Expr *expr) {

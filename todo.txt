@@ -4,7 +4,7 @@ NOTE: Read into switch statements "jump tables", and how to emit them in ASM. =>
 Add and recognize more int types in asm. (Ex. byte, short, long, quad).
  - IMPORTANT - Update stmt::enumDecl IMMEDIATELY after adding longs
 
- Add in stdin and stdout. As well as read and write (for files)
+ Implement an open/close method that returns a fd. Can be easily implemented in @output and @input
  Add in calloc, malloc, realloc, free,Templates and allocator
 
  Add in proper support for arrays and index over strings, arrays, etc.

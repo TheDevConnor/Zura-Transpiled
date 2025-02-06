@@ -10,8 +10,10 @@
 class CompileOptimizer {
 public:
 
-  static Node::Expr *optimizeBinary(BinaryExpr *expr);
   static Node::Expr *optimizeExpr(Node::Expr *expr);
+  static Node::Expr *optimizeUnary(UnaryExpr *expr);
+  static Node::Expr *optimizeBinary(BinaryExpr *expr);
+  
   static Node::Stmt *optimizeIfStmt(IfStmt *stmt);
   static Node::Stmt *optimizeStmt(Node::Stmt *stmt);
 };

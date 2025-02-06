@@ -324,7 +324,7 @@ void TypeChecker::visitVar(Maps *map, Node::Stmt *stmt) {
       // we assume the constSize is the size of the array expr
       var_stmt->type =
           new ArrayType(array_type->underlying, array_expr->elements.size());
-    } else {
+    } else if(var_stmt->expr->kind == NodeKind::ND_ARRAY) { // auto filled arrays will always have 1 element (the one to autofill) so do not error in that case
       // If the array was declared with a size we need to check if the size
       // of the array expr is the same as the size of the array type
       if (array_type->constSize != array_expr->elements.size()) {
@@ -511,21 +511,13 @@ void TypeChecker::visitContinue(Maps *map, Node::Stmt *stmt) {
   // nothing to do here
 }
 
-//         msg,       varName,      sysCall
-// @input(str, (str, char*, []char), int)
+//              varName,     bytes
+// @input( (char* | []char),  int)
 void TypeChecker::visitInput(Maps *map, Node::Stmt *stmt) {
   InputStmt *input_stmt = static_cast<InputStmt *>(stmt);
 
-  Node::Expr *toDisplay = input_stmt->toDisplay;
   Node::Expr *bufferOut = input_stmt->bufferOut;
   Node::Expr *MaxBytes = input_stmt->maxBytes;
-
-  visitExpr(map, toDisplay);
-  if (type_to_string(return_type.get()) != "str") {
-    std::string msg = "Input message must be a 'string' but got '" +
-                      type_to_string(return_type.get()) + "'";
-    handleError(input_stmt->line, input_stmt->pos, msg, "", "Type Error");
-  }
 
   visitExpr(map, bufferOut); // str, char*, char[]
   if (type_to_string(return_type.get()) != "str" &&

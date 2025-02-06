@@ -9,15 +9,17 @@ void codegen::print(Node::Stmt *stmt) {
   for (Node::Expr *arg : print->args) {
     std::string argType = getUnderlying(arg->asmType);
     if (argType.find("*") == 0)
-      handlePtrType(arg, print);
+      handlePtrDisplay(arg, print->line, print->pos);
     else if (arg->kind == ND_INT || arg->kind == ND_BOOL || arg->kind == ND_CHAR || arg->kind == ND_FLOAT)
-      handleLiteral(arg);
+      handleLiteralDisplay(arg);
     else if (argType == "str")
-      handleStrType(arg);
+      handleStrDisplay(arg);
     else if (argType == "int" || argType == "char")
-      handlePrimType(arg);
+      handlePrimitiveDisplay(arg);
     else if (argType == "float")
-      handleFloatType(arg);
+      handleFloatDisplay(arg);
+    else if (argType == "[]char") // must always be a char array, no other type of arr is allowed (char[] are also literally just char* anyway so lol)
+      handleArrayDisplay(arg, print->line, print->pos);
     else
       handleError(print->line, print->pos,
                   "Cannot print type '" + argType + "'.", "Codegen Error");
@@ -37,7 +39,7 @@ void codegen::linkFile(Node::Stmt *stmt) {
   LinkStmt *s = static_cast<LinkStmt *>(stmt);
   if (linkedFiles.find(s->name) != linkedFiles.end()) {
     // It's not the end of the world.
-    std::cout << "Warning: File '" << s->name << "' already @link'd." << std::endl;
+    std::cout << "Warning: Library '" << s->name << "' already @link'd." << std::endl;
   } else {
     linkedFiles.insert(s->name);
   }
@@ -74,13 +76,34 @@ void codegen::externName(Node::Stmt *stmt) {
 
 void codegen::cast(Node::Expr *expr) {
   CastExpr *e = static_cast<CastExpr *>(expr);
-  SymbolType *toType = static_cast<SymbolType *>(e->castee_type);
-  SymbolType *fromType = static_cast<SymbolType *>(e->castee->asmType);
+  Node::Type *to = e->castee_type;
+  Node::Type *from = e->castee->asmType;
 
-  if (fromType->name == "str") {
+  if (to->kind == ND_POINTER_TYPE && from->kind == ND_POINTER_TYPE) {
+    PointerType *toPtr = static_cast<PointerType *>(to);
+    PointerType *fromPtr = static_cast<PointerType *>(from);
+    if (toPtr->underlying->kind != ND_SYMBOL_TYPE || fromPtr->underlying->kind != ND_SYMBOL_TYPE) {
+      handleError(e->line, e->pos, "Pointer casts on non-base types (e.g. int, float, bool...) are not allowed.", "Codegen Error");
+      return;
+    }
+    if (getUnderlying(toPtr->underlying) == "unknown" || getUnderlying(fromPtr->underlying) == "unknown"
+     || getUnderlying(toPtr->underlying) == "void" || getUnderlying(fromPtr->underlying) == "void") {
+      return; // Assume the dev knew what they were doing and push the original value
+    }
+    if (getUnderlying(toPtr->underlying) != getUnderlying(fromPtr->underlying)) {
+      handleError(e->line, e->pos, "Cannot cast pointers from different types. (unimplemented)", "Codegen Error");
+      return;
+    }
+  }
+
+  SymbolType *toType = static_cast<SymbolType *>(to);
+  SymbolType *fromType = static_cast<SymbolType *>(from);
+
+  if (fromType->name == "str" || fromType->name == "[]char" || fromType->name == "char*") {
     std::cerr << "Explicitly casting from string is not allowed" << std::endl;
     exit(-1);
   }
+
   pushDebug(e->line, expr->file_id, e->pos);
   visitExpr(e->castee);
   if (fromType->name == "unknown") {

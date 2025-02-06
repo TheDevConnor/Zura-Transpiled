@@ -50,11 +50,13 @@ void Flags::runFile(const char *path, std::string outName, bool save, bool debug
 
   if (echoOn) Flags::updateProgressBar(0.0);
   Node::Stmt *result = Parser::parse(source, path);
-  ErrorClass::printError();
+  bool parserError = ErrorClass::printError();
+  if (parserError) Exit(ExitValue::PARSER_ERROR); 
   if (echoOn) Flags::updateProgressBar(0.25);
 
   TypeChecker::performCheck(result);
-  ErrorClass::printError();
+  bool tcError = ErrorClass::printError();
+  if (tcError) Exit(ExitValue::TYPE_ERROR);
   if (echoOn) Flags::updateProgressBar(0.5);
 
   // Compiler optimize the AST!
@@ -62,7 +64,8 @@ void Flags::runFile(const char *path, std::string outName, bool save, bool debug
   if (echoOn) Flags::updateProgressBar(0.75);
 
   codegen::gen(result, save, outName, path, debug);
-  ErrorClass::printError();
+  bool codegenError = ErrorClass::printError();
+  if (codegenError) Exit(ExitValue::GENERATOR_ERROR);
   if (echoOn) Flags::updateProgressBar(1.0); // We're done!
 
   delete[] source;

@@ -256,11 +256,12 @@ inline static const std::vector<std::string> floatArgOrder = {"%xmm0", "%xmm1", 
 
 // Helper functions for printing to the console
 void prepareSyscallWrite();
-void handlePtrType(Node::Expr *arg, PrintStmt *print);
-void handleLiteral(Node::Expr *arg);
-void handleStrType(Node::Expr *arg);
-void handlePrimType(Node::Expr *arg);
-void handleFloatType(Node::Expr *arg);
+void handlePtrDisplay(Node::Expr *arg, int line, int pos);
+void handleArrayDisplay(Node::Expr *arg, int line, int pos); // []char only, realistically
+void handleLiteralDisplay(Node::Expr *arg);
+void handleStrDisplay(Node::Expr *arg);
+void handlePrimitiveDisplay(Node::Expr *arg);
+void handleFloatDisplay(Node::Expr *arg);
 
 // Helper function to pop the value from the stack to a register
 void moveRegister(const std::string &dest, const std::string &src, DataSize dest_size, DataSize src_size);

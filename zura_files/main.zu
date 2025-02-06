@@ -1,13 +1,13 @@
 const main := fn () int {
-    have name: [256]char = [0];
-    have age: [256]char = [0]; # lol
+  have name: [256]char = [0];
+  have age:  [256]char = [0];
 
-    @input("What is your name? ", name, 256);
-    @input("How old are you? ", age, 256);
-
-    have ageInt: int = @cast<int>(age);
-
-    @dis("hello, ", name, "! You are ", ageInt, " years old.");
-
-    return 0;
+  @output("What's your name? ");
+  @input(name, 256);
+  @output("What about your age? ");
+  @input(age, 256);
+  
+  @dis("\nNice to meet you, ", name, ". Happy ", age, "th birthday!\n");
+  
+  return 0;
 };

@@ -23,7 +23,7 @@ std::string error(int line, int pos, const std::string &msg,
                   const std::vector<Lexer::Token> &tokens, bool isParser,
                   bool isWarning, bool isFatal, bool isMain, bool isTypeError, bool isGeneration);
 
-void printError();
+bool printError();
 
 std::string lineNumber(int line);
 std::string printLine(int line, const char *start);

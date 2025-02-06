@@ -40,8 +40,51 @@ Node::Expr *CompileOptimizer::optimizeExpr(Node::Expr *expr) {
   switch (expr->kind) {
     case NodeKind::ND_BINARY: return optimizeBinary(static_cast<BinaryExpr *>(expr));
     case NodeKind::ND_GROUP:  return optimizeExpr(static_cast<GroupExpr *>(expr)->expr);
+    case NodeKind::ND_UNARY:  return optimizeUnary(static_cast<UnaryExpr *>(expr));
     default: return expr;
   }
+}
+
+Node::Expr *CompileOptimizer::optimizeUnary(UnaryExpr *expr) {
+  Node::Expr *operand = CompileOptimizer::optimizeExpr(expr->expr);
+  if (operand->kind == ND_INT) {
+    int value = static_cast<IntExpr *>(operand)->value;
+    if (expr->op == "~") { // binary not each bit
+      return new IntExpr(expr->line, expr->pos, ~value, expr->file_id);
+    }
+    if (expr->op == "-") { // negation
+      return new IntExpr(expr->line, expr->pos, -value, expr->file_id); // (Somehow, -10 in plain source code is read as Unary - of 10 rather than an int of -10)
+    }
+  }
+  if (operand->kind == ND_BOOL) {
+    bool value = static_cast<BoolExpr *>(operand)->value;
+    if (expr->op == "!") { // logical not
+      return new BoolExpr(expr->line, expr->pos, !value, expr->file_id);
+    }
+    // ... other unary bools (if they exist anyway)
+  }
+  if (operand->kind == ND_BINARY) {
+    BinaryExpr *binExpr = static_cast<BinaryExpr *>(operand);
+    // check if the binary expression is a comparison
+    if (boolOperations.contains(binExpr->op)) {
+      // if it is, we can optimize the unary expression
+      if (expr->op == "!") {
+        // we can optimize the comparison's operation rather than get the opposite afterwards
+        std::string newOp = "";
+        if (binExpr->op == ">") newOp = "<=";
+        if (binExpr->op == "<") newOp = ">=";
+        if (binExpr->op == ">=") newOp = "<";
+        if (binExpr->op == "<=") newOp = ">";
+        if (binExpr->op == "==") newOp = "!=";
+        if (binExpr->op == "!=") newOp = "==";
+        // || and && are not really comparisons (they dont have opposites that are readily available- there is no 'nor' or 'nand')
+        if (newOp != "")
+          return new BinaryExpr(expr->line, expr->pos, binExpr->lhs, binExpr->rhs, newOp, expr->file_id);
+        // If it was not changed, fall through and return the intended expression
+      }
+    }
+  }
+  return expr;
 }
 
 Node::Expr *CompileOptimizer::optimizeBinary(BinaryExpr *expr) {

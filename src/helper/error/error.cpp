@@ -139,21 +139,16 @@ std::string ErrorClass::error(int line, int pos, const std::string &msg,
     if (!note.empty()) {
       line_error += " ↳ " + col.color("NOTE", Color::BLUE) + ": " + note + "\n";
     }
-    line_error += currentLine(line, pos, lexer, isParser, isTypeError, tokens);
-    line_error += std::string(pos + 5, ' ') + col.color("^", Color::RED, false, true) + "\n";
-    errors[line] = line_error;
-    return line_error;
   }
 
-  if (!note.empty()) line_error += " ↳ " + note + "\n";
-
-  // if we get here, it's a lexer error
-  line_error += currentLine(line, pos, lexer, isParser, isTypeError, tokens);
-  line_error += std::string(pos + 5, ' ') + col.color("^", Color::RED, false, true) + "\n";
+  if (!(isParser || isTypeError || isGeneration)) {
+    // if we get here, it's a lexer error
+    line_error += currentLine(line, pos, lexer, isParser, isTypeError, tokens);
+    line_error += std::string(pos + 5, ' ') + col.color("^", Color::RED, false, true) + "\n";
+  }
 
   if (errors.find(line) == errors.end()) errors[line] = line_error;
   if (isFatal) {
-    std::cout << "Guys its fatal bitch" << std::endl;
     printError();
     if (isGeneration) Exit(ExitValue::GENERATOR_ERROR);
     if (isTypeError) Exit(ExitValue::TYPE_ERROR);
@@ -163,8 +158,8 @@ std::string ErrorClass::error(int line, int pos, const std::string &msg,
   return line_error;
 }
 
-void ErrorClass::printError() {
-  if (!errors.empty()) {
+bool ErrorClass::printError() {
+  if (!errors.empty() && errors.size() > 0) {
     std::cout << "\r\033[2K"; // Clear the line and move to start -- overwrite previous garbage
     std::cout << "Total number of Errors: "
               << col.color(std::to_string(errors.size()), Color::RED, true,
@@ -173,5 +168,7 @@ void ErrorClass::printError() {
     for (const std::pair<int, std::string>& errorPair : errors) {
       std::cout << errorPair.second << std::endl;
     }
+    return true;
   }
+  return false;
 }

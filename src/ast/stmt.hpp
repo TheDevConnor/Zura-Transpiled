@@ -579,12 +579,11 @@ public:
 class InputStmt : public Node::Stmt {
 public: 
   int line, pos;
-  Node::Expr *toDisplay;
   Node::Expr *bufferOut;
   Node::Expr *maxBytes;
-
-  InputStmt(int line, int pos, Node::Expr * msg, Node::Expr *name, Node::Expr * sysCall, int file)
-      : line(line), pos(pos), toDisplay(msg), bufferOut(name), maxBytes(sysCall) {
+  
+  InputStmt(int line, int pos, Node::Expr *bufferOut, Node::Expr * sysCall, int file)
+      : line(line), pos(pos), bufferOut(bufferOut), maxBytes(sysCall) {
     file_id = file;
     kind = NodeKind::ND_INPUT_STMT;
   }
@@ -592,9 +591,6 @@ public:
   void debug(int indent = 0) const override {
     Node::printIndent(indent);
     std::cout << "InputStmt: \n";
-    Node::printIndent(indent + 1);
-    std::cout << "Msg: \n";
-    toDisplay->debug(indent + 2);
     Node::printIndent(indent + 1);
     std::cout << "Name: \n";
     bufferOut->debug(indent + 2);

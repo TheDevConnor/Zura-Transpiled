@@ -54,7 +54,7 @@ void Lexer::initMap() {
       {"@template", TokenKind::TEMPLATE}, {"@cast", TokenKind::CAST},
       {"@import", TokenKind::IMPORT},     {"@link", TokenKind::LINK},
       {"@extern", TokenKind::EXTERN},     {"@call", TokenKind::CALL},
-      {"@dis", TokenKind::PRINT},         {"@read", TokenKind::READ},
+      {"@output", TokenKind::PRINT},         {"@read", TokenKind::READ},
       {"@input", TokenKind::INPUT},     {"@read", TokenKind::READ},      
       {"@write", TokenKind::WRITE},
   };

@@ -240,13 +240,14 @@ void codegen::gen(Node::Stmt *stmt, bool isSaved, std::string output_filename,
   output_filename =
       output_filename.substr(0, output_filename.find_last_of("."));
 
-  ErrorClass::printError(); // Print any errors that may have occurred
+  bool isError = ErrorClass::printError();
+  if (isError) { return; }
 
   // Compile, but do not link main.o
   std::string assembler = // "Dont include standard libraries"
       (isDebug)
         ? "gcc -g -e _start -nostdlib -nostartfiles -no-pie " + output_filename + ".s -o " + output_filename
-        : "gcc -e _start -nostdlib -nostartfiles -no-pie " + output_filename + ".s -o " + output_filename;
+        : "gcc -e _start -nostdlib -nostartfiles " + output_filename + ".s -o " + output_filename;
   std::string assembler_log = output_filename + "_assembler.log";
   // loop over linkedFiles set and link them with gcc
   for (std::string linkedFile : linkedFiles) {
