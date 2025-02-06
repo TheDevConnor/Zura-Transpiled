@@ -13,6 +13,7 @@ const static std::unordered_map<std::string, Method> methodMap = {
   {"initialize", lsp::methods::initialize},
   {"shutdown", lsp::methods::shutdown},
   {"exit", lsp::methods::exit},
+  {"textDocument/hover", lsp::methods::hover},
   {"textDocument/completion", lsp::methods::completion},
   {"$/cancelRequest", lsp::methods::cancelRequest}
 };

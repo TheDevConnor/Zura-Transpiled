@@ -1,0 +1,50 @@
+[
+  {
+    "label": "call",
+    "detail": "Call a linked function",
+    "kind": 2,
+    "documentation": "This native function pairs with the @link and @extern directives to call a native function from an externally linked library.\nThe parameters will be appended in accordance with the ABI."
+  },
+  {
+    "label": "link",
+    "detail": "Link an external library",
+    "kind": 2,
+    "documentation": "This directive pairs with the @call and @extern directives to link a library to the outputted assembly if the project is built into an executable.\nIt is also useful for humans reading your code to understand what external libraries you are using. This function assumes that the library(s) in question are already installed on your system and located in /usr/include."
+  },
+  {
+    "label": "extern",
+    "detail": "Declare an external function: linked from an external library",
+    "kind": 2,
+    "documentation": "This directive pairs with the @call and @link directives to declare the use of a function that is implemented in an external library.\nThis directive tells the linker that this symbol will be resolved by link-time for each @call that happens to use it.\nThis directive is useful for interacting with external libraries written in another ABI-compliant language, for binding purposes."
+  },
+  {
+    "label": "template",
+    "detail": "Declare a function as template for use with generic types.",
+    "kind": 4,
+    "documentation": "This directive tells the compiler that the function that follows is a template and will be resolved to whatever types are using it at compile time.\nYou can use template functions as a replacement to overloading if the functionality of your code overlaps greatly.\nThis is based heavily off of C++'s template functions, which you can read more about at https://en.cppreference.com/w/cpp/language/function_template."
+  },
+  {
+    "label": "cast",
+    "detail": "Statically cast a value to another type",
+    "kind": 3,
+    "documentation": "This function is used to cast a value to another type. This follows the same general footprint as casting in C-like languages: like `(int)4.0f`.\nCoercion can be done with unions, and structs must be casted manually."
+  },
+  {
+    "label": "import",
+    "detail": "Import the global functions from another source file",
+    "kind": 2,
+    "documentation": "By declaring functions as public, they will be globally accessible to any other source file that imports them.\nThe global namespace (scope) of the two files will be joined together in the outputted assembly."
+  },
+  {
+    "label": "output",
+    "detail": "Print a list of characters to the console (stdout)",
+    "kind": 2,
+    "documentation": "This function prints each of its inputs to the console by converting to a string and writing to stdout.\nThis function is helpful when debugging or asking for user input.\nAccepted types include:\n\n- int\n- char\n- *char\n- []char\n- str\n- bool"
+  },
+  {
+    "label": "input",
+    "detail": "Take in a list of characters from the console (stdin)",
+    "kind": 2,
+    "documentation": "This function reads from stdin until either a linebreak is reached or the maximum buffer size is reached.\nThis function takes in two arguments: a []char or *char to place the input, and an int which specifies the maximum number of bytes to read."
+  }
+]

@@ -12,7 +12,8 @@ nlohmann::ordered_json lsp::methods::initialize(nlohmann::json& request) {
           {"snippetSupport", true}
         }}
       }},
-      {"textDocumentSync", TextDocumentSyncKind::Incremental}
+      {"textDocumentSync", TextDocumentSyncKind::Incremental},
+      {"hoverProvider", true}
     }},
     {"serverInfo", {
       {"name", "zura-lsp"},

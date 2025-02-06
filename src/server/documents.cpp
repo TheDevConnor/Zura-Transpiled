@@ -19,7 +19,44 @@ std::vector<std::string> lsp::split(std::string in, std::string delim) {
   return tokens;
 };
 
-void lsp::document::setCharAtPos(std::string uri, Position pos, char changeChar) {
+lsp::Word lsp::document::wordUnderPos(std::string uri, Position pos) {
+  int lineNum = pos.line;
+  int column = pos.character;
+
+  if (!documents.contains(uri)) return {};
+  std::string document = documents[uri];
+  std::vector<std::string> lines = lsp::split(document, "\n");
+  if (lineNum >= lines.size()) return {};
+  std::string line = lines.at(lineNum);
+  if (column >= line.size()) return {};
+  // get all characters surrounding the current one until a whitespace or special character is found
+  // _ and - are allowed
+  std::string word = "";
+  int firstCol;
+  for (int i = column; i >= 0; i--) {
+    char c = line.at(i);
+    firstCol = i;
+    if (c == '\n') break;
+    if ((!std::isalnum(c)) && c != '_' && c != '-' && c != '@') {
+      break;
+    }
+    word = c + word;
+  };
+  int lastCol;
+  for (int i = column + 1; i < line.size(); i++) {
+    char c = line.at(i);
+    lastCol = i;
+    if (c == '\n') break;
+    if ((!std::isalnum(c)) && c != '_' && c != '-' && c != '@') {
+      break;
+    }
+    word += c;
+  };
+
+  return Word { .word = word, .range = { .start = { .line = lineNum, .character = firstCol }, .end = { .line = lineNum, .character = lastCol } } };
+};
+
+void lsp::document::setCharAtPos(std::string uri, Position pos, std::string changeChar) {
   int lineNum = pos.line;
   int column = pos.character;
 
@@ -78,14 +115,6 @@ void lsp::events::documentChange(nlohmann::json& request) {
   }
 
   for (auto& change : request["params"]["contentChanges"]) {
-    if (change["range"]["start"]["line"] == change["range"]["end"]["line"] && change["range"]["start"]["character"] == change["range"]["end"]["character"]) {
-      // Only one character was changed in incremental mode
-      std::string uri = request["params"]["textDocument"]["uri"];
-      Position pos = {change["range"]["start"]["line"], change["range"]["start"]["character"]};
-      char changeChar = std::string(change["text"]).at(0);
-      lsp::document::setCharAtPos(uri, pos, changeChar);
-      continue;
-    }
     // Many characters were changed
     // In incremental mode
     std::vector<std::string> lines = lsp::split(change["text"], "\n");
@@ -97,25 +126,18 @@ void lsp::events::documentChange(nlohmann::json& request) {
     std::string oldDoc = documents[uri];
     if (oldDoc.empty()) continue;
     std::vector<std::string> newDoc = lsp::split(oldDoc, "\n");
-    if (start == end && startChar == endChar) {
-      // Single line change
-      lsp::document::setCharAtPos(uri, {start, startChar}, lines[0].at(0));
+    // A range and text was provided
+    if (start == end) {
+      std::string preLine = std::string(newDoc[start]);
+      newDoc[start] = preLine.substr(0, startChar) + lines[0] + preLine.substr(endChar);
     } else {
-      // A range and text was provided
-      if (start == end) {
-        newDoc[start] = newDoc[start].substr(0, startChar) + lines[0] + newDoc[start].substr(endChar);
-      } else {
-        if (end - start > 1) {
-          // If the range is more than 1, we must delete the lines in between
-          newDoc[start] = newDoc[start].substr(0, startChar) + lines[0];
-          newDoc[end] = newDoc[end].substr(endChar);
-          newDoc.erase(newDoc.begin() + start + 1, newDoc.begin() + end + 1);
-        } else {
-          // Remove the linebreak in between
-          newDoc[start] = newDoc[start].substr(0, startChar) + lines[0];
-          newDoc[end] = newDoc[end].substr(endChar);
-          newDoc.erase(newDoc.begin() + end);
-        }
+      newDoc[start] = newDoc[start].substr(0, startChar) + lines[0];
+      for (int i = 1; i < lines.size() - 1; ++i) {
+        newDoc.insert(newDoc.begin() + start + i, lines[i]);
+      }
+      newDoc[start + lines.size() - 1] = lines.back() + newDoc[end].substr(endChar);
+      if (end - start > 1) {
+        newDoc.erase(newDoc.begin() + start + lines.size(), newDoc.begin() + end + 1);
       }
     }
     std::string result;
