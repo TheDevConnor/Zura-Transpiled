@@ -1,11 +1,15 @@
 const main := fn () int {
   have name: [256]char = [0];
-  have age:  [256]char = [0];
-
+  have age:  [264]char = [0];
+  # Compile this code to see the difference between 256 byte allocation v. 264 (8 more bytes)
+  # Note: Technically, the @input function can write to `str`'s.
+  # Note: Do not use this feature, however! Strings are `const char*` and stored in the .rodata section.
+  # Note: If they were mutable char*s, their values would be overwritten.
+  # Note: So only use []char's for now- they actually allocate the space for your input.
   @output("What's your name? ");
   @input(name, 256);
   @output("What about your age? ");
-  @input(age, 256);
+  @input(age, 264);
   
   @output("\nNice to meet you, ", name, ". Happy ", age, "th birthday!\n");
   

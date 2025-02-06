@@ -51,7 +51,16 @@ public:
           // Operands are different sizes...
           // movzx dest, src
         }
-        std::stringstream ss; // C++  is trash why did i quit zig
+        if (instr.src.starts_with("$")) {
+          // it's a number! if its larger than 2^32, we must use movabsq
+          if (std::stoll(instr.src.substr(1)) > 4294967295) {
+            std::stringstream ss;
+            // in this case, i highly doubt that the destSize will be anything other than Qword
+            ss << "movabs" << dsToChar(instr.destSize) << ' ' << instr.src << ", " << instr.dest << "\n\t";
+            return ss.str();
+          }
+        }
+        std::stringstream ss;
         ss << "mov" << dsToChar(instr.srcSize) << ' ' << instr.src << ", " << instr.dest << "\n\t";
         return ss.str();
       }

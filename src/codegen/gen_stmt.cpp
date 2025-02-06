@@ -1039,22 +1039,46 @@ void codegen::declareArrayVariable(Node::Expr *expr, short int arrayLength,
   if (expr->kind == ND_ARRAY_AUTO_FILL) {
     // This is an implicit shorthand version of setting an array to [0, 0, 0, 0, ....]
     ArrayAutoFill *s = static_cast<ArrayAutoFill *>(expr);
-    push(Instr{.var = LeaInstr{.size = DataSize::Qword, .dest = "%rdx", .src = "-" + std::to_string(variableCount + arrayLength) + "(%rbp)"}, .type = InstrType::Lea}, Section::Main);
+    int totalSize = arrayLength * getByteSizeOfType(s->fillType);
+    if (totalSize <= 256) {
+      // Small enough for manual labor hehe
+      // Ensure that filling happens from the top
+      int maxQwords = totalSize / 8;
+      // find remainder bytes later if any
+      for (int i = 0; i < totalSize / 8; i++) {
+        push(Instr{.var=MovInstr{.dest=std::to_string(-(variableCount + totalSize - (i * 8))) + "(%rbp)", .src="$0", .destSize=DataSize::Qword, .srcSize=DataSize::Qword}, .type=InstrType::Mov}, Section::Main);
+      }
+      if (int remainderBytes = totalSize % 8) {
+        // Fill the remainder bytes
+        for (int i = 0; i < remainderBytes; i++) {
+          push(Instr{.var=MovInstr{.dest=std::to_string(-(variableCount + totalSize - remainderBytes + i)) + "(%rbp)", .src="$0", .destSize=DataSize::Byte, .srcSize=DataSize::Byte}, .type=InstrType::Mov}, Section::Main);
+        }
+      }
+      variableTable.insert({varName, std::to_string(-(variableCount + arrayLength)) + "(%rbp)"});
+      return;
+    }
+    // C allocates 16 bytes near the top for some reason, let's rip them off and do the same
+    // Assuming the autofill is small enough, we could manually fill them with 0's mov by mov
+    push(Instr{.var=MovInstr{.dest=std::to_string(-(variableCount + totalSize)) + "(%rbp)", .src="$0", .destSize=DataSize::Qword, .srcSize=DataSize::Qword}, .type=InstrType::Mov}, Section::Main);
+    push(Instr{.var=MovInstr{.dest=std::to_string(-(variableCount + totalSize - 8)) + "(%rbp)", .src="$0", .destSize=DataSize::Qword, .srcSize=DataSize::Qword}, .type=InstrType::Mov}, Section::Main);
+    // Prepare the registers for the rep stosq instruction
+    push(Instr{.var = LeaInstr{.size = DataSize::Qword, .dest = "%rdx", .src = "-" + std::to_string(variableCount + arrayLength - 16) + "(%rbp)"}, .type = InstrType::Lea}, Section::Main);
     push(Instr{.var = XorInstr{.lhs = "%rax", .rhs = "%rax"}, .type = InstrType::Xor}, Section::Main);
-    if ((arrayLength * getByteSizeOfType(s->fillType)) % 8 == 0) {
-      moveRegister("%rcx", "$" + std::to_string((arrayLength * getByteSizeOfType(s->fillType)) / 8), DataSize::Qword,
+    int newSize = totalSize - 16;
+    if (newSize % 8 == 0) {
+      moveRegister("%rcx", "$" + std::to_string(newSize / 8), DataSize::Qword,
                   DataSize::Qword);
       pushLinker("rep stosq\n\t",Section::Main); // Repeat %rcx times to fill ptr %rdx with the value of %rax (every 8 bytes)
-    } else if ((arrayLength * getByteSizeOfType(s->fillType)) % 4 == 0) {
-      moveRegister("%rcx", "$" + std::to_string((arrayLength * getByteSizeOfType(s->fillType)) / 4), DataSize::Qword,
+    } else if (newSize % 4 == 0) {
+      moveRegister("%rcx", "$" + std::to_string(newSize / 4), DataSize::Qword,
                   DataSize::Qword);
       pushLinker("rep stosd\n\t",Section::Main); // Repeat %rcx times to fill ptr %rdx with the value of %rax (every 8 bytes)
-    } else if ((arrayLength * getByteSizeOfType(s->fillType)) % 2 == 0) {
-      moveRegister("%rcx", "$" + std::to_string((arrayLength * getByteSizeOfType(s->fillType)) / 2), DataSize::Qword,
+    } else if (newSize % 2 == 0) {
+      moveRegister("%rcx", "$" + std::to_string(newSize / 2), DataSize::Qword,
                   DataSize::Qword);
       pushLinker("rep stosw\n\t",Section::Main); // Repeat %rcx times to fill ptr %rdx with the value of %rax (every 8 bytes)
     } else {
-      moveRegister("%rcx", "$" + std::to_string((arrayLength * getByteSizeOfType(s->fillType))), DataSize::Qword,
+      moveRegister("%rcx", "$" + std::to_string(newSize), DataSize::Qword,
                   DataSize::Qword);
       pushLinker("rep stosb\n\t",Section::Main); // Repeat %rcx times to fill ptr %rdx with the value of %rax (every 8 bytes)
     }
