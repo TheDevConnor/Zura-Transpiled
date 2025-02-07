@@ -15,8 +15,9 @@ Zura is a statically typed language that blends familiar syntax with modern cons
 9. [Templates](#templates)
 10. [Casting](#casting)
 11. [Pointers](#pointers)
-12. [Built-in Functions](#built-in-functions)
-13. [Debugging Zura](#debug-mode)
+12. [Alloc and Free](#memory)
+13. [Built-in Functions](#built-in-functions)
+14. [Debugging Zura](#debug-mode)
 
 ## Basic Syntax
 
@@ -87,13 +88,13 @@ Zura supports the `if`, `else`, `while`, and `for` control structures that you m
 # C for loop
 #    iterator  cond    postfix
 loop (i := 0; i < 10) : (i++) {
-   @dis(i, "\n");
+   @output(i, "\n");
 }
 
 # C while loop
 #    iterator  cond     (no post-loop operator)
 loop (i := 0; i < 10) {
-   @dis(i, "\n");
+   @output(i, "\n");
 }
 ```
 
@@ -102,7 +103,7 @@ You are allowed to have a post-loop operator in the loop syntax without the inli
 ```cpp
 have x: int = 0;
 loop (x < 10) : (x++) {
-   @dis(x, "\n");
+   @output(x, "\n");
 }
 ```
 
@@ -111,9 +112,9 @@ The `if` and `else` statements are similar to other languages.
 ```cpp
 have x: int = 10;
 if (x > 10) {
-   @dis("x > 10\n");
+   @output("x > 10\n");
 } else {
-   @dis("x <= 10\n");
+   @output("x <= 10\n");
 }
 ```
 
@@ -154,7 +155,7 @@ have p: Point;
 p.x = 10;
 p.y = 20;
 
-@dis("Point: (", p.x, ", ", p.y, ")\n");
+@output("Point: (", p.x, ", ", p.y, ")\n");
 ```
 
 Structs can also be defined in one big expression, rather than defining each member individually like the example above.
@@ -180,7 +181,7 @@ const Color := enum {
 };
 
 have c: Color = Color.Red;
-@dis("Color: ", c, "\n");
+@output("Color: ", c, "\n");
 ```
 
 Each member of the enum is treated as the C-like equivalent of a `unsigned long`.
@@ -221,15 +222,15 @@ const main := fn () int {
    have x: int = 10;
    have y: int = 20;
 
-   @dis("Integer values: 'x=", x, "' and 'y=", y, "'\n");
+   @output("Integer values: 'x=", x, "' and 'y=", y, "'\n");
 
    have fx: float = @cast<float>(x);
    have fy: float = @cast<float>(y);
 
-   @dis("Float values: 'fx=", fx, "' and 'fy=", fy, "'\n");
+   @output("Float values: 'fx=", fx, "' and 'fy=", fy, "'\n");
 
    have avg: float = calculate_average(fx, fy);
-   @dis("Average of float values: 'avg=", avg, "'\n");
+   @output("Average of float values: 'avg=", avg, "'\n");
 
    return 0;
 };
@@ -241,16 +242,21 @@ Zura provides a set of built-in functions that do not require the importing of s
 
 ```cpp
 have x: int = 10;
-@dis("Value of x: ", x, "\n");
+@output("Value of x: ", x, "\n");
 
 have s: string = "Hello, World!";
-@dis("String value: ", s, "\n");
+@output("String value: ", s, "\n");
 
 have y: int = @input<int>("Enter a number: ");
-@dis("You entered: ", y, "\n");
+@output("You entered: ", y, "\n");
 
 have x: int = @cast<int>(10.5);
-@dis("Casting float to int: ", x, "\n");
+@output("Casting float to int: ", x, "\n");
+
+have z: []char;
+@output("Enter a string: ");
+@input(z, 10); # z is the value that the input will be stored in; 10 is the maximum number of bytes to write into the buffer
+@output("You entered: ", z, "\n");
 ```
 
 ## Pointers
@@ -303,6 +309,10 @@ have r: Ray = {
   angle: 180;
 };
 ```
+
+## Memory
+
+Docs on `@alloc` and `@free` are coming soon!
 
 ## Debug mode
 

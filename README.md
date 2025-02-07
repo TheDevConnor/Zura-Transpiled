@@ -99,8 +99,6 @@ To start make sure you have the following installed:
 - [cmake](https://cmake.org/)
 - [make](https://www.gnu.org/software/make/)
 - [gcc](https://gcc.gnu.org/)
-- [gcc-multilib](https://packages.ubuntu.com/jammy/gcc-multilib)
-- [llvm](https://llvm.org/docs/GettingStarted.html)
 - [ninja](https://ninja-build.org/)
 
 ### Building Locally
@@ -164,6 +162,14 @@ chmod +x build.sh
 
 Or you can download the latest release from [here](https://github.com/TheDevConnor/Zura-Transpiled/releases/tag/pre-release) and add either the `zura.exe` (For Windows) or `zura` (For Linux) executable to your path.
 Eventually, I will add a script to automate this process.
+
+You can also copy the 'installer.sh' file and run it to install the latest release of Zura to your system.
+Instead of building the project yourself.
+
+```console
+chmod +x installer.sh
+./installer.sh
+```
 
 <!-- sample/SAMPLE.md -->
 Now feel free to go take a look at the documentation to see how to use the language.
