@@ -46,5 +46,17 @@
     "detail": "Take in a list of characters from the console (stdin)",
     "kind": 2,
     "documentation": "This function reads from stdin until either a linebreak is reached or the maximum buffer size is reached.\nThis function takes in two arguments: a []char or *char to place the input, and an int which specifies the maximum number of bytes to read."
+  },
+  {
+    "label": "alloc",
+    "detail": "Allocates a certain number of bytes in memory",
+    "kind": 2,
+    "documentation": "This function will request that the system allocate a page of memory that is the inputted size in bytes.\nThis function takes in one argument: an int that specifies the number of bytes to allocate."
+  },
+  {
+    "label": "free",
+    "detail": "Frees memory allocated by @alloc",
+    "kind": 2,
+    "documentation":"This function frees memory that was previously allocated using @alloc. Ensure that all memory is freed before you exit to ensure your program does not have a memory leak.\nThis function takes in two arguments: the pointer of the freed memory (returned by @alloc) and the number of bytes that you'd like to free."
   }
 ]

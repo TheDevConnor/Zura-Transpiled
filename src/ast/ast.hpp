@@ -34,6 +34,8 @@ enum NodeKind {
   ND_EXTERNAL_CALL, // @call<LinkedFunction>(12);
   ND_STRUCT, // have x: struct = { val = 12 };
   ND_ADDRESS, // &x
+  ND_FREE_MEMORY, // @free(x, 12)
+  ND_ALLOC_MEMORY, // @alloc(12);
 
   // Statements
   ND_EXPR_STMT, // x = 12

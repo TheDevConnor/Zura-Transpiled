@@ -88,6 +88,8 @@ void codegen::cast(Node::Expr *expr) {
     }
     if (getUnderlying(toPtr->underlying) == "unknown" || getUnderlying(fromPtr->underlying) == "unknown"
      || getUnderlying(toPtr->underlying) == "void" || getUnderlying(fromPtr->underlying) == "void") {
+      // Execute the code but do not type cast anything
+      visitExpr(e->castee);
       return; // Assume the dev knew what they were doing and push the original value
     }
     if (getUnderlying(toPtr->underlying) != getUnderlying(fromPtr->underlying)) {
@@ -98,11 +100,6 @@ void codegen::cast(Node::Expr *expr) {
 
   SymbolType *toType = static_cast<SymbolType *>(to);
   SymbolType *fromType = static_cast<SymbolType *>(from);
-
-  if (fromType->name == "str" || fromType->name == "[]char" || fromType->name == "char*") {
-    std::cerr << "Explicitly casting from string is not allowed" << std::endl;
-    exit(-1);
-  }
 
   pushDebug(e->line, expr->file_id, e->pos);
   visitExpr(e->castee);
@@ -176,3 +173,40 @@ void codegen::externalCall(Node::Expr *expr) {
        Section::Main);
   pushRegister("%rax");
 }
+
+void codegen::allocExpr(Node::Expr *expr) {
+  AllocMemoryExpr *alloc = static_cast<AllocMemoryExpr *>(expr);
+  visitExpr(alloc->bytesToAlloc);
+  /*
+  movq $9, %rax #
+  movq $0, %rdi #
+  movq $1024, %rsi # this is the one we care about
+  movq $3, %rdx #
+  movq $34, %r10 #
+  movq $-1, %r8
+  movq $0, %r9 #
+  */
+  popToRegister("%rsi");
+  moveRegister("%rax", "$9", DataSize::Qword, DataSize::Qword); // Syscall no
+  moveRegister("%rdi", "$0", DataSize::Qword, DataSize::Qword); // We don't care where you put the memory, just alloc anywhere
+  moveRegister("%rdx", "$3", DataSize::Qword, DataSize::Qword); // Protection flags: PROT_READ | PROT_WRITE (constant for now)
+  moveRegister("%r10", "$34", DataSize::Qword, DataSize::Qword); // Memory flags: MAP_PRIVATE | MAP_ANONYMOUS
+  moveRegister("%r8", "$-1", DataSize::Qword, DataSize::Qword); // There is no file descriptor associated here- the memory is anonymous
+  moveRegister("%r9", "$0", DataSize::Qword, DataSize::Qword); // Offset- Once again, the memory is anonymous, so we do not care
+  push(Instr{.var=Syscall{.name="mmap"},.type=InstrType::Syscall},Section::Main);
+  pushRegister("%rax");
+};
+
+void codegen::freeExpr(Node::Expr *expr) {
+  FreeMemoryExpr *free = static_cast<FreeMemoryExpr *>(expr);
+
+  // Very simple, this one!
+  visitExpr(free->whatToFree);  // rdi
+  visitExpr(free->bytesToFree); // rsi
+  popToRegister("%rsi");
+  popToRegister("%rdi");
+  // rax is constant- the syscall number
+  moveRegister("%rax", "$11", DataSize::Qword, DataSize::Qword); // Syscall number
+  push(Instr{.var=Syscall{.name="munmap"},.type=InstrType::Syscall},Section::Main);
+  pushRegister("%rax");
+};

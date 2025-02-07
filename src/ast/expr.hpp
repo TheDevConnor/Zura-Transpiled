@@ -698,3 +698,50 @@ public:
 
   ~StructExpr() = default; // rule of threes
 };
+
+class AllocMemoryExpr: public Node::Expr {
+public:
+  int line, pos;
+  Node::Expr *bytesToAlloc;
+
+  AllocMemoryExpr(int line, int pos, Node::Expr *bytes, int file)
+      : line(line), pos(pos), bytesToAlloc(bytes) {
+    file_id = file;
+    kind = NodeKind::ND_ALLOC_MEMORY;
+    asmType = new PointerType(new SymbolType("void"));
+  };
+
+  void debug(int indent = 0) const override {
+    Node::printIndent(indent);
+    std::cout << "AllocExpr: \n";
+    Node::printIndent(indent + 1);
+    std::cout << "Bytes: \n";
+    bytesToAlloc->debug(indent + 2);
+  }
+
+};
+
+class FreeMemoryExpr : public Node::Expr {
+public:
+  int line, pos;
+  Node::Expr *whatToFree;
+  Node::Expr *bytesToFree;
+
+  FreeMemoryExpr(int line, int pos, Node::Expr *whatToFree, Node::Expr *bytesToFree, int file)
+      : line(line), pos(pos), whatToFree(whatToFree), bytesToFree(bytesToFree) {
+    file_id = file;
+    kind = NodeKind::ND_FREE_MEMORY;
+    asmType = new SymbolType("int");
+  }
+
+  void debug (int ident = 0) const override {
+    Node::printIndent(ident);
+    std::cout << "FreeMemoryExpr: \n";
+    Node::printIndent(ident + 1);
+    std::cout << "What to free: \n";
+    whatToFree->debug(ident + 2);
+    Node::printIndent(ident + 1);
+    std::cout << "Bytes to free: \n";
+    bytesToFree->debug(ident + 2);
+  }
+};

@@ -54,9 +54,9 @@ void Lexer::initMap() {
       {"@template", TokenKind::TEMPLATE}, {"@cast", TokenKind::CAST},
       {"@import", TokenKind::IMPORT},     {"@link", TokenKind::LINK},
       {"@extern", TokenKind::EXTERN},     {"@call", TokenKind::CALL},
-      {"@output", TokenKind::PRINT},         {"@read", TokenKind::READ},
-      {"@input", TokenKind::INPUT},     {"@read", TokenKind::READ},      
-      {"@write", TokenKind::WRITE},
+      {"@output", TokenKind::PRINT},      {"@read", TokenKind::READ},
+      {"@input", TokenKind::INPUT},       {"@write", TokenKind::WRITE},
+      {"@free", TokenKind::FREE},         {"@alloc", TokenKind::ALLOC},
   };
 
   keywords = {

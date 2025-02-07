@@ -544,3 +544,37 @@ void TypeChecker::visitStructExpr(Maps *map, Node::Expr *expr) {
   return_type = std::make_shared<SymbolType>(struct_name);
   expr->asmType = new SymbolType(struct_name);
 }
+
+void TypeChecker::visitAllocMemory(Maps *map, Node::Expr *expr) {
+  AllocMemoryExpr *alloc = static_cast<AllocMemoryExpr *>(expr);
+  
+  visitExpr(map, alloc->bytesToAlloc);
+  if (type_to_string(return_type.get()) != "int") {
+    std::string msg = "Alloc requires the number of bytes to be of type 'int' but got '" + type_to_string(return_type.get()) + "'";
+    handleError(alloc->line, alloc->pos, msg, "", "Type Error");
+  }
+
+  return_type = std::make_shared<PointerType>(new SymbolType("void"));
+  // asmtype is a constant void* and already handled in ast
+}
+
+void TypeChecker::visitFreeMemory(Maps *map, Node::Expr *expr) {
+  FreeMemoryExpr *freeMemory = static_cast<FreeMemoryExpr *>(expr);
+  visitExpr(map, freeMemory->whatToFree);
+  if (type_to_string(return_type.get())[0] != '*') {
+    std::string msg = "Freeing memory requires the memory to be of pointer type but got '" +
+                      type_to_string(return_type.get()) + "'";
+    handleError(freeMemory->line, freeMemory->pos, msg, "", "Type Error");
+    return_type = std::make_shared<SymbolType>("unknown"); // allows stuff to be fucked up later down the line hehe (even though the return type never changes)
+    // asmtype is a constant int and already handled
+  }
+
+  visitExpr(map, freeMemory->bytesToFree);
+  if (type_to_string(return_type.get()) != "int") {
+    std::string msg = "Freeing memory requires the number of bytes to be of type 'int' but got '" + type_to_string(return_type.get()) + "'";
+    handleError(freeMemory->line, freeMemory->pos, msg, "", "Type Error");
+  }
+
+  return_type = std::make_shared<SymbolType>("int");
+  // asmtype, once again, already handled
+}

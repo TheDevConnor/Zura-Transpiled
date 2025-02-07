@@ -94,6 +94,8 @@ enum TokenKind {
   INPUT,
   READ,
   WRITE,
+  ALLOC,
+  FREE,
 
   // Error
   ERROR_,

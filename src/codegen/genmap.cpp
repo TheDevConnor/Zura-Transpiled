@@ -41,6 +41,8 @@ void codegen::initMaps() {
       {ND_STRUCT, _struct},
       {ND_ADDRESS, addressExpr},
       {ND_NULL, nullExpr},
+      {ND_FREE_MEMORY, freeExpr},
+      {ND_ALLOC_MEMORY, allocExpr},
   };
   opMap = {{"+", "add"},   {"-", "sub"},    {"*", "imul"}, {"/", "idiv"},
            {"%", "mod"}, // mod is div but special

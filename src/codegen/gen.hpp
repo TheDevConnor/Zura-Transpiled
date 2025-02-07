@@ -86,6 +86,8 @@ void _struct(Node::Expr *expr);
 void externalCall(Node::Expr *expr);
 void addressExpr(Node::Expr *expr);
 void nullExpr(Node::Expr *expr);
+void allocExpr(Node::Expr *expr);
+void freeExpr(Node::Expr *expr);
 
 void assignStructMember(Node::Expr *expr);
 void assignArray(Node::Expr *expr);

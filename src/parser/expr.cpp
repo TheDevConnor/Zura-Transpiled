@@ -87,6 +87,34 @@ Node::Expr *Parser::_prefix(PStruct *psr) {
   return new PrefixExpr(line, column, right, op.value, codegen::getFileID(psr->current_file));
 }
 
+Node::Expr *Parser::alloc_expr(PStruct *psr) {
+  int line = psr->tks[psr->pos].line;
+  int column = psr->tks[psr->pos].column;
+
+  psr->expect(psr, TokenKind::ALLOC, "Expected 'ALLOC' keyword!");
+  psr->expect(psr, TokenKind::LEFT_PAREN, "Expected L_Paran for an alloc expr!");
+
+  Node::Expr *bytes = parseExpr(psr, defaultValue);
+  psr->expect(psr, TokenKind::RIGHT_PAREN, "Expected R_Paran to end an alloc expr!");
+  return new AllocMemoryExpr(line, column, bytes, codegen::getFileID(psr->current_file));
+}
+
+Node::Expr *Parser::free_expr(PStruct *psr) {
+  int line = psr->tks[psr->pos].line;
+  int column = psr->tks[psr->pos].column;
+
+  psr->expect(psr, TokenKind::FREE, "Expected 'FREE' keyword!");
+  psr->expect(psr, TokenKind::LEFT_PAREN, "Expected L_Paran for a free memory expression!");
+
+  Node::Expr *whatToFree = parseExpr(psr, defaultValue); 
+  if (psr->current(psr).kind == TokenKind::COMMA)
+    psr->expect(psr, TokenKind::COMMA, "Expected a COMMA after the expression to free!");
+  Node::Expr *bytesToFree = parseExpr(psr, defaultValue);
+  psr->expect(psr, TokenKind::RIGHT_PAREN, "Expected R_Paran to end a free memory expression!");
+
+  return new FreeMemoryExpr(line, column, whatToFree, bytesToFree, codegen::getFileID(psr->current_file));
+};
+
 // update cast syntax to `@cast<type>(expr)`
 Node::Expr *Parser::cast_expr(PStruct *psr) {
   int line = psr->tks[psr->pos].line;

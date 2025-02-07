@@ -112,6 +112,8 @@ Node::Expr *cast_expr(PStruct *psr);
 Node::Expr *externalCall(PStruct *psr);
 Node::Expr *structExpr(PStruct *psr);
 Node::Expr *address(PStruct *psr);
+Node::Expr *alloc_expr(PStruct *psr);
+Node::Expr *free_expr(PStruct *psr);
 // Binary Functions
 Node::Expr *_postfix(PStruct *psr, Node::Expr *left, BindingPower bp);
 Node::Expr *binary(PStruct *psr, Node::Expr *left, BindingPower bp);

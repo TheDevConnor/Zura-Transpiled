@@ -11,6 +11,8 @@ Add and recognize more int types in asm. (Ex. byte, short, long, quad).
 
  Add in uint and int types.
 
+ TODO: Fix the typeCheckers indexing for chars.
+
  add in the lsp fully
  NOTE: Read into the calling convention for the lsp to comminicat with vscode and nvim respectfully
  NOTE: Good source for lsp integration 
