@@ -47,7 +47,7 @@ void codegen::constDecl(Node::Stmt *stmt) {
 
 void codegen::funcDecl(Node::Stmt *stmt) {
   FnStmt *s = static_cast<FnStmt *>(stmt);
-  int preStackSize = stackSize;
+  // size_t preStackSize = stackSize;
 
   isEntryPoint = (s->name == "main" && insideStructName == "") ? true : false;
   std::string funcName = (isEntryPoint) ? "main"
@@ -841,7 +841,7 @@ void codegen::matchStmt(Node::Stmt *stmt) {
       ".Lmatch_default" + std::to_string(conditionalCount + s->cases.size());
 
   // Go through each case and evaluate the condition.
-  for (int i = 0; i < s->cases.size(); i++) {
+  for (size_t i = 0; i < s->cases.size(); i++) {
     std::pair<Node::Expr *, Node::Stmt *> matchCase = s->cases[i];
     visitExpr(matchCase.first);
     // We can optimize a little further and remove the previous push and compare
@@ -877,7 +877,7 @@ void codegen::matchStmt(Node::Stmt *stmt) {
   }
 
   // Evaluate each case's label and, of course, statements.
-  for (int i = 0; i < s->cases.size(); i++) {
+  for (size_t i = 0; i < s->cases.size(); i++) {
     std::pair<Node::Expr *, Node::Stmt *> matchCase = s->cases[i];
     push(Instr{.var = Label{.name = ".Lmatch_case" +
                                     std::to_string(conditionalCount + i)},
@@ -937,7 +937,7 @@ void codegen::declareStructVariable(Node::Expr *expr, std::string structName,
 
   int structBase = whereToPut;
   // Evaluate the orderedFields and store them in the struct!!!!
-  for (int i = 0; i < orderedFields.size(); i++) {
+  for (size_t i = 0; i < orderedFields.size(); i++) {
     std::pair<std::string, Node::Expr *> field = orderedFields.at(i);
     // Check if the field is a struct itself
     Node::Type *fieldType = structByteSizes[structName].second[i].second.first;
@@ -954,7 +954,7 @@ void codegen::declareStructVariable(Node::Expr *expr, std::string structName,
         }
         */
         int offset = 0;
-        if (i != 0) for (int j = 0; j < i; j++) offset += structByteSizes[structName].second.at(j).second.second;
+        if (i != 0) for (size_t j = 0; j < i; j++) offset += structByteSizes[structName].second.at(j).second.second;
         // Where to put is where to put the last byte of the struct
         // We need this new value passed in here to be the base of the new struct
         declareStructVariable(field.second, getUnderlying(fieldType),
@@ -969,11 +969,11 @@ void codegen::declareStructVariable(Node::Expr *expr, std::string structName,
         // This is a bit of a hack, but it works.
         IdentExpr *ident = static_cast<IdentExpr *>(field.second);
         std::string where = variableTable[ident->name];
-        int structFieldSize =
-            structByteSizes[structName].second.at(i).second.second;
+        // unsigned short structFieldSize =
+        //     structByteSizes[structName].second.at(i).second.second;
         // Get the offset - this will be the sum of all previous fieldSizes
         int offset = 0;
-        if (i != 0) for (int j = 0; j < i; j++) offset += structByteSizes[structName].second.at(j).second.second;
+        if (i != 0) for (size_t j = 0; j < i; j++) offset += structByteSizes[structName].second.at(j).second.second;
         int fieldVarOffset = std::stoi(where.substr(0, where.find('(')));
         // Put the identifer address into rcx
         visitExpr(ident);
@@ -981,7 +981,7 @@ void codegen::declareStructVariable(Node::Expr *expr, std::string structName,
 
         // Go through each field of the field
         // and basically move the value into the new one
-        for (int j = 0;
+        for (size_t j = 0;
              j < structByteSizes[getUnderlying(fieldType)].second.size(); j++) {
           push(
               Instr{.var =
@@ -1006,7 +1006,7 @@ void codegen::declareStructVariable(Node::Expr *expr, std::string structName,
           // To - relative to rbp, PLUS the base of the new struct
           int subFieldOffset = 0;
           if (j != 0)
-            for (int k = 0; k < j; k++) {
+            for (size_t k = 0; k < j; k++) {
               // Don't ask. Please, this is so bad...
               subFieldOffset +=
                   structByteSizes[getUnderlying(structByteSizes[structName]
@@ -1045,7 +1045,7 @@ void codegen::declareArrayVariable(Node::Expr *expr, short int arrayLength,
       // Ensure that filling happens from the top
       int maxQwords = totalSize / 8;
       // find remainder bytes later if any
-      for (int i = 0; i < totalSize / 8; i++) {
+      for (int i = 0; i < maxQwords; i++) {
         push(Instr{.var=MovInstr{.dest=std::to_string(-(variableCount + totalSize - (i * 8))) + "(%rbp)", .src="$0", .destSize=DataSize::Qword, .srcSize=DataSize::Qword}, .type=InstrType::Mov}, Section::Main);
       }
       if (int remainderBytes = totalSize % 8) {
@@ -1119,8 +1119,6 @@ void codegen::declareArrayVariable(Node::Expr *expr, short int arrayLength,
 
 void codegen::inputStmt(Node::Stmt *stmt) {
   InputStmt *s = static_cast<InputStmt *>(stmt);
-
-  int labelCount = 0;
 
   push(Instr{.var = Comment{.comment = "input statement"}, .type = InstrType::Comment},Section::Main);
   pushDebug(s->line, stmt->file_id, s->pos);

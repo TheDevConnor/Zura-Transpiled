@@ -158,7 +158,7 @@ bool TypeChecker::validateArgumentCount(CallExpr *call, Node::Expr *callee,
                                         const std::vector<std::pair<std::string, Node::Type *>> &fnParams) {
   // Check if the call is a member expr call or a call on a function from a struct
   bool isFromStruct = callee->kind == ND_MEMBER;
-  int requiredSize = fnParams.size();
+  size_t requiredSize = fnParams.size();
   if (isFromStruct) {
     // Subtract 1 from the size of the fnParams because the first param is the 'self' proprty
     requiredSize--;

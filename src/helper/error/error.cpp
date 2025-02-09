@@ -165,7 +165,8 @@ bool ErrorClass::printError() {
               << col.color(std::to_string(errors.size()), Color::RED, true,
                             false)
               << std::endl;
-    for (const std::pair<int, std::string>& errorPair : errors) {
+    
+    for (const auto& errorPair : errors) {
       std::cout << errorPair.second << std::endl;
     }
     return true;

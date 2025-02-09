@@ -12,6 +12,8 @@ nlohmann::ordered_json lsp::methods::shutdown(nlohmann::json& request) {
 
 nlohmann::ordered_json lsp::methods::exit(nlohmann::json& request) {
   Exit(ExitValue::SUCCESS);
+  // the process exits but the compiler screams for no return here lol
+  return nullptr;
 };
 
 nlohmann::ordered_json lsp::methods::cancelRequest(nlohmann::json& request) {

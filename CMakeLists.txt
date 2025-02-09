@@ -4,6 +4,7 @@ project(zura LANGUAGES CXX)
 
 set(CMAKE_CXX_STANDARD 20)
 
+# add_compile_options(-Wall -Wpedantic -Werror -Wfatal-errors -Wextra)
 add_compile_options(-fmax-errors=1 -Wno-error -Wno-fatal-errors -Wno-pedantic -Wno-all -Wno-extra)
 
 # Specify header and source files

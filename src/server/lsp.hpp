@@ -5,8 +5,8 @@ namespace lsp {
     // -- TYPES --
 
   struct Position {
-    int line;
-    int character;
+    size_t line;
+    size_t character;
   };
 
   struct Range {

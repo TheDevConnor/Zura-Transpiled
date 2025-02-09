@@ -138,7 +138,7 @@ void codegen::binary(Node::Expr *expr) {
     if (op == "idiv" || op == "div" || op == "mod") {
       // Division requires special handling because of RDX:RAX input
       pushLinker("cqto\n\t", Section::Main);
-      push(Instr {.var = DivInstr{.from = "%rbx"}, .type = InstrType::Div}, Section::Main);
+      push(Instr {.var = DivInstr{.from = "%rbx", .isSigned = true}, .type = InstrType::Div}, Section::Main);
       if (op == "mod")
         pushRegister("%rdx"); // Push remainder
       else
@@ -404,7 +404,7 @@ void codegen::arrayElem(Node::Expr *expr) {
     if (e->lhs->kind == ND_IDENT) {
       IdentExpr *ident = static_cast<IdentExpr *>(e->lhs);
       Node::Type *underlying = static_cast<ArrayType *>(e->asmType)->underlying;
-      std::string whereBytes = variableTable[static_cast<IdentExpr *>(e->lhs)->name];
+      std::string whereBytes = variableTable[ident->name];
       int offset = std::stoi(whereBytes.substr(0, whereBytes.find("("))); // this is the base of the array - the first byte of the first element
       offset -= (index->value * getByteSizeOfType(underlying));
       pushRegister(std::to_string(offset) + "(%rbp)");
@@ -551,7 +551,7 @@ void codegen::memberExpr(Node::Expr *expr) {
         int offset = 0; // im gonna do something about that later
         std::string structName = sym->name;
         std::vector<StructMember> fields = structByteSizes[structName].second;
-        for (int i = 0; i < fields.size(); i++) {
+        for (size_t i = 0; i < fields.size(); i++) {
           if (fields[i].first == member->name) break;
           offset += fields[i].second.second;
         }
@@ -643,11 +643,9 @@ void codegen::assignStructMember(Node::Expr *expr) {
       std::string base = variableTable[rhs->name];
       std::string subbedString = base.substr(0, base.find('('));
       int baseBytes = std::stoi(subbedString);
-      // step 2: find the offset of the field
-      int fieldOffset = offset;
-      // step 3: order the fields
+      // step 2: order the fields
       std::vector<std::pair<std::string, Node::Expr *>> orderedFields;
-      for (int i = 0; i < fields.size(); i++) {
+      for (size_t i = 0; i < fields.size(); i++) {
         for (std::pair<Node::Expr *, Node::Expr *> field : static_cast<StructExpr *>(e->rhs)->values) {
           if (static_cast<IdentExpr *>(field.first)->name
               == fields.at(i).first) {
@@ -656,8 +654,8 @@ void codegen::assignStructMember(Node::Expr *expr) {
           }
         }
       }
-      // step 4: evaluate the ordered fields and store them in the inner struct
-      for (int i = 0; i < orderedFields.size(); i++) {
+      // step 3: evaluate the ordered fields and store them in the inner struct
+      for (size_t i = 0; i < orderedFields.size(); i++) {
         std::pair<std::string, Node::Expr *> field = orderedFields.at(i);
         // Evaluate the expression
         visitExpr(field.second);
@@ -686,13 +684,12 @@ void codegen::assignStructMember(Node::Expr *expr) {
     // defined struct as the base of the new one
     StructExpr *s = static_cast<StructExpr *>(e->rhs);
     std::string structTypeName = static_cast<SymbolType *>(s->asmType)->name;
-    int size = structByteSizes[structTypeName].first;
     std::string base = variableTable[static_cast<IdentExpr *>(e->assignee)->name];
     std::vector<StructMember> fields = structByteSizes[structTypeName].second;
     // The fields of the expression might be out of order from which they are defined
     // in the struct. We need to reorder them.
     std::vector<std::pair<std::string, Node::Expr *>> orderedFields;
-    for (int i = 0; i < fields.size(); i++) {
+    for (size_t i = 0; i < fields.size(); i++) {
       for (std::pair<Node::Expr *, Node::Expr *> field : s->values) {
         if (static_cast<IdentExpr *>(field.first)->name
             == fields.at(i).first) {
@@ -704,18 +701,17 @@ void codegen::assignStructMember(Node::Expr *expr) {
 
     // Evaluate the orderedFields and store them in the struct!!!!
     std::string subbedString = base.substr(0, base.find('('));
-    int baseBytes = std::stoi(subbedString);
 
     // Evaluate what rcx has to be
     visitExpr(e->assignee); // The identifier's position
     popToRegister("%rcx");
-    for (int i = 0; i < orderedFields.size(); i++) {
+    for (size_t i = 0; i < orderedFields.size(); i++) {
       std::pair<std::string, Node::Expr *> field = orderedFields.at(i);
       // Evaluate the expression
       visitExpr(field.second);
       // Pop the value into a register
       int popToOffset = 0;
-      if (i != 0) for (int j = 0; j < i; j++) {
+      if (i != 0) for (size_t j = 0; j < i; j++) {
         popToOffset += fields[j].second.second;
       }
       std::string popExpr = std::to_string(-popToOffset) + "(%rcx)";
@@ -756,7 +752,7 @@ void codegen::assignArray(Node::Expr *expr) {
       text_section.pop_back();
       push(Instr{.var=LeaInstr{.size=DataSize::Qword,.dest="%rcx",.src=instr.what}, .type = InstrType::Lea},Section::Main);
       ArrayExpr *rhs = static_cast<ArrayExpr *>(assign->rhs);
-      for (int i = 0; i < rhs->elements.size(); i++) {
+      for (size_t i = 0; i < rhs->elements.size(); i++) {
         visitExpr(rhs->elements.at(i));
         popToRegister(std::to_string(-i * getByteSizeOfType(rhs->type)) + "(%rcx)");
       }

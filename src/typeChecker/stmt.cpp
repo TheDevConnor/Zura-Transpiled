@@ -237,7 +237,7 @@ void TypeChecker::visitEnum(Maps *map, Node::Stmt *stmt) {
   }
 
   // visit the fields Aka the variables
-  for (int i = 0; i < enum_stmt->fields.size(); i++) {
+  for (size_t i = 0; i < enum_stmt->fields.size(); i++) {
     declare(map->local_symbol_table, enum_stmt->fields[i],
             static_cast<Node::Type *>(new SymbolType("int")), enum_stmt->line,
             enum_stmt->pos);
@@ -327,7 +327,7 @@ void TypeChecker::visitVar(Maps *map, Node::Stmt *stmt) {
     } else if(var_stmt->expr->kind == NodeKind::ND_ARRAY) { // auto filled arrays will always have 1 element (the one to autofill) so do not error in that case
       // If the array was declared with a size we need to check if the size
       // of the array expr is the same as the size of the array type
-      if (array_type->constSize != array_expr->elements.size()) {
+      if ((size_t)array_type->constSize != array_expr->elements.size()) {
         std::string msg = "Array '" + var_stmt->name + "' requires " +
                           std::to_string(array_type->constSize) +
                           " elements but got " +
@@ -369,7 +369,7 @@ void TypeChecker::visitVar(Maps *map, Node::Stmt *stmt) {
 
 void TypeChecker::visitPrint(Maps *map, Node::Stmt *stmt) {
   PrintStmt *print_stmt = static_cast<PrintStmt *>(stmt);
-  for (int i = 0; i < print_stmt->args.size(); i++) {
+  for (size_t i = 0; i < print_stmt->args.size(); i++) {
     visitExpr(map, print_stmt->args[i]);
     print_stmt->args[i]->asmType = createDuplicate(return_type.get());
     ;

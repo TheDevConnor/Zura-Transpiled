@@ -8,7 +8,7 @@ nlohmann::ordered_json lsp::methods::completion(nlohmann::json& request) {
   json position = request["params"]["position"];
 
   if (request["params"]["context"]["triggerCharacter"] == "@" ||
-    lsp::document::charAtPos(request["params"]["textDocument"]["uri"], Position {.line = position["line"], .character = int(position["character"]) - 1}) == '@') {
+    lsp::document::charAtPos(request["params"]["textDocument"]["uri"], Position {.line = position["line"], .character = size_t(position["character"]) - 1}) == '@') {
       return ordered_json {
         {"isIncomplete", false},
         {"items", ordered_json::parse(std::ifstream("src/server/atFunctions.json"))}

@@ -20,8 +20,9 @@ std::vector<std::string> lsp::split(std::string in, std::string delim) {
 };
 
 lsp::Word lsp::document::wordUnderPos(std::string uri, Position pos) {
-  int lineNum = pos.line;
-  int column = pos.character;
+  // neither of these will basically ever be negative
+  size_t lineNum = pos.line;
+  size_t column = pos.character;
 
   if (!documents.contains(uri)) return {};
   std::string document = documents[uri];
@@ -32,8 +33,8 @@ lsp::Word lsp::document::wordUnderPos(std::string uri, Position pos) {
   // get all characters surrounding the current one until a whitespace or special character is found
   // _ and - are allowed
   std::string word = "";
-  int firstCol;
-  for (int i = column; i >= 0; i--) {
+  size_t firstCol;
+  for (size_t i = column; i > 0; i--) {
     char c = line.at(i);
     firstCol = i;
     if (c == '\n') break;
@@ -42,8 +43,8 @@ lsp::Word lsp::document::wordUnderPos(std::string uri, Position pos) {
     }
     word = c + word;
   };
-  int lastCol;
-  for (int i = column + 1; i < line.size(); i++) {
+  size_t lastCol;
+  for (size_t i = column + 1; i < line.size(); i++) {
     char c = line.at(i);
     lastCol = i;
     if (c == '\n') break;
@@ -57,8 +58,8 @@ lsp::Word lsp::document::wordUnderPos(std::string uri, Position pos) {
 };
 
 void lsp::document::setCharAtPos(std::string uri, Position pos, std::string changeChar) {
-  int lineNum = pos.line;
-  int column = pos.character;
+  size_t lineNum = pos.line;
+  size_t column = pos.character;
 
   if (!documents.contains(uri)) return;
   std::string document = documents[uri];
@@ -75,7 +76,7 @@ void lsp::document::setCharAtPos(std::string uri, Position pos, std::string chan
   lines.at(lineNum) = newLine;
 
   std::string newDoc = "";
-  for (int i = 0; i < lines.size(); i++) {
+  for (size_t i = 0; i < lines.size(); i++) {
     newDoc += lines.at(i);
     if (i != lines.size() - 1) newDoc += "\n";
   };
@@ -132,7 +133,7 @@ void lsp::events::documentChange(nlohmann::json& request) {
       newDoc[start] = preLine.substr(0, startChar) + lines[0] + preLine.substr(endChar);
     } else {
       newDoc[start] = newDoc[start].substr(0, startChar) + lines[0];
-      for (int i = 1; i < lines.size() - 1; ++i) {
+      for (size_t i = 1; i < lines.size() - 1; ++i) {
         newDoc.insert(newDoc.begin() + start + i, lines[i]);
       }
       newDoc[start + lines.size() - 1] = lines.back() + newDoc[end].substr(endChar);
@@ -141,7 +142,7 @@ void lsp::events::documentChange(nlohmann::json& request) {
       }
     }
     std::string result;
-    for (int i = 0; i < newDoc.size(); i++) {
+    for (size_t i = 0; i < newDoc.size(); i++) {
       result += newDoc[i];
       if (i != newDoc.size() - 1) result += "\n";
     };

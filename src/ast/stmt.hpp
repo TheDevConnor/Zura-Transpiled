@@ -119,7 +119,7 @@ public:
   bool shouldDeclareForward;
 
   BlockStmt(int line, int pos, std::vector<Node::Stmt *> stmts, bool declareForward, std::vector<Node::Type *> varDeclTypes, int file)
-      : line(line), pos(pos), shouldDeclareForward(declareForward), varDeclTypes(std::move(varDeclTypes)), stmts(stmts) {
+      : line(line), pos(pos), stmts(stmts), varDeclTypes(std::move(varDeclTypes)), shouldDeclareForward(declareForward) {
     file_id = file;
     kind = NodeKind::ND_BLOCK_STMT;
   }

@@ -20,8 +20,7 @@ void TypeChecker::visitTemplateCall(Maps *map, Node::Expr *expr) {
 }
 
 void TypeChecker::visitExternalCall(Maps *map, Node::Expr *expr) {
-  ExternalCall *external_call = static_cast<ExternalCall *>(expr);
-
+  // There's not really a whole lot to typecheck here , lol
   return_type = std::make_shared<SymbolType>(
       "unknown"); // Unknown type, imagine that this is cast to like int or
                   // whatever
@@ -59,13 +58,11 @@ void TypeChecker::visitFloat(Maps *map, Node::Expr *expr) {
 }
 
 void TypeChecker::visitString(Maps *map, Node::Expr *expr) {
-  StringExpr *string = static_cast<StringExpr *>(expr);
   return_type = std::make_shared<SymbolType>("str");
   expr->asmType = new SymbolType("str");
 }
 
 void TypeChecker::visitChar(Maps *map, Node::Expr *expr) {
-  CharExpr *character = static_cast<CharExpr *>(expr);
   return_type = std::make_shared<SymbolType>("char");
   expr->asmType = new SymbolType("char");
 }
@@ -197,7 +194,6 @@ void TypeChecker::visitGrouping(Maps *map, Node::Expr *expr) {
 }
 
 void TypeChecker::visitBool(Maps *map, Node::Expr *expr) {
-  BoolExpr *boolean = static_cast<BoolExpr *>(expr);
   return_type = std::make_shared<SymbolType>("bool");
   expr->asmType = createDuplicate(return_type.get());
 }
@@ -464,7 +460,7 @@ void TypeChecker::visitStructExpr(Maps *map, Node::Expr *expr) {
     return;
   }
 
-  if (struct_size != struct_expr->values.size()) {
+  if ((size_t)struct_size != struct_expr->values.size()) {
     std::string msg = "Struct '" + struct_name + "' requires " +
                       std::to_string(struct_size) + " elements but got " +
                       std::to_string(struct_expr->values.size());

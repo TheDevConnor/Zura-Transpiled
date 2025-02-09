@@ -31,13 +31,14 @@ int levenshtein_distance(std::string s1, std::string s2) {
   // to transform one string into another
 
   // Create a 2D array to store the distances
-  int m = s1.size();
-  int n = s2.size();
-  int dp[m + 1][n + 1];
+  size_t m = s1.size();
+  size_t n = s2.size();
+  // vlas are very bad bad
+  std::vector<std::vector<size_t>> dp(m + 1, std::vector<size_t>(n + 1));
 
   // Initialize the array
-  for (int i = 0; i <= m; i++) {
-    for (int j = 0; j <= n; j++) {
+  for (size_t i = 0; i <= m; i++) {
+    for (size_t j = 0; j <= n; j++) {
       if (i == 0) {
         dp[i][j] = j;
       } else if (j == 0) {
@@ -49,8 +50,8 @@ int levenshtein_distance(std::string s1, std::string s2) {
   }
 
   // Fill in the array
-  for (int i = 1; i <= m; i++) {
-    for (int j = 1; j <= n; j++) {
+  for (size_t i = 1; i <= m; i++) {
+    for (size_t j = 1; j <= n; j++) {
       if (s1[i - 1] == s2[j - 1]) { // only add to the distance if the characters are different
         dp[i][j] = dp[i - 1][j - 1]; // set distance at that location
       } else { // the characters were different

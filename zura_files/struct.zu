@@ -6,11 +6,11 @@ const Hobbies := enum {
 }; 
 
 const Person := struct {
-    name: str;
-    age: int;
+    name: str,
+    age: int,
     
     greet := fn (self: *Person) void {
-        @dis("Hello, my name is ", self.name, " and I am ", self.age, " years old.\n");
+        @output("Hello, my name is ", self.name, " and I am ", self.age, " years old.\n");
     }; 
 };
 
