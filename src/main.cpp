@@ -14,12 +14,24 @@
 
 std::string get_version(const char *path) {
     std::ifstream file(path);
-    if (!file) {
-        std::cerr << "Error: Could not open file '" << path << "'" << std::endl;
-        Exit(ExitValue::INVALID_FILE);
-    }
 
     std::string version;
+
+    if (!file) {
+        // then check the /usr/local/bin/zura path
+        file.open("/usr/local/bin/zura/" + std::string(path));
+        if (!file) {
+            std::cerr << "Error: Could not open file '" << path << "'" << std::endl;
+            Exit(ExitValue::INVALID_FILE);
+        }
+
+        std::getline(file, version);
+        ZuraVersion = version;
+        file.close();
+
+        return version;
+    }
+
     std::getline(file, version);
     ZuraVersion = version;
     file.close();
