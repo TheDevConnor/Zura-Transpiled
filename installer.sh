@@ -62,6 +62,7 @@ fi
 # Move executable
 echo "Installing Zura..."
 sudo mv "$EXECUTABLE" "$INSTALL_DIR"
+sudo mv "version.txt" "$INSTALL_DIR"
 
 # Store the new version
 echo "Updating version file..."
