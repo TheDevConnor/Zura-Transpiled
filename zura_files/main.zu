@@ -1,3 +1,19 @@
-const main := fn () int {
+# const len := fn (input: []int) int {
+#   loop (i = 0; i < 100): (i++) {
+#     if (input[i] == 0) return i;
+#   }
+
+#   return -1;
+# };
+
+# const main := fn () int {
+#   have num: []int = [1, 2, 3, 4, 5, 0]; # 0 is the terminator
+#   have l: int = len(num);
+#   @output(l, "\n");
+#   return 0;
+# };
+
+const main := fn() int {
+  @output("Hello, World!\n");
   return 0;
 };

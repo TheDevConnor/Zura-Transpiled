@@ -2,6 +2,7 @@
 #include "../ast/types.hpp"
 #include "../helper/math/math.hpp"
 #include "type.hpp"
+#include <algorithm>
 #include <memory>
 
 #include <limits>
@@ -122,6 +123,10 @@ void TypeChecker::visitBinary(Maps *map, Node::Expr *expr) {
                     "' requires the type to be an 'int' or 'float' but got '" +
                     type_to_string(lhs.get()) + "' and '" +
                     type_to_string(rhs.get()) + "'";
+
+  // std::cout << "lhs: " << type_to_string(lhs.get()) << std::endl;
+  // std::cout << "rhs: " << type_to_string(rhs.get()) << std::endl;
+  
   if (!checkTypeMatch(lhs, rhs, binary->op, binary->line, binary->pos, msg)) {
     return_type = std::make_shared<SymbolType>("unknown");
     expr->asmType = new SymbolType("unknown");
@@ -375,26 +380,38 @@ void TypeChecker::visitArrayType(Maps *map, Node::Type *type) {
 
 void TypeChecker::visitIndex(Maps *map, Node::Expr *expr) {
   IndexExpr *index = static_cast<IndexExpr *>(expr);
-  visitExpr(map, index->lhs);
-  Node::Type *array = createDuplicate(return_type.get());
-  visitExpr(map, index->rhs);
-  Node::Type *idx = createDuplicate(return_type.get());
+  auto lhs = index->lhs;
+  auto rhs = index->rhs;
 
-  if (type_to_string(idx) != "int") {
-    std::string msg = "Array index must be of type 'int' but got '" +
-                      type_to_string(idx) + "'";
+  visitExpr(map, lhs);
+  std::shared_ptr<Node::Type> lhsType = return_type;
+
+  visitExpr(map, rhs);
+  std::shared_ptr<Node::Type> rhsType = return_type;
+
+  // search for '[]' in the lhs type and 'int' in the rhs type
+  auto lhsStr = type_to_string(lhsType.get());
+  auto rhsStr = type_to_string(rhsType.get());
+
+  if (lhsStr.find("[]") == std::string::npos) {
+    std::string msg = "Indexing requires the left hand side to be an array but got '" + lhsStr + "'";
+    std::cout << msg << std::endl;
     handleError(index->line, index->pos, msg, "", "Type Error");
+    return_type = std::make_shared<SymbolType>("unknown");
+    expr->asmType = new SymbolType("unknown");
+    return;
   }
 
-  if (array->kind == ND_ARRAY_TYPE) {
-    std::string msg =
-        "Indexing requires the lhs to be of type array but got '" +
-        type_to_string(array) + "'";
+  if (rhsStr != "int") {
+    std::string msg = "Indexing requires the right hand side to be an 'int' but got '" + rhsStr + "'";
     handleError(index->line, index->pos, msg, "", "Type Error");
+    return_type = std::make_shared<SymbolType>("unknown");
+    expr->asmType = new SymbolType("unknown");
+    return;
   }
 
-  return_type =
-      std::make_shared<SymbolType>(type_to_string(static_cast<ArrayType *>(array)->underlying));
+  // set the return type to the underlying type of the array
+  return_type = std::make_shared<SymbolType>(lhsStr.substr(2, lhsStr.size() - 2)); // remove the '[]' from the type
   expr->asmType = createDuplicate(return_type.get());
 }
 

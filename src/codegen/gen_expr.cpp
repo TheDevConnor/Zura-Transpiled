@@ -425,6 +425,7 @@ void codegen::arrayElem(Node::Expr *expr) {
         pushRegister(std::to_string(offset) + "(%rcx)");
     }
   } else {
+    std::cout << "Non-constant index array access not implemented yet" << std::endl;
     // This is a little more intricate.
     // We have to evaluate the index and multiply it by the size of the type
     if (e->lhs->kind == ND_IDENT) {
@@ -480,6 +481,7 @@ void codegen::_arrayExpr(Node::Expr *expr) {
   ArrayExpr *e = static_cast<ArrayExpr *>(expr);
   pushDebug(e->line, expr->file_id, e->pos);
 
+  e->debug();
 }
 
 void codegen::memberExpr(Node::Expr *expr) {

@@ -285,6 +285,8 @@ void codegen::funcDecl(Node::Stmt *stmt) {
   for (size_t i = 0; i < s->params.size(); i++) {
     variableTable.erase(s->params.at(i).first);
   }
+
+  std::cout << "Function '" << s->name << "' has been compiled." << std::endl;
 };
 
 void codegen::varDecl(Node::Stmt *stmt) {
@@ -315,6 +317,7 @@ void codegen::varDecl(Node::Stmt *stmt) {
     } else if (s->type->kind == ND_ARRAY_TYPE ||
                s->type->kind == ND_ARRAY_AUTO_FILL) {
       ArrayType *at = static_cast<ArrayType *>(s->type);
+      std::cout << "Array type: " << at->underlying->kind << std::endl;
       declareArrayVariable(
           s->expr, static_cast<ArrayType *>(s->type)->constSize,
           s->name); // s->name so it can be inserted to variableTable, s->type
@@ -620,6 +623,8 @@ void codegen::_return(Node::Stmt *stmt) {
       handleReturnCleanup(); // We don't care about rax! We're exiting. We already
                              // know that nothing is being returned therefore we
                              // know that this is ok.
+      std::string msg ="WARNING: Returning from a non-void function without a return value. This is undefined behavior.";
+      handleError(returnStmt->line, returnStmt->pos, msg, "codegen");
       return;
     }
   }
@@ -642,8 +647,8 @@ void codegen::_return(Node::Stmt *stmt) {
   // Probably a symbol type!
   SymbolType *st = static_cast<SymbolType *>(returnStmt->expr->asmType);
   if (st->name == "float" || st->name == "double") {
-    push(Instr{.var=PopInstr{.where="%xmm0",.whereSize=DataSize::SS},.type=InstrType::Pop},Section::Main); // abi standard (can hold many bytes of data, so its fine for both floats AND doubles to fit in here)
-  } else if (structByteSizes.find(st->name) != structByteSizes.end()) {
+    popToRegister("%xmm0");
+  } else {
     popToRegister("%rax");
   }
   handleReturnCleanup();

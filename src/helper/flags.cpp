@@ -59,6 +59,8 @@ void Flags::runFile(const char *path, std::string outName, bool save, bool debug
   if (tcError) Exit(ExitValue::TYPE_ERROR);
   if (echoOn) Flags::updateProgressBar(0.5);
 
+  result->debug();
+
   // Compiler optimize the AST!
   result = CompileOptimizer::optimizeStmt(result);
   if (echoOn) Flags::updateProgressBar(0.75);
