@@ -616,6 +616,7 @@ void codegen::_return(Node::Stmt *stmt) {
   pushDebug(returnStmt->line, stmt->file_id, returnStmt->pos);
   if (returnStmt->expr == nullptr) {
     if (isEntryPoint) {
+      // Entry point (Main) function is an unsigned int, meaning that it is acceptable to return as a int here
       moveRegister("%rdi", "$0", DataSize::Qword, DataSize::Qword);
       handleExitSyscall();
       return;
@@ -647,7 +648,7 @@ void codegen::_return(Node::Stmt *stmt) {
   // Probably a symbol type!
   SymbolType *st = static_cast<SymbolType *>(returnStmt->expr->asmType);
   if (st->name == "float" || st->name == "double") {
-    popToRegister("%xmm0");
+    push(Instr{.var=PopInstr{.where="%xmm0",.whereSize=DataSize::SS},.type=InstrType::Pop},Section::Main);
   } else {
     popToRegister("%rax");
   }
