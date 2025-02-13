@@ -16,7 +16,7 @@ void codegen::initMaps() {
       {ND_CONTINUE_STMT, _continue}, {ND_STRUCT_STMT, structDecl},
       {ND_ENUM_STMT, enumDecl},      {ND_IMPORT_STMT, importDecl},
       {ND_LINK_STMT, linkFile},      {ND_EXTERN_STMT, externName},
-      {ND_MATCH_STMT, matchStmt},   {ND_INPUT_STMT, inputStmt},
+      {ND_MATCH_STMT, matchStmt},    {ND_INPUT_STMT, inputStmt},
   };
   exprHandlers = {
       {ND_BINARY, binary},
@@ -52,4 +52,8 @@ void codegen::initMaps() {
            {"==", "sete"}, {"!=", "setne"}, {">", "setg"}, {">=", "setge"},
            {"<", "setl"},  {"<=", "setle"}, {"||", "lor"}, {"|", "bor"},
            {"&&", "land"}, {"&", "band"}};
+  typeSizes = {
+      {"int", 8},  {"float", 8}, {"enum", 8}, {"str", 8},
+      {"char", 1}, {"bool", 1},  {"void", 0},
+  };
 }

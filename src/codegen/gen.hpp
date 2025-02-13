@@ -30,6 +30,9 @@ T lookup(const std::unordered_map<U, T> &map, U key) {
     return iter->second;
 }
 
+// Map for type sizes
+inline std::unordered_map<std::string, int> typeSizes;
+
 void initMaps();
 
 // Signed 64-bit integer

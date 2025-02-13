@@ -6,6 +6,7 @@
 #include <cstdint>
 #include <fstream>
 #include <cmath>
+#include <unordered_map>
 
 
 void codegen::handleError(int line, int pos, std::string msg,
@@ -380,40 +381,28 @@ void codegen::pushDebug(int line, int file, int column) {
 
 // A real type, not the asmType
 signed short int codegen::getByteSizeOfType(Node::Type *type) {
-  if (type->kind == NodeKind::ND_POINTER_TYPE) {
-    return 8;
-  }
-  if (type->kind == NodeKind::ND_ARRAY_TYPE) {
-    return 8; // Pointer to first element
-    // In the case where we need to have the size of the array based on type * length, they will do it on their own
-  }
-  if (type->kind == NodeKind::ND_FUNCTION_TYPE) {
-    return 8; // Also just a pointer
-  }
-  if (type->kind == NodeKind::ND_FUNCTION_TYPE_PARAM) {
-    return 8; // Also just a pointer lol
-  };
-  if (type->kind == NodeKind::ND_SYMBOL_TYPE) {
-    SymbolType *sym = static_cast<SymbolType *>(type);
-    if (sym->name == "int") {
+  switch (type->kind) {
+    case ND_POINTER_TYPE:
+    case ND_ARRAY_TYPE:
+    case ND_FUNCTION_TYPE:
+    case ND_FUNCTION_TYPE_PARAM:
       return 8;
-    } else if (sym->name == "char") {
-      return 1;
-    } else if (sym->name == "float") {
-      return 8;
-    } else if (sym->name == "void") {
-      return 0;
-    } else if (structByteSizes.find(sym->name) != structByteSizes.end()) {
-      return structByteSizes[sym->name].first;
-    } else {
-      return 8; // Default to 8 bytes because x64 rules!!
+    case ND_SYMBOL_TYPE: {
+      SymbolType *sym = static_cast<SymbolType *>(type);
+      auto it = typeSizes.find(sym->name);
+      if (it != typeSizes.end()) {
+        return it->second;
+      }
+      // Unreachable!
+      std::string msg = "Unknown type '" + sym->name + "'.";
+      handleError(0, 0, msg, "Codegen Error");
+      return 0; // Let the compiler know that this is an error
     }
-    std::cout << "Unknown type: " << sym->name << std::endl;
-    return -1;
+    default:
+      std::string msg = "Unknown type '" + std::to_string((int)type->kind) + "'.";
+      handleError(0, 0, msg, "Codegen Error");
+      return 0;
   }
-  // Unreachable!
-  std::cout << "Reached unknown place in the getByteSizeOfType ..." << std::endl;
-  return -1;
 };
 
 std::string codegen::getUnderlying(Node::Type *type) {

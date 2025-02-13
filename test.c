@@ -1,41 +1,28 @@
-#include <stdio.h>
 #include <stdbool.h>
+#include <stdio.h>
 
-enum TokenKind {
-  IDENTIFIER,
-  VARIABLE,
-  EQUALS,
-  SEMICOLON,
+enum WeekDay {
+  Sunday,
+  Monday,
+  Tuesday,
+  Wednesday,
+  Thursday,
+  Friday,
+  Saturday
+}WeekDay;
 
-  _EOF,
-};
-
-struct Token {
-  enum TokenKind kind;
-  const char *value;
-} Token;
-
-void print(struct Token tk) {
-  printf("Token: %d, %s\n", tk.kind, tk.value);
-}
-
-bool is_eof(struct Token tk) {
-  return tk.kind == _EOF;
-}
+struct Day {
+}Day;
 
 int main() {
-  struct Token tokens[] = {
-    {IDENTIFIER, "x"},
-    {EQUALS, "="},
-    {VARIABLE, "5"},
-    {SEMICOLON, ";"},
-    {_EOF, ""},
-  };
-  
-  for (int i = 0; !is_eof(tokens[i]); i++) {
-    print(tokens[i]);
-  }
+  // print out the sizeof an int, float, char, and bool
+  printf("Size of int: %lu\n", sizeof(int));
+  printf("Size of float: %lu\n", sizeof(float));
+  printf("Size of char: %lu\n", sizeof(char));
+  printf("Size of bool: %lu\n", sizeof(bool));
 
-  return 0;
+  // print out the sizeof an enum, struct, and pointer
+  printf("Size of enum: %lu\n", sizeof(WeekDay)); // should be 4
+  printf("Size of struct: %lu\n", sizeof(Day)); // should be 16
 }
 
