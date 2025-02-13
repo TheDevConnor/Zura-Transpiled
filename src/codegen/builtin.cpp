@@ -1,4 +1,6 @@
 #include "gen.hpp"
+#include "optimizer/instr.hpp"
+#include <unordered_map>
 
 void codegen::print(Node::Stmt *stmt) {
   PrintStmt *print = static_cast<PrintStmt *>(stmt);
@@ -210,3 +212,52 @@ void codegen::freeExpr(Node::Expr *expr) {
   push(Instr{.var=Syscall{.name="munmap"},.type=InstrType::Syscall},Section::Main);
   pushRegister("%rax");
 };
+
+void codegen::sizeofExpr(Node::Expr *expr) {
+  SizeOfExpr *s = static_cast<SizeOfExpr *>(expr);
+  
+  // Get the type of the expression
+  std::string typeName = getUnderlying(s->whatToSizeOf->asmType);
+  std::string name = static_cast<IdentExpr*>(s->whatToSizeOf)->name;
+
+  std::cout << "Sizeof: " << typeName << std::endl;
+
+  // Define a lookup for type sizes
+  size_t size = 0;
+  std::unordered_map<std::string, size_t> typeSizes = {
+      {"int", 4},    {"enum", 4}, {"char", 1}, {"bool", 1},    {"float", 4},
+      {"[]char", 8}, {"str", 8},  {"void", 0}, {"unknown", 0},
+  };
+
+  if (s->whatToSizeOf->asmType->kind == ND_POINTER_TYPE) {
+    PointerType *p = static_cast<PointerType *>(s->whatToSizeOf->asmType);
+    if (p->underlying->kind == ND_SYMBOL_TYPE) {
+      typeName = getUnderlying(p->underlying);
+    } else {
+      handleError(s->line, s->pos, "Cannot get size of type '" + typeName + "' on variable '" + name + "'.", "Codegen Error");
+    }
+  }
+
+  if (s->whatToSizeOf->asmType->kind == ND_ARRAY_TYPE) {
+    ArrayType *a = static_cast<ArrayType *>(s->whatToSizeOf->asmType);
+    if (a->underlying->kind == ND_SYMBOL_TYPE) {
+      typeName = getUnderlying(a->underlying);
+    } else {
+      handleError(s->line, s->pos, "Cannot get size of type '" + typeName + "' on variable '" + name + "'.", "Codegen Error");
+    }
+  }
+
+  // TODO: Implement struct size
+
+  if (typeSizes.find(typeName) == typeSizes.end()) {
+    handleError(s->line, s->pos, "Cannot get size of type '" + typeName + "' on variable '" + name + "'.", "Codegen Error");
+  }
+
+  size = typeSizes[typeName];
+
+  // Push the size to the stack
+  push(Instr{.var=PushInstr{.what="$"+std::to_string(size),.whatSize=DataSize::Qword},.type=InstrType::Push},Section::Main);
+
+  // Push the size to the stack
+  push(Instr{.var=Comment{.comment="Sizeof " + name + " is " + std::to_string(size) + " bytes."},.type=InstrType::Comment},Section::Main);
+}

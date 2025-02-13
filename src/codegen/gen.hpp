@@ -88,6 +88,7 @@ void addressExpr(Node::Expr *expr);
 void nullExpr(Node::Expr *expr);
 void allocExpr(Node::Expr *expr);
 void freeExpr(Node::Expr *expr);
+void sizeofExpr(Node::Expr *expr);
 
 void assignStructMember(Node::Expr *expr);
 void assignArray(Node::Expr *expr);

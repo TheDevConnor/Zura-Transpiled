@@ -36,6 +36,8 @@ enum NodeKind {
   ND_ADDRESS, // &x
   ND_FREE_MEMORY, // @free(x, 12)
   ND_ALLOC_MEMORY, // @alloc(12);
+  ND_MEMCPY_MEMORY, // @memcpy(x, y, 12)
+  ND_SIZEOF, // @sizeof(x)
 
   // Statements
   ND_EXPR_STMT, // x = 12

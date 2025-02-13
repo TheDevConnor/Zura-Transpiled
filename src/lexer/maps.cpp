@@ -57,6 +57,7 @@ void Lexer::initMap() {
       {"@output", TokenKind::PRINT},      {"@read", TokenKind::READ},
       {"@input", TokenKind::INPUT},       {"@write", TokenKind::WRITE},
       {"@free", TokenKind::FREE},         {"@alloc", TokenKind::ALLOC},
+      {"@memcpy", TokenKind::MEMCPY},     {"@sizeof", TokenKind::SIZEOF},
   };
 
   keywords = {

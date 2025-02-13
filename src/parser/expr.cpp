@@ -138,6 +138,46 @@ Node::Expr *Parser::cast_expr(PStruct *psr) {
   return new CastExpr(line, column, castee, castee_type, codegen::getFileID(psr->current_file));
 }
 
+Node::Expr *Parser::sizeof_expr(PStruct *psr) {
+  int line = psr->tks[psr->pos].line;
+  int column = psr->tks[psr->pos].column;
+  psr->expect(psr, SIZEOF, "Expected 'SIZEOF' keyword!");
+
+  psr->expect(psr, TokenKind::LEFT_PAREN,
+              "Expected a L_Paran to start a sizeof expr!");
+  Node::Expr *expr = parseExpr(psr, defaultValue);
+  psr->expect(psr, TokenKind::RIGHT_PAREN,
+              "Expected a R_Paran to end a sizeof expr!");
+
+  return new SizeOfExpr(line, column, expr, codegen::getFileID(psr->current_file));
+}
+
+Node::Expr *Parser::memcpy_expr(PStruct *psr) {
+  int line = psr->tks[psr->pos].line;
+  int column = psr->tks[psr->pos].column;
+  psr->expect(psr, MEMCPY, "Expected 'MEMCPY' keyword!");
+
+  psr->expect(psr, TokenKind::LEFT_PAREN,
+              "Expected a L_Paran to start a memcpy expr!");
+  Node::Expr *dest = parseExpr(psr, defaultValue);
+  
+  if (psr->current(psr).kind == TokenKind::COMMA)
+    psr->expect(psr, TokenKind::COMMA,
+                "Expected a COMMA after the destination in a memcpy expr!");
+
+  Node::Expr *src = parseExpr(psr, defaultValue);
+  
+  if (psr->current(psr).kind == TokenKind::COMMA)
+    psr->expect(psr, TokenKind::COMMA,
+                "Expected a COMMA after the source in a memcpy expr!");
+
+  Node::Expr *size = parseExpr(psr, defaultValue);
+  psr->expect(psr, TokenKind::RIGHT_PAREN,
+              "Expected a R_Paran to end a memcpy expr!");
+
+  return new MemcpyExpr(line, column, dest, src, size, codegen::getFileID(psr->current_file));
+}
+
 Node::Expr *Parser::_postfix(PStruct *psr, Node::Expr *left, BindingPower bp) {
   int line = psr->tks[psr->pos].line;
   int column = psr->tks[psr->pos].column;

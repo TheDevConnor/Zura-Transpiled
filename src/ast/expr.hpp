@@ -745,3 +745,53 @@ public:
     bytesToFree->debug(ident + 2);
   }
 };
+
+class SizeOfExpr : public Node::Expr {
+public:
+  int line, pos;
+  Node::Expr *whatToSizeOf;
+
+  SizeOfExpr(int line, int pos, Node::Expr *whatToSizeOf, int file)
+      : line(line), pos(pos), whatToSizeOf(whatToSizeOf) {
+    file_id = file;
+    kind = NodeKind::ND_SIZEOF;
+    asmType = new SymbolType("int");
+  }
+
+  void debug(int ident = 0) const override {
+    Node::printIndent(ident);
+    std::cout << "SizeOfExpr: \n";
+    Node::printIndent(ident + 1);
+    std::cout << "What to size of: \n";
+    whatToSizeOf->debug(ident + 2);
+  }
+};
+
+class MemcpyExpr : public Node::Expr {
+public:
+  int line, pos;
+  Node::Expr *dest;
+  Node::Expr *src;
+  Node::Expr *bytes;
+
+  MemcpyExpr(int line, int pos, Node::Expr *dest, Node::Expr *src, Node::Expr *bytes, int file)
+      : line(line), pos(pos), dest(dest), src(src), bytes(bytes) {
+    file_id = file;
+    kind = NodeKind::ND_MEMCPY_MEMORY;
+    asmType = new SymbolType("int");
+  }
+
+  void debug(int ident = 0) const override {
+    Node::printIndent(ident);
+    std::cout << "Memcpy: \n";
+    Node::printIndent(ident + 1);
+    std::cout << "Destination: \n";
+    dest->debug(ident + 2);
+    Node::printIndent(ident + 1);
+    std::cout << "Source: \n";
+    src->debug(ident + 2);
+    Node::printIndent(ident + 1);
+    std::cout << "Bytes: \n";
+    bytes->debug(ident + 2);
+  }
+};

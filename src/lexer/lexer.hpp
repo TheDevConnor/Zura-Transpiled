@@ -96,6 +96,8 @@ enum TokenKind {
   WRITE,
   ALLOC,
   FREE,
+  MEMCPY,
+  SIZEOF,
 
   // Error
   ERROR_,

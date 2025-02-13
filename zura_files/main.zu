@@ -1,19 +1,21 @@
-# const len := fn (input: []int) int {
-#   loop (i = 0; i < 100): (i++) {
-#     if (input[i] == 0) return i;
-#   }
+const Weekday := enum {
+  Monday,
+  Tuesday,
+  Wednesday,
+  Thursday,
+  Friday,
+  Saturday,
+  Sunday
+}; 
 
-#   return -1;
-# };
+const main := fn () int {
+  have x: *int;
+  @output("Size of x: ", @sizeof(x), "\n"); # 4
 
-# const main := fn () int {
-#   have num: []int = [1, 2, 3, 4, 5, 0]; # 0 is the terminator
-#   have l: int = len(num);
-#   @output(l, "\n");
-#   return 0;
-# };
+  have y: str;
+  @output("Size of y: ", @sizeof(y), "\n"); # 8
 
-const main := fn() int {
-  @output("Hello, World!\n");
+  @output("Size of z: ", @sizeof(Weekday), "\n"); # 4
+
   return 0;
 };

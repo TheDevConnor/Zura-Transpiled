@@ -591,3 +591,10 @@ void TypeChecker::visitFreeMemory(Maps *map, Node::Expr *expr) {
   return_type = std::make_shared<SymbolType>("int");
   // asmtype, once again, already handled
 }
+
+void TypeChecker::visitSizeof(Maps *map, Node::Expr *expr) {
+  SizeOfExpr *sizeOf = static_cast<SizeOfExpr *>(expr);
+  visitExpr(map, sizeOf->whatToSizeOf);
+  return_type = std::make_shared<SymbolType>("int");
+  // asmtype is a constant int and already handled
+}

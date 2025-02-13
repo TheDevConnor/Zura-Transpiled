@@ -198,4 +198,5 @@ void visitStructExpr(Maps *map, Node::Expr *expr);
 void visitAddress(Maps *map, Node::Expr *expr);
 void visitAllocMemory(Maps *map, Node::Expr *expr);
 void visitFreeMemory(Maps *map, Node::Expr *expr);
+void visitSizeof(Maps *map, Node::Expr *expr);
 } // namespace TypeChecker
