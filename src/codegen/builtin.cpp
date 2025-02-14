@@ -215,26 +215,13 @@ void codegen::freeExpr(Node::Expr *expr) {
 
 void codegen::sizeofExpr(Node::Expr *expr) {
   SizeOfExpr *s = static_cast<SizeOfExpr *>(expr);
-  std::string name = static_cast<IdentExpr*>(s->whatToSizeOf)->name;
 
   // Define a lookup for type sizes
-  size_t size = 0;
-  if (getUnderlying(s->whatToSizeOf->asmType) == "struct") {
-    std::string structName = static_cast<IdentExpr *>(s->whatToSizeOf)->name;
-
-    // Look up the struct size
-    if (structByteSizes.find(structName) == structByteSizes.end()) {
-      std::string msg = "Cannot get size of struct '" + structName + "' because it is not defined.";
-      handleError(s->line, s->pos, msg, "Codegen Error");
-    }
-    size = structByteSizes[structName].first;
-  } else {
-    size = getByteSizeOfType(s->whatToSizeOf->asmType);
-  }
+  size_t size = getByteSizeOfType(s->whatToSizeOf->asmType);
 
   // Push the size to the stack
   push(Instr{.var=PushInstr{.what="$"+std::to_string(size),.whatSize=DataSize::Qword},.type=InstrType::Push},Section::Main);
 
   // Push the size to the stack
-  push(Instr{.var=Comment{.comment="Sizeof " + name + " is " + std::to_string(size) + " bytes."},.type=InstrType::Comment},Section::Main);
+  push(Instr{.var=Comment{.comment="Sizeof " + static_cast<IdentExpr *>(s->whatToSizeOf)->name + " is " + std::to_string(size) + " bytes."},.type=InstrType::Comment},Section::Main);
 }

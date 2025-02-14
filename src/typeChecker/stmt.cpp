@@ -137,7 +137,7 @@ void TypeChecker::visitBlock(Maps *map, Node::Stmt *stmt) {
 
 void TypeChecker::visitStruct(Maps *map, Node::Stmt *stmt) {
   StructStmt *struct_stmt = static_cast<StructStmt *>(stmt);
-  SymbolType *type = new SymbolType("struct");
+  SymbolType *type = new SymbolType(struct_stmt->name);
 
   // add the struct name to the local table and global table
   declare(map->local_symbol_table, struct_stmt->name,
@@ -217,7 +217,7 @@ void TypeChecker::visitStruct(Maps *map, Node::Stmt *stmt) {
         .clear(); // clear the local table for the next function
   }
 
-  return_type = std::make_shared<SymbolType>("struct");
+  return_type = std::make_shared<SymbolType>(struct_stmt->name);
 }
 
 void TypeChecker::visitEnum(Maps *map, Node::Stmt *stmt) {

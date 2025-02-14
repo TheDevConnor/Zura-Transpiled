@@ -389,11 +389,14 @@ signed short int codegen::getByteSizeOfType(Node::Type *type) {
       return 8;
     case ND_SYMBOL_TYPE: {
       SymbolType *sym = static_cast<SymbolType *>(type);
-      auto it = typeSizes.find(sym->name);
-      if (it != typeSizes.end()) {
-        return it->second;
+      if (structByteSizes.find(sym->name) != structByteSizes.end()) {
+        return structByteSizes[sym->name].first;
       }
-      // Unreachable!
+      if (typeSizes.find(sym->name) != typeSizes.end()) {
+        return typeSizes[sym->name];
+      }
+      // Unknown type...
+      // Hopefully this is unreachable!
       std::string msg = "Unknown type '" + sym->name + "'.";
       handleError(0, 0, msg, "Codegen Error");
       return 0; // Let the compiler know that this is an error
