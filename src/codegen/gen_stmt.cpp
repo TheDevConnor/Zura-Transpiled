@@ -310,7 +310,7 @@ void codegen::varDecl(Node::Stmt *stmt) {
         structByteSizes.find(getUnderlying(s->type)) != structByteSizes.end()) {
       // It's of type struct!
       // Basically ignore the part where we allocate memory for this thing.
-      declareStructVariable(s->expr, getUnderlying(s->type), variableCount);
+      declareStructVariable(s->expr, getUnderlying(s->type), "%rbp", variableCount);
       int structSize = structByteSizes[getUnderlying(s->type)].first;
       variableTable.insert({s->name, where});
       variableCount += structSize;
@@ -913,130 +913,57 @@ void codegen::matchStmt(Node::Stmt *stmt) {
 
 // Structname passed by the varStmt's "type" field
 void codegen::declareStructVariable(Node::Expr *expr, std::string structName,
-                                    int whereToPut) {
+                                    std::string offsetRegister, int startOffset) {
   StructExpr *s = static_cast<StructExpr *>(expr);
-  // At the end, we are gonna load the effective address into
-  // garbage register and put that into the variable table.
-  // (This is because structs cannot be passed by value, duh)
+  // The only purpose of this function is to put memory in the right place
+  // it does not declare the struct in the variable table or modify the variable count
 
-  // Make sure that the fields unordered_map is not empty
-  if (structByteSizes[structName].first == 0 || s->values.size() == 0) {
-    std::cout << std::to_string(structByteSizes[structName].first) << ", "
-              << std::to_string(s->values.size()) << std::endl;
-    std::cerr << "Empty struct not allowed!" << std::endl;
-    exit(-1);
+  // Order the fields in the struct
+  std::vector<Node::Expr *> fields = {};
+  for (StructMember field : structByteSizes[structName].second) {
+    for (std::pair<std::string, Node::Expr *> f : s->values) {
+      if (f.first == field.first) {
+        fields.push_back(f.second);
+      }
+    }
   }
 
-  // The fields of the expression might be out of order from which they are
-  // defined in the struct. We need to reorder them.
-  std::vector<std::pair<std::string, Node::Expr *>> orderedFields;
-  for (int i = structByteSizes[structName].second.size(); i > 0; i--) {
-    for (std::pair<Node::Expr *, Node::Expr *> field : s->values) {
-      if (static_cast<IdentExpr *>(field.first)->name ==
-          structByteSizes[structName].second.at(i-1).first) {
-        orderedFields.push_back(
-            {structByteSizes[structName].second.at(i-1).first, field.second});
+  // evaluate each field and store its result inside the (outer) struct
+  for (size_t i = 0; i < fields.size(); i++) {
+    Node::Expr *field = fields.at(i);
+    unsigned short offset = 0;
+    if (i != 0) for (size_t j = 0; j < i; j++) {
+      offset += getByteSizeOfType(structByteSizes[structName].second.at(j).second.first);
+    }
+    if (field->asmType->kind == ND_SYMBOL_TYPE && structByteSizes.find(getUnderlying(field->asmType)) != structByteSizes.end()) {
+      // Evaluate THAT struct but place it in the outer struct at the offset
+      declareStructVariable(field, getUnderlying(field->asmType), offsetRegister, startOffset + offset);
+      continue;
+    }
+
+    if (getByteSizeOfType(field->asmType) > 8) {
+      // How is that possible? It's not even a struct.
+      handleError(s->line, s->pos, "Struct field is too large to fit in a struct", "codegen", true);
+    }
+
+    // Evaluate the field and store it in the struct
+    visitExpr(field);
+    switch (getByteSizeOfType(field->asmType)) {
+      case 1:
+        push(Instr{.var=PopInstr{.where=std::to_string(-(startOffset + offset)) + "(" + offsetRegister + ")",.whereSize=DataSize::Byte},.type=InstrType::Pop},Section::Main);
         break;
-      }
+      case 2:
+        push(Instr{.var=PopInstr{.where=std::to_string(-(startOffset + offset)) + "(" + offsetRegister + ")",.whereSize=DataSize::Word},.type=InstrType::Pop},Section::Main);
+        break;
+      case 4:
+        push(Instr{.var=PopInstr{.where=std::to_string(-(startOffset + offset)) + "(" + offsetRegister + ")",.whereSize=DataSize::Dword},.type=InstrType::Pop},Section::Main);
+        break;
+      case 8:
+      default:
+        push(Instr{.var=PopInstr{.where=std::to_string(-(startOffset + offset)) + "(" + offsetRegister + ")",.whereSize=DataSize::Qword},.type=InstrType::Pop},Section::Main);
+        break;
     }
-  }
-
-  int structBase = whereToPut;
-  // Evaluate the orderedFields and store them in the struct!!!!
-  for (size_t i = 0; i < orderedFields.size(); i++) {
-    std::pair<std::string, Node::Expr *> field = orderedFields.at(i);
-    // Check if the field is a struct itself
-    Node::Type *fieldType = structByteSizes[structName].second[i].second.first;
-    if (fieldType->kind == ND_SYMBOL_TYPE &&
-        (structByteSizes.find(getUnderlying(fieldType)) !=
-         structByteSizes.end())) {
-      // It's of type struct!
-      if (field.second->kind == ND_STRUCT) {
-        /*
-        have a: Struct = {
-          inner: {
-            # Nested struct literal expressions
-          }
-        }
-        */
-        int offset = 0;
-        if (i != 0) for (size_t j = 0; j < i; j++) offset += structByteSizes[structName].second.at(j).second.second;
-        // Where to put is where to put the last byte of the struct
-        // We need this new value passed in here to be the base of the new struct
-        declareStructVariable(field.second, getUnderlying(fieldType),
-                              whereToPut + offset);
-        continue;
-      }
-      // x = {
-      //   a: OtherStructThatAlreadyExists;
-      // }
-      if (field.second->kind == ND_IDENT) {
-        // Load each individual field of the ident struct into this new struct
-        // This is a bit of a hack, but it works.
-        IdentExpr *ident = static_cast<IdentExpr *>(field.second);
-        std::string where = variableTable[ident->name];
-        // unsigned short structFieldSize =
-        //     structByteSizes[structName].second.at(i).second.second;
-        // Get the offset - this will be the sum of all previous fieldSizes
-        int offset = 0;
-        if (i != 0) for (size_t j = 0; j < i; j++) offset += structByteSizes[structName].second.at(j).second.second;
-        int fieldVarOffset = std::stoi(where.substr(0, where.find('(')));
-        // Put the identifer address into rcx
-        visitExpr(ident);
-        popToRegister("%rcx");
-
-        // Go through each field of the field
-        // and basically move the value into the new one
-        for (size_t j = 0;
-             j < structByteSizes[getUnderlying(fieldType)].second.size(); j++) {
-          push(
-              Instr{.var =
-                        Comment{
-                            .comment =
-                                "Move field '" +
-                                structByteSizes[getUnderlying(fieldType)]
-                                    .second[j]
-                                    .first +
-                                "' of " + ident->name + " to field '" +
-                                structByteSizes[structName].second.at(i).first +
-                                "' of '" + structName + "'"},
-                    .type = InstrType::Comment},
-              Section::Main);
-          // From - relative to rcx, the base of the identifier struct
-          std::string from =
-              std::to_string(
-                  -(fieldVarOffset + structByteSizes[getUnderlying(fieldType)]
-                                         .second[j]
-                                         .second.second)) +
-              "(%rcx)";
-          // To - relative to rbp, PLUS the base of the new struct
-          int subFieldOffset = 0;
-          if (j != 0)
-            for (size_t k = 0; k < j; k++) {
-              // Don't ask. Please, this is so bad...
-              subFieldOffset +=
-                  structByteSizes[getUnderlying(structByteSizes[structName]
-                                                    .second[i]
-                                                    .second.first)]
-                      .second[i]
-                      .second.second;
-            }
-          std::string to =
-              std::to_string(-(whereToPut + subFieldOffset)) + "(%rbp)";
-          pushRegister(from);
-          popToRegister(to);
-
-          // Optimizer will handle the intermediate motions of the values
-        }
-        continue; // Do not just push the address here :)
-      }
-    }
-    // Evaluate the expression
-    visitExpr(field.second);
-    int offset =
-        i == 0 ? 0 : i * structByteSizes[structName].second.at(i - 1).second.second;
-    // Pop the value into a register
-    popToRegister(std::to_string(-(structBase + offset)) + "(%rbp)");
+    continue;
   }
 }
 
@@ -1107,7 +1034,7 @@ void codegen::declareArrayVariable(Node::Expr *expr, short int arrayLength,
       // Structs cannot be generated in the expr.
       // We must assign each value to its place in the array.
       int startingPoint = arrayBase + ((i-1) * underlyingByteSize);
-      declareStructVariable(element, getUnderlying(at), startingPoint);
+      declareStructVariable(element, getUnderlying(at), "%rbp", startingPoint);
       continue;
     }
     visitExpr(element);

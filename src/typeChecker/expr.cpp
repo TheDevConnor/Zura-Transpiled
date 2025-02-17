@@ -489,21 +489,20 @@ void TypeChecker::visitStructExpr(Maps *map, Node::Expr *expr) {
 
   // Now compare the types of the struct elements with the types of the struct
   // expression elements
-  for (std::pair<Node::Expr *, Node::Expr *> elem : struct_expr->values) {
-    // find the type of the struct element
-    IdentExpr *name = static_cast<IdentExpr *>(elem.first);
+  for (std::pair<std::string, Node::Expr *> elem : struct_expr->values) {
+    // find the type of the struct element;
     std::string elem_type = "";
     // set elem_type to the type of the struct element, if it exists
     for (std::pair<std::string, Node::Type *> member :
          map->struct_table[struct_name]) {
-      if (member.first == name->name) {
+      if (member.first == elem.first) {
         elem_type = type_to_string(member.second);
         break;
       }
     }
 
     if (elem_type == "") {
-      std::string msg = "Named member '" + name->name +
+      std::string msg = "Named member '" + elem.first +
                         "' not found in struct '" + struct_name + "'";
       // did you mean?
       std::vector<std::string> known;
@@ -512,7 +511,7 @@ void TypeChecker::visitStructExpr(Maps *map, Node::Expr *expr) {
         known.push_back(member.first);
       }
       std::optional<std::string> closest =
-          string_distance(known, name->name, 3);
+          string_distance(known, elem.first, 3);
       if (closest.has_value()) {
         handleError(struct_expr->line, struct_expr->pos, msg,
                     "Did you mean '" + closest.value() + "'?", "Type Error");
@@ -546,7 +545,7 @@ void TypeChecker::visitStructExpr(Maps *map, Node::Expr *expr) {
     }
     std::string expected = type_to_string(elem.second->asmType);
     if (checkReturnType(elem.second, expected) == nullptr) {
-      std::string msg = "Struct element '" + name->name + "' requires type '" +
+      std::string msg = "Struct element '" + elem.first + "' requires type '" +
                         elem_type + "' but got '" + expected + "'";
       handleError(struct_expr->line, struct_expr->pos, msg, "", "Type Error");
       return_type = std::make_shared<SymbolType>("unknown");

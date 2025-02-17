@@ -20,17 +20,28 @@ Add and recognize more int types in asm. (Ex. byte, short, long, quad).
         https://microsoft.github.io/language-server-protocol/specifications/lsp/3.17/specification/
 
 A test for if adding TCP/HTTP requests
+Change @input/@output to be @read/@write and make file descriptor manually declared (0 for stdin; 1 for stdout)
 Pointers implemented now. Still backwards from C declarations tho but shh
    - Implement sockets (HTTP requests ??)
    - Note for HTTP:
       - $ man 2 socket
-      - Socket Syscall #: SYS_socket 41
-      - Socket Domain:    AF_INET (ip v4) 2
-      - Socket type:      SOCK_STREAM 1
-      - Bind Syscall #:   SYS_bind 49
-      - Listen Syscall #: SYS_listen 50
-      - Accept Syscall #: SYS_accept 43
-      - Read Syscall #:   SYS_read 0
-      - Write Syscall #:  SYS_WRITE 1 (Already implemented in the form of 'dis')
+          @socket(DOMAIN, TYPE, PROTOCOL) ->
+          - the protocol of communication- IPv4 sized addresses
+          - the, well, type of connection- SOCK_STREAM = 'sequenced, reliable, two-way, connection-based byte streams'
+          - 0 lol
+          - on return : file descriptor
+          
+          @bind(FD, *ADDR, ADDRLEN) ->
+          - file descriptor returned by @socket
+          - an address to a struct (the members don't really matter as it will just be type punned)
+          - sizeof previous struct
+          - on return : status code (success/error)
+
+          @accept(FD, *ADDR, *ADDRLEN) ->
+          - file descriptor returned by @socket
+          - these could technically be null if we wanted lol but its basically the same as @bind
+
+          Congratulations! Just read from the socket file descriptor and that is that.
+          Make sure to close it before reading another!
 
 TRHEN WE AT VERSION 1 BABY!

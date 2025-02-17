@@ -420,10 +420,12 @@ Node::Expr *Parser::structExpr(PStruct *psr) {
   psr->expect(psr, TokenKind::LEFT_BRACE,
               "Expected a L_Brace to start a struct expr!");
 
-  std::unordered_map<Node::Expr *, Node::Expr *> elements;
+  std::unordered_map<std::string, Node::Expr *> elements;
 
   while (psr->current(psr).kind != TokenKind::RIGHT_BRACE) {
-    Node::Expr *key = parseExpr(psr, defaultValue);
+    std::string key = psr->expect(psr, TokenKind::IDENTIFIER,
+                "Expected an IDENTIFIER as a key in a struct expr!")
+                .value;
     psr->expect(psr, TokenKind::COLON,
                 "Expected a COLON after a key in a struct expr!");
     Node::Expr *value = parseExpr(psr, defaultValue);

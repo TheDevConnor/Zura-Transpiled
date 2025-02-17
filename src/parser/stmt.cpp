@@ -284,7 +284,7 @@ Node::Stmt *Parser::structStmt(PStruct *psr, std::string name) {
       if (psr->peek(psr).kind == TokenKind::SEMICOLON) {
         Lexer::Token semi = psr->advance(psr);
         if (warnForSemi) {
-          ErrorClass::error(semi.line, semi.column, "Commas are non-standard for struct field lists",
+          ErrorClass::error(semi.line, semi.column, "Semicolons are non-standard for struct field lists",
           "Found while parsing struct '" + name + "'.", "Parser Error", psr->current_file.c_str(),
           lexer, psr->tks, true, true, false, false, false, false);
           warnForSemi = false;

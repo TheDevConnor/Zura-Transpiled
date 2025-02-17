@@ -95,7 +95,7 @@ void sizeofExpr(Node::Expr *expr);
 
 void assignStructMember(Node::Expr *expr);
 void assignArray(Node::Expr *expr);
-void declareStructVariable(Node::Expr *expr, std::string structName, int whereToPut);
+void declareStructVariable(Node::Expr *expr, std::string structName, std::string offsetRegister, int startOffset);
 void declareArrayVariable(Node::Expr *expr, short int arrayLength, std::string varName);
 
 size_t sizeOfLEB(int64_t value);

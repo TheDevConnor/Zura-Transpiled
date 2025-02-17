@@ -1,42 +1,32 @@
-const Weekday := enum {
-  Monday,
-  Tuesday,
-  Wednesday,
-  Thursday,
-  Friday,
-  Saturday,
-  Sunday
-}; 
+const InnerTest := struct {
+  x: int,
+  y: int,
+};
 
-const Day := struct {
-  month: int,
-  day: int,
-  year: int,
-
-  hour: int,
-  minute: int,
-  second: int,
+const Test := struct {
+  z: int,
+  a: int,
+  b: int,
+  c: InnerTest,
 };
 
 const main := fn () int {
-  # have a: Day;
-  # @output("Size of Day: ", @sizeof(a), "\n"); 
-  #TODO: I have the sizeof working, but when we set the type to be a strust or enum it does not work
+  have a: Test = {
+    z: 0,
+    a: 1,
+    b: 2,
+    c: {
+      x: 3,
+      y: 4
+    }
+  };
 
-  # have a: Weekday;
-  # @output("Size of Weekday: ", @sizeof(a), "\n");
+  a.c = {
+    x: 5,
+    y: 6
+  };
 
-  have a: int;
-  have b: float;
-  have c: char;
-  have d: bool;
+  a.z = 7;
 
-  @output("Size of int: ", @sizeof(a), "\n");
-  @output("Size of float: ", @sizeof(b), "\n");
-  @output("Size of char: ", @sizeof(c), "\n");
-  @output("Size of bool: ", @sizeof(d), "\n");
-  @output("Size of Day: ", @sizeof(Day), "\n");
-  @output("Size of Weekday: ", @sizeof(Weekday), "\n");
-
-  return 0;
+  return a.a;
 };

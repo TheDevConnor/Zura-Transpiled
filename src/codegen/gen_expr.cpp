@@ -521,10 +521,10 @@ void codegen::memberExpr(Node::Expr *expr) {
     // Right now, %rcx points to the beginning of the struct, which contains the last field.
     // In order to get the field we need, we should just loop over all the fields
     // and add to an offset.
-    int offset = size;
-    for (int i = fields.size(); i > 0; i--) {
-      offset -= fields[i-1].second.second;
-      if (fields[i-1].first == fieldName) break;
+    unsigned short offset = 0;
+    for (size_t i = 0; i < structByteSizes[structName].second.size(); i++) {
+      if (structByteSizes[structName].second.at(i).first == fieldName) break;
+      offset += structByteSizes[structName].second.at(i).second.second;
     }
     // submit the answer :D
     if (offset == 0) {
@@ -615,115 +615,55 @@ void codegen::addressExpr(Node::Expr *expr) {
 
 void codegen::assignStructMember(Node::Expr *expr) {
   AssignmentExpr *e = static_cast<AssignmentExpr *>(expr);
-  if (e->assignee->kind == ND_MEMBER) {
-    // Reassigning a struct's member.
-    // The new value is already pushed onto the stack.
-    // We just have to find where to pop it!
-    MemberExpr *member = static_cast<MemberExpr *>(e->assignee);
-    IdentExpr *lhs = static_cast<IdentExpr *>(member->lhs);
-    IdentExpr *rhs = static_cast<IdentExpr *>(member->rhs);
-    std::string asmName = static_cast<SymbolType *>(lhs->asmType)->name;
-    std::string structTypeName = asmName;
-    int size = structByteSizes[structTypeName].first;
-    std::vector<StructMember> fields = structByteSizes[structTypeName].second;
-    // Find the position of the field
-    int offset = size;
-    for (int i = fields.size(); i > 0; i--) {
-      offset -= fields[i].second.second;
-      if (fields[i].first == rhs->name) {
-        break;
-      }
+  // This is where you go
+  // struct.member = value;
+
+  if (structByteSizes.find(getUnderlying(e->rhs->asmType)) != structByteSizes.end()) {
+    // It's a struct
+    visitExpr(e->assignee);
+    text_section.pop_back(); // This will only contain a `push %rcx` which we dont need to be pushed :D
+    // Declare a struct variable with the offset related to rcx
+
+    int memberOffset = 0;
+    std::string structName = getUnderlying(e->assignee->asmType);
+    for (size_t i = 0; i < structByteSizes[structName].second.size(); i++) {
+      if (structByteSizes[structName].second[i].first == static_cast<IdentExpr *>(e->rhs)->name) break;
+      memberOffset += structByteSizes[structName].second[i].second.second;
     }
-    // If it's a pointer, it's very simple.
-    // This is if it's NOT simple...
-    if (structByteSizes.find(getUnderlying(member->asmType)) != structByteSizes.end()
-      && member->asmType->kind == ND_SYMBOL_TYPE
-      && e->rhs->kind == ND_STRUCT) {
-      // Find where the inner struct was previously stored
-      // so we can override those values
-      // step 1: find base address of the whole struct
-      std::string base = variableTable[rhs->name];
-      std::string subbedString = base.substr(0, base.find('('));
-      int baseBytes = std::stoi(subbedString);
-      // step 2: order the fields
-      std::vector<std::pair<std::string, Node::Expr *>> orderedFields;
-      for (size_t i = 0; i < fields.size(); i++) {
-        for (std::pair<Node::Expr *, Node::Expr *> field : static_cast<StructExpr *>(e->rhs)->values) {
-          if (static_cast<IdentExpr *>(field.first)->name
-              == fields.at(i).first) {
-            orderedFields.push_back({fields.at(i).first, field.second});
-            break;
-          }
-        }
-      }
-      // step 3: evaluate the ordered fields and store them in the inner struct
-      for (size_t i = 0; i < orderedFields.size(); i++) {
-        std::pair<std::string, Node::Expr *> field = orderedFields.at(i);
-        // Evaluate the expression
-        visitExpr(field.second);
-        // Pop the value into a register
-        std::string popExpr = std::to_string(baseBytes + offset + (fields.at(i).second.second)) + "(%rcx)";
-        // optimizer bug fsr
-        popToRegister(popExpr);
-      }
-      push(Instr{.var=LeaInstr{.size=DataSize::Qword,.dest="%rcx",.src=std::to_string(8 - (size + offset)) + "(%rbp)"},.type=InstrType::Lea},Section::Main);
-      pushRegister("%rcx");
-      return;
-    } else {
-      // We are setting a memberexpr to a ptr
-      // ex. human.pet = dog;
-      // Pop the value into a register by evaluating the lhs
-      visitExpr(lhs);
-      popToRegister("%rcx");
-      visitExpr(e->rhs);
-      std::string popExpr = std::to_string(offset) + "(%rcx)";
-      popToRegister(popExpr);
-      pushRegister(popExpr); // Return the value (assignments are exprs after all)
-    }
+    // TODO: This function will always make the relative offsets to the base register NEGATIVE which in this case it shouldnt be
+    // TODO: Other than that though, this implmentation works 100% fine as it seems
+    declareStructVariable(e->rhs, getUnderlying(e->assignee->asmType), "%rcx", memberOffset);
+    // Assign expressions must return something, so we will return the offset of the rcx thing
+    // Lea instr
+    push(Instr{.var = LeaInstr{.size = DataSize::Qword, .dest = "%rcx", .src = std::to_string(memberOffset) + "(%rcx)"},
+               .type = InstrType::Lea},
+         Section::Main);
     return;
-  } else if (e->rhs->kind == ND_STRUCT) {
-    // Just evaluate the struct expression but use the base of the already
-    // defined struct as the base of the new one
-    StructExpr *s = static_cast<StructExpr *>(e->rhs);
-    std::string structTypeName = static_cast<SymbolType *>(s->asmType)->name;
-    std::string base = variableTable[static_cast<IdentExpr *>(e->assignee)->name];
-    std::vector<StructMember> fields = structByteSizes[structTypeName].second;
-    // The fields of the expression might be out of order from which they are defined
-    // in the struct. We need to reorder them.
-    std::vector<std::pair<std::string, Node::Expr *>> orderedFields;
-    for (size_t i = 0; i < fields.size(); i++) {
-      for (std::pair<Node::Expr *, Node::Expr *> field : s->values) {
-        if (static_cast<IdentExpr *>(field.first)->name
-            == fields.at(i).first) {
-          orderedFields.push_back({fields.at(i).first, field.second});
-          break;
-        }
-      }
-    }
-
-    // Evaluate the orderedFields and store them in the struct!!!!
-    std::string subbedString = base.substr(0, base.find('('));
-
-    // Evaluate what rcx has to be
-    visitExpr(e->assignee); // The identifier's position
-    popToRegister("%rcx");
-    for (size_t i = 0; i < orderedFields.size(); i++) {
-      std::pair<std::string, Node::Expr *> field = orderedFields.at(i);
-      // Evaluate the expression
-      visitExpr(field.second);
-      // Pop the value into a register
-      int popToOffset = 0;
-      if (i != 0) for (size_t j = 0; j < i; j++) {
-        popToOffset += fields[j].second.second;
-      }
-      std::string popExpr = std::to_string(-popToOffset) + "(%rcx)";
-      // optimizer bug fsr
-      popToRegister(popExpr);
-    }
-    push(Instr{.var=LeaInstr{.size=DataSize::Qword,.dest="%rcx",.src=variableTable[static_cast<IdentExpr *>(e->assignee)->name]},.type=InstrType::Lea},Section::Main);
-    pushRegister("%rcx");
-
   }
+  // The value is not a struct-- hopefully this is very easy
+  // We have to evaluate the rhs
+  // Now we pop into the surrounding struct
+  visitExpr(e->assignee);
+  text_section.pop_back(); // previous instr would juts be a push rcx which we do not need
+  visitExpr(e->rhs);
+  // Pop the value into a register
+  switch (getByteSizeOfType(e->rhs->asmType)) {
+    case 1:
+      push(Instr{.var=PopInstr{.where=std::to_string(getByteSizeOfType(e->rhs->asmType))+"(%rcx)",.whereSize=DataSize::Byte},.type=InstrType::Pop},Section::Main);
+      break;
+    case 2:
+      push(Instr{.var=PopInstr{.where=std::to_string(getByteSizeOfType(e->rhs->asmType))+"(%rcx)",.whereSize=DataSize::Word},.type=InstrType::Pop},Section::Main);
+      break;
+    case 4:
+      push(Instr{.var=PopInstr{.where=std::to_string(getByteSizeOfType(e->rhs->asmType))+"(%rcx)",.whereSize=DataSize::Dword},.type=InstrType::Pop},Section::Main);
+      break;
+    case 8:
+    default:
+      push(Instr{.var=PopInstr{.where=std::to_string(getByteSizeOfType(e->rhs->asmType))+"(%rcx)",.whereSize=DataSize::Qword},.type=InstrType::Pop},Section::Main);
+      break;
+  }
+  // Assign expressions must return something
+  pushRegister("%rcx");
 };
 
 void codegen::assignArray(Node::Expr *expr) {
