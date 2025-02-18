@@ -3,29 +3,36 @@
 #include "optimizer/compiler.hpp"
 #include <string>
 
-void codegen::visitExpr(Node::Expr *expr) {
+void codegen::visitExpr(Node::Expr *expr)
+{
   // Optimize the expression before we handle it!
   Node::Expr *realExpr = CompileOptimizer::optimizeExpr(expr);
-  if (int(realExpr->kind) > (int)NodeKind::ND_NULL) { // im dumb ignore me i put the wrong sign :sob: ya
-    std::cout << "stinky node D:" << std::endl; // bp here if the nodekind is something weird 
+  if (int(realExpr->kind) > (int)NodeKind::ND_NULL)
+  {                                             // im dumb ignore me i put the wrong sign :sob: ya
+    std::cout << "stinky node D:" << std::endl; // bp here if the nodekind is something weird
   }
-  ExprHandler handler = lookup(exprHandlers, realExpr->kind); 
-  if (handler) {
+  ExprHandler handler = lookup(exprHandlers, realExpr->kind);
+  if (handler)
+  {
     handler(realExpr);
   }
 }
 
 // A basic "fallback" type of expression that covers all 1-D, basic expr's
-void codegen::primary(Node::Expr *expr) {
+void codegen::primary(Node::Expr *expr)
+{
   // TODO: Implement the primary expression
-  switch (expr->kind) {
-  case NodeKind::ND_INT: {
+  switch (expr->kind)
+  {
+  case NodeKind::ND_INT:
+  {
     IntExpr *e = static_cast<IntExpr *>(expr);
     pushDebug(e->line, expr->file_id, e->pos);
     pushRegister("$" + std::to_string(e->value));
     break;
   } // It happened here in the ident
-  case NodeKind::ND_IDENT: {
+  case NodeKind::ND_IDENT:
+  {
     IdentExpr *e = static_cast<IdentExpr *>(expr);
     std::string res = variableTable[e->name];
 
@@ -37,27 +44,48 @@ void codegen::primary(Node::Expr *expr) {
 
     // Push the result
     // Check for struct
-    if (e->type->kind == ND_SYMBOL_TYPE) {
-      if (structByteSizes.find(static_cast<SymbolType *>(e->asmType)->name) != structByteSizes.end()) {
-        push(Instr{.var = LeaInstr { .size = DataSize::Qword, .dest = "%rcx", .src = res }, .type = InstrType::Lea}, Section::Main);
+    if (e->type->kind == ND_SYMBOL_TYPE)
+    {
+      if (structByteSizes.find(static_cast<SymbolType *>(e->asmType)->name) != structByteSizes.end())
+      {
+        push(Instr{.var = LeaInstr{.size = DataSize::Qword, .dest = "%rcx", .src = res}, .type = InstrType::Lea}, Section::Main);
         pushRegister("%rcx");
         break;
       }
-    } else if (e->type->kind == ND_ARRAY_TYPE) {
-      push(Instr{.var = LeaInstr { .size = DataSize::Qword, .dest = "%rcx", .src = res }, .type = InstrType::Lea}, Section::Main);
+    }
+    else if (e->type->kind == ND_ARRAY_TYPE)
+    {
+      push(Instr{.var = LeaInstr{.size = DataSize::Qword, .dest = "%rcx", .src = res}, .type = InstrType::Lea}, Section::Main);
       pushRegister("%rcx");
       break;
     }
-    pushRegister(res);
+    // Get the byte size of the ident (this will determine the type of the push)
+    switch (getByteSizeOfType(e->asmType))
+    {
+      case 1:
+        push(Instr{.var=PushInstr{.what=res,.whatSize=DataSize::Byte},.type=InstrType::Push},Section::Main);
+        break;
+      case 2:
+        push(Instr{.var=PushInstr{.what=res,.whatSize=DataSize::Word},.type=InstrType::Push},Section::Main);
+        break;
+      case 4:
+        push(Instr{.var=PushInstr{.what=res,.whatSize=DataSize::Dword},.type=InstrType::Push},Section::Main);
+        break;
+      case 8:
+      default:
+        push(Instr{.var=PushInstr{.what=res,.whatSize=DataSize::Qword},.type=InstrType::Push},Section::Main);
+        break;
+    }
     break;
   }
-  case ND_STRING: {
+  case ND_STRING:
+  {
     StringExpr *string = static_cast<StringExpr *>(expr);
     std::string label = "string" + std::to_string(stringCount++);
 
     pushDebug(string->line, expr->file_id, string->pos);
     // Push the label onto the stack
-    push(Instr{.var=LeaInstr{.size=DataSize::Qword,.dest="%r13",.src=label+"(%rip)"},.type=InstrType::Lea},Section::Main);
+    push(Instr{.var = LeaInstr{.size = DataSize::Qword, .dest = "%r13", .src = label + "(%rip)"}, .type = InstrType::Lea}, Section::Main);
     pushRegister("%r13");
 
     // define the string in the data section
@@ -65,44 +93,48 @@ void codegen::primary(Node::Expr *expr) {
          Section::ReadonlyData);
 
     // Push the string onto the data section
-    push(Instr{.var = AscizInstr{.what=string->value},
+    push(Instr{.var = AscizInstr{.what = string->value},
                .type = InstrType::Asciz},
          Section::ReadonlyData);
     break;
   }
-  case ND_CHAR: {
+  case ND_CHAR:
+  {
     CharExpr *charExpr = static_cast<CharExpr *>(expr);
     pushDebug(charExpr->line, expr->file_id, charExpr->pos);
     pushRegister("$" + std::to_string((int)charExpr->value));
     break;
   }
-  case ND_FLOAT: {
+  case ND_FLOAT:
+  {
     FloatExpr *floating = static_cast<FloatExpr *>(expr);
     std::string label = "float" + std::to_string(floatCount++);
     pushDebug(floating->line, expr->file_id, floating->pos);
 
     // Push the label onto the stack
     moveRegister("%xmm0", label + "(%rip)", DataSize::SS, DataSize::SS);
-    push(Instr{.var=PushInstr{.what="%xmm0",.whatSize=DataSize::SS},.type=InstrType::Push},Section::Main);
+    push(Instr{.var = PushInstr{.what = "%xmm0", .whatSize = DataSize::SS}, .type = InstrType::Push}, Section::Main);
 
     // define the string in the data section
     push(Instr{.var = Label{.name = label}, .type = InstrType::Label},
          Section::ReadonlyData);
 
     // Push the string onto the data section
-    push(Instr{.var=Comment{.comment=std::to_string(floating->value)},.type=InstrType::Comment},Section::ReadonlyData);
-    push(Instr{.var = DataSectionInstr{.bytesToDefine = DataSize::Dword /* long, aka 32-bits */, .what=std::to_string(convertFloatToInt(floating->value))},
+    push(Instr{.var = Comment{.comment = std::to_string(floating->value)}, .type = InstrType::Comment}, Section::ReadonlyData);
+    push(Instr{.var = DataSectionInstr{.bytesToDefine = DataSize::Dword /* long, aka 32-bits */, .what = std::to_string(convertFloatToInt(floating->value))},
                .type = InstrType::DB},
          Section::ReadonlyData);
     break;
   }
-  case ND_BOOL: {
+  case ND_BOOL:
+  {
     BoolExpr *boolExpr = static_cast<BoolExpr *>(expr);
     // Technically just an int but SHHHHHHHH.............................
-    push(Instr{.var=PushInstr{.what="$"+std::to_string(boolExpr->value),.whatSize=DataSize::Byte},.type=InstrType::Push},Section::Main);
+    push(Instr{.var = PushInstr{.what = "$" + std::to_string(boolExpr->value), .whatSize = DataSize::Byte}, .type = InstrType::Push}, Section::Main);
     break;
   }
-  default: {
+  default:
+  {
     std::cerr
         << "No fancy error for this, beg Connor... (Soviet Pancakes speaking)"
         << std::endl;
@@ -113,20 +145,25 @@ void codegen::primary(Node::Expr *expr) {
   }
 }
 
-void codegen::binary(Node::Expr *expr) {
+void codegen::binary(Node::Expr *expr)
+{
   BinaryExpr *e = static_cast<BinaryExpr *>(expr);
   pushDebug(e->line, expr->file_id, e->pos);
   SymbolType *returnType = static_cast<SymbolType *>(e->asmType);
 
-  if (returnType->name == "int") {
+  if (returnType->name == "int")
+  {
     int lhsDepth = getExpressionDepth(e->lhs);
     int rhsDepth = getExpressionDepth(e->rhs);
-    if (lhsDepth > rhsDepth) {
+    if (lhsDepth > rhsDepth)
+    {
       visitExpr(e->lhs);
       visitExpr(e->rhs);
       popToRegister("%rbx"); // Pop RHS into RBX
       popToRegister("%rax"); // Pop LHS into RAX
-    } else {
+    }
+    else
+    {
       visitExpr(e->rhs);
       visitExpr(e->lhs);
       popToRegister("%rax"); // Pop LHS into RAX
@@ -135,15 +172,18 @@ void codegen::binary(Node::Expr *expr) {
 
     // Perform the operation
     std::string op = lookup(opMap, e->op);
-    if (op == "idiv" || op == "div" || op == "mod") {
+    if (op == "idiv" || op == "div" || op == "mod")
+    {
       // Division requires special handling because of RDX:RAX input
       pushLinker("cqto\n\t", Section::Main);
-      push(Instr {.var = DivInstr{.from = "%rbx", .isSigned = true}, .type = InstrType::Div}, Section::Main);
+      push(Instr{.var = DivInstr{.from = "%rbx", .isSigned = true}, .type = InstrType::Div}, Section::Main);
       if (op == "mod")
         pushRegister("%rdx"); // Push remainder
       else
         pushRegister("%rax"); // Push result
-    } else {
+    }
+    else
+    {
       // Every other operation ...
       push(Instr{.var = BinaryInstr{.op = op, .src = "%rbx", .dst = "%rax"},
                  .type = InstrType::Binary},
@@ -151,16 +191,21 @@ void codegen::binary(Node::Expr *expr) {
       pushRegister("%rax"); // Push the result
     }
     return; // Done
-  } else if (returnType->name == "float") {
+  }
+  else if (returnType->name == "float")
+  {
     // Similar logic for floats
     int lhsDepth = getExpressionDepth(static_cast<BinaryExpr *>(e->lhs));
     int rhsDepth = getExpressionDepth(static_cast<BinaryExpr *>(e->rhs));
-    if (lhsDepth > rhsDepth) {
+    if (lhsDepth > rhsDepth)
+    {
       visitExpr(e->lhs);
       visitExpr(e->rhs);
       popToRegister("%xmm1"); // Pop RHS into XMM1
       popToRegister("%xmm0"); // Pop LHS into XMM0
-    } else {
+    }
+    else
+    {
       visitExpr(e->rhs);
       visitExpr(e->lhs);
       popToRegister("%xmm0"); // Pop LHS into XMM0
@@ -168,26 +213,35 @@ void codegen::binary(Node::Expr *expr) {
     }
 
     std::string op;
-    if (e->op == "+") op = "addss";
-    if (e->op == "-") op = "subss";
-    if (e->op == "*") op = "mulss";
-    if (e->op == "/") op = "divss";
+    if (e->op == "+")
+      op = "addss";
+    if (e->op == "-")
+      op = "subss";
+    if (e->op == "*")
+      op = "mulss";
+    if (e->op == "/")
+      op = "divss";
 
     push(Instr{.var = BinaryInstr{.op = op, .src = "%xmm1", .dst = "%xmm0"},
                .type = InstrType::Binary},
          Section::Main);
-    pushRegister("%xmm0"); 
-  } else if (returnType->name == "bool") {
+    pushRegister("%xmm0");
+  }
+  else if (returnType->name == "bool")
+  {
     // We need to compare the two values
     // Check depth
     int lhsDepth = getExpressionDepth(e->lhs);
     int rhsDepth = getExpressionDepth(e->rhs);
-    if (lhsDepth > rhsDepth) {
+    if (lhsDepth > rhsDepth)
+    {
       visitExpr(e->lhs);
       visitExpr(e->rhs);
       popToRegister("%rbx"); // Pop RHS into RBX
       popToRegister("%rax"); // Pop LHS into RAX
-    } else {
+    }
+    else
+    {
       visitExpr(e->rhs);
       visitExpr(e->lhs);
       popToRegister("%rax"); // Pop LHS into RAX
@@ -204,7 +258,8 @@ void codegen::binary(Node::Expr *expr) {
   }
 }
 
-void codegen::unary(Node::Expr *expr) {
+void codegen::unary(Node::Expr *expr)
+{
   UnaryExpr *e = static_cast<UnaryExpr *>(expr);
   pushDebug(e->line, expr->file_id, e->pos);
   visitExpr(e->expr);
@@ -214,107 +269,138 @@ void codegen::unary(Node::Expr *expr) {
 
   text_section.pop_back();
 
-  if (e->op == "++" || e->op == "--") {
+  if (e->op == "++" || e->op == "--")
+  {
     // Perform the operation
     std::string res = (e->op == "++") ? "inc" : "dec";
     // Dear code reader, i apologize
-    push(Instr {
-      .var = LinkerDirective{ .value = res + "q " + whatWasPushed + "\n\t" },
-      .type = InstrType::Linker   // Hey do you know why this infinatly loops? show asm
-    }, Section::Main);
+    push(Instr{
+             .var = LinkerDirective{.value = res + "q " + whatWasPushed + "\n\t"},
+             .type = InstrType::Linker // Hey do you know why this infinatly loops? show asm
+         },
+         Section::Main);
   }
   // Push the result
   pushRegister(whatWasPushed);
 }
 
-void codegen::grouping(Node::Expr *expr) {
+void codegen::grouping(Node::Expr *expr)
+{
   GroupExpr *e = static_cast<GroupExpr *>(expr);
   // Visit the expression inside the grouping
   pushDebug(e->line, expr->file_id, e->pos);
   visitExpr(e->expr);
 }
 
-void codegen::call(Node::Expr *expr) {
+void codegen::call(Node::Expr *expr)
+{
   CallExpr *e = static_cast<CallExpr *>(expr);
-  if (e->callee->kind == ND_IDENT) {
+  if (e->callee->kind == ND_IDENT)
+  {
     IdentExpr *n = static_cast<IdentExpr *>(e->callee);
     pushDebug(e->line, expr->file_id, e->pos);
     // Push each argument one by one.
-    if (e->args.size() > intArgOrder.size()) {
+    if (e->args.size() > intArgOrder.size())
+    {
       std::cerr << "Too many arguments in call - consider reducing them or moving them to a globally defined space." << std::endl;
       exit(-1);
     }
     int offsetAmount = round(variableCount - 8, 8);
-    if (offsetAmount) push(Instr{.var=SubInstr{.lhs="%rsp",.rhs="$"+std::to_string(offsetAmount)},.type=InstrType::Sub},Section::Main);
+    if (offsetAmount)
+      push(Instr{.var = SubInstr{.lhs = "%rsp", .rhs = "$" + std::to_string(offsetAmount)}, .type = InstrType::Sub}, Section::Main);
     int intArgCount = 0;
     int floatArgCount = 0;
 
-    for (size_t i = 0; i < e->args.size(); i++) {
+    for (size_t i = 0; i < e->args.size(); i++)
+    {
       // evaluate them
       visitExpr(e->args.at(i));
       // Check if the argument was a struct or array
       // That requires an lea, not a mov (that will be implicitly created here)
       bool isLea = false;
-      if (e->args[i]->asmType->kind == ND_ARRAY_TYPE) {
+      if (e->args[i]->asmType->kind == ND_ARRAY_TYPE)
+      {
         // lea should be false, because the value being processed is already technically a pointer
       }
-      if (e->args[i]->asmType->kind == ND_SYMBOL_TYPE) {
+      if (e->args[i]->asmType->kind == ND_SYMBOL_TYPE)
+      {
         SymbolType *sym = static_cast<SymbolType *>(e->args[i]->asmType);
-        if (structByteSizes.find(sym->name) != structByteSizes.end()) {
+        if (structByteSizes.find(sym->name) != structByteSizes.end())
+        {
           // FIRST we check the size of the struct type
-          if (structByteSizes[sym->name].first > 16) {
+          if (structByteSizes[sym->name].first > 16)
+          {
             isLea = true; // It was in there!
           }
         }
       }
-      if (isLea) {
+      if (isLea)
+      {
         // Get rid of the pushexpr
         PushInstr instr = std::get<PushInstr>(text_section.at(text_section.size() - 1).var);
         std::string whatWasPushed = instr.what;
         text_section.pop_back();
         // Now we can lea
         // ... IF what was pushed was an address ...
-        if (whatWasPushed.find('(') == std::string::npos) {
+        if (whatWasPushed.find('(') == std::string::npos)
+        {
           // run additional check to see if float or int
-          if (getUnderlying(e->args[i]->asmType) == "float" && e->args[i]->asmType->kind == ND_SYMBOL_TYPE) {
+          if (getUnderlying(e->args[i]->asmType) == "float" && e->args[i]->asmType->kind == ND_SYMBOL_TYPE)
+          {
             popToRegister(floatArgOrder[floatArgCount++]);
-          } else {
+          }
+          else
+          {
             popToRegister(intArgOrder[intArgCount++]);
           }
-        } else
+        }
+        else
           push(Instr{.var = LeaInstr{.size = DataSize::Qword, .dest = intArgOrder[i], .src = whatWasPushed},
-                    .type = InstrType::Lea},
-              Section::Main);
-      } else
+                     .type = InstrType::Lea},
+               Section::Main);
+      }
+      else
         popToRegister(intArgOrder[i]);
     }
     // Call the function
     push(Instr{.var = CallInstr{.name = "usr_" + n->name},
-              .type = InstrType::Call,
-              .optimize = false},
-        Section::Main);
-    if (offsetAmount) push(Instr{.var=AddInstr{.lhs="%rsp",.rhs="$"+std::to_string(offsetAmount)},.type=InstrType::Sub},Section::Main);
+               .type = InstrType::Call,
+               .optimize = false},
+         Section::Main);
+    if (offsetAmount)
+      push(Instr{.var = AddInstr{.lhs = "%rsp", .rhs = "$" + std::to_string(offsetAmount)}, .type = InstrType::Sub}, Section::Main);
     // What we push as the result depends on the return type of the function
     if (e->asmType->kind == ND_POINTER_TYPE ||
         e->asmType->kind == ND_ARRAY_TYPE ||
         e->asmType->kind == ND_FUNCTION_TYPE ||
-        e->asmType->kind == ND_FUNCTION_TYPE_PARAM) {
+        e->asmType->kind == ND_FUNCTION_TYPE_PARAM)
+    {
       pushRegister("%rax");
-    } else {
+    }
+    else
+    {
       SymbolType *st = static_cast<SymbolType *>(e->asmType);
-      if (st->name == "float" || st->name == "double") {
-        push(Instr{.var=PushInstr{.what="%xmm0",.whatSize=DataSize::SS},.type=InstrType::Push},Section::Main); // abi standard (can hold many bytes of data, so its fine for both floats AND doubles to fit in here)
-      } else if (structByteSizes.find(st->name) != structByteSizes.end()) {
+      if (st->name == "float" || st->name == "double")
+      {
+        push(Instr{.var = PushInstr{.what = "%xmm0", .whatSize = DataSize::SS}, .type = InstrType::Push}, Section::Main); // abi standard (can hold many bytes of data, so its fine for both floats AND doubles to fit in here)
+      }
+      else if (structByteSizes.find(st->name) != structByteSizes.end())
+      {
         pushRegister("%rax"); // When tossing this thing around, its handled basically as a pointer
       }
     }
-  } else if (e->callee->kind == ND_MEMBER) {
+  }
+  else if (e->callee->kind == ND_MEMBER)
+  {
     // Get the struct name
     MemberExpr *member = static_cast<MemberExpr *>(e->callee);
     std::string structName;
-    if (member->lhs->kind == ND_INDEX) {
+    if (member->lhs->kind == ND_INDEX)
+    {
       structName = getUnderlying(static_cast<IndexExpr *>(member->lhs)->lhs->asmType);
-    } else structName = getUnderlying(member->lhs->asmType);
+    }
+    else
+      structName = getUnderlying(member->lhs->asmType);
     std::string fnName = static_cast<IdentExpr *>(member->rhs)->name;
     pushDebug(e->line, expr->file_id, e->pos);
     // Push each argument one by one.
@@ -324,29 +410,36 @@ void codegen::call(Node::Expr *expr) {
     popToRegister(intArgOrder[0]);
     int intArgCount = 1; // 1st is preserved for struct ptr above
     int floatArgCount = 0;
-    int offsetAmount = round(variableCount-8, 8);
-    if (offsetAmount) push(Instr{.var=SubInstr{.lhs="%rsp",.rhs="$"+std::to_string(offsetAmount)},.type=InstrType::Sub},Section::Main);
-    for (size_t i = 0; i < e->args.size(); i++) {
+    int offsetAmount = round(variableCount - 8, 8);
+    if (offsetAmount)
+      push(Instr{.var = SubInstr{.lhs = "%rsp", .rhs = "$" + std::to_string(offsetAmount)}, .type = InstrType::Sub}, Section::Main);
+    for (size_t i = 0; i < e->args.size(); i++)
+    {
       // evaluate them
       visitExpr(e->args.at(i));
-      if (getUnderlying(e->args[i]->asmType) == "float" && e->args[i]->asmType->kind == ND_SYMBOL_TYPE) {
+      if (getUnderlying(e->args[i]->asmType) == "float" && e->args[i]->asmType->kind == ND_SYMBOL_TYPE)
+      {
         popToRegister(floatArgOrder[floatArgCount++]);
-      } else {
+      }
+      else
+      {
         popToRegister(intArgOrder[intArgCount++]);
       }
     }
     // Call the function
     push(Instr{.var = CallInstr{.name = "usrstruct_" + structName + "_" + fnName},
-              .type = InstrType::Call,
-              .optimize = false},
-        Section::Main);
-    if (offsetAmount) push(Instr{.var=AddInstr{.lhs="%rsp",.rhs="$"+std::to_string(offsetAmount)},.type=InstrType::Sub},Section::Main);
+               .type = InstrType::Call,
+               .optimize = false},
+         Section::Main);
+    if (offsetAmount)
+      push(Instr{.var = AddInstr{.lhs = "%rsp", .rhs = "$" + std::to_string(offsetAmount)}, .type = InstrType::Sub}, Section::Main);
     pushRegister("%rax");
   }
 }
 
 // TODO: FIX this to evalueate correctly
-void codegen::ternary(Node::Expr *expr) {
+void codegen::ternary(Node::Expr *expr)
+{
   TernaryExpr *e = static_cast<TernaryExpr *>(expr);
 
   int ternay = 0;
@@ -356,33 +449,42 @@ void codegen::ternary(Node::Expr *expr) {
   popToRegister("%rax");
 
   push(Instr{.var = CmpInstr{.lhs = "%rax", .rhs = "$0"},
-             .type = InstrType::Cmp},Section::Main);
+             .type = InstrType::Cmp},
+       Section::Main);
   push(Instr{.var = JumpInstr{.op = JumpCondition::Equal,
                               .label = "ternaryFalse" + ternayCount},
-             .type = InstrType::Jmp}, Section::Main);
+             .type = InstrType::Jmp},
+       Section::Main);
 
   visitExpr(e->lhs);
 
   push(Instr{.var = JumpInstr{.op = JumpCondition::Unconditioned,
                               .label = "ternaryEnd" + ternayCount},
-             .type = InstrType::Jmp},Section::Main);
+             .type = InstrType::Jmp},
+       Section::Main);
   push(Instr{.var = Label{.name = "ternaryFalse" + ternayCount},
-             .type = InstrType::Label},Section::Main);
+             .type = InstrType::Label},
+       Section::Main);
 
   visitExpr(e->rhs);
 
   push(Instr{.var = Label{.name = "ternaryEnd" + ternayCount},
-             .type = InstrType::Label},Section::Main);
+             .type = InstrType::Label},
+       Section::Main);
   ternay++;
 }
 
-void codegen::assign(Node::Expr *expr) {
+void codegen::assign(Node::Expr *expr)
+{
   AssignmentExpr *e = static_cast<AssignmentExpr *>(expr);
   pushDebug(e->line, expr->file_id, e->pos);
-  if (e->assignee->kind == ND_MEMBER || e->rhs->kind == ND_STRUCT) {
+  if (e->assignee->kind == ND_MEMBER || e->rhs->kind == ND_STRUCT)
+  {
     assignStructMember(e);
     return;
-  } else if (e->assignee->kind == ND_INDEX || e->rhs->kind == ND_ARRAY) {
+  }
+  else if (e->assignee->kind == ND_INDEX || e->rhs->kind == ND_ARRAY)
+  {
     assignArray(e);
     return;
   };
@@ -393,22 +495,27 @@ void codegen::assign(Node::Expr *expr) {
   pushRegister(res); // Expressions return values!
 }
 
-void codegen::arrayElem(Node::Expr *expr) {
+void codegen::arrayElem(Node::Expr *expr)
+{
   IndexExpr *e = static_cast<IndexExpr *>(expr);
   pushDebug(e->line, expr->file_id, e->pos);
   // Evaluate the arrauy
   // Evaluate the index
-  if (e->rhs->kind == ND_INT) {
+  if (e->rhs->kind == ND_INT)
+  {
     // It's a constant index
     IntExpr *index = static_cast<IntExpr *>(e->rhs);
-    if (e->lhs->kind == ND_IDENT) {
+    if (e->lhs->kind == ND_IDENT)
+    {
       IdentExpr *ident = static_cast<IdentExpr *>(e->lhs);
       Node::Type *underlying = static_cast<ArrayType *>(e->asmType)->underlying;
       std::string whereBytes = variableTable[ident->name];
       int offset = std::stoi(whereBytes.substr(0, whereBytes.find("("))); // this is the base of the array - the first byte of the first element
       offset -= (index->value * getByteSizeOfType(underlying));
       pushRegister(std::to_string(offset) + "(%rbp)");
-    } else {
+    }
+    else
+    {
       visitExpr(e->lhs);
       // it is an array type so we must actually lea this!
       PushInstr instr = std::get<PushInstr>(text_section.at(text_section.size() - 1).var);
@@ -424,21 +531,26 @@ void codegen::arrayElem(Node::Expr *expr) {
       else
         pushRegister(std::to_string(offset) + "(%rcx)");
     }
-  } else {
+  }
+  else
+  {
     std::cout << "Non-constant index array access not implemented yet" << std::endl;
     // This is a little more intricate.
     // We have to evaluate the index and multiply it by the size of the type
-    if (e->lhs->kind == ND_IDENT) {
-      push(Instr{.var = LeaInstr{.size=DataSize::Qword, .dest = "%rcx", .src = variableTable[static_cast<IdentExpr *>(e->lhs)->name]}, .type = InstrType::Lea}, Section::Main);
-    } else {
+    if (e->lhs->kind == ND_IDENT)
+    {
+      push(Instr{.var = LeaInstr{.size = DataSize::Qword, .dest = "%rcx", .src = variableTable[static_cast<IdentExpr *>(e->lhs)->name]}, .type = InstrType::Lea}, Section::Main);
+    }
+    else
+    {
       visitExpr(e->lhs);
       // lhs is always gonna be an array, but we need it to hold the addr
       PushInstr instr = std::get<PushInstr>(text_section.at(text_section.size() - 1).var);
       std::string whatWasPushed = instr.what;
       text_section.pop_back();
       push(Instr{.var = LeaInstr{.size = DataSize::Qword, .dest = "%rcx", .src = whatWasPushed},
-                .type = InstrType::Lea},
-          Section::Main);
+                 .type = InstrType::Lea},
+           Section::Main);
       // %rcx contains the base of the array
     }
     visitExpr(e->rhs);
@@ -448,59 +560,68 @@ void codegen::arrayElem(Node::Expr *expr) {
     pushLinker("negq %rax\n\t", Section::Main);
     // Multiply it by the size of the type
     int underlyingByteSize = getByteSizeOfType(static_cast<ArrayType *>(e->lhs->asmType)->underlying);
-    switch (underlyingByteSize) {
-      case 1: {
-        // No need to multiply
-        // Ex: []char or []bool
-        pushRegister("(%rcx, %rax)");
-        break;
-      }
-      case 2:
-      case 4:
-      case 8: {
-        // Multiply by the size of the type
-        pushRegister("(%rcx, %rax, " + std::to_string(underlyingByteSize) + ")");
-        break;
-      }
+    switch (underlyingByteSize)
+    {
+    case 1:
+    {
+      // No need to multiply
+      // Ex: []char or []bool
+      pushRegister("(%rcx, %rax)");
+      break;
+    }
+    case 2:
+    case 4:
+    case 8:
+    {
+      // Multiply by the size of the type
+      pushRegister("(%rcx, %rax, " + std::to_string(underlyingByteSize) + ")");
+      break;
+    }
 
-      default: {
-        // Sad, we can't rely on little syntactical sugar of the assembler to cheat our way out :(
-        push(Instr{.var = BinaryInstr{.op = "imul", .src = "$" + std::to_string(underlyingByteSize), .dst = "%rax"},
-                   .type = InstrType::Binary},
-             Section::Main);
-        pushRegister("(%rcx, %rax)");
-        break;
-      }
+    default:
+    {
+      // Sad, we can't rely on little syntactical sugar of the assembler to cheat our way out :(
+      push(Instr{.var = BinaryInstr{.op = "imul", .src = "$" + std::to_string(underlyingByteSize), .dst = "%rax"},
+                 .type = InstrType::Binary},
+           Section::Main);
+      pushRegister("(%rcx, %rax)");
+      break;
+    }
     }
   }
   // the end!
 }
 
 // z: [1, 2, 3, 4, 5]
-void codegen::_arrayExpr(Node::Expr *expr) { 
+void codegen::_arrayExpr(Node::Expr *expr)
+{
   ArrayExpr *e = static_cast<ArrayExpr *>(expr);
   pushDebug(e->line, expr->file_id, e->pos);
 
   e->debug();
 }
 
-void codegen::memberExpr(Node::Expr *expr) {
+void codegen::memberExpr(Node::Expr *expr)
+{
   MemberExpr *e = static_cast<MemberExpr *>(expr);
   pushDebug(e->line, expr->file_id, e->pos);
   // If lhs is enum
   std::string lhsName = getUnderlying(e->lhs->asmType);
-  if (lhsName == "enum") {
+  if (lhsName == "enum")
+  {
     IdentExpr *lhs = static_cast<IdentExpr *>(e->lhs);
     IdentExpr *rhs = static_cast<IdentExpr *>(e->rhs);
     pushRegister("$enum_" + lhs->name + "_" + rhs->name);
     return;
   }
 
-  if (structByteSizes.find(lhsName) != structByteSizes.end()) {
+  if (structByteSizes.find(lhsName) != structByteSizes.end())
+  {
     // It's a struct
     std::string structName = lhsName;
     // Now we have the name of the struct!
-    if (structName == "unknown") {
+    if (structName == "unknown")
+    {
       // Typechecker thought that its fields did not correlate to a struct.
       // That means we cannot calculate byte sizes/offsets or any of that good stuff
       // since the struct wasn't valid.
@@ -509,52 +630,70 @@ void codegen::memberExpr(Node::Expr *expr) {
     }
     // Now we can access the struct's fields
     int size = structByteSizes[structName].first;
-    std::vector<StructMember> fields = structByteSizes[structName].second;
+    std::vector<StructMember> &fields = structByteSizes[structName].second;
     // Eval lhs (this will put the struct's address onto the stack)
-    visitExpr(e->lhs);
+    visitExpr(e->lhs); // this could be an ident or something
     // Pop the struct's address into a register
     popToRegister("%rcx");
 
     // Now, we have to do some crazy black magic shit like -8(%rcx) but we find what to replace '8' with.
     std::string fieldName = static_cast<IdentExpr *>(e->rhs)->name;
-    
+
     // Right now, %rcx points to the beginning of the struct, which contains the last field.
     // In order to get the field we need, we should just loop over all the fields
     // and add to an offset.
-    unsigned short offset = 0;
-    for (size_t i = 0; i < structByteSizes[structName].second.size(); i++) {
-      if (structByteSizes[structName].second.at(i).first == fieldName) break;
-      offset += structByteSizes[structName].second.at(i).second.second;
+    short offset = 0;
+    for (size_t i = 0; i < structByteSizes[structName].second.size(); i++)
+    {
+      if (structByteSizes[structName].second.at(i).first == fieldName) {
+        offset = -structByteSizes[structName].second.at(i).second.second; // This is the offset, not the size of the type!
+        break;
+      }
+    }
+    // check if the type of the result is another struct (push the address instead)
+    if (structByteSizes.find(getUnderlying(e->asmType)) != structByteSizes.end()) {
+      // Instead of pushing straight up, we must lea
+      push(Instr{.var=LeaInstr{.size=DataSize::Qword, .dest="%rcx", .src=std::to_string(offset) + "(%rcx)"},.type=InstrType::Lea},Section::Main);
+      pushRegister("%rcx");
+      return;
     }
     // submit the answer :D
-    if (offset == 0) {
+    if (offset == 0)
+    {
       pushRegister("(%rcx)");
-    } else {
+    }
+    else
+    {
       pushRegister(std::to_string(offset) + "(%rcx)");
     }
     return;
   }
 
-  if (e->lhs->kind == ND_INDEX) {
+  if (e->lhs->kind == ND_INDEX)
+  {
     visitExpr(e->lhs);
     // Should push the value of the array element. If not, then I'm dumb and it pushed its addr
     // Pop the value into a register
     popToRegister("%rcx");
     // Now we can access the member
-    IndexExpr *index = static_cast<IndexExpr* >(e->lhs);
+    IndexExpr *index = static_cast<IndexExpr *>(e->lhs);
     // get the member
     IdentExpr *member = static_cast<IdentExpr *>(e->rhs);
     // get the type of whatever we are indexing
     Node::Type *indexType = index->asmType;
     // if type was a struct
-    if (indexType->kind == ND_SYMBOL_TYPE) {
+    if (indexType->kind == ND_SYMBOL_TYPE)
+    {
       SymbolType *sym = static_cast<SymbolType *>(indexType);
-      if (structByteSizes.find(sym->name) != structByteSizes.end()) {
+      if (structByteSizes.find(sym->name) != structByteSizes.end())
+      {
         int offset = 0; // im gonna do something about that later
         std::string structName = sym->name;
         std::vector<StructMember> fields = structByteSizes[structName].second;
-        for (size_t i = 0; i < fields.size(); i++) {
-          if (fields[i].first == member->name) break;
+        for (size_t i = 0; i < fields.size(); i++)
+        {
+          if (fields[i].first == member->name)
+            break;
           offset += fields[i].second.second;
         }
         // now we can access the member
@@ -576,13 +715,15 @@ void codegen::memberExpr(Node::Expr *expr) {
   */
 }
 
-void codegen::_struct(Node::Expr *expr) {
+void codegen::_struct(Node::Expr *expr)
+{
   std::cerr << "Lonely struct expression just dangling here. That's not allowed!" << std::endl;
   exit(-1);
   return;
 };
 
-void codegen::addressExpr(Node::Expr *expr) {
+void codegen::addressExpr(Node::Expr *expr)
+{
   AddressExpr *e = static_cast<AddressExpr *>(expr);
   // It was a struct or something like that
   // Get the address of it. The address is the return type (becuase it's a pointer)
@@ -594,14 +735,17 @@ void codegen::addressExpr(Node::Expr *expr) {
   text_section.pop_back();
   // check if we did this to a struct
 
-  if (realRight->kind == ND_IDENT) {
+  if (realRight->kind == ND_IDENT)
+  {
     IdentExpr *ident = static_cast<IdentExpr *>(realRight);
 
-    if (structByteSizes.find(getUnderlying(ident->asmType)) != structByteSizes.end()) {
+    if (structByteSizes.find(getUnderlying(ident->asmType)) != structByteSizes.end())
+    {
       // It was a struct!
       // It's very likely that what was pushed was "rcx" in this scenario.
       // That, however, just does not apply to the lea instruction.
-      if (whatWasPushed == "%rcx") {
+      if (whatWasPushed == "%rcx")
+      {
         pushRegister("%rcx");
         return;
       }
@@ -613,32 +757,67 @@ void codegen::addressExpr(Node::Expr *expr) {
   pushRegister("%rcx");
 };
 
-void codegen::assignStructMember(Node::Expr *expr) {
+void codegen::assignStructMember(Node::Expr *expr)
+{
   AssignmentExpr *e = static_cast<AssignmentExpr *>(expr);
   // This is where you go
   // struct.member = value;
 
-  if (structByteSizes.find(getUnderlying(e->rhs->asmType)) != structByteSizes.end()) {
-    // It's a struct
-    visitExpr(e->assignee);
-    text_section.pop_back(); // This will only contain a `push %rcx` which we dont need to be pushed :D
-    // Declare a struct variable with the offset related to rcx
-
-    int memberOffset = 0;
-    std::string structName = getUnderlying(e->assignee->asmType);
-    for (size_t i = 0; i < structByteSizes[structName].second.size(); i++) {
-      if (structByteSizes[structName].second[i].first == static_cast<IdentExpr *>(e->rhs)->name) break;
-      memberOffset += structByteSizes[structName].second[i].second.second;
+  if (structByteSizes.find(getUnderlying(e->rhs->asmType)) != structByteSizes.end())
+  {
+    if (e->rhs->kind == ND_STRUCT)
+    {
+      // It's a struct
+      visitExpr(e->assignee);
+      popToRegister("%rdx");
+      // TODO: This function will always make the relative offsets to the base register NEGATIVE which in this case it shouldnt be
+      // TODO: Other than that though, this implmentation works 100% fine as it seems
+      declareStructVariable(e->rhs, getUnderlying(e->assignee->asmType), "%rdx", 0);
+      // Assign expressions must return something, so we will return the offset of the rcx thing
+      // Lea instr
+      push(Instr{.var = LeaInstr{.size = DataSize::Qword, .dest = "%rcx", .src = "(%rdx)"},
+                 .type = InstrType::Lea},
+           Section::Main);
+      return;
     }
-    // TODO: This function will always make the relative offsets to the base register NEGATIVE which in this case it shouldnt be
-    // TODO: Other than that though, this implmentation works 100% fine as it seems
-    declareStructVariable(e->rhs, getUnderlying(e->assignee->asmType), "%rcx", memberOffset);
-    // Assign expressions must return something, so we will return the offset of the rcx thing
-    // Lea instr
-    push(Instr{.var = LeaInstr{.size = DataSize::Qword, .dest = "%rcx", .src = std::to_string(memberOffset) + "(%rcx)"},
-               .type = InstrType::Lea},
-         Section::Main);
-    return;
+    // The rhs is NOT a struct literal, but something else instead
+    // This is a bit more complicated
+    if (e->rhs->kind == ND_IDENT) {
+      // This is the easiest case where we just transfer each byte into the struct
+      visitExpr(e->rhs);
+      popToRegister("%rdx");
+      visitExpr(e->assignee);
+      popToRegister("%rsi"); // The register used here doesn't matter, but rsi is rarely used in Zura (other than syscall @ functions)
+      // Rdx contains the smaller struct. Rsi contains the bigger struct. Move each byte!
+      short byteCount = getByteSizeOfType(e->rhs->asmType);
+      while (byteCount > 0) {
+        if (byteCount >= 8) {
+          // Move a qword
+          byteCount -= 8;
+          moveRegister("%rax", std::to_string(-byteCount) + "(%rdx)", DataSize::Qword, DataSize::Qword);
+          moveRegister(std::to_string(-byteCount) + "(%rsi)", "%rax", DataSize::Qword, DataSize::Qword);
+        } else if (byteCount >= 4) {
+          // Move a dword (long)
+          byteCount -= 4;
+          moveRegister("%eax", std::to_string(-byteCount) + "(%rdx)", DataSize::Dword, DataSize::Dword);
+          moveRegister(std::to_string(-byteCount) + "(%rsi)", "%eax", DataSize::Dword, DataSize::Dword);
+        } else if (byteCount >= 2) {
+          // Move a word (short)
+          byteCount -= 2;
+          moveRegister("%ax", std::to_string(-byteCount) + "(%rdx)", DataSize::Word, DataSize::Word);
+          moveRegister(std::to_string(-byteCount) + "(%rsi)", "%ax", DataSize::Word, DataSize::Word);
+        } else {
+          // Move a byte (char)
+          byteCount -= 1;
+          moveRegister("%al", std::to_string(-byteCount) + "(%rdx)", DataSize::Byte, DataSize::Byte);
+          moveRegister(std::to_string(-byteCount) + "(%rsi)", "%al", DataSize::Byte, DataSize::Byte);
+        }
+      }
+      // Assignment expr's must return something
+      // Let's return the little struct ptr
+      pushRegister("%rdx");
+      return;
+    }
   }
   // The value is not a struct-- hopefully this is very easy
   // We have to evaluate the rhs
@@ -647,28 +826,31 @@ void codegen::assignStructMember(Node::Expr *expr) {
   text_section.pop_back(); // previous instr would juts be a push rcx which we do not need
   visitExpr(e->rhs);
   // Pop the value into a register
-  switch (getByteSizeOfType(e->rhs->asmType)) {
-    case 1:
-      push(Instr{.var=PopInstr{.where=std::to_string(getByteSizeOfType(e->rhs->asmType))+"(%rcx)",.whereSize=DataSize::Byte},.type=InstrType::Pop},Section::Main);
-      break;
-    case 2:
-      push(Instr{.var=PopInstr{.where=std::to_string(getByteSizeOfType(e->rhs->asmType))+"(%rcx)",.whereSize=DataSize::Word},.type=InstrType::Pop},Section::Main);
-      break;
-    case 4:
-      push(Instr{.var=PopInstr{.where=std::to_string(getByteSizeOfType(e->rhs->asmType))+"(%rcx)",.whereSize=DataSize::Dword},.type=InstrType::Pop},Section::Main);
-      break;
-    case 8:
-    default:
-      push(Instr{.var=PopInstr{.where=std::to_string(getByteSizeOfType(e->rhs->asmType))+"(%rcx)",.whereSize=DataSize::Qword},.type=InstrType::Pop},Section::Main);
-      break;
+  switch (getByteSizeOfType(e->rhs->asmType))
+  {
+  case 1:
+    push(Instr{.var = PopInstr{.where = std::to_string(getByteSizeOfType(e->rhs->asmType)) + "(%rcx)", .whereSize = DataSize::Byte}, .type = InstrType::Pop}, Section::Main);
+    break;
+  case 2:
+    push(Instr{.var = PopInstr{.where = std::to_string(getByteSizeOfType(e->rhs->asmType)) + "(%rcx)", .whereSize = DataSize::Word}, .type = InstrType::Pop}, Section::Main);
+    break;
+  case 4:
+    push(Instr{.var = PopInstr{.where = std::to_string(getByteSizeOfType(e->rhs->asmType)) + "(%rcx)", .whereSize = DataSize::Dword}, .type = InstrType::Pop}, Section::Main);
+    break;
+  case 8:
+  default:
+    push(Instr{.var = PopInstr{.where = std::to_string(getByteSizeOfType(e->rhs->asmType)) + "(%rcx)", .whereSize = DataSize::Qword}, .type = InstrType::Pop}, Section::Main);
+    break;
   }
   // Assign expressions must return something
   pushRegister("%rcx");
 };
 
-void codegen::assignArray(Node::Expr *expr) {
+void codegen::assignArray(Node::Expr *expr)
+{
   AssignmentExpr *assign = static_cast<AssignmentExpr *>(expr);
-  if (assign->assignee->kind == ND_INDEX) {
+  if (assign->assignee->kind == ND_INDEX)
+  {
     IndexExpr *e = static_cast<IndexExpr *>(assign->assignee);
     IntExpr *index = static_cast<IntExpr *>(e->rhs);
     int idx = index->value;
@@ -683,18 +865,22 @@ void codegen::assignArray(Node::Expr *expr) {
     // Push the value again
     pushRegister(std::to_string(offset) + "(%rcx)");
     return;
-  } else if (assign->rhs->kind == ND_ARRAY) {
+  }
+  else if (assign->rhs->kind == ND_ARRAY)
+  {
     // assume that the bytes are already allocated for us
     // (for example, in a sub from rax or from the member of a struct)
-    if (assign->assignee->asmType->kind == ND_ARRAY_TYPE) {
+    if (assign->assignee->asmType->kind == ND_ARRAY_TYPE)
+    {
       // array = array
       // Go through each member of the first array and override with the second.
       visitExpr(assign->assignee);
       PushInstr instr = std::get<PushInstr>(text_section.at(text_section.size() - 1).var);
       text_section.pop_back();
-      push(Instr{.var=LeaInstr{.size=DataSize::Qword,.dest="%rcx",.src=instr.what}, .type = InstrType::Lea},Section::Main);
+      push(Instr{.var = LeaInstr{.size = DataSize::Qword, .dest = "%rcx", .src = instr.what}, .type = InstrType::Lea}, Section::Main);
       ArrayExpr *rhs = static_cast<ArrayExpr *>(assign->rhs);
-      for (size_t i = 0; i < rhs->elements.size(); i++) {
+      for (size_t i = 0; i < rhs->elements.size(); i++)
+      {
         visitExpr(rhs->elements.at(i));
         popToRegister(std::to_string(-i * getByteSizeOfType(rhs->type)) + "(%rcx)");
       }
@@ -706,8 +892,9 @@ void codegen::assignArray(Node::Expr *expr) {
   // I think that's it??!!!
 };
 
-void codegen::nullExpr(Node::Expr *expr) {
+void codegen::nullExpr(Node::Expr *expr)
+{
   // Has implicit value of 0.
   pushRegister("$0");
-  return;  
+  return;
 }

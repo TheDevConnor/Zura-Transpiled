@@ -545,8 +545,8 @@ void codegen::structDecl(Node::Stmt *stmt) {
   // Calculate size by adding the size of members
   for (std::pair<std::string, Node::Type *> field : s->fields) {
     int fieldSize = getByteSizeOfType(field.second);
+    members.push_back({field.first, {field.second, size}}); // Place the "size" (offset) BEFORE we add to the total
     size += fieldSize; // Yes, even calculates the size of nested structs.
-    members.push_back({field.first, {field.second, size}});
   }
   structByteSizes.insert({s->name, {size, members}});
 
@@ -931,13 +931,42 @@ void codegen::declareStructVariable(Node::Expr *expr, std::string structName,
   // evaluate each field and store its result inside the (outer) struct
   for (size_t i = 0; i < fields.size(); i++) {
     Node::Expr *field = fields.at(i);
-    unsigned short offset = 0;
-    if (i != 0) for (size_t j = 0; j < i; j++) {
-      offset += getByteSizeOfType(structByteSizes[structName].second.at(j).second.first);
-    }
+    unsigned short offset = structByteSizes[structName].second.at(i).second.second;
     if (field->asmType->kind == ND_SYMBOL_TYPE && structByteSizes.find(getUnderlying(field->asmType)) != structByteSizes.end()) {
-      // Evaluate THAT struct but place it in the outer struct at the offset
-      declareStructVariable(field, getUnderlying(field->asmType), offsetRegister, startOffset + offset);
+      if (field->kind == ND_STRUCT) {
+        // Evaluate THAT struct but place it in the outer struct at the offset
+        declareStructVariable(field, getUnderlying(field->asmType), offsetRegister, startOffset + offset);
+        continue;
+      }
+      // It must be an identifier or something, which means we must copy each byte from the original into this
+      visitExpr(field);
+      popToRegister("%rdx"); // Hopefully, 'field' will be something that returns the address
+
+      // NEXT UPPP we must copy each byte
+      short byteCount = getByteSizeOfType(field->asmType);
+      while (byteCount > 0) {
+        if (byteCount >= 8) {
+          // Move a qword
+          byteCount -= 8;
+          moveRegister("%rax", std::to_string(-byteCount) + "(%rdx)", DataSize::Qword, DataSize::Qword);
+          moveRegister(std::to_string(-(byteCount + startOffset + offset)) + "(" + offsetRegister + ")", "%rax", DataSize::Qword, DataSize::Qword);
+        } else if (byteCount >= 4) {
+          // Move a dword (long)
+          byteCount -= 4;
+          moveRegister("%eax", std::to_string(-byteCount) + "(%rdx)", DataSize::Dword, DataSize::Dword);
+          moveRegister(std::to_string(-(byteCount + startOffset + offset)) + "(" + offsetRegister + ")", "%eax", DataSize::Dword, DataSize::Dword);
+        } else if (byteCount >= 2) {
+          // Move a word (short)
+          byteCount -= 2;
+          moveRegister("%ax", std::to_string(-byteCount) + "(%rdx)", DataSize::Word, DataSize::Word);
+          moveRegister(std::to_string(-(byteCount + startOffset + offset)) + "(" + offsetRegister + ")", "%ax", DataSize::Word, DataSize::Word);
+        } else {
+          // Move a byte (char)
+          byteCount -= 1;
+          moveRegister("%al", std::to_string(-byteCount) + "(%rdx)", DataSize::Byte, DataSize::Byte);
+          moveRegister(std::to_string(-(byteCount + startOffset + offset)) + "(" + offsetRegister + ")", "%al", DataSize::Byte, DataSize::Byte);
+        }
+      }
       continue;
     }
 

@@ -4,29 +4,36 @@ const InnerTest := struct {
 };
 
 const Test := struct {
-  z: int,
   a: int,
   b: int,
   c: InnerTest,
 };
 
 const main := fn () int {
+  # have b: InnerTest = {
+  #   x: 6,
+  #   y: 7,
+  # };
   have a: Test = {
-    z: 0,
-    a: 1,
-    b: 2,
-    c: {
-      x: 3,
-      y: 4
+    a: 2,
+    b: 3,
+    # c: b # Setting to variables works as intended
+    c: { # Setting to literal works as intended
+      x: 4,
+      y: 5,
     }
   };
 
-  a.c = {
-    x: 5,
-    y: 6
-  };
+  # a.c = { # Works as intended
+  #   x: 8,
+  #   y: 9,
+  # };
 
-  a.z = 7;
+  # have b: InnerTest = {
+  #   x: 6,
+  #   y: 7,
+  # };
+  # a.c = b; # Works as intended
 
   return a.a;
 };
