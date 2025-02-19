@@ -90,29 +90,24 @@ void TypeChecker::processStructMember(Maps *map, MemberExpr *member, const std::
     // Check if we are looking at a function or a field
     if (map->struct_table_fn.find(realType) != map->struct_table_fn.end()) {
       const FnVector &stmts = map->struct_table_fn[realType];
-      const FnVector::const_iterator res = std::find_if(stmts.begin(), stmts.end(),
-                              [&member](const Fn &fn) {
-                                  return fn.first.first == static_cast<IdentExpr *>(member->rhs)->name;
-                              });
-      if (res == stmts.end()) {
-      } else {
+      const FnVector::const_iterator res = std::find_if(stmts.begin(), stmts.end(), [&member](const Fn &fn) {
+          return fn.first.first == static_cast<IdentExpr *>(member->rhs)->name;
+      });
+      if (res == stmts.end()) {} // This is a field
+      else {
         return_type = std::make_shared<SymbolType>(type_to_string(res->first.second));
         member->asmType = createDuplicate(return_type.get());
         return;
       }
     }
-    const std::vector<std::pair<std::string, Node::Type *>> &fields =
-        map->struct_table[realType];
+    const std::vector<std::pair<std::string, Node::Type *>> &fields = map->struct_table[realType];
     const std::vector<std::pair<std::string, Node::Type *>>::const_iterator
-        res = std::find_if(
-            fields.begin(), fields.end(),
-            [&name](const std::pair<std::string, Node::Type *> &field) {
-              return field.first == name;
-            });
+        res = std::find_if(fields.begin(), fields.end(),[&name](const std::pair<std::string, Node::Type *> &field) {
+          return field.first == name;
+        });
     // this cannot be fields.end() because that is actually a valid return
     if (res == fields.end()) {
-      std::string msg =
-          "Type '" + lhsType + "' does not have member '" + name + "'";
+      std::string msg = "Type '" + realType + "' does not have member '" + name + "'";
       handleError(member->line, member->pos, msg, "", "Type Error");
       return_type = std::make_shared<SymbolType>("unknown");
       return;

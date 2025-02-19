@@ -5,13 +5,13 @@ Add and recognize more int types in asm. (Ex. byte, short, long, quad).
  - IMPORTANT - Update stmt::enumDecl IMMEDIATELY after adding longs
 
  Implement an open/close method that returns a fd. Can be easily implemented in @output and @input
- Add in alloc, free, cast, memcpy, and sizeof functions. (done => alloc, free, cast, sizeof)
+ Add in alloc, free, cast, memcpy, and sizeof functions. (done => alloc, free, cast, sizeof, memcpy)
 
  Add in proper support for arrays and index over strings, arrays, etc.
 
  Add in uint and int types.
 
- TODO: Fix the typeCheckers indexing for chars.
+ TODO: Fix the typeCheckers indexing for chars as well as nested member exprs. (Fixed: nested member expr)
 
  add in the lsp fully
  NOTE: Read into the calling convention for the lsp to comminicat with vscode and nvim respectfully

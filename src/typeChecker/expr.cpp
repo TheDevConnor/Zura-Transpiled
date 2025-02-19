@@ -312,22 +312,30 @@ void TypeChecker::visitMember(Maps *map, Node::Expr *expr) {
   // Verify that the lhs is a struct or enum
   visitExpr(map, member->lhs);
   std::string lhsType = type_to_string(return_type.get());
-  std::string name = "";
-  if (member->lhs->kind == ND_MEMBER) {
-    name = static_cast<IdentExpr *>(static_cast<MemberExpr *>(member->lhs)->rhs)
-               ->name;
-  } else {
-    name = static_cast<IdentExpr *>(member->rhs)->name;
-  }
+  std::string name = static_cast<IdentExpr *>(member->rhs)->name;
+
   // Determine if lhs is a struct or enum
   std::string typeKind = determineTypeKind(map, lhsType);
 
+  // check if the lhs is a struct or enum
+  if (map->struct_table.find(lhsType) == map->struct_table.end() && map->enum_table.find(name) == map->enum_table.end()) {
+    std::string msg = "Member access requires the left hand side to be a struct or enum but got '" + lhsType + "'";
+    handleError(member->line, member->pos, msg, "", "Type Error");
+    return_type = std::make_shared<SymbolType>("unknown");
+    expr->asmType = new SymbolType("unknown");
+    return;
+  }
+
+  // check if the lhs is a struct
   if (typeKind == "struct") {
     processStructMember(map, member, name, lhsType);
   } else if (typeKind == "enum") {
     processEnumMember(map, member, name);
   } else {
-    handleUnknownType(member, name);
+    std::string msg = "Member access requires the left hand side to be a struct or enum but got '" + lhsType + "' for '" + name + "'";
+    handleError(member->line, member->pos, msg, "", "Type Error");
+    return_type = std::make_shared<SymbolType>("unknown");
+    expr->asmType = new SymbolType("unknown");
   }
 }
 

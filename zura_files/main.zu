@@ -1,13 +1,33 @@
+const InnerTest2 := struct {
+  x: int,
+  y: int,
+};
+
+const InnerTest := struct {
+  x: int,
+  y: InnerTest2,
+};
+
+const Test := struct {
+  a: int,
+  b: int,
+  c: InnerTest,
+};
+
 const main := fn () int {
-  have src: *char = "Hello, World!";
+  have a: Test = {
+    a: 1,
+    b: 2,
+    c: {
+      x: 3,
+      y: {
+        x: 4,
+        y: 5,
+      },
+    }
+  };
 
-  have dest: *char = @cast<*char>(@alloc(14));
-
-  @memcpy(dest, src, 13);
-
-  @output(dest, "\n");
-
-  @free(dest, 14);
+  @output(a.a, " ", a.b, " ", a.c.x, " ", a.c.y.x, " ", a.c.y.y, "\n"); # 1 2 3 4 5
 
   return 0;
 };
