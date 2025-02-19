@@ -239,6 +239,7 @@ public:
         }
         return inst + " " + instr.from + ", " + instr.to + "\n\t";
       }
+      
       // String literal (eg .cfi_startproc in functions)
       // It is the responsibility of the input to have its own formatting (\n\t)
       std::string operator()(LinkerDirective instr) const { return instr.value; }

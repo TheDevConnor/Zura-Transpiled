@@ -597,3 +597,33 @@ void TypeChecker::visitSizeof(Maps *map, Node::Expr *expr) {
   return_type = std::make_shared<SymbolType>("int");
   // asmtype is a constant int and already handled
 }
+
+void TypeChecker::visitMemcpyMemory(Maps *map, Node::Expr *expr) {
+  MemcpyExpr *memcpy = static_cast<MemcpyExpr *>(expr);
+  visitExpr(map, memcpy->dest);
+  if (type_to_string(return_type.get())[0] != '*') {
+    std::string msg = "Memcpy requires the destination to be of pointer type but got '" +
+                      type_to_string(return_type.get()) + "'";
+    handleError(memcpy->line, memcpy->pos, msg, "", "Type Error");
+    return_type = std::make_shared<SymbolType>("unknown"); // allows stuff to be fucked up later down the line hehe (even though the return type never changes)
+    // asmtype is a constant int and already handled
+  }
+
+  visitExpr(map, memcpy->src);
+  if (type_to_string(return_type.get())[0] != '*') {
+    std::string msg = "Memcpy requires the source to be of pointer type but got '" +
+                      type_to_string(return_type.get()) + "'";
+    handleError(memcpy->line, memcpy->pos, msg, "", "Type Error");
+    return_type = std::make_shared<SymbolType>("unknown"); // allows stuff to be fucked up later down the line hehe (even though the return type never changes)
+    // asmtype is a constant int and already handled
+  }
+
+  visitExpr(map, memcpy->bytes);
+  if (type_to_string(return_type.get()) != "int") {
+    std::string msg = "Memcpy requires the number of bytes to be of type 'int' but got '" + type_to_string(return_type.get()) + "'";
+    handleError(memcpy->line, memcpy->pos, msg, "", "Type Error");
+  }
+
+  return_type = std::make_shared<SymbolType>("int");
+  // asmtype, once again, already handled
+}

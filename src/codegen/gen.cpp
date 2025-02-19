@@ -129,6 +129,15 @@ void codegen::gen(Node::Stmt *stmt, bool isSaved, std::string output_filename,
           "\n"
           ".size native_itoa, .-native_itoa\n";
   }
+  if (nativeFunctionsUsed[NativeASMFunc::memcpy] == true) {
+    file << ".type native_memcpy, @function\n"
+          "native_memcpy:"
+          "\n    # rdi = dest, rsi = src, rdx = bytes"
+          "\n    movq %rdx, %rcx"
+          "\n    rep movsb"
+          "\n    ret"
+          "\n.size native_memcpy, .-native_memcpy\n";
+  }
   if (debug) 
     file << ".Ldebug_text0:\n";
   if (head_section.size() > 0) {

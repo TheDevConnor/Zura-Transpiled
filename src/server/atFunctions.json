@@ -58,5 +58,17 @@
     "detail": "Frees memory allocated by @alloc",
     "kind": 2,
     "documentation":"This function frees memory that was previously allocated using @alloc. Ensure that all memory is freed before you exit to ensure your program does not have a memory leak.\nThis function takes in two arguments: the pointer of the freed memory (returned by @alloc) and the number of bytes that you'd like to free."
+  }, 
+  {
+    "label": "sizeof",
+    "detail": "Get the size of a type in bytes",
+    "kind": 2,
+    "documentation": "This function returns the size of a type in bytes. This is useful for allocating memory or for debugging purposes.\nThis function takes in one argument: the type that you'd like to get the size of."
+  },
+  {
+    "label": "memcpy",
+    "detail": "Copy a block of memory from one location to another",
+    "kind": 2,
+    "documentation": "This function copies a block of memory from one location to another. This is useful for copying arrays or structs.\nThis function takes in three arguments: the destination pointer, the source pointer, and the number of bytes to copy."
   }
 ]

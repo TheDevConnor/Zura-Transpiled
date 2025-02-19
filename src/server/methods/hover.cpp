@@ -14,7 +14,7 @@ nlohmann::ordered_json lsp::methods::hover(nlohmann::json& request) {
   // get the text file at the uri
   Word text = lsp::document::wordUnderPos(uri, pos);
 
-  if (text.word.starts_with("@")) { // TODO: Check if inside a string or a comment (not real code)
+  if (text.word.rfind("@", 0) == 0) { // TODO: Check if inside a string or a comment (not real code)
     // check the integrity of the word (check to see if it's a real @ function)
     const static std::unordered_map<std::string, std::string> atFunctions = {
       {"output", "It can be used to display something to the console (stdout).\n\nExample:\n```zura\n@output(\"Hello, World!\"); # \"Hello, World!\" expected\n```"},
@@ -27,6 +27,7 @@ nlohmann::ordered_json lsp::methods::hover(nlohmann::json& request) {
       {"call", "It can be used to call an external function that is linked externally. The function being called must be linked and extern'd before using it.\n\nExample:\n```zura\n@link \"libc\"; # Passed to linker\n@extern \"printf\"; # Look up this symbol\n\nconst main := fn () int {\n\t@call<printf>(\"Hello, World!\"); # Call previously revealed function\n};\n```"},
       {"alloc", "It can be used to allocate a certain number of bytes in memory. The only input required is the number of the bytes to allocate and returns the pointer to the allocated memory.\n\nExample:\n```zura\n@alloc(1024); # Allocates 1024 bytes of memory in your system\n```"},
       {"free", "It can be used to free previously allocated memory using @alloc. The only inputs are the pointer and the number of bytes to free and returns a status code, 0 for success and -1 for failure..\n\nExample:\n```zura\nhave ptr: *void = @alloc(1024);\n# ...\n@free(ptr, 1024); # frees the memory at ptr\n```"},
+      {"sizeof", "It can be used to get the size of a type in bytes. The only input required is the type and returns the size of the type in bytes.\n\nExample:\n```zura\nhave x: int;\n@output(@sizeof(x)); # Outputs 8\n```"},
     };
     std::unordered_map<std::string, std::string>::iterator closestMatch;
     int closestMatchDistance = 1000;

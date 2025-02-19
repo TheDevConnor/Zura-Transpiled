@@ -1,39 +1,13 @@
-const InnerTest := struct {
-  x: int,
-  y: int,
-};
-
-const Test := struct {
-  a: int,
-  b: int,
-  c: InnerTest,
-};
-
 const main := fn () int {
-  # have b: InnerTest = {
-  #   x: 6,
-  #   y: 7,
-  # };
-  have a: Test = {
-    a: 2,
-    b: 3,
-    # c: b # Setting to variables works as intended
-    c: { # Setting to literal works as intended
-      x: 4,
-      y: 5,
-    }
-  };
+  have src: *char = "Hello, World!";
 
-  # a.c = { # Works as intended
-  #   x: 8,
-  #   y: 9,
-  # };
+  have dest: *char = @cast<*char>(@alloc(14));
 
-  # have b: InnerTest = {
-  #   x: 6,
-  #   y: 7,
-  # };
-  # a.c = b; # Works as intended
+  @memcpy(dest, src, 13);
 
-  return a.a;
+  @output(dest, "\n");
+
+  @free(dest, 14);
+
+  return 0;
 };

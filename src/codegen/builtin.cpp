@@ -225,3 +225,25 @@ void codegen::sizeofExpr(Node::Expr *expr) {
   // Push the size to the stack
   push(Instr{.var=Comment{.comment="Sizeof " + static_cast<IdentExpr *>(s->whatToSizeOf)->name + " is " + std::to_string(size) + " bytes."},.type=InstrType::Comment},Section::Main);
 }
+
+void codegen::memcpyExpr(Node::Expr *expr) {
+  MemcpyExpr *m = static_cast<MemcpyExpr *>(expr);
+
+  // Evaluate the arguments
+  visitExpr(m->dest);
+  visitExpr(m->src);
+  visitExpr(m->bytes);
+
+  // Pop the values into registers
+  popToRegister("%rdx");  // bytes
+  popToRegister("%rsi");  // src
+  popToRegister("%rdi");  // dest
+
+  // Emit the memcpy instruction
+  push(Instr{.var = Comment{.comment = "memcpy(dest, src, bytes)"}, .type = InstrType::Comment}, Section::Main);
+  push(Instr{.var = CallInstr{.name = "native_memcpy"}, .type = InstrType::Call}, Section::Main);
+  nativeFunctionsUsed[NativeASMFunc::memcpy] = true;
+
+  // Push the return value to the stack
+  pushRegister("%rax");
+}

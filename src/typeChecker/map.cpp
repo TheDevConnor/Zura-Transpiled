@@ -63,6 +63,7 @@ std::vector<std::pair<NodeKind, TypeChecker::ExprNodeHandler>>
         {NodeKind::ND_FREE_MEMORY, visitFreeMemory},
         {NodeKind::ND_ALLOC_MEMORY, visitAllocMemory},
         {NodeKind::ND_SIZEOF, visitSizeof},
+        {NodeKind::ND_MEMCPY_MEMORY, visitMemcpyMemory},
 };
 
 Node::Stmt *TypeChecker::StmtAstLookup(Node::Stmt *node, Maps *maps) {

@@ -395,9 +395,10 @@ signed short int codegen::getByteSizeOfType(Node::Type *type) {
       if (typeSizes.find(sym->name) != typeSizes.end()) {
         return typeSizes[sym->name];
       }
+      if (sym->name.find("*") != std::string::npos) return 8;
       // Unknown type...
       // Hopefully this is unreachable!
-      std::string msg = "Unknown type '" + sym->name + "'.";
+      std::string msg = "Unknown type '" + sym->name + "'. For some reason, this type is not in the typeSizes map.";
       handleError(0, 0, msg, "Codegen Error");
       return 0; // Let the compiler know that this is an error
     }
