@@ -92,8 +92,8 @@ void TypeChecker::visitFn(Maps *map, Node::Stmt *stmt) {
             fn_stmt->line, fn_stmt->pos);
 
     return_type = nullptr;
-    map->local_symbol_table
-        .clear(); // clear the local table for the next function
+    map->local_symbol_table.clear(); // clear the local table for the next function
+    map->function_params.clear();
     return;
   }
 
@@ -124,8 +124,8 @@ void TypeChecker::visitFn(Maps *map, Node::Stmt *stmt) {
           fn_stmt->line, fn_stmt->pos);
 
   return_type = nullptr;
-  map->local_symbol_table
-      .clear(); // clear the local table for the next function
+  map->local_symbol_table.clear(); // clear the local table for the next function
+  map->function_params.clear();
 }
 
 void TypeChecker::visitBlock(Maps *map, Node::Stmt *stmt) {
