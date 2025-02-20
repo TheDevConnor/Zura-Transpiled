@@ -6,6 +6,7 @@
 #include "optimizer/optimize.hpp"
 
 #include <string>
+#include <cstdint>
 #include <unordered_map>
 #include <vector>
 #include <set>

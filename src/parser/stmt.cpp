@@ -548,7 +548,7 @@ Node::Stmt *Parser::importStmt(PStruct *psr, std::string name) {
   std::filesystem::path absolutePath = std::filesystem::absolute(
     std::filesystem::path(current_file).parent_path() / path);
   char *fileContent = Flags::readFile(absolutePath.string().c_str());
-  Node::Stmt *result = parse(fileContent, absolutePath);
+  Node::Stmt *result = parse(fileContent, absolutePath.string().c_str());
   if (result == nullptr) {
     ErrorClass::error(line, column, "Could not parse the imported file '" + path + "'",
                       "", "Parser Error", path.c_str(), lexer, psr->tks, true,
