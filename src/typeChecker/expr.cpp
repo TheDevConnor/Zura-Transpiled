@@ -109,6 +109,27 @@ void TypeChecker::visitIdent(Maps *map, Node::Expr *expr) {
   // property
   ident->type = res;
   return_type = std::make_shared<SymbolType>(type_to_string(res));
+  if (isLspMode) {
+    // Check if enum type
+    if (map->enum_table.find(ident->name) != map->enum_table.end()) {
+      lsp_idents.push_back(LSPIdentifier{res, LSPIdentifierType::Enum, ident->name, ident->line, ident->pos});
+      return;
+    }
+    // check if struct type
+    if (map->struct_table.find(ident->name) != map->struct_table.end()) {
+      lsp_idents.push_back(LSPIdentifier{res, LSPIdentifierType::Struct, ident->name, ident->line, ident->pos});
+      return;
+    }
+    // check if function
+    // loop over functions
+    for (auto fn : map->function_table) {
+      if (fn.first.first == ident->name) {
+        lsp_idents.push_back(LSPIdentifier{res, LSPIdentifierType::Function, ident->name, ident->line, ident->pos});
+        return;
+      } // my pc is about to explode of battery lol fun lol
+    }
+    lsp_idents.push_back(LSPIdentifier{res, LSPIdentifierType::Variable, ident->name, ident->line, ident->pos});
+  }
 }
 
 void TypeChecker::visitBinary(Maps *map, Node::Expr *expr) {
@@ -123,9 +144,6 @@ void TypeChecker::visitBinary(Maps *map, Node::Expr *expr) {
                     "' requires the type to be an 'int' or 'float' but got '" +
                     type_to_string(lhs.get()) + "' and '" +
                     type_to_string(rhs.get()) + "'";
-
-  // std::cout << "lhs: " << type_to_string(lhs.get()) << std::endl;
-  // std::cout << "rhs: " << type_to_string(rhs.get()) << std::endl;
   
   if (!checkTypeMatch(lhs, rhs, binary->op, binary->line, binary->pos, msg)) {
     return_type = std::make_shared<SymbolType>("unknown");
@@ -195,7 +213,6 @@ void TypeChecker::visitGrouping(Maps *map, Node::Expr *expr) {
   GroupExpr *grouping = static_cast<GroupExpr *>(expr);
   visitExpr(map, grouping->expr);
   expr->asmType = createDuplicate(return_type.get());
-  ;
 }
 
 void TypeChecker::visitBool(Maps *map, Node::Expr *expr) {
@@ -304,6 +321,10 @@ void TypeChecker::visitCall(Maps *map, Node::Expr *expr) {
     return_type = std::make_shared<SymbolType>(type_to_string(fnName.second));
   }
   expr->asmType = createDuplicate(return_type.get());
+  // add an ident // ok bye its about to shutdown now grab the charger! im too far :(((((  RUNNNNNNNNNN 
+  if (isLspMode) {
+    lsp_idents.push_back(LSPIdentifier{fnName.second, LSPIdentifierType::Function, fnName.first, static_cast<IdentExpr *>(call->callee)->line, static_cast<IdentExpr *>(call->callee)->pos});
+  }
 }
 
 void TypeChecker::visitMember(Maps *map, Node::Expr *expr) {
@@ -403,7 +424,6 @@ void TypeChecker::visitIndex(Maps *map, Node::Expr *expr) {
 
   if (lhsStr.find("[]") == std::string::npos) {
     std::string msg = "Indexing requires the left hand side to be an array but got '" + lhsStr + "'";
-    std::cout << msg << std::endl;
     handleError(index->line, index->pos, msg, "", "Type Error");
     return_type = std::make_shared<SymbolType>("unknown");
     expr->asmType = new SymbolType("unknown");

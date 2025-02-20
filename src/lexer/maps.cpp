@@ -14,7 +14,7 @@ void Lexer::initLexer(const char *source, std::string file) {
   scanner.current = source;
   scanner.source = source;
   scanner.start = source;
-  scanner.column = 1;
+  scanner.column = 0;
   scanner.line = 1;
   scanner.file = file;
 

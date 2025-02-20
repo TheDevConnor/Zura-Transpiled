@@ -159,6 +159,7 @@ std::string ErrorClass::error(int line, int pos, const std::string &msg,
 }
 
 bool ErrorClass::printError() {
+  if (!shouldPrintErrors) return false; // Dont print something to console, it might mess up Literally everything...
   if (!errors.empty() && errors.size() > 0) {
     std::cout << "\r\033[2K"; // Clear the line and move to start -- overwrite previous garbage
     std::cout << "Total number of Errors: "

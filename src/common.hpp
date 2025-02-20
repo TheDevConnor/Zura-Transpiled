@@ -6,6 +6,7 @@
 
 inline std::string ZuraVersion = "";
 inline std::string get_version(const char *path);
+inline bool shouldPrintErrors = true;
 
 class FlagConfig {
 public:

@@ -1,5 +1,6 @@
-#include "./lsp.hpp"
 #include <unordered_map>
+#include "../parser/parser.hpp"
+#include "./lsp.hpp"
 
 // URI : Contents
 std::unordered_map<std::string, std::string> documents = {};
@@ -95,6 +96,7 @@ char lsp::document::charAtPos(std::string uri, Position pos) {
 void lsp::events::documentOpen(nlohmann::json& request) {
   std::string uri = request["params"]["textDocument"]["uri"];
   std::string contents = request["params"]["textDocument"]["text"];
+  TypeChecker::performCheck(Parser::parse(contents.c_str(), uri), false, true);
   if (contents.empty()) {
     documents.emplace(uri, "\n"); // the newline is very important here
   } else {
@@ -103,6 +105,7 @@ void lsp::events::documentOpen(nlohmann::json& request) {
 };
 
 void lsp::events::documentChange(nlohmann::json& request) {
+  TypeChecker::performCheck(Parser::parse(lsp::document::getText(request["params"]["textDocument"]["uri"]).c_str(), request["params"]["textDocument"]["uri"]), false, true);
   if (request["params"]["contentChanges"].size() == 1 && (!request["params"]["contentChanges"][0].contains("range"))) {
     // No range property means that Full TextDocumentChange is used - Just set directly
     std::string uri = request["params"]["textDocument"]["uri"];
@@ -150,3 +153,8 @@ void lsp::events::documentChange(nlohmann::json& request) {
     documents[uri] = result;
   }
 }
+
+std::string lsp::document::getText(std::string uri) {
+  if (!documents.contains(uri)) return "";
+  return documents[uri];
+};

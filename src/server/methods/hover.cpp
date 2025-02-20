@@ -1,5 +1,7 @@
 #include "../../helper/math/math.hpp"
+#include "../../parser/parser.hpp"
 #include "../lsp.hpp"
+#include "../logging.hpp"
 
 #include <fstream>
 
@@ -27,7 +29,8 @@ nlohmann::ordered_json lsp::methods::hover(nlohmann::json& request) {
       {"call", "It can be used to call an external function that is linked externally. The function being called must be linked and extern'd before using it.\n\nExample:\n```zura\n@link \"libc\"; # Passed to linker\n@extern \"printf\"; # Look up this symbol\n\nconst main := fn () int {\n\t@call<printf>(\"Hello, World!\"); # Call previously revealed function\n};\n```"},
       {"alloc", "It can be used to allocate a certain number of bytes in memory. The only input required is the number of the bytes to allocate and returns the pointer to the allocated memory.\n\nExample:\n```zura\n@alloc(1024); # Allocates 1024 bytes of memory in your system\n```"},
       {"free", "It can be used to free previously allocated memory using @alloc. The only inputs are the pointer and the number of bytes to free and returns a status code, 0 for success and -1 for failure..\n\nExample:\n```zura\nhave ptr: *void = @alloc(1024);\n# ...\n@free(ptr, 1024); # frees the memory at ptr\n```"},
-      {"sizeof", "It can be used to get the size of a type in bytes. The only input required is the type and returns the size of the type in bytes.\n\nExample:\n```zura\nhave x: int;\n@output(@sizeof(x)); # Outputs 8\n```"},
+      {"sizeof", "It can be used to get the size of a type in bytes, calculated at comptime. It can be useful when trying to allocate a certain number of structs that you may change the size of later. The only input required is the type and returns the size of the type in bytes.\n\nExample:\n```zura\nhave x: int;\n@output(@sizeof(x)); # 8\n\nhave y: Test;\n@alloc(@sizeof(y)); # If you change the members of Y, this will still work as intended\n```"},
+      {"memcpy", "It can be used to copy a certain number of bytes from one memory location to another. The only inputs required are the two pointers and the byte count. It is a void function.\n\nExample:\n```zura\nstruct Test {\n\tx: int;\n\ty: int;\n};\n\nhave x: Test = { x: 1, y: 2 };\nhave y: Test;\n@memcpy(&x, &y, @sizeof(x)); # Copy { 1, 2 } -> y\n```"},
     };
     std::unordered_map<std::string, std::string>::iterator closestMatch;
     int closestMatchDistance = 1000;
@@ -67,7 +70,7 @@ nlohmann::ordered_json lsp::methods::hover(nlohmann::json& request) {
       {"range", {
         {"start", {
           {"line", pos.line},
-          {"character", text.range.start.character}
+          {"character", text.range.start.character + 1}
         }},
         {"end", {
           {"line", pos.line},
@@ -81,7 +84,66 @@ nlohmann::ordered_json lsp::methods::hover(nlohmann::json& request) {
         {"value", "## Built-in function `" + text.word + "`\n\nThis is a built-in function provided by Zura.\nNo external libraries are required in order to access this function.\n" + atFunctions.at(funcName)}
       }}
     };
+  } else {
+    // A normal hover request LOL here we go!
+    // Get the type of the word
+    using namespace TypeChecker;
+    // make the TC do something!!!
+    LSPIdentifier ident = getIdentifierUnderPos(pos);
+    if (ident.ident == "*") { // illegal character ensures you cannot trick us hahahah
+      return nullptr; // Means nothing. You hovered over a space or something stupid
+    }
+    std::string type = type_to_string(ident.underlying);
+    std::string markupResult;
+    switch(ident.type) {
+      case LSPIdentifierType::Struct:
+        markupResult = "Struct `" + ident.ident + "`";
+        break;
+      case LSPIdentifierType::Enum:
+        markupResult = "Enum `" + ident.ident + "`";
+        break;
+      case LSPIdentifierType::Function:
+        markupResult = "Function `" + ident.ident + "`";
+        break;
+      case LSPIdentifierType::Variable:
+        markupResult = "Variable `" + ident.ident + "`";
+        break;
+      default:
+        markupResult = "Unknown `" + ident.ident + "`";
+        break;
+    }
+    return {
+      {"range", {
+        {"start", {
+          {"line", pos.line},
+          {"character", text.range.start.character + 1} // It was always before for some reason. I dont know why
+        }},
+        {"end", {
+          {"line", pos.line},
+          {"character", text.range.end.character}
+        }}
+      }},
+      // the actual hover text
+      // title
+      {"contents", {
+        {"kind", "markdown"},
+        {"value", markupResult}
+      }}
+    };
   }
 
   return nullptr;
+}
+
+TypeChecker::LSPIdentifier lsp::getIdentifierUnderPos(lsp::Position pos) {
+  using namespace TypeChecker;
+  if (lsp_idents.empty()) return LSPIdentifier { .ident = "*" };
+  for (LSPIdentifier &ident : lsp_idents) {
+    if ((ident.line - 1) == pos.line
+        && pos.character >= ident.pos
+        && pos.character < (ident.pos + ident.ident.size())) {
+      return ident;
+    }
+  }
+  return LSPIdentifier { .ident = "*" };
 }

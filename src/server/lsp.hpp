@@ -1,5 +1,7 @@
+#pragma once
 #include <vector>
 #include "json.hpp"
+#include "../typeChecker/type.hpp"
 
 namespace lsp {
     // -- TYPES --
@@ -48,7 +50,10 @@ namespace lsp {
     void setCharAtPos(std::string uri, Position pos, std::string changeChar);
     char charAtPos(std::string uri, Position pos);
     Word wordUnderPos(std::string uri, Position pos);
+    std::string getText(std::string uri);
   };
+
+  TypeChecker::LSPIdentifier getIdentifierUnderPos(Position pos);
 
   std::vector<std::string> split(std::string in, std::string delim);
 };

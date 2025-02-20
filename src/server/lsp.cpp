@@ -2,6 +2,7 @@
 #include <unordered_map>
 #include "lsp.hpp"
 #include "logging.hpp"
+#include "../common.hpp"
 
 void lsp::initialize() {
   lsp::main();
@@ -23,9 +24,11 @@ const static std::unordered_map<std::string, Event> eventMap = {
 };
 
 void lsp::main() {
+  
   std::string buffer = "";
   char ch;
   logging::init();
+  shouldPrintErrors = false; // DO NOT MESS UP THE CONSOLE...!!!
   while (std::cin.get(ch)) {
     // See if there is any new input from stdin
     buffer += ch;
@@ -61,7 +64,7 @@ void lsp::main() {
         }
         std::string responseStr = finalResult.dump();
         std::string header = "Content-Length: " + std::to_string(responseStr.size()) + "\r\n\r\n";
-        logging::log (header + responseStr + "\n");
+        logging::log (header + responseStr + "\n"); // newlines should NOT be in the stdout
         std::cout << (header + responseStr) << std::flush;
       } else if (eventMap.contains(request.at("method"))) {
         // These do not return results and are OK to invoke just like this

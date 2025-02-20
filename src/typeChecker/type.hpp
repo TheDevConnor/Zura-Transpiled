@@ -21,6 +21,31 @@ extern bool isType;
 void handleError(int line, int pos, std::string msg, std::string note,
                   std::string typeOfError);
 
+
+enum class LSPIdentifierType { // Types of identifiers that can be looked up with syntax highlighting
+  Function,
+  Struct,
+  Enum,
+  Variable,
+  Type,
+  Template,
+  Array,
+  EnumMember,
+  StructMember,
+  StructFunction,
+  Unknown
+};
+
+struct LSPIdentifier {
+  Node::Type *underlying;
+  LSPIdentifierType type;
+  std::string ident;
+  int line;
+  int pos;
+};
+
+inline std::vector<LSPIdentifier> lsp_idents = {};
+
 struct Maps {
 public:
   std::unordered_map<std::string, Node::Type *> global_symbol_table = {};
@@ -118,7 +143,8 @@ bool checkTypeMatch(const std::shared_ptr<SymbolType> &lhs,
                     const std::shared_ptr<SymbolType> &rhs,
                     const std::string &operation, int line, int pos,
                     std::string &msg);
-void performCheck(Node::Stmt *stmt, bool isMain = true);
+inline bool isLspMode = false;
+void performCheck(Node::Stmt *stmt, bool isMain = true, bool isLspServer = false);
 void printTables(Maps *map);
 
 std::string determineTypeKind(Maps *map, const std::string &type);

@@ -89,9 +89,6 @@ set(ZURA_SOURCE_FILES
     src/main.cpp
 )
 
-# Bootstrap the version.txt file
-file(WRITE ${CMAKE_BINARY_DIR}/version.txt "v0.1.35")
-
 # Add the version.txt file to the project
 configure_file(${CMAKE_BINARY_DIR}/version.txt ${CMAKE_BINARY_DIR}/version.txt COPYONLY)
 

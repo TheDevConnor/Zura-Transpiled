@@ -38,7 +38,7 @@ Lexer::Token Parser::PStruct::expect(PStruct *psr, TokenKind tk,
                       "Parser Error", node.current_file, lexer, psr->tks, true,
                       false, false, false, false, false);
     ErrorClass::printError();
-    exit(1);
+    return current(psr);
   }
   if (current(psr).kind != tk) {
     ErrorClass::error(current(psr).line, current(psr).column, msg, "",

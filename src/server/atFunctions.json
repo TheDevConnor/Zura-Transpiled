@@ -63,7 +63,7 @@
     "label": "sizeof",
     "detail": "Get the size of a type in bytes",
     "kind": 2,
-    "documentation": "This function returns the size of a type in bytes. This is useful for allocating memory or for debugging purposes.\nThis function takes in one argument: the type that you'd like to get the size of."
+    "documentation": "This function returns the size of a type in bytes. This can be useful when using @alloc, for example, if you want to allocate X number of struct Y..\nThis function takes in one argument: the type that you'd like to get the size of."
   },
   {
     "label": "memcpy",
