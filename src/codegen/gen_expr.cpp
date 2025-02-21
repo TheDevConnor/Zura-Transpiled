@@ -596,9 +596,11 @@ void codegen::arrayElem(Node::Expr *expr)
 void codegen::_arrayExpr(Node::Expr *expr)
 {
   ArrayExpr *e = static_cast<ArrayExpr *>(expr);
-  pushDebug(e->line, expr->file_id, e->pos);
+  // Random array just floating around here...
+  // That's not very good.
 
-  e->debug();
+  // error
+  handleError(e->line, e->pos, "Orphaned arrays are not allowed.", "Codegen", true);
 }
 
 void codegen::memberExpr(Node::Expr *expr)
@@ -633,8 +635,29 @@ void codegen::memberExpr(Node::Expr *expr)
     std::vector<StructMember> &fields = structByteSizes[structName].second;
     // Eval lhs (this will put the struct's address onto the stack)
     visitExpr(e->lhs); // this could be an ident or something
-    // Pop the struct's address into a register
-    popToRegister("%rcx");
+    /*
+     * This is an optimization for nested member expressions.
+     * In the assembly, it may look like this:
+     * leaq -8(%rbp), %rcx
+     * leaq -24(%rcx), %rcx
+     * leaq -8(%rcx), %rcx
+     * ...
+     * Now, they will be optimized to only one leaq instruction.
+     * leaq -40(%rbp), %rcx ; :D
+     */
+    // It likely looks like this: leaq -8(%rbp), %rcx --- pushq %rcx. We want to get that RBP offset there!!
+    text_section.pop_back(); // Push
+    std::string whatWasPushed = std::get<LeaInstr>(text_section.at(text_section.size() - 1).var).src;
+    text_section.pop_back();
+    bool pushedHasOffset = whatWasPushed.find("(") != std::string::npos;
+    signed int whatWasPushedOffset =
+      pushedHasOffset
+        ? (whatWasPushed.find('(') == 0
+          ? 0
+          : std::stoi(whatWasPushed.substr(0, whatWasPushed.find("(")))
+          )
+        : 0;
+    std::string whatWasPushedReg = pushedHasOffset ? whatWasPushed.substr(whatWasPushed.find('(') + 1, (whatWasPushed.size() - whatWasPushed.find('(')) - 2) : whatWasPushed;
 
     // Now, we have to do some crazy black magic shit like -8(%rcx) but we find what to replace '8' with.
     std::string fieldName = static_cast<IdentExpr *>(e->rhs)->name;
@@ -653,18 +676,24 @@ void codegen::memberExpr(Node::Expr *expr)
     // check if the type of the result is another struct (push the address instead)
     if (structByteSizes.find(getUnderlying(e->asmType)) != structByteSizes.end()) {
       // Instead of pushing straight up, we must lea
-      push(Instr{.var=LeaInstr{.size=DataSize::Qword, .dest="%rcx", .src=std::to_string(offset) + "(%rcx)"},.type=InstrType::Lea},Section::Main);
+      if (pushedHasOffset) {
+        push(Instr{.var=LeaInstr{.size=DataSize::Qword, .dest="%rcx", .src=std::to_string(whatWasPushedOffset + (offset)) + "(" + whatWasPushedReg + ")"},.type=InstrType::Lea},Section::Main);
+      } else {
+        push(Instr{.var=LeaInstr{.size=DataSize::Qword, .dest="%rcx", .src=std::to_string(offset) + "(" + whatWasPushedReg + ")"},.type=InstrType::Lea},Section::Main);
+      }
       pushRegister("%rcx");
       return;
     }
     // submit the answer :D
     if (offset == 0)
     {
-      pushRegister("(%rcx)");
+      if (pushedHasOffset) pushRegister(whatWasPushed);
+      else pushRegister("(" + whatWasPushed + ")"); // It was not an effective address. It was just a register
     }
     else
     {
-      pushRegister(std::to_string(offset) + "(%rcx)");
+      if (pushedHasOffset) pushRegister(std::to_string(whatWasPushedOffset + offset) + "(" + whatWasPushedReg + ")");
+      else pushRegister(std::to_string(offset) + "(" + whatWasPushed + ")");
     }
     return;
   }
@@ -717,9 +746,8 @@ void codegen::memberExpr(Node::Expr *expr)
 
 void codegen::_struct(Node::Expr *expr)
 {
-  std::cerr << "Lonely struct expression just dangling here. That's not allowed!" << std::endl;
-  exit(-1);
-  return;
+  StructExpr *e = static_cast<StructExpr *>(expr); // Needed for the line and pos numbers
+  handleError(e->line, e->pos, "Orphaned structs are not allowed.", "Codegen", true);
 };
 
 void codegen::addressExpr(Node::Expr *expr)

@@ -2,19 +2,19 @@
   {
     "label": "call",
     "detail": "Call a linked function",
-    "kind": 2,
+    "kind": 3,
     "documentation": "This native function pairs with the @link and @extern directives to call a native function from an externally linked library.\nThe parameters will be appended in accordance with the ABI."
   },
   {
     "label": "link",
     "detail": "Link an external library",
-    "kind": 2,
+    "kind": 3,
     "documentation": "This directive pairs with the @call and @extern directives to link a library to the outputted assembly if the project is built into an executable.\nIt is also useful for humans reading your code to understand what external libraries you are using. This function assumes that the library(s) in question are already installed on your system and located in /usr/include."
   },
   {
     "label": "extern",
     "detail": "Declare an external function: linked from an external library",
-    "kind": 2,
+    "kind": 3,
     "documentation": "This directive pairs with the @call and @link directives to declare the use of a function that is implemented in an external library.\nThis directive tells the linker that this symbol will be resolved by link-time for each @call that happens to use it.\nThis directive is useful for interacting with external libraries written in another ABI-compliant language, for binding purposes."
   },
   {
@@ -32,43 +32,43 @@
   {
     "label": "import",
     "detail": "Import the global functions from another source file",
-    "kind": 2,
+    "kind": 3,
     "documentation": "By declaring functions as public, they will be globally accessible to any other source file that imports them.\nThe global namespace (scope) of the two files will be joined together in the outputted assembly."
   },
   {
     "label": "output",
     "detail": "Print a list of characters to the console (stdout)",
-    "kind": 2,
+    "kind": 3,
     "documentation": "This function prints each of its inputs to the console by converting to a string and writing to stdout.\nThis function is helpful when debugging or asking for user input.\nAccepted types include:\n\n- int\n- char\n- *char\n- []char\n- str\n- bool"
   },
   {
     "label": "input",
     "detail": "Take in a list of characters from the console (stdin)",
-    "kind": 2,
+    "kind": 3,
     "documentation": "This function reads from stdin until either a linebreak is reached or the maximum buffer size is reached.\nThis function takes in two arguments: a []char or *char to place the input, and an int which specifies the maximum number of bytes to read."
   },
   {
     "label": "alloc",
     "detail": "Allocates a certain number of bytes in memory",
-    "kind": 2,
+    "kind": 3,
     "documentation": "This function will request that the system allocate a page of memory that is the inputted size in bytes.\nThis function takes in one argument: an int that specifies the number of bytes to allocate."
   },
   {
     "label": "free",
     "detail": "Frees memory allocated by @alloc",
-    "kind": 2,
+    "kind": 3,
     "documentation":"This function frees memory that was previously allocated using @alloc. Ensure that all memory is freed before you exit to ensure your program does not have a memory leak.\nThis function takes in two arguments: the pointer of the freed memory (returned by @alloc) and the number of bytes that you'd like to free."
   }, 
   {
     "label": "sizeof",
     "detail": "Get the size of a type in bytes",
-    "kind": 2,
+    "kind": 3,
     "documentation": "This function returns the size of a type in bytes. This can be useful when using @alloc, for example, if you want to allocate X number of struct Y..\nThis function takes in one argument: the type that you'd like to get the size of."
   },
   {
     "label": "memcpy",
     "detail": "Copy a block of memory from one location to another",
-    "kind": 2,
+    "kind": 3,
     "documentation": "This function copies a block of memory from one location to another. This is useful for copying arrays or structs.\nThis function takes in three arguments: the destination pointer, the source pointer, and the number of bytes to copy."
   }
 ]

@@ -14,6 +14,8 @@ Add and recognize more int types in asm. (Ex. byte, short, long, quad).
  TODO: Fix the typeCheckers indexing for chars as well as nested member exprs. (Fixed: nested member expr)
 
  add in the lsp fully
+  Fix Hover requests to be put in the right place
+  Fix Completion requests to not just hang and eventually crash (Infinite loop)
  NOTE: Read into the calling convention for the lsp to comminicat with vscode and nvim respectfully
  NOTE: Good source for lsp integration 
         https://code.visualstudio.com/api/language-extensions/language-server-extension-guide

@@ -8,19 +8,17 @@ void TypeChecker::performCheck(Node::Stmt *stmt, bool isMain, bool isLspServer) 
   foundMain = false;
   needsReturn = false;
   return_type = nullptr;
-  lsp_idents.clear();
-  
-  // std::unique_ptr<Maps> map = std::make_unique<Maps>();
-  Maps *map = new Maps();
   isLspMode = isLspServer;
+  lsp_idents.clear();
+  map.reset();
 
-  visitStmt(map, stmt); // Pass the instance of Maps to visitStmt 
+  map = std::make_unique<Maps>();
+
+  visitStmt(map.get(), stmt); // Pass the instance of Maps to visitStmt 
   if (!foundMain && isMain) {
     handleError(0, 0, "No main function found",
                  "Try adding this function: \n\tconst main := fn() int { \n\t  "
                  "  return 0\n\t}",
                  "Type Error");
   }
-
-  delete map;
 }

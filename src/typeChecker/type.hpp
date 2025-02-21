@@ -92,6 +92,8 @@ public:
       {"++", UnaryOP::Increment}, {"--", UnaryOP::Decrement}};
 };
 
+inline std::unique_ptr<Maps> map = nullptr;
+
 std::string type_to_string(Node::Type *type);
 
 template <typename T, typename U>

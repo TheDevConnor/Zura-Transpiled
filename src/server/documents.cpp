@@ -105,16 +105,17 @@ void lsp::events::documentOpen(nlohmann::json& request) {
 };
 
 void lsp::events::documentChange(nlohmann::json& request) {
-  TypeChecker::performCheck(Parser::parse(lsp::document::getText(request["params"]["textDocument"]["uri"]).c_str(), request["params"]["textDocument"]["uri"]), false, true);
   if (request["params"]["contentChanges"].size() == 1 && (!request["params"]["contentChanges"][0].contains("range"))) {
     // No range property means that Full TextDocumentChange is used - Just set directly
     std::string uri = request["params"]["textDocument"]["uri"];
     std::string contents = request["params"]["contentChanges"][0]["text"];
+    // check if teh character was a newline or a semicolon (typecheck again if so)
     if (contents.empty()) {
       documents[uri] = "\n"; // the newline is very important here
     } else {
       documents[uri] = contents;
     }
+    TypeChecker::performCheck(Parser::parse(lsp::document::getText(request["params"]["textDocument"]["uri"]).c_str(), request["params"]["textDocument"]["uri"]), false, true);
     return;
   }
 
@@ -152,6 +153,8 @@ void lsp::events::documentChange(nlohmann::json& request) {
     if (result.empty()) result = "\n";
     documents[uri] = result;
   }
+  // This is probably fine
+  TypeChecker::performCheck(Parser::parse(lsp::document::getText(request["params"]["textDocument"]["uri"]).c_str(), request["params"]["textDocument"]["uri"]), false, true);
 }
 
 std::string lsp::document::getText(std::string uri) {
