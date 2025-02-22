@@ -30,13 +30,11 @@ void codegen::gen(Node::Stmt *stmt, bool isSaved, std::string output_filename,
   // stmt->debug();
   visitStmt(stmt);
 
-  // Make 2 passes of optimization
+  // Make 3 passes of optimization
+  text_section = Optimizer::optimizeInstrs(text_section);
   text_section = Optimizer::optimizeInstrs(text_section);
   text_section = Optimizer::optimizeInstrs(text_section);
   
-  // functions are pushed to text anyway so idk wtf im doing with my life anymore lol
-  head_section = Optimizer::optimizeInstrs(head_section);
-  head_section = Optimizer::optimizeInstrs(head_section);
   // data section cannot be optimized
   // rodata section cant be optimized either
 

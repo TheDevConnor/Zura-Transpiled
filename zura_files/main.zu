@@ -11,7 +11,6 @@ const main := fn () int {
 
   @input(fileDescriptor, contents, 256);
   @output(1, contents); # Repeat it back to the console
-  
   @close(fileDescriptor); # Clean up after ourselves
   return 0;
 };

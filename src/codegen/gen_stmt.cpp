@@ -321,7 +321,7 @@ void codegen::varDecl(Node::Stmt *stmt) {
           s->expr, static_cast<ArrayType *>(s->type)->constSize,
           s->name); // s->name so it can be inserted to variableTable, s->type
                     // so we know the byte sizes.
-      variableCount += getByteSizeOfType(at->underlying) * at->constSize;
+      variableCount += (getByteSizeOfType(at->underlying) * at->constSize) + 8;
     } else {
       visitExpr(s->expr);
       popToRegister(where); // For values small enough to fit in a register.
@@ -1015,7 +1015,7 @@ void codegen::declareArrayVariable(Node::Expr *expr, short int arrayLength,
           push(Instr{.var=MovInstr{.dest=std::to_string(-(variableCount + totalSize - remainderBytes + i)) + "(%rbp)", .src="$0", .destSize=DataSize::Byte, .srcSize=DataSize::Byte}, .type=InstrType::Mov}, Section::Main);
         }
       }
-      variableTable.insert({varName, std::to_string(-(variableCount + arrayLength)) + "(%rbp)"});
+      variableTable.insert({varName, std::to_string(-(variableCount + totalSize)) + "(%rbp)"});
       return;
     }
     // C allocates 16 bytes near the top for some reason, let's rip them off and do the same
@@ -1044,7 +1044,7 @@ void codegen::declareArrayVariable(Node::Expr *expr, short int arrayLength,
       pushLinker("rep stosb\n\t",Section::Main); // Repeat %rcx times to fill ptr %rdx with the value of %rax (every 8 bytes)
     }
     // Add the array to the variable table
-    variableTable.insert({varName, std::to_string(-(variableCount + arrayLength)) + "(%rbp)"});
+    variableTable.insert({varName, std::to_string(-(variableCount + totalSize)) + "(%rbp)"});
     return;
   }
 
@@ -1070,7 +1070,6 @@ void codegen::declareArrayVariable(Node::Expr *expr, short int arrayLength,
     popToRegister(std::to_string(-(arrayBase + ((i-1) * underlyingByteSize))) +
                   "(%rbp)");
   }
-  // Add the struct to the variable table
 
   // NOTE: The value of arrays, when referencing their variable name, is a pointer to element #1.
   // NOTE: So let's do the same calculation as earlier to find that very 1st byte.
@@ -1107,6 +1106,7 @@ void codegen::closeStmt(Node::Stmt *stmt) {
   visitExpr(s->fd); // rdi
   popToRegister("%rdi");   // rdi
   // RAX is constant in this case- constant syscall number
-  push(Instr{.var=XorInstr{.lhs="%rax",.rhs="%rax"},.type=InstrType::Xor},Section::Main);
+  // Stupid AI! Rax is not 0...
+  moveRegister("%rax", "$3", DataSize::Qword, DataSize::Qword);
   push(Instr{.var=Syscall{.name="close"},.type=InstrType::Syscall},Section::Main);
 }

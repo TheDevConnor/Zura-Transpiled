@@ -934,7 +934,7 @@ void codegen::openExpr(Node::Expr *expr) {
   // visitExpr(e->canCreate);
 
   // Default flags: O_RDWR | O_CREAT | O_TRUNC
-  // values:          2    |   0100  |  1000   = 578
+  // values:          2    |   100   |  1000   = 578
 
   // Create the syscall
   popToRegister("%rdi");

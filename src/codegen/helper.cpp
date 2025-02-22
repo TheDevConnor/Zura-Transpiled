@@ -321,10 +321,10 @@ void codegen::handleStrDisplay(Node::Expr *fd, Node::Expr *arg) {
   nativeFunctionsUsed[NativeASMFunc::strlen] = true;
   visitExpr(arg);
   popToRegister("%rsi"); // String address
-  moveRegister("%rdi", "%rsi", DataSize::Qword, DataSize::Qword);
   // calls might mess up any variables on the stack
   // lets make sure that does not happen by subtracting from stack
   push(Instr{.var=SubInstr{.lhs="%rsp",.rhs="$"+std::to_string(variableCount)},.type=InstrType::Sub},Section::Main);
+  moveRegister("%rdi", "%rsi", DataSize::Qword, DataSize::Qword);
   push(Instr{.var = CallInstr{.name = "native_strlen"}, .type = InstrType::Call},
        Section::Main);
   push(Instr{.var=AddInstr{.lhs="%rsp",.rhs="$"+std::to_string(variableCount)},.type=InstrType::Sub},Section::Main);

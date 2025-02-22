@@ -1,5 +1,4 @@
 #include "optimize.hpp"
-
 void Optimizer::optimizePair(std::vector<Instr> *output, Instr &prev, Instr &curr) {
     if (!prev.optimize || !curr.optimize) {
         appendAndResetPrev(output, curr, prev);
@@ -61,7 +60,7 @@ void Optimizer::appendAndResetPrev(std::vector<Instr> *output, Instr &curr, Inst
 void Optimizer::processMov(std::vector<Instr> *output, Instr &prev, Instr &curr) {
     MovInstr currAsMov = std::get<MovInstr>(curr.var);
 
-    if (currAsMov.dest == currAsMov.src) return;
+    if (currAsMov.dest == currAsMov.src) return tryPop(output);
 
     if (prev.type == InstrType::Mov) {
         MovInstr prevAsMov = std::get<MovInstr>(prev.var);
@@ -71,6 +70,9 @@ void Optimizer::processMov(std::vector<Instr> *output, Instr &prev, Instr &curr)
             prev = Instr {.var = {}, .type=InstrType::NONE};
             return;
         }
+    } else if (prev.type == InstrType::Lea) {
+      processLeaMovPair(output, prev, curr);
+      return;
     }
 
     output->push_back(curr);
@@ -200,6 +202,38 @@ void Optimizer::simplifyPushPopPair(std::vector<Instr> *output, Instr &prev, Ins
     prev = newInstr;
     output->push_back(newInstr);
     return;
+}
+
+
+void Optimizer::processLeaMovPair(std::vector<Instr> *output, Instr &prev, Instr &curr) {
+    MovInstr currAsMov = std::get<MovInstr>(curr.var);
+    LeaInstr prevAsLea = std::get<LeaInstr>(prev.var);
+
+    /*
+     * leaq -8(%rbp), %rax
+     * movq %rax, %rdi
+     is the same as
+     * leaq -8(%rbp), %rdi
+     */
+    if (currAsMov.src == prevAsLea.dest) {
+        // check if the dest was an effective address
+        if (currAsMov.dest.find('(') != std::string::npos) {
+          output->push_back(curr);
+          return;
+        }
+        // Get rid of the mov and the leaq
+        tryPop(output);
+        // Create a new lea instruction with the mov's src
+        Instr newInstr = {
+          .var = LeaInstr{.size = prevAsLea.size, .dest = currAsMov.dest, .src = prevAsLea.src},
+          .type = InstrType::Lea
+        };
+        output->push_back(newInstr);
+        prev = Instr {.var = {}, .type=InstrType::NONE};
+        return;
+    } else {
+        output->push_back(curr);
+    }
 }
 
 // Optimize pairs with a useless instruction in between
