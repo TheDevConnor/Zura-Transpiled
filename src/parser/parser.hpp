@@ -93,7 +93,7 @@ Node::Type *symbol_table(PStruct *psr);
 Node::Type *array_type(PStruct *psr);
 Node::Type *parseType(PStruct *psr, BindingPower bp);
 Node::Type *pointer_type(PStruct *psr);
-Node::Expr *null_type(PStruct *psr);
+Node::Expr *nullType(PStruct *psr);
 Node::Type *type_application(PStruct *psr);
 Node::Type *function_type(PStruct *psr);
 
@@ -107,15 +107,16 @@ Node::Expr *unary(PStruct *psr);
 Node::Expr *_prefix(PStruct *psr);
 Node::Expr *group(PStruct *psr);
 Node::Expr *array(PStruct *psr);
-Node::Expr *bool_expr(PStruct *psr);
-Node::Expr *cast_expr(PStruct *psr);
+Node::Expr *boolExpr(PStruct *psr);
+Node::Expr *castExpr(PStruct *psr);
 Node::Expr *externalCall(PStruct *psr);
 Node::Expr *structExpr(PStruct *psr);
 Node::Expr *address(PStruct *psr);
-Node::Expr *alloc_expr(PStruct *psr);
-Node::Expr *free_expr(PStruct *psr);
-Node::Expr *sizeof_expr(PStruct *psr);
-Node::Expr *memcpy_expr(PStruct *psr);
+Node::Expr *allocExpr(PStruct *psr);
+Node::Expr *freeExpr(PStruct *psr);
+Node::Expr *sizeofExpr(PStruct *psr);
+Node::Expr *memcpyExpr(PStruct *psr);
+Node::Expr *openExpr(PStruct *psr);
 // Binary Functions
 Node::Expr *_postfix(PStruct *psr, Node::Expr *left, BindingPower bp);
 Node::Expr *binary(PStruct *psr, Node::Expr *left, BindingPower bp);
@@ -145,5 +146,7 @@ Node::Stmt *continueStmt(PStruct *psr, std::string name);
 Node::Stmt *linkStmt(PStruct *psr, std::string name);
 Node::Stmt *externStmt(PStruct *psr, std::string name);
 Node::Stmt *inputStmt(PStruct *psr, std::string name);
+Node::Stmt *closeStmt(PStruct *psr, std::string name);
+
 Node::Stmt *exprStmt(PStruct *psr);
 } // namespace Parser

@@ -317,7 +317,6 @@ void codegen::varDecl(Node::Stmt *stmt) {
     } else if (s->type->kind == ND_ARRAY_TYPE ||
                s->type->kind == ND_ARRAY_AUTO_FILL) {
       ArrayType *at = static_cast<ArrayType *>(s->type);
-      std::cout << "Array type: " << at->underlying->kind << std::endl;
       declareArrayVariable(
           s->expr, static_cast<ArrayType *>(s->type)->constSize,
           s->name); // s->name so it can be inserted to variableTable, s->type
@@ -1089,10 +1088,25 @@ void codegen::inputStmt(Node::Stmt *stmt) {
   // do in reverse order because one of these may screw up the values of the registers
   visitExpr(s->bufferOut); // rsi (should be leaq'd)
   visitExpr(s->maxBytes);  // rdx
+  visitExpr(s->fd);        // rdi
+  popToRegister("%rdi");   // rdi
   popToRegister("%rdx");   // rdx
   popToRegister("%rsi");   // rsi
   // RAX and RDI are constant in this case- constant syscall number and constant file descriptor (fd of stdin is 0)
   push(Instr{.var=XorInstr{.lhs="%rax",.rhs="%rax"},.type=InstrType::Xor},Section::Main);
-  push(Instr{.var=XorInstr{.lhs="%rdi",.rhs="%rdi"},.type=InstrType::Xor},Section::Main);
   push(Instr{.var=Syscall{.name="read"},.type=InstrType::Syscall},Section::Main);
+}
+
+
+void codegen::closeStmt(Node::Stmt *stmt) {
+  CloseStmt *s = static_cast<CloseStmt *>(stmt);
+  pushDebug(s->line, stmt->file_id, s->pos);
+
+  // Now that we printed the "prompt", we now have to make the syscall using the values
+  // do in reverse order because one of these may screw up the values of the registers
+  visitExpr(s->fd); // rdi
+  popToRegister("%rdi");   // rdi
+  // RAX is constant in this case- constant syscall number
+  push(Instr{.var=XorInstr{.lhs="%rax",.rhs="%rax"},.type=InstrType::Xor},Section::Main);
+  push(Instr{.var=Syscall{.name="close"},.type=InstrType::Syscall},Section::Main);
 }

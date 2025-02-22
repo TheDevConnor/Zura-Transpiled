@@ -98,6 +98,8 @@ enum TokenKind {
   FREE,
   MEMCPY,
   SIZEOF,
+  OPEN,  // open a file and return a fd from its path
+  CLOSE, // close a fd
 
   // Error
   ERROR_,

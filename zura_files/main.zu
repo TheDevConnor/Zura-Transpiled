@@ -1,33 +1,17 @@
-const InnerTest2 := struct {
-  x: int,
-  y: int,
-};
-
-const InnerTest := struct {
-  x: int,
-  y: InnerTest2,
-};
-
-const Test := struct {
-  a: int,
-  b: int,
-  c: InnerTest,
-};
-
 const main := fn () int {
-  have a: Test = {
-    a: 1,
-    b: 2,
-    c: {
-      x: 3,
-      y: {
-        x: 4,
-        y: 5,
-      },
-    }
-  };
+  have path: str = "version.txt";
+  have contents: [256]char = [0]; # autofill with 0
 
-  @output(a.a, " ", a.b, " ", a.c.x, " ", a.c.y.x, " ", a.c.y.y, "\n"); # 1 2 3 4 5
+  have fileDescriptor: int = @open(path, true, false, false); # Can read, not write, not create
+  @output(1, fileDescriptor, "\n"); # Works..?
+  if (fileDescriptor < 0) {
+    @output(1, "Error opening file\n");
+    return -1;
+  }
 
+  @input(fileDescriptor, contents, 256);
+  @output(1, contents); # Repeat it back to the console
+  
+  @close(fileDescriptor); # Clean up after ourselves
   return 0;
 };

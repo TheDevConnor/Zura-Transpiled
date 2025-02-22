@@ -200,6 +200,7 @@ void visitLink(Maps *map, Node::Stmt *stmt);
 void visitExtern(Maps *map, Node::Stmt *stmt);
 void visitMatch(Maps *map, Node::Stmt *stmt);
 void visitInput(Maps *map, Node::Stmt *stmt);
+void visitClose(Maps *map, Node::Stmt *stmt);
 
 // !Expr functions
 void visitTemplateCall(Maps *map, Node::Expr *expr);
@@ -228,4 +229,5 @@ void visitAllocMemory(Maps *map, Node::Expr *expr);
 void visitFreeMemory(Maps *map, Node::Expr *expr);
 void visitMemcpyMemory(Maps *map, Node::Expr *expr);
 void visitSizeof(Maps *map, Node::Expr *expr);
+void visitOpen(Maps *map, Node::Expr *expr);
 } // namespace TypeChecker

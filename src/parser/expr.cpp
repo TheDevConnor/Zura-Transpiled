@@ -87,7 +87,7 @@ Node::Expr *Parser::_prefix(PStruct *psr) {
   return new PrefixExpr(line, column, right, op.value, codegen::getFileID(psr->current_file));
 }
 
-Node::Expr *Parser::alloc_expr(PStruct *psr) {
+Node::Expr *Parser::allocExpr(PStruct *psr) {
   int line = psr->tks[psr->pos].line;
   int column = psr->tks[psr->pos].column;
 
@@ -99,7 +99,7 @@ Node::Expr *Parser::alloc_expr(PStruct *psr) {
   return new AllocMemoryExpr(line, column, bytes, codegen::getFileID(psr->current_file));
 }
 
-Node::Expr *Parser::free_expr(PStruct *psr) {
+Node::Expr *Parser::freeExpr(PStruct *psr) {
   int line = psr->tks[psr->pos].line;
   int column = psr->tks[psr->pos].column;
 
@@ -116,7 +116,7 @@ Node::Expr *Parser::free_expr(PStruct *psr) {
 };
 
 // update cast syntax to `@cast<type>(expr)`
-Node::Expr *Parser::cast_expr(PStruct *psr) {
+Node::Expr *Parser::castExpr(PStruct *psr) {
   int line = psr->tks[psr->pos].line;
   int column = psr->tks[psr->pos].column;
 
@@ -138,7 +138,7 @@ Node::Expr *Parser::cast_expr(PStruct *psr) {
   return new CastExpr(line, column, castee, castee_type, codegen::getFileID(psr->current_file));
 }
 
-Node::Expr *Parser::sizeof_expr(PStruct *psr) {
+Node::Expr *Parser::sizeofExpr(PStruct *psr) {
   int line = psr->tks[psr->pos].line;
   int column = psr->tks[psr->pos].column;
   psr->expect(psr, SIZEOF, "Expected 'SIZEOF' keyword!");
@@ -152,7 +152,7 @@ Node::Expr *Parser::sizeof_expr(PStruct *psr) {
   return new SizeOfExpr(line, column, expr, codegen::getFileID(psr->current_file));
 }
 
-Node::Expr *Parser::memcpy_expr(PStruct *psr) {
+Node::Expr *Parser::memcpyExpr(PStruct *psr) {
   int line = psr->tks[psr->pos].line;
   int column = psr->tks[psr->pos].column;
   psr->expect(psr, MEMCPY, "Expected 'MEMCPY' keyword!");
@@ -404,7 +404,7 @@ Node::Expr *Parser::resolution(PStruct *psr, Node::Expr *left,
   return new ResolutionExpr(line, column, left, right, codegen::getFileID(psr->current_file));
 }
 
-Node::Expr *Parser::bool_expr(PStruct *psr) {
+Node::Expr *Parser::boolExpr(PStruct *psr) {
   int line = psr->tks[psr->pos].line;
   int column = psr->tks[psr->pos].column;
 
@@ -453,7 +453,54 @@ Node::Expr *Parser::address(PStruct *psr) {
   return new AddressExpr(line, column, expr, codegen::getFileID(psr->current_file));
 }
 
-Node::Expr *Parser::null_type(PStruct *psr) {
+Node::Expr *Parser::nullType(PStruct *psr) {
   psr->advance(psr);
   return new NullExpr(psr->tks[psr->pos].line, psr->tks[psr->pos].column, codegen::getFileID(psr->current_file));
+};
+
+Node::Expr *Parser::openExpr(PStruct *psr) {
+  int line = psr->tks[psr->pos].line;
+  int column = psr->tks[psr->pos].column;
+  psr->expect(psr, TokenKind::OPEN,
+              "Expected an OPEN keyword to start an open expr!");
+  
+  psr->expect(psr, TokenKind::LEFT_PAREN,
+              "Expected a L_Paren to start an open expr!");
+  
+  Node::Expr *filePath = parseExpr(psr, defaultValue);
+
+  Node::Expr *canRead = nullptr;
+  Node::Expr *canWrite = nullptr;
+  Node::Expr *canCreate = nullptr;
+
+  // check if the next character is NOT a right paran
+  if (psr->current(psr).kind != TokenKind::RIGHT_PAREN) {
+    if (psr->current(psr).kind == TokenKind::COMMA)
+      psr->expect(psr, TokenKind::COMMA,
+                  "Expected a COMMA after the file path in an open expr!");
+    canRead = parseExpr(psr, defaultValue);
+  }
+  // do it again for canWrite
+  if (psr->current(psr).kind != TokenKind::RIGHT_PAREN) {
+    if (psr->current(psr).kind == TokenKind::COMMA)
+      psr->expect(psr, TokenKind::COMMA,
+                "Expected a COMMA after the canRead in an open expr!");
+    canWrite = parseExpr(psr, defaultValue);
+  }
+  // do it again for canCreate
+  if (psr->current(psr).kind != TokenKind::RIGHT_PAREN) {
+    if (psr->current(psr).kind == TokenKind::COMMA)
+      psr->expect(psr, TokenKind::COMMA,
+                  "Expected a COMMA after the canWrite in an open expr!");
+    canCreate = parseExpr(psr, defaultValue);
+  }
+  // this time there MUST be a closing parenthesis
+  psr->expect(psr, TokenKind::RIGHT_PAREN,
+              "Expected a R_Paren to end an open expr!");
+
+  // Return!
+  if (canRead == nullptr) canRead = new BoolExpr(line, column, true, codegen::getFileID(psr->current_file));
+  if (canWrite == nullptr) canWrite = new BoolExpr(line, column, true, codegen::getFileID(psr->current_file));
+  if (canCreate == nullptr) canCreate = new BoolExpr(line, column, true, codegen::getFileID(psr->current_file));
+  return new OpenExpr(line, column, filePath, canRead, canWrite, canCreate, codegen::getFileID(psr->current_file));
 };

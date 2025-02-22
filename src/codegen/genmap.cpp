@@ -17,6 +17,7 @@ void codegen::initMaps() {
       {ND_ENUM_STMT, enumDecl},      {ND_IMPORT_STMT, importDecl},
       {ND_LINK_STMT, linkFile},      {ND_EXTERN_STMT, externName},
       {ND_MATCH_STMT, matchStmt},    {ND_INPUT_STMT, inputStmt},
+      {ND_CLOSE, closeStmt}
   };
   exprHandlers = {
       {ND_BINARY, binary},
@@ -45,6 +46,7 @@ void codegen::initMaps() {
       {ND_ALLOC_MEMORY, allocExpr},
       {ND_SIZEOF, sizeofExpr},
       {ND_MEMCPY_MEMORY, memcpyExpr},
+      {ND_OPEN, openExpr}
   };
   opMap = {{"+", "add"},   {"-", "sub"},    {"*", "imul"}, {"/", "idiv"},
            {"%", "mod"}, // mod is div but special

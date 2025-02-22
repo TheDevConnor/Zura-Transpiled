@@ -64,6 +64,7 @@ void Parser::createMaps() {
       {TokenKind::BREAK, breakStmt},      {TokenKind::CONTINUE, continueStmt},
       {TokenKind::LINK, linkStmt},        {TokenKind::EXTERN, externStmt},
       {TokenKind::MATCH, matchStmt},      {TokenKind::INPUT, inputStmt},
+      {TokenKind::CLOSE, closeStmt},
   };
   nud_lu = {
       {TokenKind::INT, primary},           {TokenKind::FLOAT, primary},
@@ -71,12 +72,13 @@ void Parser::createMaps() {
       {TokenKind::LEFT_PAREN, group},      {TokenKind::MINUS, unary},
       {TokenKind::PLUS_PLUS, _prefix},     {TokenKind::BANG, unary},
       {TokenKind::MINUS_MINUS, _prefix},   {TokenKind::LEFT_BRACKET, array},
-      {TokenKind::TR, bool_expr},          {TokenKind::FAL, bool_expr},
-      {TokenKind::CAST, cast_expr},        {TokenKind::CALL, externalCall},
+      {TokenKind::TR, boolExpr},          {TokenKind::FAL, boolExpr},
+      {TokenKind::CAST, castExpr},        {TokenKind::CALL, externalCall},
       {TokenKind::LEFT_BRACE, structExpr}, {TokenKind::LAND, address},
-      {TokenKind::NIL, null_type},         {TokenKind::CHAR, primary},
-      {TokenKind::ALLOC, alloc_expr},      {TokenKind::FREE, free_expr},
-      {TokenKind::SIZEOF, sizeof_expr},    {TokenKind::MEMCPY, memcpy_expr},
+      {TokenKind::NIL, nullType},         {TokenKind::CHAR, primary},
+      {TokenKind::ALLOC, allocExpr},      {TokenKind::FREE, freeExpr},
+      {TokenKind::SIZEOF, sizeofExpr},    {TokenKind::MEMCPY, memcpyExpr},
+      {TokenKind::OPEN, openExpr},
   };
   led_lu = {
       {TokenKind::PLUS, binary},

@@ -74,6 +74,7 @@ void linkFile(Node::Stmt *stmt);
 void externName(Node::Stmt *stmt);
 void matchStmt(Node::Stmt *stmt);
 void inputStmt(Node::Stmt *stmt);
+void closeStmt(Node::Stmt *stmt);
 
 void _arrayExpr(Node::Expr *expr);
 void arrayElem(Node::Expr *expr);
@@ -94,6 +95,7 @@ void allocExpr(Node::Expr *expr);
 void freeExpr(Node::Expr *expr);
 void sizeofExpr(Node::Expr *expr);
 void memcpyExpr(Node::Expr *expr);
+void openExpr(Node::Expr *expr);
 
 void assignStructMember(Node::Expr *expr);
 void assignArray(Node::Expr *expr);
@@ -265,12 +267,12 @@ inline static const std::vector<std::string> floatArgOrder = {"%xmm0", "%xmm1", 
 
 // Helper functions for printing to the console
 void prepareSyscallWrite();
-void handlePtrDisplay(Node::Expr *arg, int line, int pos);
-void handleArrayDisplay(Node::Expr *arg, int line, int pos); // []char only, realistically
-void handleLiteralDisplay(Node::Expr *arg);
-void handleStrDisplay(Node::Expr *arg);
-void handlePrimitiveDisplay(Node::Expr *arg);
-void handleFloatDisplay(Node::Expr *arg);
+void handlePtrDisplay(Node::Expr *fd, Node::Expr *arg, int line, int pos);
+void handleArrayDisplay(Node::Expr *fd, Node::Expr *arg, int line, int pos); // []char only, realistically
+void handleLiteralDisplay(Node::Expr *fd, Node::Expr *arg);
+void handleStrDisplay(Node::Expr *fd, Node::Expr *arg);
+void handlePrimitiveDisplay(Node::Expr *fd, Node::Expr *arg);
+void handleFloatDisplay(Node::Expr *fd, Node::Expr *arg);
 
 // Helper function to pop the value from the stack to a register
 void moveRegister(const std::string &dest, const std::string &src, DataSize dest_size, DataSize src_size);

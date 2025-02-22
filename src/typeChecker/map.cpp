@@ -33,6 +33,7 @@ std::vector<std::pair<NodeKind, TypeChecker::StmtNodeHandler>>
         {NodeKind::ND_EXTERN_STMT, visitExtern},
         {NodeKind::ND_MATCH_STMT, visitMatch},
         {NodeKind::ND_INPUT_STMT, visitInput},
+        {NodeKind::ND_CLOSE, visitClose}
 };
 
 std::vector<std::pair<NodeKind, TypeChecker::ExprNodeHandler>>
@@ -64,6 +65,7 @@ std::vector<std::pair<NodeKind, TypeChecker::ExprNodeHandler>>
         {NodeKind::ND_ALLOC_MEMORY, visitAllocMemory},
         {NodeKind::ND_SIZEOF, visitSizeof},
         {NodeKind::ND_MEMCPY_MEMORY, visitMemcpyMemory},
+        {NodeKind::ND_OPEN, visitOpen}
 };
 
 Node::Stmt *TypeChecker::StmtAstLookup(Node::Stmt *node, Maps *maps) {

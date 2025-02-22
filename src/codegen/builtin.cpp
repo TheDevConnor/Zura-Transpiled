@@ -3,7 +3,7 @@
 #include <unordered_map>
 
 void codegen::print(Node::Stmt *stmt) {
-  PrintStmt *print = static_cast<PrintStmt *>(stmt);
+  OutputStmt *print = static_cast<OutputStmt *>(stmt);
 
   push(Instr{.var = Comment{.comment = "print stmt"}, .type = InstrType::Comment}, Section::Main);
   pushDebug(print->line, stmt->file_id);
@@ -11,17 +11,17 @@ void codegen::print(Node::Stmt *stmt) {
   for (Node::Expr *arg : print->args) {
     std::string argType = getUnderlying(arg->asmType);
     if (argType.find("*") == 0)
-      handlePtrDisplay(arg, print->line, print->pos);
+      handlePtrDisplay(print->fd, arg, print->line, print->pos);
     else if (arg->kind == ND_INT || arg->kind == ND_BOOL || arg->kind == ND_CHAR || arg->kind == ND_FLOAT)
-      handleLiteralDisplay(arg);
+      handleLiteralDisplay(print->fd, arg);
     else if (argType == "str")
-      handleStrDisplay(arg);
+      handleStrDisplay(print->fd, arg);
     else if (argType == "int" || argType == "char")
-      handlePrimitiveDisplay(arg);
+      handlePrimitiveDisplay(print->fd, arg);
     else if (argType == "float")
-      handleFloatDisplay(arg);
+      handleFloatDisplay(print->fd, arg);
     else if (argType == "[]char") // must always be a char array, no other type of arr is allowed (char[] are also literally just char* anyway so lol)
-      handleArrayDisplay(arg, print->line, print->pos);
+      handleArrayDisplay(print->fd, arg, print->line, print->pos);
     else
       handleError(print->line, print->pos,
                   "Cannot print type '" + argType + "'.", "Codegen Error");

@@ -1,10 +1,8 @@
-Add in control flow to the codegen (done => if, for, switch, while)
-NOTE: Read into switch statements "jump tables", and how to emit them in ASM. => Kind of done. Need more research.
-
 Add and recognize more int types in asm. (Ex. byte, short, long, quad).
  - IMPORTANT - Update stmt::enumDecl IMMEDIATELY after adding longs
 
- Implement an open/close method that returns a fd. Can be easily implemented in @output and @input
+ Implement an open/close method that returns a fd. Can be easily implemented alongside @output and @input
+  - Implement constant flags and allow native functions to pass them (for example, O_RDONLY or O_CREAT in @open)
  Add in alloc, free, cast, memcpy, and sizeof functions. (done => alloc, free, cast, sizeof, memcpy)
 
  Add in proper support for arrays and index over strings, arrays, etc.

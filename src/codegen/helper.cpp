@@ -253,18 +253,18 @@ void codegen::push(Instr instr, Section section) {
 void codegen::prepareSyscallWrite() {
   // syscall id for write on x86 is 1
   moveRegister("%rax", "$1", DataSize::Qword, DataSize::Qword);
-  // set rdi to 1 (file descriptor for stdout)
-  moveRegister("%rdi", "$1", DataSize::Qword, DataSize::Qword);
   // Make syscall to write
   push(Instr{.var = Syscall{.name = "SYS_WRITE"}, .type = InstrType::Syscall},
        Section::Main);
 }
 
-void codegen::handlePtrDisplay(Node::Expr *arg, int line, int pos) {
+void codegen::handlePtrDisplay(Node::Expr *fd, Node::Expr *arg, int line, int pos) {
   if (getUnderlying(arg->asmType).find("char") == 1) {
     // Printing a char*
     visitExpr(arg);
     popToRegister("%rsi");
+    visitExpr(fd);
+    popToRegister("%rdi");
     prepareSyscallWrite();
   } else {
     handleError(line, pos,
@@ -273,16 +273,18 @@ void codegen::handlePtrDisplay(Node::Expr *arg, int line, int pos) {
   }
 }
 
-void codegen::handleArrayDisplay(Node::Expr *arg, int line, int pos) {
+void codegen::handleArrayDisplay(Node::Expr *fd, Node::Expr *arg, int line, int pos) {
   // this function will only ever happen in a []char and never anywhere else
   ArrayType *at = static_cast<ArrayType *>(arg->asmType);
   visitExpr(arg);
   popToRegister("%rsi");
   moveRegister("%rdx", "$" + std::to_string(at->constSize), DataSize::Qword, DataSize::Qword);
+  visitExpr(fd);
+  popToRegister("%rdi");
   prepareSyscallWrite();
 }
 
-void codegen::handleLiteralDisplay(Node::Expr *arg) {
+void codegen::handleLiteralDisplay(Node::Expr *fd, Node::Expr *arg) {
   // This function effectively just prints the value of the literal
   std::string strLabel = "string" + std::to_string(stringCount++);
   std::string stringValue;
@@ -310,10 +312,12 @@ void codegen::handleLiteralDisplay(Node::Expr *arg) {
   // perform the operation by moving the string into %rsi and the length into %rdx
   push(Instr{.var=LeaInstr{.size=DataSize::Qword, .dest="%rsi",.src=strLabel+"(%rip)"},.type=InstrType::Lea},Section::Main);
   moveRegister("%rdx", "$" + std::to_string(stringValue.length()), DataSize::Qword, DataSize::Qword);
+  visitExpr(fd);
+  popToRegister("%rdi");
   prepareSyscallWrite(); // The end!
 };
 
-void codegen::handleStrDisplay(Node::Expr *arg) {
+void codegen::handleStrDisplay(Node::Expr *fd, Node::Expr *arg) {
   nativeFunctionsUsed[NativeASMFunc::strlen] = true;
   visitExpr(arg);
   popToRegister("%rsi"); // String address
@@ -325,10 +329,12 @@ void codegen::handleStrDisplay(Node::Expr *arg) {
        Section::Main);
   push(Instr{.var=AddInstr{.lhs="%rsp",.rhs="$"+std::to_string(variableCount)},.type=InstrType::Sub},Section::Main);
   moveRegister("%rdx", "%rax", DataSize::Qword, DataSize::Qword); // Length of string
+  visitExpr(fd);
+  popToRegister("%rdi");
   prepareSyscallWrite();
 }
 
-void codegen::handlePrimitiveDisplay(Node::Expr *arg) {
+void codegen::handlePrimitiveDisplay(Node::Expr *fd, Node::Expr *arg) {
   nativeFunctionsUsed[NativeASMFunc::strlen] = true;
   nativeFunctionsUsed[NativeASMFunc::itoa] = true;
   visitExpr(arg);
@@ -344,10 +350,12 @@ void codegen::handlePrimitiveDisplay(Node::Expr *arg) {
        Section::Main);
   push(Instr{.var=AddInstr{.lhs="%rsp",.rhs="$"+std::to_string(variableCount)},.type=InstrType::Sub},Section::Main);
   moveRegister("%rdx", "%rax", DataSize::Qword, DataSize::Qword); // Length of number string
+  visitExpr(fd);
+  popToRegister("%rdi");
   prepareSyscallWrite();
 }
 
-void codegen::handleFloatDisplay(Node::Expr *arg) {
+void codegen::handleFloatDisplay(Node::Expr *fd, Node::Expr *arg) {
     std::string msg = "Printing floats is not supported yet.";
     handleError(0, 0, msg, "Codegen Error");
 }

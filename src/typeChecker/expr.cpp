@@ -655,3 +655,34 @@ void TypeChecker::visitMemcpyMemory(Maps *map, Node::Expr *expr) {
   return_type = std::make_shared<SymbolType>("int");
   // asmtype, once again, already handled
 }
+
+void TypeChecker::visitOpen(Maps *map, Node::Expr *expr) {
+  OpenExpr *open = static_cast<OpenExpr *>(expr);
+  visitExpr(map, open->filename);
+  if (type_to_string(return_type.get()) != "str"
+      && type_to_string(return_type.get()) != "*char"
+      && type_to_string(return_type.get()) != "[]char") {
+    std::string msg = "Open expression requires the filepath to be of type 'str' or its derivatives but got '" + type_to_string(return_type.get()) + "'";
+    handleError(open->line, open->pos, msg, "", "Type Error");
+  }
+
+  // There are 3 bools that can be passed to open, but they are all optional
+  if (open->canRead != nullptr) {
+    visitExpr(map, open->canRead);
+    if (type_to_string(return_type.get()) != "bool") {
+      std::string msg = "Open expression requires the canRead parameter to be of type 'bool' but got '" + type_to_string(return_type.get()) + "'";
+      handleError(open->line, open->pos, msg, "", "Type Error");
+    }
+  }
+
+  if (open->canWrite != nullptr) {
+    visitExpr(map, open->canWrite);
+    if (type_to_string(return_type.get()) != "bool") {
+      std::string msg = "Open expression requires the canWrite parameter to be of type 'bool' but got '" + type_to_string(return_type.get()) + "'";
+      handleError(open->line, open->pos, msg, "", "Type Error");
+    }
+  }
+
+  return_type = std::make_shared<SymbolType>("int");
+  // asmtype is a constant int and already handled
+}

@@ -796,3 +796,34 @@ public:
     bytes->debug(ident + 2);
   }
 };
+
+class OpenExpr : public Node::Expr {
+public:
+  int line, pos;
+  Node::Expr *filename;
+  Node::Expr *flags;
+  // flags
+  // TODO: Create global constants for these and allow for them to be OR'd together manually
+  // TODO: Most imporant flags: O_CREAT
+  Node::Expr *canRead;
+  Node::Expr *canWrite;
+  Node::Expr *canCreate;
+
+  OpenExpr(int line, int pos, Node::Expr *filename, Node::Expr *canRead, Node::Expr *canWrite, Node::Expr *canCreate, int file)
+      : line(line), pos(pos), filename(filename), flags(flags), canRead(canRead), canWrite(canWrite), canCreate(canCreate) {
+    file_id = file;
+    kind = NodeKind::ND_OPEN;
+    asmType = new SymbolType("int");
+  }
+
+  void debug(int ident = 0) const override {
+    Node::printIndent(ident);
+    std::cout << "OpenExpr: \n";
+    Node::printIndent(ident + 1);
+    std::cout << "Filename: \n";
+    filename->debug(ident + 2);
+    Node::printIndent(ident + 1);
+    std::cout << "Flags: \n";
+    flags->debug(ident + 2);
+  }
+};

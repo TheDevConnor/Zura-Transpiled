@@ -644,6 +644,9 @@ void codegen::memberExpr(Node::Expr *expr)
      * ...
      * Now, they will be optimized to only one leaq instruction.
      * leaq -40(%rbp), %rcx ; :D
+     * 
+     * Additionally, this system is robust enough to handle MemberExpr's on dereferencing pointers
+     * due to the fact that the register used is %rcx rather than the actual location on the stack.
      */
     // It likely looks like this: leaq -8(%rbp), %rcx --- pushq %rcx. We want to get that RBP offset there!!
     text_section.pop_back(); // Push
@@ -918,6 +921,30 @@ void codegen::assignArray(Node::Expr *expr)
     }
   }
   // I think that's it??!!!
+};
+
+void codegen::openExpr(Node::Expr *expr) {
+  OpenExpr *e = static_cast<OpenExpr *>(expr);
+  pushDebug(e->line, expr->file_id, e->pos);
+
+  visitExpr(e->filename);
+  // DEAL WITH THESE LATER (VERY IMPORANT IG)
+  // visitExpr(e->canRead);
+  // visitExpr(e->canWrite);
+  // visitExpr(e->canCreate);
+
+  // Default flags: O_RDWR | O_CREAT | O_TRUNC
+  // values:          2    |   0100  |  1000   = 578
+
+  // Create the syscall
+  popToRegister("%rdi");
+  moveRegister("%rsi", "$578", DataSize::Qword, DataSize::Qword);
+  // mode_t mode = S_IRUSR | S_IWUSR | S_IROTH
+  // values: total = 388
+  moveRegister("%rdx", "$388", DataSize::Qword, DataSize::Qword);
+  moveRegister("%rax", "$2", DataSize::Qword, DataSize::Qword);
+  push(Instr{.var = Syscall{.name = "SYS_OPEN"}, .type = InstrType::Syscall}, Section::Main);
+  pushRegister("%rax");
 };
 
 void codegen::nullExpr(Node::Expr *expr)

@@ -38,6 +38,8 @@ enum NodeKind {
   ND_ALLOC_MEMORY, // @alloc(12);
   ND_MEMCPY_MEMORY, // @memcpy(x, y, 12)
   ND_SIZEOF, // @sizeof(x)
+  ND_OPEN, // @open("file", true, false, true)
+  ND_CLOSE, // close(12)
 
   // Statements
   ND_EXPR_STMT, // x = 12

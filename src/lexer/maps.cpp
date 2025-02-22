@@ -58,6 +58,8 @@ void Lexer::initMap() {
       {"@input", TokenKind::INPUT},       {"@write", TokenKind::WRITE},
       {"@free", TokenKind::FREE},         {"@alloc", TokenKind::ALLOC},
       {"@memcpy", TokenKind::MEMCPY},     {"@sizeof", TokenKind::SIZEOF},
+      // file management
+      {"@open", TokenKind::OPEN},         {"@close", TokenKind::CLOSE}
   };
 
   keywords = {
@@ -75,7 +77,7 @@ void Lexer::initMap() {
       {"break", TokenKind::BREAK},        {"continue", TokenKind::CONTINUE},
       {"typename", TokenKind::TYPEALIAS}, {"match", TokenKind::MATCH},
       {"default", TokenKind::DEFAULT},    {"case", TokenKind::CASE},
-      {"return", TokenKind::RETURN}, 
+      {"return", TokenKind::RETURN},
   };
 
   scMap = {

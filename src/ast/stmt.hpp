@@ -186,13 +186,14 @@ public:
   ~VarStmt() = default; // rule of threes
 };
 
-class PrintStmt : public Node::Stmt {
+class OutputStmt : public Node::Stmt {
 public:
   int line, pos;
+  Node::Expr *fd;
   std::vector<Node::Expr *> args;
 
-  PrintStmt(int line, int pos, std::vector<Node::Expr *> args, int file)
-      : line(line), pos(pos), args(std::move(args)) {
+  OutputStmt(int line, int pos, Node::Expr *fd, std::vector<Node::Expr *> args, int file)
+      : line(line), pos(pos), fd(fd), args(std::move(args)) {
     file_id = file;
     kind = NodeKind::ND_PRINT_STMT;
   }
@@ -200,12 +201,16 @@ public:
   void debug(int indent = 0) const override {
     Node::printIndent(indent);
     std::cout << "PrintStmt: \n";
+    Node::printIndent(indent + 1);
+    std::cout << "File descriptor: \n";
+    fd->debug(indent + 2);
     for (Node::Expr *a : args) {
+      Node::printIndent(indent + 1);
       a->debug(indent + 1);
     }
   }
 
-  ~PrintStmt() = default; // rule of threes
+  ~OutputStmt() = default; // rule of threes
 };
 class FnStmt : public Node::Stmt {
 public:
@@ -581,9 +586,10 @@ public:
   int line, pos;
   Node::Expr *bufferOut;
   Node::Expr *maxBytes;
+  Node::Expr *fd;
   
-  InputStmt(int line, int pos, Node::Expr *bufferOut, Node::Expr * sysCall, int file)
-      : line(line), pos(pos), bufferOut(bufferOut), maxBytes(sysCall) {
+  InputStmt(int line, int pos, Node::Expr *fd, Node::Expr *bufferOut, Node::Expr * sysCall, int file)
+      : line(line), pos(pos), fd(fd), bufferOut(bufferOut), maxBytes(sysCall) {
     file_id = file;
     kind = NodeKind::ND_INPUT_STMT;
   }
@@ -592,10 +598,33 @@ public:
     Node::printIndent(indent);
     std::cout << "InputStmt: \n";
     Node::printIndent(indent + 1);
-    std::cout << "Name: \n";
+    std::cout << "FD: \n";
+    fd->debug(indent + 2);
+    Node::printIndent(indent + 1);
+    std::cout << "Output buffer: \n";
     bufferOut->debug(indent + 2);
     Node::printIndent(indent + 1);
-    std::cout << "SysCall: \n";
+    std::cout << "Input byte count: \n";
     maxBytes->debug(indent + 2);
+  }
+};
+
+class CloseStmt : public Node::Stmt {
+public:
+  int line, pos;
+  Node::Expr *fd;
+
+  CloseStmt(int line, int pos, Node::Expr *fd, int file)
+      : line(line), pos(pos), fd(fd) {
+    file_id = file;
+    kind = NodeKind::ND_CLOSE;
+  }
+
+  void debug(int indent = 0) const override {
+    Node::printIndent(indent);
+    std::cout << "CloseStmt: \n";
+    Node::printIndent(indent + 1);
+    std::cout << "FD: \n";
+    fd->debug(indent + 2);
   }
 };

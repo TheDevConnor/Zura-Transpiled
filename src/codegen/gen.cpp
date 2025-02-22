@@ -53,7 +53,7 @@ void codegen::gen(Node::Stmt *stmt, bool isSaved, std::string output_filename,
           "# "
         << ZuraVersion
         << "\n"
-          "# What's New: Memory allocated / freed\n"
+          "# What's New: Opening & Closing files. @input & @output take in FDs\n"
         << "\n# Everything beyond this point was generated automatically by the Zura compiler.\n" 
            ".att_syntax\n";
   

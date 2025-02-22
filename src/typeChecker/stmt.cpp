@@ -368,7 +368,13 @@ void TypeChecker::visitVar(Maps *map, Node::Stmt *stmt) {
 }
 
 void TypeChecker::visitPrint(Maps *map, Node::Stmt *stmt) {
-  PrintStmt *print_stmt = static_cast<PrintStmt *>(stmt);
+  OutputStmt *print_stmt = static_cast<OutputStmt *>(stmt);
+  visitExpr(map, print_stmt->fd);
+  if (type_to_string(return_type.get()) != "int") {
+    std::string msg = "Print requires the file descriptor to be of type 'int' "
+                      "but got '" + type_to_string(return_type.get()) + "'";
+    handleError(print_stmt->line, print_stmt->pos, msg, "", "Type Error");
+  }
   for (size_t i = 0; i < print_stmt->args.size(); i++) {
     visitExpr(map, print_stmt->args[i]);
     print_stmt->args[i]->asmType = createDuplicate(return_type.get());
@@ -516,10 +522,14 @@ void TypeChecker::visitContinue(Maps *map, Node::Stmt *stmt) {
 void TypeChecker::visitInput(Maps *map, Node::Stmt *stmt) {
   InputStmt *input_stmt = static_cast<InputStmt *>(stmt);
 
-  Node::Expr *bufferOut = input_stmt->bufferOut;
-  Node::Expr *MaxBytes = input_stmt->maxBytes;
+  visitExpr(map, input_stmt->fd);
+  if (type_to_string(return_type.get()) != "int") {
+    std::string msg = "Input system call fd must be a 'int' but got '" +
+                      type_to_string(return_type.get()) + "'";
+    handleError(input_stmt->line, input_stmt->pos, msg, "", "Type Error");
+  }
 
-  visitExpr(map, bufferOut); // str, char*, char[]
+  visitExpr(map, input_stmt->bufferOut); // str, char*, char[]
   if (type_to_string(return_type.get()) != "str" &&
       type_to_string(return_type.get()) != "*char" &&
       type_to_string(return_type.get()) != "[]char") {
@@ -529,12 +539,23 @@ void TypeChecker::visitInput(Maps *map, Node::Stmt *stmt) {
     handleError(input_stmt->line, input_stmt->pos, msg, "", "Type Error");
   }
 
-  visitExpr(map, MaxBytes);
+  visitExpr(map, input_stmt->maxBytes);
   if (type_to_string(return_type.get()) != "int") {
-    std::string msg = "Input system call must be a 'int' but got '" +
+    std::string msg = "Input max bytes must be a 'int' but got '" +
                       type_to_string(return_type.get()) + "'";
     handleError(input_stmt->line, input_stmt->pos, msg, "", "Type Error");
   }
 
+  return_type = nullptr;
+}
+
+void TypeChecker::visitClose(Maps *map, Node::Stmt *stmt) {
+  CloseStmt *close_stmt = static_cast<CloseStmt *>(stmt);
+  visitExpr(map, close_stmt->fd);
+  if (type_to_string(return_type.get()) != "int") {
+    std::string msg = "Close system call fd must be a 'int' but got '" +
+                      type_to_string(return_type.get()) + "'";
+    handleError(close_stmt->line, close_stmt->pos, msg, "", "Type Error");
+  }
   return_type = nullptr;
 }
