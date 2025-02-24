@@ -276,9 +276,9 @@ void codegen::handlePtrDisplay(Node::Expr *fd, Node::Expr *arg, int line, int po
 void codegen::handleArrayDisplay(Node::Expr *fd, Node::Expr *arg, int line, int pos) {
   // this function will only ever happen in a []char and never anywhere else
   ArrayType *at = static_cast<ArrayType *>(arg->asmType);
-  visitExpr(arg);
-  popToRegister("%rsi");
-  moveRegister("%rdx", "$" + std::to_string(at->constSize), DataSize::Qword, DataSize::Qword);
+  visitExpr(arg); // the lea
+  popToRegister("%rsi"); // syscall arg
+  moveRegister("%rdx", "$" + std::to_string(getByteSizeOfType(at->underlying) * at->constSize), DataSize::Qword, DataSize::Qword); // byte count
   visitExpr(fd);
   popToRegister("%rdi");
   prepareSyscallWrite();
@@ -302,6 +302,13 @@ void codegen::handleLiteralDisplay(Node::Expr *fd, Node::Expr *arg) {
     FloatExpr *floatExpr = static_cast<FloatExpr *>(arg);
     stringValue = std::to_string(floatExpr->value);
     push(Instr{.var=Comment{.comment="Print float literal for some reason"},.type=InstrType::Comment},Section::Main);
+  };
+  if (arg->kind == ND_STRING) {
+    // Probably the most common form of literal being printed.
+    // Hello world users (everyone), you've been lied to.
+    StringExpr *stringExpr = static_cast<StringExpr *>(arg);
+    stringValue = stringExpr->value.substr(1, stringExpr->value.size() - 2); // Quotes are included, for some reason.
+    push(Instr{.var=Comment{.comment="Print string ltieral for some reason"},.type=InstrType::Comment},Section::Main);
   }
   // Char expr is the same as an intexpr and its kinda unused on its own
 
@@ -311,7 +318,15 @@ void codegen::handleLiteralDisplay(Node::Expr *fd, Node::Expr *arg) {
   push(Instr{.var=AscizInstr{.what='"' + stringValue + '"'},.type=InstrType::Asciz},Section::ReadonlyData);
   // perform the operation by moving the string into %rsi and the length into %rdx
   push(Instr{.var=LeaInstr{.size=DataSize::Qword, .dest="%rsi",.src=strLabel+"(%rip)"},.type=InstrType::Lea},Section::Main);
-  moveRegister("%rdx", "$" + std::to_string(stringValue.length()), DataSize::Qword, DataSize::Qword);
+  // Ensure that each time we see a backslash, we subtract 1 from the count
+  // Ex: \tHello, world!\n would be reduced 2 times.
+  int count = stringValue.size();
+  for (int i = 0; i < stringValue.size(); i++) {
+    char c = stringValue.at(i);
+    if (c == '\\') count--;
+    if (i > 0 && stringValue.at(i - 1) == '\\' && c == '\\') count++; // '\\' = just a backslash, which is still one character
+  }
+  moveRegister("%rdx", "$" + std::to_string(count), DataSize::Qword, DataSize::Qword);
   visitExpr(fd);
   popToRegister("%rdi");
   prepareSyscallWrite(); // The end!

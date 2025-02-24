@@ -1,16 +1,15 @@
 const main := fn () int {
   have path: str = "version.txt";
-  have contents: [256]char = [0]; # autofill with 0
+  have contents: [512]char = [0]; # Previous bug: when >256, the autofill would not fill. Now it does!
 
-  have fileDescriptor: int = @open(path, true, false, false); # Can read, not write, not create
-  @output(1, fileDescriptor, "\n"); # Works..?
+  have fileDescriptor: int = @open(path, true, false, false); # Can read, not write, not create (will NOT fuck up the file)
   if (fileDescriptor < 0) {
     @output(1, "Error opening file\n");
     return -1;
   }
 
-  @input(fileDescriptor, contents, 256);
-  @output(1, contents); # Repeat it back to the console
+  @input(fileDescriptor, contents, 512);
+  @output(1, contents, "\n"); # Repeat it back to the console
   @close(fileDescriptor); # Clean up after ourselves
   return 0;
 };

@@ -108,7 +108,12 @@ void TypeChecker::visitIdent(Maps *map, Node::Expr *expr) {
   // update the ast-node (IdentExpr) to hold the type of the identifier as a
   // property
   ident->type = res;
-  return_type = std::make_shared<SymbolType>(type_to_string(res));
+  if (res->kind == ND_ARRAY_TYPE) {
+    ArrayType *at = static_cast<ArrayType *>(res);
+    return_type = std::make_shared<ArrayType>(at->underlying, at->constSize);
+  } else {
+    return_type = std::make_shared<SymbolType>(type_to_string(res));
+  }
   if (isLspMode) {
     // Check if enum type
     if (map->enum_table.find(ident->name) != map->enum_table.end()) {

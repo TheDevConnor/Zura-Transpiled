@@ -1020,11 +1020,14 @@ void codegen::declareArrayVariable(Node::Expr *expr, short int arrayLength,
     }
     // C allocates 16 bytes near the top for some reason, let's rip them off and do the same
     // Assuming the autofill is small enough, we could manually fill them with 0's mov by mov
+    int preVarCount = variableCount;
+    variableCount = round(variableCount, 16);
     push(Instr{.var=MovInstr{.dest=std::to_string(-(variableCount + totalSize)) + "(%rbp)", .src="$0", .destSize=DataSize::Qword, .srcSize=DataSize::Qword}, .type=InstrType::Mov}, Section::Main);
     push(Instr{.var=MovInstr{.dest=std::to_string(-(variableCount + totalSize - 8)) + "(%rbp)", .src="$0", .destSize=DataSize::Qword, .srcSize=DataSize::Qword}, .type=InstrType::Mov}, Section::Main);
     // Prepare the registers for the rep stosq instruction
     push(Instr{.var = LeaInstr{.size = DataSize::Qword, .dest = "%rdx", .src = "-" + std::to_string(variableCount + arrayLength - 16) + "(%rbp)"}, .type = InstrType::Lea}, Section::Main);
     push(Instr{.var = XorInstr{.lhs = "%rax", .rhs = "%rax"}, .type = InstrType::Xor}, Section::Main);
+    moveRegister("%rdi", "%rdx", DataSize::Qword, DataSize::Qword);
     int newSize = totalSize - 16;
     if (newSize % 8 == 0) {
       moveRegister("%rcx", "$" + std::to_string(newSize / 8), DataSize::Qword,
@@ -1045,6 +1048,7 @@ void codegen::declareArrayVariable(Node::Expr *expr, short int arrayLength,
     }
     // Add the array to the variable table
     variableTable.insert({varName, std::to_string(-(variableCount + totalSize)) + "(%rbp)"});
+    variableCount = preVarCount;
     return;
   }
 

@@ -938,7 +938,47 @@ void codegen::openExpr(Node::Expr *expr) {
 
   // Create the syscall
   popToRegister("%rdi");
-  moveRegister("%rsi", "$578", DataSize::Qword, DataSize::Qword);
+  if (e->canRead == nullptr
+   && e->canWrite == nullptr
+   && e->canCreate == nullptr) {
+    // The user did not specify any arguments. By default, they are Can Read, Can Write, and Can Create
+    moveRegister("%rsi", "$578", DataSize::Qword, DataSize::Qword);
+  } else {
+    bool canReadLiteral = false;
+    bool canWriteLiteral = false;
+    bool canCreateLiteral = false;
+    if (e->canRead == nullptr) canReadLiteral = true; // Effectively, you wrote 'true'
+    if (e->canWrite == nullptr) canWriteLiteral = true;
+    if (e->canCreate == nullptr) canCreateLiteral = true;
+
+    if (e->canRead != nullptr) if (e->canRead->kind == ND_BOOL) canReadLiteral = true;
+    if (e->canWrite != nullptr) if (e->canWrite->kind == ND_BOOL) canWriteLiteral = true;
+    if (e->canCreate != nullptr) if (e->canCreate->kind == ND_BOOL) canCreateLiteral = true;
+    if (canReadLiteral && canWriteLiteral && canCreateLiteral) {
+      // We can run these values and evaluate them in comptime
+      bool canReadValue;
+      bool canWriteValue;
+      bool canCreateValue;
+      if (e->canRead == nullptr) canReadValue = true;
+      else canReadValue = static_cast<BoolExpr *>(e->canRead)->value;
+
+      if (e->canWrite == nullptr) canWriteValue = true;
+      else canWriteValue = static_cast<BoolExpr *>(e->canWrite)->value;
+
+      if (e->canCreate == nullptr) canCreateValue = true;
+      else canCreateValue = static_cast<BoolExpr *>(e->canCreate)->value;
+      // read | write | create
+      //  02 |  0100  | 01000
+      const static int canRead = 02;
+      const static int canWrite = 0100;
+      const static int canCreate = 01000;
+      moveRegister("%rsi", "$" + std::to_string((canReadValue ? canRead : 0) | (canWriteValue ? canWrite : 0) | (canCreateValue ? canCreate : 0)), DataSize::Qword, DataSize::Qword);
+    } else {
+      // Some values are literals, some are not
+      // I could personally not care less about what you specify, so how about we return the default
+      moveRegister("%rsi", "$578", DataSize::Qword, DataSize::Qword);
+    }
+  }
   // mode_t mode = S_IRUSR | S_IWUSR | S_IROTH
   // values: total = 388
   moveRegister("%rdx", "$388", DataSize::Qword, DataSize::Qword);

@@ -1,5 +1,7 @@
 #include "gen.hpp"
 #include "optimizer/instr.hpp"
+#include "optimizer/compiler.hpp"
+#include "../typeChecker/type.hpp"
 #include <unordered_map>
 
 void codegen::print(Node::Stmt *stmt) {
@@ -9,19 +11,20 @@ void codegen::print(Node::Stmt *stmt) {
   pushDebug(print->line, stmt->file_id);
 
   for (Node::Expr *arg : print->args) {
-    std::string argType = getUnderlying(arg->asmType);
+    std::string argType = TypeChecker::type_to_string(arg->asmType);
+    Node::Expr *optimizedArg = CompileOptimizer::optimizeExpr(arg);
     if (argType.find("*") == 0)
       handlePtrDisplay(print->fd, arg, print->line, print->pos);
-    else if (arg->kind == ND_INT || arg->kind == ND_BOOL || arg->kind == ND_CHAR || arg->kind == ND_FLOAT)
-      handleLiteralDisplay(print->fd, arg);
+    else if (optimizedArg->kind == ND_INT || optimizedArg->kind == ND_BOOL || optimizedArg->kind == ND_CHAR || optimizedArg->kind == ND_FLOAT || optimizedArg->kind == ND_STRING)
+      handleLiteralDisplay(print->fd, optimizedArg);
     else if (argType == "str")
-      handleStrDisplay(print->fd, arg);
+      handleStrDisplay(print->fd, optimizedArg);
     else if (argType == "int" || argType == "char")
-      handlePrimitiveDisplay(print->fd, arg);
+      handlePrimitiveDisplay(print->fd, optimizedArg);
     else if (argType == "float")
-      handleFloatDisplay(print->fd, arg);
+      handleFloatDisplay(print->fd, optimizedArg);
     else if (argType == "[]char") // must always be a char array, no other type of arr is allowed (char[] are also literally just char* anyway so lol)
-      handleArrayDisplay(print->fd, arg, print->line, print->pos);
+      handleArrayDisplay(print->fd, optimizedArg, print->line, print->pos);
     else
       handleError(print->line, print->pos,
                   "Cannot print type '" + argType + "'.", "Codegen Error");
