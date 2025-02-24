@@ -8,7 +8,7 @@
 #include <vector>
 
 namespace ErrorClass {
-inline static std::unordered_map<int, std::string> errors = {};
+inline static std::vector<std::string> errors = {};
 inline int ErrorPos = 0;
 
 std::string formatLineWithTokens(int line, int pos,

@@ -100,7 +100,7 @@ std::string ErrorClass::error(int line, int pos, const std::string &msg,
 
   if (isMain) {
     line_error += "\t" + col.color("Note", Color::CYAN, false, true) + ": " + note + "\n";
-    errors[line] = line_error;
+    errors.push_back(line_error);
     return line_error;
   }
 
@@ -115,23 +115,21 @@ std::string ErrorClass::error(int line, int pos, const std::string &msg,
         if (!note.empty()) line_error += " ↳ " + col.color("NOTE", Color::BLUE) + ": " + note + "\n";
     }
 
-    if (errors.find(line) == errors.end()) {
-        errors[line] = line_error; // Add error if not already present
-    }
+    errors.push_back(line_error); // Add error if not already present
     return line_error;
   }
 
   if (isTypeError) {
     if (!note.empty()) {
       line_error += " ↳ " + col.color("NOTE", Color::BLUE) + ": " + note + "\n";
-      errors[line] = line_error;
+      errors.push_back(line_error);
       return line_error;
     }
 
     line_error += (line > 0) ? currentLine(line - 1, pos, lexer, isParser, isTypeError, tokens) : "";
     line_error += col.color(currentLine(line, pos, lexer, isParser, isTypeError, tokens), Color::GRAY, false, true);
     line_error += currentLine(line + 1, pos, lexer, isParser, isTypeError, tokens);
-    errors[line] = line_error;
+    errors.push_back(line_error);
     return line_error;
   }
 
@@ -147,7 +145,6 @@ std::string ErrorClass::error(int line, int pos, const std::string &msg,
     line_error += std::string(pos + 5, ' ') + col.color("^", Color::RED, false, true) + "\n";
   }
 
-  if (errors.find(line) == errors.end()) errors[line] = line_error;
   if (isFatal) {
     printError();
     if (isGeneration) Exit(ExitValue::GENERATOR_ERROR);
@@ -167,8 +164,8 @@ bool ErrorClass::printError() {
                             false)
               << std::endl;
     
-    for (const auto& errorPair : errors) {
-      std::cout << errorPair.second << std::endl;
+    for (const std::string &error : errors) {
+      std::cout << error << std::endl;
     }
     return true;
   }
