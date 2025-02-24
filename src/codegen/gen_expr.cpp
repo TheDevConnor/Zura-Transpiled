@@ -981,6 +981,11 @@ void codegen::openExpr(Node::Expr *expr) {
   }
   // mode_t mode = S_IRUSR | S_IWUSR | S_IROTH
   // values: total = 388
+
+  // Have you ever wanted to run a shell file but had to run `chmod +x file.sh` first?
+  // This rdx register, 'mode', says who has the permissions (like 'x' for 'execute') on the file
+  // I'm not sure why this is needed, because the file literally wouldn't be opened if you didn't have permission,
+  // but I have to supply this otherwise the syscall will fail.
   moveRegister("%rdx", "$388", DataSize::Qword, DataSize::Qword);
   moveRegister("%rax", "$2", DataSize::Qword, DataSize::Qword);
   push(Instr{.var = Syscall{.name = "SYS_OPEN"}, .type = InstrType::Syscall}, Section::Main);
