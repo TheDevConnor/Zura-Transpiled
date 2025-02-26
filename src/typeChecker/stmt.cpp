@@ -370,7 +370,7 @@ void TypeChecker::visitVar(Maps *map, Node::Stmt *stmt) {
 void TypeChecker::visitPrint(Maps *map, Node::Stmt *stmt) {
   OutputStmt *print_stmt = static_cast<OutputStmt *>(stmt);
   visitExpr(map, print_stmt->fd);
-  if (type_to_string(return_type.get()) != "int") {
+  if (!isIntBasedType(return_type.get())) {
     std::string msg = "Print requires the file descriptor to be of type 'int' "
                       "but got '" + type_to_string(return_type.get()) + "'";
     handleError(print_stmt->line, print_stmt->pos, msg, "", "Type Error");
@@ -540,7 +540,7 @@ void TypeChecker::visitInput(Maps *map, Node::Stmt *stmt) {
   }
 
   visitExpr(map, input_stmt->maxBytes);
-  if (type_to_string(return_type.get()) != "int") {
+  if (!isIntBasedType(return_type.get())) {
     std::string msg = "Input max bytes must be a 'int' but got '" +
                       type_to_string(return_type.get()) + "'";
     handleError(input_stmt->line, input_stmt->pos, msg, "", "Type Error");

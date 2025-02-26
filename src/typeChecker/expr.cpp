@@ -39,8 +39,12 @@ void TypeChecker::visitInt(Maps *map, Node::Expr *expr) {
     handleError(integer->line, integer->pos, msg, "", "Type Error");
   }
 
-  return_type = std::make_shared<SymbolType>("int");
-  expr->asmType = new SymbolType("int");
+  bool isSigned = integer->value < 0;
+
+  std::string type = isSigned ? "signed int" : "unsigned int";
+
+  return_type = std::make_shared<SymbolType>(type);
+  expr->asmType = new SymbolType(type);
 }
 
 void TypeChecker::visitFloat(Maps *map, Node::Expr *expr) {
@@ -181,7 +185,7 @@ void TypeChecker::visitUnary(Maps *map, Node::Expr *expr) {
     integer->isNegative = true;
     visitExpr(map, integer);
 
-    if (type_to_string(return_type.get()) != "int") {
+    if (!isIntBasedType(return_type.get())) {
       std::string msg = "Unary operation '" + unary->op +
                         "' requires the type to be an 'int' but got '" +
                         type_to_string(return_type.get()) + "'";
@@ -367,18 +371,23 @@ void TypeChecker::visitMember(Maps *map, Node::Expr *expr) {
 
 void TypeChecker::visitArray(Maps *map, Node::Expr *expr) {
   ArrayExpr *array = static_cast<ArrayExpr *>(expr);
-  if (array->type == nullptr) {
-    array->type = new ArrayType(new SymbolType("unknown"), -1);
-    expr->asmType = array->type;
-  }
+  ArrayType *at = static_cast<ArrayType *>(createDuplicate(return_type.get()));
 
+  
   // check if the array is empty
   if (array->elements.empty()) {
     std::string msg = "Array must have at least one element!";
     handleError(array->line, array->pos, msg, "", "Type Error");
-    return_type = std::make_shared<ArrayType>(array->type, 0);
+    return_type = std::make_shared<ArrayType>(new SymbolType("unknown"), -1);
     expr->asmType = createDuplicate(return_type.get());
     return;
+  }
+
+  if (at->constSize != array->elements.size()) {
+    std::string msg = "Array requires " +
+                      std::to_string(at->constSize) + " elements but got " +
+                      std::to_string(array->elements.size());
+    handleError(array->line, array->pos, msg, "", "Type Error");
   }
 
   for (Node::Expr *elem : array->elements) {
@@ -388,19 +397,23 @@ void TypeChecker::visitArray(Maps *map, Node::Expr *expr) {
       expr->asmType = createDuplicate(return_type.get());
       return;
     }
-    array->type = return_type.get(); // update the type of the array
-    map->array_table.push_back(return_type.get());
+    if (type_to_string(return_type.get()) != type_to_string(at->underlying)) {
+      // It might be an int comparison that's really weird
+      if (isIntBasedType(return_type.get()) && isIntBasedType(at->underlying)) {
+        continue; // Don't error- this is okay.
+      }
+      std::string msg = "Array requires all elements to be of type '" +
+                        type_to_string(at->underlying) + "' but got '" +
+                        type_to_string(return_type.get()) + "'";
+      handleError(array->line, array->pos, msg, "", "Type Error");
+      return_type = std::make_shared<SymbolType>("unknown");
+      expr->asmType = new SymbolType("unknown");
+      return;
+    }
   }
 
-  if (map->array_table.empty()) {
-    ArrayType *at = static_cast<ArrayType *>(array->type);
-    return_type = std::make_shared<ArrayType>(at->underlying, 0);
-    expr->asmType = createDuplicate(return_type.get());
-    return;
-  }
-  return_type =
-      std::make_shared<ArrayType>(map->array_table[0], map->array_table.size());
-  expr->asmType = createDuplicate(return_type.get());
+  return_type = std::make_shared<ArrayType>(at);
+  expr->asmType = at;
 
   // clear the array table
   map->array_table.clear();

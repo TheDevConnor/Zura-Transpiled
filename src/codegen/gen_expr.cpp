@@ -534,7 +534,6 @@ void codegen::arrayElem(Node::Expr *expr)
   }
   else
   {
-    std::cout << "Non-constant index array access not implemented yet" << std::endl;
     // This is a little more intricate.
     // We have to evaluate the index and multiply it by the size of the type
     if (e->lhs->kind == ND_IDENT)
@@ -555,9 +554,6 @@ void codegen::arrayElem(Node::Expr *expr)
     }
     visitExpr(e->rhs);
     popToRegister("%rax");
-    // %rax contains the index
-    // Negate rax
-    pushLinker("negq %rax\n\t", Section::Main);
     // Multiply it by the size of the type
     int underlyingByteSize = getByteSizeOfType(static_cast<ArrayType *>(e->lhs->asmType)->underlying);
     switch (underlyingByteSize)
@@ -566,18 +562,18 @@ void codegen::arrayElem(Node::Expr *expr)
     {
       // No need to multiply
       // Ex: []char or []bool
-      pushRegister("(%rcx, %rax)");
+      push(Instr{.var = PushInstr{.what = "(%rcx, %rax)", .whatSize = DataSize::Byte}, .type = InstrType::Push}, Section::Main);
       break;
     }
     case 2:
-    case 4:
-    case 8:
-    {
-      // Multiply by the size of the type
-      pushRegister("(%rcx, %rax, " + std::to_string(underlyingByteSize) + ")");
+      push(Instr{.var = PushInstr { .what = "(%rcx, %rax, 2)", .whatSize = DataSize::Word }, .type = InstrType::Push }, Section::Main);
       break;
-    }
-
+    case 4:
+      push(Instr{.var = PushInstr { .what = "(%rcx, %rax, 4)", .whatSize = DataSize::Dword }, .type = InstrType::Push }, Section::Main);
+      break;
+    case 8:
+      push(Instr{.var = PushInstr { .what = "(%rcx, %rax, 8)", .whatSize = DataSize::Qword }, .type = InstrType::Push }, Section::Main);
+      break;
     default:
     {
       // Sad, we can't rely on little syntactical sugar of the assembler to cheat our way out :(
@@ -808,15 +804,7 @@ void codegen::assignStructMember(Node::Expr *expr)
       // Lea instr
       push(Instr{.var = LeaInstr{.size = DataSize::Qword, .dest = "%rcx", .src = "(%rdx)"},
                  .type = InstrType::Lea},
-           Section::Main);
-      return;
-    }
-    // The rhs is NOT a struct literal, but something else instead
-    // This is a bit more complicated
-    if (e->rhs->kind == ND_IDENT) {
-      // This is the easiest case where we just transfer each byte into the struct
-      visitExpr(e->rhs);
-      popToRegister("%rdx");
+            Section::Main);
       visitExpr(e->assignee);
       popToRegister("%rsi"); // The register used here doesn't matter, but rsi is rarely used in Zura (other than syscall @ functions)
       // Rdx contains the smaller struct. Rsi contains the bigger struct. Move each byte!

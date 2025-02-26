@@ -19,7 +19,7 @@ void codegen::print(Node::Stmt *stmt) {
       handleLiteralDisplay(print->fd, optimizedArg);
     else if (argType == "str")
       handleStrDisplay(print->fd, optimizedArg);
-    else if (argType == "int" || argType == "char")
+    else if (TypeChecker::isIntBasedType(arg->asmType))
       handlePrimitiveDisplay(print->fd, optimizedArg);
     else if (argType == "float")
       handleFloatDisplay(print->fd, optimizedArg);

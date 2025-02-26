@@ -1,6 +1,7 @@
 #include "../helper/error/error.hpp"
 #include "../ast/stmt.hpp"
 #include "type.hpp"
+#include <unordered_set>
 #include <memory>
 
 void TypeChecker::handleError(int line, int pos, std::string msg,
@@ -60,6 +61,8 @@ bool TypeChecker::checkTypeMatch(const std::shared_ptr<SymbolType> &lhs,
   if (type_to_string(lhs.get()) != type_to_string(rhs.get())) {
     // if one side is of type 'any' let the other side be the type so it is not an error
     if (type_to_string(lhs.get()) == "any" || type_to_string(rhs.get()) == "any") return true;
+    // Compare any int type to the builtin int typeturn true;
+    if (isIntBasedType(lhs.get()) && isIntBasedType(rhs.get())) return true;
     handleError(line, pos, msg, "", "Type Error");
     return false;
   }
@@ -217,4 +220,12 @@ Node::Type *TypeChecker::createDuplicate(Node::Type *type) {
       return nullptr;
     }
   }
+}
+
+bool TypeChecker::isIntBasedType(Node::Type *type) {
+  const static std::unordered_set<std::string> intTypes = {
+    "int", "signed int", "unsigned int", "char"
+  };
+
+  return intTypes.find(type_to_string(type)) != intTypes.end();
 }

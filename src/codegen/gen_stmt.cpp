@@ -285,8 +285,6 @@ void codegen::funcDecl(Node::Stmt *stmt) {
   for (size_t i = 0; i < s->params.size(); i++) {
     variableTable.erase(s->params.at(i).first);
   }
-
-  std::cout << "Function '" << s->name << "' has been compiled." << std::endl;
 };
 
 void codegen::varDecl(Node::Stmt *stmt) {
@@ -1071,7 +1069,7 @@ void codegen::declareArrayVariable(Node::Expr *expr, short int arrayLength,
     }
     visitExpr(element);
     // Pop the value into a register
-    popToRegister(std::to_string(-(arrayBase + ((i-1) * underlyingByteSize))) +
+    popToRegister(std::to_string(-(arrayBase + ((i) * underlyingByteSize))) +
                   "(%rbp)");
   }
 

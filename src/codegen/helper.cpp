@@ -353,7 +353,25 @@ void codegen::handlePrimitiveDisplay(Node::Expr *fd, Node::Expr *arg) {
   nativeFunctionsUsed[NativeASMFunc::strlen] = true;
   nativeFunctionsUsed[NativeASMFunc::itoa] = true;
   visitExpr(arg);
-  popToRegister("%rdi");
+  switch (getByteSizeOfType(arg->asmType)) {
+    case 1:
+      push(Instr{.var=PopInstr{.where="%al",.whereSize=DataSize::Byte},.type=InstrType::Pop},Section::Main);
+      pushLinker("movzx %al, %rdi\n\t",Section::Main);
+      // Sign extend
+      break;
+    case 2:
+      push(Instr{.var=PopInstr{.where="%ax",.whereSize=DataSize::Word},.type=InstrType::Pop},Section::Main);
+      pushLinker("movzx %ax, %rdi\n\t",Section::Main);
+      break;
+    case 4:
+      push(Instr{.var=PopInstr{.where="%eax",.whereSize=DataSize::Dword},.type=InstrType::Pop},Section::Main);
+      pushLinker("movzx %eax, %rdi\n\t",Section::Main);
+      break;
+    case 8:
+    default:
+      push(Instr{.var=PopInstr{.where="%rax",.whereSize=DataSize::Qword},.type=InstrType::Pop},Section::Main);
+      break;
+  }
   // subtract rsp
   push(Instr{.var=SubInstr{.lhs="%rsp",.rhs="$"+std::to_string(variableCount)},.type=InstrType::Sub},Section::Main);
   push(Instr{.var = CallInstr{.name = "native_itoa"}, .type = InstrType::Call},

@@ -89,9 +89,6 @@ set(ZURA_SOURCE_FILES
     src/main.cpp
 )
 
-# Add the version.txt file to the project
-configure_file(${CMAKE_BINARY_DIR}/version.txt ${CMAKE_BINARY_DIR}/version.txt COPYONLY)
-
 # Create executable
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 add_executable(zura ${ZURA_HEADER_FILES} ${ZURA_SOURCE_FILES})

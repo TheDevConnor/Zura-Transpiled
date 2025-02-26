@@ -96,6 +96,8 @@ inline std::unique_ptr<Maps> map = nullptr;
 
 std::string type_to_string(Node::Type *type);
 
+bool isIntBasedType(Node::Type *type);
+
 template <typename T, typename U>
 static void declare(std::unordered_map<T, U> &tables, std::string name, U value,
                     int line, int pos) {
