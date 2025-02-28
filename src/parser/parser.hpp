@@ -137,6 +137,7 @@ Node::Stmt *constStmt(PStruct *psr, std::string name);
 Node::Stmt *enumStmt(PStruct *psr, std::string name);
 Node::Stmt *loopStmt(PStruct *psr, std::string name);
 Node::Stmt *printStmt(PStruct *psr, std::string name);
+Node::Stmt *printlnStmt(PStruct *psr, std::string name);
 Node::Stmt *varStmt(PStruct *psr, std::string name);
 Node::Stmt *funStmt(PStruct *psr, std::string name);
 Node::Stmt *ifStmt(PStruct *psr, std::string name);

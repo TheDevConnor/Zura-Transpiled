@@ -375,11 +375,15 @@ void TypeChecker::visitPrint(Maps *map, Node::Stmt *stmt) {
                       "but got '" + type_to_string(return_type.get()) + "'";
     handleError(print_stmt->line, print_stmt->pos, msg, "", "Type Error");
   }
+
+  // check if we are a println statement if so add a new line to the end
+  if (print_stmt->isPrintln) print_stmt->args.push_back(new StringExpr(0, 0, "'\n'", 0));
+
   for (size_t i = 0; i < print_stmt->args.size(); i++) {
     visitExpr(map, print_stmt->args[i]);
     print_stmt->args[i]->asmType = createDuplicate(return_type.get());
-    ;
   }
+
   return_type = nullptr;
 }
 

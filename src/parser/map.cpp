@@ -64,7 +64,7 @@ void Parser::createMaps() {
       {TokenKind::BREAK, breakStmt},      {TokenKind::CONTINUE, continueStmt},
       {TokenKind::LINK, linkStmt},        {TokenKind::EXTERN, externStmt},
       {TokenKind::MATCH, matchStmt},      {TokenKind::INPUT, inputStmt},
-      {TokenKind::CLOSE, closeStmt},
+      {TokenKind::CLOSE, closeStmt},      {TokenKind::PRINTLN, printlnStmt},
   };
   nud_lu = {
       {TokenKind::INT, primary},           {TokenKind::FLOAT, primary},

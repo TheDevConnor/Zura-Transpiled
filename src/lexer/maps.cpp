@@ -59,7 +59,8 @@ void Lexer::initMap() {
       {"@free", TokenKind::FREE},         {"@alloc", TokenKind::ALLOC},
       {"@memcpy", TokenKind::MEMCPY},     {"@sizeof", TokenKind::SIZEOF},
       // file management
-      {"@open", TokenKind::OPEN},         {"@close", TokenKind::CLOSE}
+      {"@open", TokenKind::OPEN},         {"@close", TokenKind::CLOSE},
+      {"@outputln", TokenKind::PRINTLN},
   };
 
   keywords = {

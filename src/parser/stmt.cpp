@@ -137,6 +137,39 @@ Node::Stmt *Parser::printStmt(PStruct *psr, std::string name) {
   return new OutputStmt(line, column, fileDescriptor, args, codegen::getFileID(psr->current_file));
 }
 
+Node::Stmt *Parser::printlnStmt(PStruct *psr, std::string name) {
+  int line = psr->tks[psr->pos].line;
+  int column = psr->tks[psr->pos].column;
+
+  psr->expect(psr, TokenKind::PRINTLN,
+              "Expected a PRINTLN keyword to start an output stmt");
+  psr->expect(psr, TokenKind::LEFT_PAREN,
+              "Expected a L_PAREN to start an output stmt");
+
+  Node::Expr *fileDescriptor = parseExpr(psr, BindingPower::defaultValue);
+  if (psr->current(psr).kind == TokenKind::COMMA)
+    psr->expect(psr, TokenKind::COMMA,
+                "Expected a COMMA after the file descriptor in an output stmt");
+
+  std::vector<Node::Expr *> args; // Change the type of args vector
+
+  while (psr->current(psr).kind != TokenKind::RIGHT_PAREN) {
+    args.push_back(parseExpr(psr, BindingPower::defaultValue));
+    if (psr->current(psr).kind == TokenKind::COMMA)
+      psr->expect(psr, TokenKind::COMMA,
+                  "Expected a COMMA after an arguement in an output stmt");
+  }
+
+  if (psr->current(psr).kind == TokenKind::RIGHT_PAREN)
+    psr->expect(psr, TokenKind::RIGHT_PAREN,
+                "Expected a R_PAREN to end an output stmt");
+  if (psr->current(psr).kind == TokenKind::SEMICOLON)
+    psr->expect(psr, TokenKind::SEMICOLON,
+                "Expected a SEMICOLON at the end of an output stmt");
+
+  return new OutputStmt(line, column, fileDescriptor, args, codegen::getFileID(psr->current_file), true);
+}
+
 Node::Stmt *Parser::constStmt(PStruct *psr, std::string name) {
   int line = psr->tks[psr->pos].line;
   int column = psr->tks[psr->pos].column;

@@ -65,6 +65,7 @@ enum TokenKind {
   NIL,
   OR,
   PRINT,
+  PRINTLN,
   RETURN,
   SUPER,
   TR,

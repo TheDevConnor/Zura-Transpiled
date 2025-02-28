@@ -191,9 +191,10 @@ public:
   int line, pos;
   Node::Expr *fd;
   std::vector<Node::Expr *> args;
+  bool isPrintln = false;
 
-  OutputStmt(int line, int pos, Node::Expr *fd, std::vector<Node::Expr *> args, int file)
-      : line(line), pos(pos), fd(fd), args(std::move(args)) {
+  OutputStmt(int line, int pos, Node::Expr *fd, std::vector<Node::Expr *> args, int file, bool isPrintln = false)
+      : line(line), pos(pos), fd(fd), args(std::move(args)), isPrintln(isPrintln) {
     file_id = file;
     kind = NodeKind::ND_PRINT_STMT;
   }
