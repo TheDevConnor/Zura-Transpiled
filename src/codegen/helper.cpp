@@ -369,7 +369,8 @@ void codegen::handlePrimitiveDisplay(Node::Expr *fd, Node::Expr *arg) {
       break;
     case 8:
     default:
-      push(Instr{.var=PopInstr{.where="%rax",.whereSize=DataSize::Qword},.type=InstrType::Pop},Section::Main);
+      // Prev: Wrong register lol
+      push(Instr{.var=PopInstr{.where="%rdi",.whereSize=DataSize::Qword},.type=InstrType::Pop},Section::Main);
       break;
   }
   // subtract rsp

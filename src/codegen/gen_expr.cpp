@@ -766,17 +766,104 @@ void codegen::addressExpr(Node::Expr *expr)
   {
     IdentExpr *ident = static_cast<IdentExpr *>(realRight);
 
-    if (structByteSizes.find(getUnderlying(ident->asmType)) != structByteSizes.end())
+    push(Instr{.var=LeaInstr{.size=DataSize::Qword, .dest="%rcx", .src=variableTable[ident->name]},.type=InstrType::Lea},Section::Main);
+    pushRegister("%rcx");
+    return;
+  } else if (realRight->kind == ND_MEMBER) {
+    MemberExpr *member = static_cast<MemberExpr *>(realRight);
+    // Visit the lhs of the member
+    visitExpr(member->lhs); // This SHOULD be a struct
+    // Pop the value into a register
+    popToRegister("%rcx");
+    // But we must know the type of the lhs in order to know the offset of the field
+    std::string structName = getUnderlying(member->lhs->asmType);
+    std::string fieldName = static_cast<IdentExpr *>(member->rhs)->name;
+    // Now we can access the member
+    int offset = 0;
+    for (size_t i = 0; i < structByteSizes[structName].second.size(); i++)
     {
-      // It was a struct!
-      // It's very likely that what was pushed was "rcx" in this scenario.
-      // That, however, just does not apply to the lea instruction.
-      if (whatWasPushed == "%rcx")
-      {
-        pushRegister("%rcx");
-        return;
-      }
+      offset = structByteSizes[structName].second.at(i).second.second; // This is the offset, not the size of the type!
+      if (structByteSizes[structName].second.at(i).first == fieldName)
+        break;
     }
+    // Lea the address of the field
+    push(Instr{.var=LeaInstr{.size=DataSize::Qword, .dest="%rcx", .src=std::to_string(offset) + "(%rcx)"},.type=InstrType::Lea},Section::Main);
+    pushRegister("%rcx");
+    return;
+  } else if (realRight->kind == ND_INDEX) {
+    IndexExpr *index = static_cast<IndexExpr *>(realRight);
+    Node::Expr *compute = CompileOptimizer::optimizeExpr(index->rhs);
+    if (compute->kind == ND_INT) {
+      // It's constant, which means we can do some HEAVY optimization here!
+      IntExpr *intExpr = static_cast<IntExpr *>(compute);
+      signed long long int value = intExpr->value;
+      // Visit the lhs of the index
+      visitExpr(index->lhs); // This SHOULD be an array, which means it will push the address
+      text_section.pop_back(); // Remove the 'push'
+      // There should be an LEA on top of the text_section rn
+      LeaInstr instr = std::get<LeaInstr>(text_section.at(text_section.size() - 1).var);
+      text_section.pop_back(); // Remove the 'lea'
+      // Now we can "re-push" that value because its constant
+      int underlyingByteSize = getByteSizeOfType(static_cast<ArrayType *>(index->lhs->asmType)->underlying);
+      std::string leaRegister = instr.src.find('(') ? instr.src.substr(instr.src.find('(') + 1, instr.src.size() - instr.src.find('(') - 2) : instr.src;
+      int leaOffset = instr.src.find('(') ? std::stoi(instr.src.substr(0, instr.src.find('('))) : 0;
+      push(Instr{.var=LeaInstr{.size=DataSize::Qword, .dest="%rcx", .src=std::to_string(leaOffset + (value * underlyingByteSize)) + "(" + leaRegister + ")"},.type=InstrType::Lea},Section::Main);
+      pushRegister("%rcx");
+      return;
+    }
+    // We have to compute this :(
+    // Visit the weird rhs
+    visitExpr(compute);
+    int computeByteSize = getByteSizeOfType(compute->asmType);
+    switch (computeByteSize) {
+      case 1:
+        push(Instr{.var=PopInstr{.where = "%dl", .whereSize = DataSize::Byte},.type=InstrType::Pop},Section::Main);
+        // Movzx
+        // TODO: If the src type is signed, do a sign extend instead
+        pushLinker("movzbq %dl, %rdx\n\t",Section::Main);
+        break;
+      case 2:
+        push(Instr{.var=PopInstr{.where = "%dx", .whereSize = DataSize::Word},.type=InstrType::Pop},Section::Main);
+        // Movzx
+        pushLinker("movzwq %dx, %rdx\n\t",Section::Main);
+        break;
+      case 4:
+        push(Instr{.var=PopInstr{.where = "%edx", .whereSize = DataSize::Dword},.type=InstrType::Pop},Section::Main);
+        // Movzx
+        pushLinker("movzlq %edx, %rdx\n\t",Section::Main);
+        break;
+      default: // What went wrong? Why would it not be 8? It should be 8....
+      case 8:
+        push(Instr{.var=PopInstr{.where = "%rdx", .whereSize = DataSize::Qword},.type=InstrType::Pop},Section::Main);
+        break;
+    }
+    // Pop the value into a register
+    popToRegister("%rax");
+    // Visit the lhs of the index
+    visitExpr(index->lhs); // This SHOULD be an array, which means it will push the address
+    popToRegister("%rdx");
+    // Push the address as a effective address and multiplication
+    int underlyingByteSize = getByteSizeOfType(static_cast<ArrayType *>(index->lhs->asmType)->underlying);
+    switch (underlyingByteSize) {
+      case 1:
+        push(Instr{.var=LeaInstr{.size=DataSize::Qword, .dest="%rcx", .src="(%rdx, %rax)"},.type=InstrType::Lea},Section::Main);
+        break;
+      case 2:
+        push(Instr{.var=LeaInstr{.size=DataSize::Qword, .dest="%rcx", .src="(%rdx, %rax, 2)"},.type=InstrType::Lea},Section::Main);
+        break;
+      case 4:
+        push(Instr{.var=LeaInstr{.size=DataSize::Qword, .dest="%rcx", .src="(%rdx, %rax, 4)"},.type=InstrType::Lea},Section::Main);
+        break;
+      case 8:
+        push(Instr{.var=LeaInstr{.size=DataSize::Qword, .dest="%rcx", .src="(%rdx, %rax, 8)"},.type=InstrType::Lea},Section::Main);
+        break;
+      default:
+        push(Instr{.var=BinaryInstr{.op="imul",.src="$" + std::to_string(underlyingByteSize),.dst="%rax"},.type=InstrType::Binary},Section::Main);
+        push(Instr{.var=LeaInstr{.size=DataSize::Qword, .dest="%rcx", .src="(%rdx, %rax)"},.type=InstrType::Lea},Section::Main);
+        break;
+    }
+    pushRegister("%rcx");
+    return;
   }
   push(Instr{.var = LeaInstr{.size = DataSize::Qword, .dest = "%rcx", .src = whatWasPushed},
              .type = InstrType::Lea},
