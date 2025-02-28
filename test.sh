@@ -88,7 +88,7 @@ fi
 
 # Test 7: Print a string literal using dis
 expected_output="Hello, World!"
-echo "const main := fn () int { @dis(\"$expected_output\"); return 0; };" > zura_files/main.zu
+echo "const main := fn () int { @output(1, \"$expected_output\"); return 0; };" > zura_files/main.zu
 test7_passed=1
 ./release/zura build zura_files/main.zu -name main -quiet
 output=$(./main | tr -d '\0')
@@ -100,7 +100,7 @@ fi
 
 # Test 8: Print a string variable from dis
 expected_output="Goodbye, World!"
-echo "const main := fn () int { have a: int = 14; have b: str = \"$expected_output\"; @dis(b); return 0; };" > zura_files/main.zu
+echo "const main := fn () int { have a: int = 14; have b: str = \"$expected_output\"; @output(1, b); return 0; };" > zura_files/main.zu
 test8_passed=1
 ./release/zura build zura_files/main.zu -name main -quiet
 output=$(./main | tr -d '\0')
@@ -178,7 +178,7 @@ fi
 # test 14: dis on a int variable
 expected_output="10"
 expected_code=0 # expect success
-echo $'const main := fn () int { have a: int = 10; @dis(a); return 0; };' > zura_files/main.zu
+echo $'const main := fn () int { have a: int = 10; @output(1, a); return 0; };' > zura_files/main.zu
 test14_passed=1
 ./release/zura build zura_files/main.zu -name main -quiet
 output=$(./main | tr -d '\0')
@@ -197,7 +197,7 @@ fi
 # test 15: dis on a int literal
 expected_output="12"
 expected_code=1
-echo $'const main := fn () int { @dis(12); return 1; };' > zura_files/main.zu
+echo $'const main := fn () int { @output(1, 12); return 1; };' > zura_files/main.zu
 test15_passed=1
 ./release/zura build zura_files/main.zu -name main -quiet
 output=$(./main)

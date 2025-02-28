@@ -1,6 +1,1 @@
-const main := fn () int {
-  loop (i = 0; i < 10): (i++) { # This is not ouputting correctly lol :( I have to look into it
-    @outputln(1, i); # BUT this is outputting correctly :o
-  }
-  return 0;
-};
+const main := fn () int { have a: int = 0; loop (a < 10) { a = a + 1; } return a; };

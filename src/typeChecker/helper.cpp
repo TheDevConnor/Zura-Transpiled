@@ -178,14 +178,17 @@ bool TypeChecker::validateArgumentTypes(Maps *map, CallExpr *call, Node::Expr *c
                                         const std::vector<std::pair<std::string, Node::Type *>> &fnParams) {
   for (size_t i = 0; i < call->args.size(); ++i) {
     visitExpr(map, call->args[i]);
-    std::string argType = type_to_string(return_type.get());
-    std::string expectedType = type_to_string(fnParams[i + (callee->kind == ND_MEMBER ? 1 : 0)].second);
+    std::string argTypeStr = type_to_string(return_type.get());
+    Node::Type *expectedType = fnParams[i + (callee->kind == ND_MEMBER ? 1 : 0)].second;
+    std::string expectedTypeStr = type_to_string(expectedType);
 
-    if (argType != expectedType) {
+    if (argTypeStr != expectedTypeStr) {
+      // If int is compared to an unsigned int or something, let it go
+      if (isIntBasedType(return_type.get()) && isIntBasedType(expectedType)) continue; // They can effectively be casted to one another
       std::string functionName = callee->kind == ND_IDENT ? static_cast<IdentExpr *>(callee)->name : static_cast<IdentExpr *>(static_cast<MemberExpr *>(callee)->lhs)->name;
       std::string msg = "Function '" + functionName + "' requires argument '" +
-                        fnParams[i].first + "' to be of type '" + expectedType +
-                        "' but got '" + argType + "'";
+                        fnParams[i].first + "' to be of type '" + expectedTypeStr +
+                        "' but got '" + argTypeStr + "'";
       handleError(call->line, call->pos, msg, "", "Type Error");
       return_type = std::make_shared<SymbolType>("unknown");
       return false;

@@ -386,7 +386,26 @@ void codegen::call(Node::Expr *expr)
       }
       else if (structByteSizes.find(st->name) != structByteSizes.end())
       {
+        // TODO: No! This is really wrong!!!!
         pushRegister("%rax"); // When tossing this thing around, its handled basically as a pointer
+      } else {
+        // switch over the byte size of return type
+        switch (getByteSizeOfType(e->asmType))
+        {
+          case 1:
+            push(Instr{.var=PushInstr{.what="%al",.whatSize=DataSize::Byte},.type=InstrType::Push},Section::Main);
+            break;
+          case 2:
+            push(Instr{.var=PushInstr{.what="%ax",.whatSize=DataSize::Word},.type=InstrType::Push},Section::Main);
+            break;
+          case 4:
+            push(Instr{.var=PushInstr{.what="%eax",.whatSize=DataSize::Dword},.type=InstrType::Push},Section::Main);
+            break;
+          case 8:
+          default:
+            push(Instr{.var=PushInstr{.what="%rax",.whatSize=DataSize::Qword},.type=InstrType::Push},Section::Main);
+            break;
+        }
       }
     }
   }
@@ -433,7 +452,44 @@ void codegen::call(Node::Expr *expr)
          Section::Main);
     if (offsetAmount)
       push(Instr{.var = AddInstr{.lhs = "%rsp", .rhs = "$" + std::to_string(offsetAmount)}, .type = InstrType::Sub}, Section::Main);
-    pushRegister("%rax");
+      if (e->asmType->kind == ND_POINTER_TYPE ||
+        e->asmType->kind == ND_ARRAY_TYPE ||
+        e->asmType->kind == ND_FUNCTION_TYPE ||
+        e->asmType->kind == ND_FUNCTION_TYPE_PARAM)
+    {
+      pushRegister("%rax");
+    }
+    else
+    {
+      SymbolType *st = static_cast<SymbolType *>(e->asmType);
+      if (st->name == "float" || st->name == "double")
+      {
+        push(Instr{.var = PushInstr{.what = "%xmm0", .whatSize = DataSize::SS}, .type = InstrType::Push}, Section::Main); // abi standard (can hold many bytes of data, so its fine for both floats AND doubles to fit in here)
+      }
+      else if (structByteSizes.find(st->name) != structByteSizes.end())
+      {
+        // TODO: No! This is really wrong!!!!
+        pushRegister("%rax"); // When tossing this thing around, its handled basically as a pointer
+      } else {
+        // switch over the byte size of return type
+        switch (getByteSizeOfType(e->asmType))
+        {
+          case 1:
+            push(Instr{.var=PushInstr{.what="%al",.whatSize=DataSize::Byte},.type=InstrType::Push},Section::Main);
+            break;
+          case 2:
+            push(Instr{.var=PushInstr{.what="%ax",.whatSize=DataSize::Word},.type=InstrType::Push},Section::Main);
+            break;
+          case 4:
+            push(Instr{.var=PushInstr{.what="%eax",.whatSize=DataSize::Dword},.type=InstrType::Push},Section::Main);
+            break;
+          case 8:
+          default:
+            push(Instr{.var=PushInstr{.what="%rax",.whatSize=DataSize::Qword},.type=InstrType::Push},Section::Main);
+            break;
+        }
+      }
+    }
   }
 }
 
