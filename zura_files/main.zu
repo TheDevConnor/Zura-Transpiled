@@ -1,12 +1,13 @@
+const Test := struct {
+  x: *int,
+};
+
 const main := fn () int {
-  have num: int = 500;
-  have ptr: *int = &num; # address of num
+  have a: int = 59;
+  have t: Test = {
+    x: &a,
+  };
 
-  @outputln(1, "Value of num: ", num);
-  @outputln(1, "Value using pointer dereference: ", ptr&);
-
-  ptr& = 100; # TODO: This is not working yet
-  @outputln(1, "Value of num after change: ", num);
-
-  return 0;
+  have b: int = t.x&;
+  return a;
 };

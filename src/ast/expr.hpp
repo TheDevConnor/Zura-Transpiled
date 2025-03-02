@@ -333,17 +333,18 @@ public:
 class DereferenceExpr : public Node::Expr {
 public:
   int line, pos;
-  std::string name;
+  Node::Expr *left;
 
-  DereferenceExpr(int line, int pos, std::string name, int file)
-      : line(line), pos(pos), name(name) {
+  DereferenceExpr(int line, int pos, Node::Expr *left, int file)
+      : line(line), pos(pos), left(left) {
     file_id = file;
     kind = NodeKind::ND_DEREFERENCE;
   }
 
   void debug(int indent = 0) const override {
     Node::printIndent(indent);
-    std::cout << "DereferenceExpr: " << name << "\n";
+    std::cout << "DereferenceExpr: \n";
+    left->debug(indent + 1);
   }
 
   ~DereferenceExpr() = default; // rule of threes

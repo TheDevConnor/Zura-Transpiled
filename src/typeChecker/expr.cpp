@@ -78,28 +78,21 @@ void TypeChecker::visitAddress(Maps *map, Node::Expr *expr) {
 void TypeChecker::visitDereference(Maps *map, Node::Expr *expr) {
   DereferenceExpr *dereference = static_cast<DereferenceExpr *>(expr);
   // look though the local and global symbol table to find the type of the
-  Node::Type *it = (map->local_symbol_table.find(dereference->name) != map->local_symbol_table.end())
-                ? map->local_symbol_table[dereference->name]
-                : map->global_symbol_table[dereference->name];
-  if (it == nullptr) {
-    std::string msg = "Undefined variable '" + dereference->name + "'";
-    handleError(dereference->line, dereference->pos, msg, "", "Type Error");
-    return_type = std::make_shared<SymbolType>("unknown");
-    expr->asmType = new SymbolType("unknown");
-    return;
-  }
-  
-  // check if the type is a pointer
-  if (it->kind != ND_POINTER_TYPE) {
-    std::string msg = "Dereference requires the type to be a pointer but got '" + type_to_string(it) + "'";
+  visitExpr(map, dereference->left);
+
+  // check if the left side is a pointer
+  auto it = checkReturnType(dereference->left, "unknown");  
+  if (type_to_string(it.get()).find("*") == std::string::npos) {
+    std::string msg = "Dereference operation requires the left hand side to be a pointer but got '" + type_to_string(it.get()) + "'";
     handleError(dereference->line, dereference->pos, msg, "", "Type Error");
     return_type = std::make_shared<SymbolType>("unknown");
     expr->asmType = new SymbolType("unknown");
     return;
   }
 
-  // update the return type to be the underlying type of the pointer
-  return_type = std::make_shared<SymbolType>(type_to_string(static_cast<PointerType *>(it)->underlying));
+  // remove the '*' from the type
+  std::string ptr = it.get()->name.replace(it.get()->name.find("*"), 1, "");
+  return_type = std::make_shared<SymbolType>(ptr);
   expr->asmType = createDuplicate(return_type.get());
 }
 

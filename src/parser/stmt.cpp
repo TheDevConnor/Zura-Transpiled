@@ -321,17 +321,7 @@ Node::Stmt *Parser::structStmt(PStruct *psr, std::string name) {
       Node::Type *fieldType = parseType(psr, BindingPower::defaultValue);
       fields.push_back({fieldName, fieldType});
       if (psr->peek(psr).kind == TokenKind::RIGHT_BRACE) break; // who cares about the semicolon/comma?
-      if (psr->peek(psr).kind == TokenKind::SEMICOLON) {
-        Lexer::Token semi = psr->advance(psr);
-        if (warnForSemi) {
-          ErrorClass::error(semi.line, semi.column, "Semicolons are non-standard for struct field lists",
-          "Found while parsing struct '" + name + "'.", "Parser Error", psr->current_file.c_str(),
-          lexer, psr->tks, true, true, false, false, false, false);
-          warnForSemi = false;
-        }
-      }
-      psr->expect(psr, TokenKind::COMMA,
-                  "Expected a COMMA after the field type in a struct stmt");
+      psr->expect(psr, TokenKind::COMMA, "Semicolons are non-standard for struct field lists; use commas instead");
       break;
     }
     case TokenKind::SEMICOLON: {

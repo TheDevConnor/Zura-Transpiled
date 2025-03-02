@@ -929,15 +929,8 @@ void codegen::addressExpr(Node::Expr *expr)
 
 void codegen::dereferenceExpr(Node::Expr *expr) {
   DereferenceExpr *e = static_cast<DereferenceExpr *>(expr);
-
-  // Look up variable address in the table
-  std::string var = variableTable[e->name];
-
-  // Load the pointer's value (which is an address) into %rcx
-  push(Instr{.var=MovInstr{.dest="%rcx", .src=var}, .type=InstrType::Mov}, Section::Main);
-
-  // Dereference %rcx to get the value stored at that address
-  pushRegister("(%rcx)");
+  std::cout << "Dereference expression not implemented! I Connor dos not know what to do lol" << std::endl;
+  exit(-1);
 }
 
 void codegen::assignStructMember(Node::Expr *expr)

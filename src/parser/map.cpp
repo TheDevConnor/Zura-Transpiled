@@ -119,6 +119,8 @@ void Parser::createMaps() {
 
       {TokenKind::AND, binary},
       {TokenKind::OR, binary},
+
+      {TokenKind::LAND, dereference},
   };
   bp_lu = {
       {TokenKind::COMMA, BindingPower::comma},
@@ -172,6 +174,7 @@ void Parser::createMaps() {
 
       {TokenKind::DOT, BindingPower::member},
       {TokenKind::RESOLUTION, BindingPower::member},
+      {TokenKind::LAND, BindingPower::member},
   };
   ignore_tokens = {
       TokenKind::SEMICOLON,

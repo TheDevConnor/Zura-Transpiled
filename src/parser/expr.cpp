@@ -37,11 +37,6 @@ Node::Expr *Parser::primary(PStruct *psr) {
     return new FloatExpr(line, column, std::stof(psr->advance(psr).value), codegen::getFileID(psr->current_file));
   }
   case TokenKind::IDENTIFIER: {
-    if (psr->peek(psr, 1).kind == TokenKind::LAND) {
-      std::string name = psr->advance(psr).value;
-      psr->advance(psr); // skip the LAND token
-      return new DereferenceExpr(line, column, name, codegen::getFileID(psr->current_file));
-    }
     return new IdentExpr(line, column, psr->advance(psr).value, nullptr, codegen::getFileID(psr->current_file));
   }
   case TokenKind::STRING: {
@@ -456,6 +451,14 @@ Node::Expr *Parser::address(PStruct *psr) {
   Node::Expr *expr = parseExpr(psr, defaultValue);
 
   return new AddressExpr(line, column, expr, codegen::getFileID(psr->current_file));
+}
+
+Node::Expr *Parser::dereference(PStruct *psr, Node::Expr *left, BindingPower bp) {
+  int line = psr->tks[psr->pos].line;
+  int column = psr->tks[psr->pos].column;
+  Lexer::Token op = psr->advance(psr);
+
+  return new DereferenceExpr(line, column, left, codegen::getFileID(psr->current_file));
 }
 
 Node::Expr *Parser::nullType(PStruct *psr) {
