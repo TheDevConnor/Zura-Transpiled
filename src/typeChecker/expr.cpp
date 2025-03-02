@@ -39,12 +39,8 @@ void TypeChecker::visitInt(Maps *map, Node::Expr *expr) {
     handleError(integer->line, integer->pos, msg, "", "Type Error");
   }
 
-  bool isSigned = integer->value < 0;
-
-  std::string type = isSigned ? "signed int" : "unsigned int";
-
-  return_type = std::make_shared<SymbolType>(type);
-  expr->asmType = new SymbolType(type);
+  return_type = std::make_shared<SymbolType>("int");
+  expr->asmType = new SymbolType("int");
 }
 
 void TypeChecker::visitFloat(Maps *map, Node::Expr *expr) {
@@ -77,6 +73,34 @@ void TypeChecker::visitAddress(Maps *map, Node::Expr *expr) {
   visitExpr(map, address->right);
   return_type = std::make_shared<PointerType>(return_type.get());
   expr->asmType = new PointerType(createDuplicate(address->right->asmType));
+}
+
+void TypeChecker::visitDereference(Maps *map, Node::Expr *expr) {
+  DereferenceExpr *dereference = static_cast<DereferenceExpr *>(expr);
+  // look though the local and global symbol table to find the type of the
+  Node::Type *it = (map->local_symbol_table.find(dereference->name) != map->local_symbol_table.end())
+                ? map->local_symbol_table[dereference->name]
+                : map->global_symbol_table[dereference->name];
+  if (it == nullptr) {
+    std::string msg = "Undefined variable '" + dereference->name + "'";
+    handleError(dereference->line, dereference->pos, msg, "", "Type Error");
+    return_type = std::make_shared<SymbolType>("unknown");
+    expr->asmType = new SymbolType("unknown");
+    return;
+  }
+  
+  // check if the type is a pointer
+  if (it->kind != ND_POINTER_TYPE) {
+    std::string msg = "Dereference requires the type to be a pointer but got '" + type_to_string(it) + "'";
+    handleError(dereference->line, dereference->pos, msg, "", "Type Error");
+    return_type = std::make_shared<SymbolType>("unknown");
+    expr->asmType = new SymbolType("unknown");
+    return;
+  }
+
+  // update the return type to be the underlying type of the pointer
+  return_type = std::make_shared<SymbolType>(type_to_string(static_cast<PointerType *>(it)->underlying));
+  expr->asmType = createDuplicate(return_type.get());
 }
 
 void TypeChecker::visitIdent(Maps *map, Node::Expr *expr) {

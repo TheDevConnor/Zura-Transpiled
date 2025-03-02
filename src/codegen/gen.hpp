@@ -90,6 +90,7 @@ void memberExpr(Node::Expr *expr);
 void _struct(Node::Expr *expr);
 void externalCall(Node::Expr *expr);
 void addressExpr(Node::Expr *expr);
+void dereferenceExpr(Node::Expr *expr);
 void nullExpr(Node::Expr *expr);
 void allocExpr(Node::Expr *expr);
 void freeExpr(Node::Expr *expr);

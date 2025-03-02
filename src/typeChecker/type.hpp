@@ -227,6 +227,7 @@ void visitCast(Maps *map, Node::Expr *expr);
 void visitExternalCall(Maps *map, Node::Expr *expr);
 void visitStructExpr(Maps *map, Node::Expr *expr);
 void visitAddress(Maps *map, Node::Expr *expr);
+void visitDereference(Maps *map, Node::Expr *expr);
 void visitAllocMemory(Maps *map, Node::Expr *expr);
 void visitFreeMemory(Maps *map, Node::Expr *expr);
 void visitMemcpyMemory(Maps *map, Node::Expr *expr);

@@ -330,6 +330,25 @@ public:
   ~AddressExpr() = default; // rule of threes
 };
 
+class DereferenceExpr : public Node::Expr {
+public:
+  int line, pos;
+  std::string name;
+
+  DereferenceExpr(int line, int pos, std::string name, int file)
+      : line(line), pos(pos), name(name) {
+    file_id = file;
+    kind = NodeKind::ND_DEREFERENCE;
+  }
+
+  void debug(int indent = 0) const override {
+    Node::printIndent(indent);
+    std::cout << "DereferenceExpr: " << name << "\n";
+  }
+
+  ~DereferenceExpr() = default; // rule of threes
+};
+
 class ArrayExpr : public Node::Expr {
 public:
   int line, pos;

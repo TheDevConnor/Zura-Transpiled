@@ -61,6 +61,7 @@ std::vector<std::pair<NodeKind, TypeChecker::ExprNodeHandler>>
         {NodeKind::ND_EXTERNAL_CALL, visitExternalCall},
         {NodeKind::ND_STRUCT, visitStructExpr},
         {NodeKind::ND_ADDRESS, visitAddress},
+        {NodeKind::ND_DEREFERENCE, visitDereference},
         {NodeKind::ND_FREE_MEMORY, visitFreeMemory},
         {NodeKind::ND_ALLOC_MEMORY, visitAllocMemory},
         {NodeKind::ND_SIZEOF, visitSizeof},

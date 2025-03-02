@@ -41,6 +41,7 @@ void codegen::initMaps() {
       {ND_EXTERNAL_CALL, externalCall},
       {ND_STRUCT, _struct},
       {ND_ADDRESS, addressExpr},
+      {ND_DEREFERENCE, dereferenceExpr},
       {ND_NULL, nullExpr},
       {ND_FREE_MEMORY, freeExpr},
       {ND_ALLOC_MEMORY, allocExpr},
