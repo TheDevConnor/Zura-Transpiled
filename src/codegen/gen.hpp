@@ -100,6 +100,7 @@ void openExpr(Node::Expr *expr);
 
 void assignStructMember(Node::Expr *expr);
 void assignArray(Node::Expr *expr);
+void assignDereference(Node::Expr *expr);
 void declareStructVariable(Node::Expr *expr, std::string structName, std::string offsetRegister, int startOffset);
 void declareArrayVariable(Node::Expr *expr, short int arrayLength, std::string varName);
 
