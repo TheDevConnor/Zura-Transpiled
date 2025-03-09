@@ -53,6 +53,9 @@ class TestZuraPrograms(unittest.TestCase):
     
     def test_struct_field_access(self):
         run_test("const a:=struct{x:int,};const main:=fn()int{have b:a={x:72};return b.x;};", expected_exit_code=72)
+      
+    def test_point_to_struct(self):
+        run_test("const a:=struct{x:int,};const main:=fn()int{have b:a={x:72};have c:*a=&b;return c.x;};", expected_exit_code=72)
 
 if __name__ == "__main__":
     unittest.main()
