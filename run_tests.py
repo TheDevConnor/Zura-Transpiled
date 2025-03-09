@@ -4,6 +4,10 @@ import os
 
 def run_test(code: str, expected_exit_code=None, expected_output=None):
     """Helper function to compile and run a Zura program, checking exit code and/or output."""
+    # Check if release directory exists and a zura binary is present
+    if not os.path.exists("release/zura"):
+        raise FileNotFoundError("Zura binary not found. Please build the project in release mode first using './build.sh release'.")
+
     with open("zura_files/main.zu", "w") as f:
         f.write(code)
     
