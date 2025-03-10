@@ -2,6 +2,7 @@
 #include "../ast/types.hpp"
 #include "../helper/math/math.hpp"
 #include "type.hpp"
+#include "typeMaps.hpp"
 #include <algorithm>
 #include <memory>
 
@@ -9,18 +10,18 @@
 #include <optional>
 #include <string>
 
-void TypeChecker::visitExpr(Maps *map, Node::Expr *expr) {
-  ExprAstLookup(expr, map);
+void TypeChecker::visitExpr(Node::Expr *expr) {
+  ExprAstLookup(expr);
 }
 
-void TypeChecker::visitTemplateCall(Maps *map, Node::Expr *expr) {
+void TypeChecker::visitTemplateCall(Node::Expr *expr) {
   TemplateCallExpr *template_call = static_cast<TemplateCallExpr *>(expr);
 
   std::string msg = "Template function calls are not supported yet";
   handleError(template_call->line, template_call->pos, msg, "", "Type Error");
 }
 
-void TypeChecker::visitExternalCall(Maps *map, Node::Expr *expr) {
+void TypeChecker::visitExternalCall(Node::Expr *expr) {
   // There's not really a whole lot to typecheck here , lol
   return_type = std::make_shared<SymbolType>(
       "unknown"); // Unknown type, imagine that this is cast to like int or
@@ -28,7 +29,7 @@ void TypeChecker::visitExternalCall(Maps *map, Node::Expr *expr) {
   expr->asmType = new SymbolType("unknown");
 };
 
-void TypeChecker::visitInt(Maps *map, Node::Expr *expr) {
+void TypeChecker::visitInt(Node::Expr *expr) {
   IntExpr *integer = static_cast<IntExpr *>(expr);
 
   // check if the integer is within the range of an i64 int
@@ -43,7 +44,7 @@ void TypeChecker::visitInt(Maps *map, Node::Expr *expr) {
   expr->asmType = new SymbolType("int");
 }
 
-void TypeChecker::visitFloat(Maps *map, Node::Expr *expr) {
+void TypeChecker::visitFloat(Node::Expr *expr) {
   FloatExpr *floating = static_cast<FloatExpr *>(expr);
 
   // check if the float is within the range of an f32 float
@@ -58,27 +59,27 @@ void TypeChecker::visitFloat(Maps *map, Node::Expr *expr) {
   expr->asmType = new SymbolType("float");
 }
 
-void TypeChecker::visitString(Maps *map, Node::Expr *expr) {
+void TypeChecker::visitString(Node::Expr *expr) {
   return_type = std::make_shared<SymbolType>("str");
   expr->asmType = new SymbolType("str");
 }
 
-void TypeChecker::visitChar(Maps *map, Node::Expr *expr) {
+void TypeChecker::visitChar(Node::Expr *expr) {
   return_type = std::make_shared<SymbolType>("char");
   expr->asmType = new SymbolType("char");
 }
 
-void TypeChecker::visitAddress(Maps *map, Node::Expr *expr) {
+void TypeChecker::visitAddress(Node::Expr *expr) {
   AddressExpr *address = static_cast<AddressExpr *>(expr);
-  visitExpr(map, address->right);
+  visitExpr(address->right);
   return_type = std::make_shared<PointerType>(return_type.get());
   expr->asmType = new PointerType(createDuplicate(address->right->asmType));
 }
 
-void TypeChecker::visitDereference(Maps *map, Node::Expr *expr) {
+void TypeChecker::visitDereference(Node::Expr *expr) {
   DereferenceExpr *dereference = static_cast<DereferenceExpr *>(expr);
   // look though the local and global symbol table to find the type of the
-  visitExpr(map, dereference->left);
+  visitExpr(dereference->left);
 
   // check if the left side is a pointer
   auto it = checkReturnType(dereference->left, "unknown");  
@@ -96,32 +97,34 @@ void TypeChecker::visitDereference(Maps *map, Node::Expr *expr) {
   expr->asmType = createDuplicate(return_type.get());
 }
 
-void TypeChecker::visitIdent(Maps *map, Node::Expr *expr) {
+void TypeChecker::visitIdent(Node::Expr *expr) {
   IdentExpr *ident = static_cast<IdentExpr *>(expr);
   Node::Type *res = nullptr;
 
-  if (map->local_symbol_table.find(ident->name) != map->local_symbol_table.end()) {
-    res = map->local_symbol_table[ident->name];
-    ident->asmType = createDuplicate(res);
-  } else if (map->global_symbol_table.find(ident->name) != map->global_symbol_table.end()) {
-    res = map->global_symbol_table[ident->name];
-    ident->asmType = createDuplicate(res);
+  // if (map->local_symbol_table.find(ident->name) != map->local_symbol_table.end()) {
+  //   res = map->local_symbol_table[ident->name];
+  //   ident->asmType = createDuplicate(res);
+  // } else if (map->global_symbol_table.find(ident->name) != map->global_symbol_table.end()) {
+  //   res = map->global_symbol_table[ident->name];
+  //   ident->asmType = createDuplicate(res);
+  // }
+  for (auto it : context->localScopes) {
+    if (it.find(ident->name) != it.end()) {
+      res = it[ident->name];
+      ident->asmType = createDuplicate(res);
+    }
   }
 
-  // check if we found something in the local symbol table if not return error
-  // of 'did you mean'
+  // check if we found something in the local symbol table if not return error of 'did you mean'
   if (res == nullptr) {
-    for (std::pair<std::string, Node::Type *> pair : map->local_symbol_table)
-      map->stackKeys.push_back(pair.first);
-    std::optional<std::string> closest =
-        string_distance(map->stackKeys, ident->name, 3);
-    std::string msg = "";
-    if (closest.has_value()) {
-      msg = "Undefined variable '" + ident->name + "' did you mean '" +
-            closest.value() + "'?";
-    } else {
-      msg = "Undefined variable '" + ident->name + "'";
+    for (auto it : context->localScopes) {
+      for (auto pair : it) {
+        context->stackKeys.push_back(pair.first);
+      }
     }
+    std::optional<std::string> closest = string_distance(context->stackKeys, ident->name, 3);
+    std::string msg = (closest.has_value()) ? "Undefined variable '" + ident->name + "' did you mean '" + closest.value() + "'?" 
+                                            : "Undefined variable '" + ident->name + "'";
     handleError(ident->line, ident->pos, msg, "", "Type Error");
     res = new SymbolType("unknown"); // return unknown type
   }
@@ -158,12 +161,12 @@ void TypeChecker::visitIdent(Maps *map, Node::Expr *expr) {
   }
 }
 
-void TypeChecker::visitBinary(Maps *map, Node::Expr *expr) {
+void TypeChecker::visitBinary(Node::Expr *expr) {
   BinaryExpr *binary = static_cast<BinaryExpr *>(expr);
 
-  visitExpr(map, binary->lhs);
+  visitExpr(binary->lhs);
   std::shared_ptr<SymbolType> lhs = checkReturnType(binary->lhs, "unknown");
-  visitExpr(map, binary->rhs);
+  visitExpr(binary->rhs);
   std::shared_ptr<SymbolType> rhs = checkReturnType(binary->rhs, "unknown");
 
   std::string msg = "Binary operation '" + binary->op +
@@ -177,12 +180,10 @@ void TypeChecker::visitBinary(Maps *map, Node::Expr *expr) {
     return;
   }
 
-  if (map->mathOps.find(binary->op) != map->mathOps.end()) {
+  if (mathOps.find(binary->op) != mathOps.end()) {
     return_type = lhs;
-    expr->asmType =
-        new SymbolType(lhs.get()->name); // This, for some reason, is needed,
-                                         // and only in debug mode?????
-  } else if (map->boolOps.find(binary->op) != map->boolOps.end()) {
+    expr->asmType = new SymbolType(lhs.get()->name); // This, for some reason, is needed, otherwise the type is not set
+  } else if (boolOps.find(binary->op) != boolOps.end()) {
     return_type = std::make_shared<SymbolType>("bool");
     expr->asmType = new SymbolType("bool");
   } else {
@@ -193,14 +194,14 @@ void TypeChecker::visitBinary(Maps *map, Node::Expr *expr) {
   }
 }
 
-void TypeChecker::visitUnary(Maps *map, Node::Expr *expr) {
+void TypeChecker::visitUnary(Node::Expr *expr) {
   UnaryExpr *unary = static_cast<UnaryExpr *>(expr);
 
   if (unary->op == "-") {
     // update the bool on the value to be negative
     IntExpr *integer = static_cast<IntExpr *>(unary->expr);
     integer->isNegative = true;
-    visitExpr(map, integer);
+    visitExpr(integer);
 
     if (!isIntBasedType(return_type.get())) {
       std::string msg = "Unary operation '" + unary->op +
@@ -212,7 +213,7 @@ void TypeChecker::visitUnary(Maps *map, Node::Expr *expr) {
     return;
   }
 
-  visitExpr(map, unary->expr);
+  visitExpr(unary->expr);
 
   return_type = checkReturnType(expr, "unknown");
   expr->asmType = createDuplicate(return_type.get());
@@ -235,29 +236,29 @@ void TypeChecker::visitUnary(Maps *map, Node::Expr *expr) {
   }
 }
 
-void TypeChecker::visitGrouping(Maps *map, Node::Expr *expr) {
+void TypeChecker::visitGrouping(Node::Expr *expr) {
   GroupExpr *grouping = static_cast<GroupExpr *>(expr);
-  visitExpr(map, grouping->expr);
+  visitExpr(grouping->expr);
   expr->asmType = createDuplicate(return_type.get());
 }
 
-void TypeChecker::visitBool(Maps *map, Node::Expr *expr) {
+void TypeChecker::visitBool(Node::Expr *expr) {
   return_type = std::make_shared<SymbolType>("bool");
   expr->asmType = createDuplicate(return_type.get());
 }
 
-void TypeChecker::visitTernary(Maps *map, Node::Expr *expr) {
+void TypeChecker::visitTernary(Node::Expr *expr) {
   TernaryExpr *ternary = static_cast<TernaryExpr *>(expr);
-  visitExpr(map, ternary->condition);
+  visitExpr(ternary->condition);
   if (type_to_string(return_type.get()) != "bool") {
     std::string msg = "Ternary condition must be a 'bool' but got '" +
                       type_to_string(return_type.get()) + "'";
     handleError(ternary->line, ternary->pos, msg, "", "Type Error");
   }
 
-  visitExpr(map, ternary->lhs);
+  visitExpr(ternary->lhs);
   std::shared_ptr<Node::Type> lhs = return_type;
-  visitExpr(map, ternary->rhs);
+  visitExpr(ternary->rhs);
   std::shared_ptr<Node::Type> rhs = return_type;
 
   if (lhs == nullptr || rhs == nullptr) {
@@ -275,11 +276,11 @@ void TypeChecker::visitTernary(Maps *map, Node::Expr *expr) {
   expr->asmType = lhs.get();
 }
 
-void TypeChecker::visitAssign(Maps *map, Node::Expr *expr) {
+void TypeChecker::visitAssign(Node::Expr *expr) {
   AssignmentExpr *assign = static_cast<AssignmentExpr *>(expr);
-  visitExpr(map, assign->assignee);
+  visitExpr(assign->assignee);
   std::shared_ptr<Node::Type> lhs = return_type;
-  visitExpr(map, assign->rhs);
+  visitExpr(assign->rhs);
   std::shared_ptr<Node::Type> rhs = return_type;
 
   if (lhs == nullptr || rhs == nullptr) {
@@ -310,7 +311,7 @@ void TypeChecker::visitAssign(Maps *map, Node::Expr *expr) {
   expr->asmType = lhs.get();
 }
 
-void TypeChecker::visitCall(Maps *map, Node::Expr *expr) {
+void TypeChecker::visitCall(Node::Expr *expr) {
   CallExpr *call = static_cast<CallExpr *>(expr);
   Node::Expr *name = call->callee;
 
@@ -332,7 +333,7 @@ void TypeChecker::visitCall(Maps *map, Node::Expr *expr) {
     return;
   }
 
-  if (!validateArgumentTypes(map, call, name, fnParams)) {
+  if (!validateArgumentTypes(call, name, fnParams)) {
     return;
   }
 
@@ -353,16 +354,16 @@ void TypeChecker::visitCall(Maps *map, Node::Expr *expr) {
   }
 }
 
-void TypeChecker::visitMember(Maps *map, Node::Expr *expr) {
+void TypeChecker::visitMember(Node::Expr *expr) {
   MemberExpr *member = static_cast<MemberExpr *>(expr);
 
   // Verify that the lhs is a struct or enum
-  visitExpr(map, member->lhs);
+  visitExpr(member->lhs);
   std::string lhsType = type_to_string(return_type.get());
   std::string name = static_cast<IdentExpr *>(member->rhs)->name;
 
   // Determine if lhs is a struct or enum
-  std::string typeKind = determineTypeKind(map, lhsType);
+  std::string typeKind = determineTypeKind(lhsType);
 
   // check if the lhs is a struct or enum
   if (map->struct_table.find(lhsType) == map->struct_table.end() && map->enum_table.find(name) == map->enum_table.end()) {
@@ -375,9 +376,9 @@ void TypeChecker::visitMember(Maps *map, Node::Expr *expr) {
 
   // check if the lhs is a struct
   if (typeKind == "struct") {
-    processStructMember(map, member, name, lhsType);
+    processStructMember(member, name, lhsType);
   } else if (typeKind == "enum") {
-    processEnumMember(map, member, name);
+    processEnumMember(member, name);
   } else {
     std::string msg = "Member access requires the left hand side to be a struct or enum but got '" + lhsType + "' for '" + name + "'";
     handleError(member->line, member->pos, msg, "", "Type Error");
@@ -386,7 +387,7 @@ void TypeChecker::visitMember(Maps *map, Node::Expr *expr) {
   }
 }
 
-void TypeChecker::visitArray(Maps *map, Node::Expr *expr) {
+void TypeChecker::visitArray(Node::Expr *expr) {
   ArrayExpr *array = static_cast<ArrayExpr *>(expr);
   ArrayType *at = static_cast<ArrayType *>(createDuplicate(return_type.get()));
 
@@ -408,7 +409,7 @@ void TypeChecker::visitArray(Maps *map, Node::Expr *expr) {
   }
 
   for (Node::Expr *elem : array->elements) {
-    visitExpr(map, elem);
+    visitExpr(elem);
     if (return_type == nullptr) {
       return_type = std::make_shared<SymbolType>("unknown");
       expr->asmType = createDuplicate(return_type.get());
@@ -436,21 +437,21 @@ void TypeChecker::visitArray(Maps *map, Node::Expr *expr) {
   map->array_table.clear();
 }
 
-void TypeChecker::visitArrayType(Maps *map, Node::Type *type) {
+void TypeChecker::visitArrayType(Node::Type *type) {
   ArrayType *array = static_cast<ArrayType *>(type);
   return_type =
       std::make_shared<ArrayType>(array->underlying, array->constSize);
 }
 
-void TypeChecker::visitIndex(Maps *map, Node::Expr *expr) {
+void TypeChecker::visitIndex(Node::Expr *expr) {
   IndexExpr *index = static_cast<IndexExpr *>(expr);
   auto lhs = index->lhs;
   auto rhs = index->rhs;
 
-  visitExpr(map, lhs);
+  visitExpr(lhs);
   std::shared_ptr<Node::Type> lhsType = return_type;
 
-  visitExpr(map, rhs);
+  visitExpr(rhs);
   std::shared_ptr<Node::Type> rhsType = return_type;
 
   // search for '[]' in the lhs type and 'int' in the rhs type
@@ -478,7 +479,7 @@ void TypeChecker::visitIndex(Maps *map, Node::Expr *expr) {
   expr->asmType = createDuplicate(return_type.get());
 }
 
-void TypeChecker::visitArrayAutoFill(Maps *map, Node::Expr *expr) {
+void TypeChecker::visitArrayAutoFill(Node::Expr *expr) {
   ArrayAutoFill *array = static_cast<ArrayAutoFill *>(expr);
 
   ArrayType *arrayType = static_cast<ArrayType *>(createDuplicate(return_type.get()));
@@ -494,16 +495,16 @@ void TypeChecker::visitArrayAutoFill(Maps *map, Node::Expr *expr) {
   }
 }
 
-void TypeChecker::visitCast(Maps *map, Node::Expr *expr) {
+void TypeChecker::visitCast(Node::Expr *expr) {
   // Cast the generic expression to a CastExpr
   CastExpr *cast = static_cast<CastExpr *>(expr);
   // Visit the inside (update it's inner asmType)
-  visitExpr(map, cast->castee);
+  visitExpr(cast->castee);
   expr->asmType = cast->castee_type;
   return_type = std::make_shared<SymbolType>(type_to_string(cast->castee_type));
 }
 
-void TypeChecker::visitStructExpr(Maps *map, Node::Expr *expr) {
+void TypeChecker::visitStructExpr(Node::Expr *expr) {
   StructExpr *struct_expr = static_cast<StructExpr *>(expr);
 
   std::string struct_name = "";
@@ -620,7 +621,7 @@ void TypeChecker::visitStructExpr(Maps *map, Node::Expr *expr) {
   expr->asmType = new SymbolType(struct_name);
 }
 
-void TypeChecker::visitAllocMemory(Maps *map, Node::Expr *expr) {
+void TypeChecker::visitAllocMemory(Node::Expr *expr) {
   AllocMemoryExpr *alloc = static_cast<AllocMemoryExpr *>(expr);
   
   visitExpr(map, alloc->bytesToAlloc);
@@ -633,7 +634,7 @@ void TypeChecker::visitAllocMemory(Maps *map, Node::Expr *expr) {
   // asmtype is a constant void* and already handled in ast
 }
 
-void TypeChecker::visitFreeMemory(Maps *map, Node::Expr *expr) {
+void TypeChecker::visitFreeMemory(Node::Expr *expr) {
   FreeMemoryExpr *freeMemory = static_cast<FreeMemoryExpr *>(expr);
   visitExpr(map, freeMemory->whatToFree);
   if (type_to_string(return_type.get())[0] != '*') {
@@ -654,14 +655,14 @@ void TypeChecker::visitFreeMemory(Maps *map, Node::Expr *expr) {
   // asmtype, once again, already handled
 }
 
-void TypeChecker::visitSizeof(Maps *map, Node::Expr *expr) {
+void TypeChecker::visitSizeof(Node::Expr *expr) {
   SizeOfExpr *sizeOf = static_cast<SizeOfExpr *>(expr);
   visitExpr(map, sizeOf->whatToSizeOf);
   return_type = std::make_shared<SymbolType>("int");
   // asmtype is a constant int and already handled
 }
 
-void TypeChecker::visitMemcpyMemory(Maps *map, Node::Expr *expr) {
+void TypeChecker::visitMemcpyMemory(Node::Expr *expr) {
   MemcpyExpr *memcpy = static_cast<MemcpyExpr *>(expr);
   visitExpr(map, memcpy->dest);
   if (type_to_string(return_type.get())[0] != '*') {
@@ -691,7 +692,7 @@ void TypeChecker::visitMemcpyMemory(Maps *map, Node::Expr *expr) {
   // asmtype, once again, already handled
 }
 
-void TypeChecker::visitOpen(Maps *map, Node::Expr *expr) {
+void TypeChecker::visitOpen(Node::Expr *expr) {
   OpenExpr *open = static_cast<OpenExpr *>(expr);
   visitExpr(map, open->filename);
   if (type_to_string(return_type.get()) != "str"

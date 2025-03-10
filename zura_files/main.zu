@@ -1,13 +1,3 @@
 const main := fn () int {
-  have num: int = 500;
-  have ptr: *int = &num; # address of num
-
-  @outputln(1, "Value of num: ", num);
-  @outputln(1, "Value using pointer dereference: ", ptr&);
-
-  have x: int = 11;
-  ptr& = 500 * x;
-  @outputln(1, "Value of num after change: ", num);
-
   return 0;
 };
