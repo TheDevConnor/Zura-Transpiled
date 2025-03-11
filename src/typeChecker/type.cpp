@@ -6,18 +6,23 @@
 #include <memory>
 
 void TypeChecker::performCheck(Node::Stmt *stmt, bool isMain, bool isLspServer) {
-  // Reset everything before we check
-  foundMain = false;
-  needsReturn = false;
-  return_type = nullptr;
   isLspMode = isLspServer;
   lsp_idents.clear();
 
-  visitStmt(stmt); // Pass the instance of Maps to visitStmt 
+  initMaps(); // Initialize the maps
+
+  if (!context) {
+    context = std::make_unique<TypeCheckerContext>();
+    std::cout << "TypeChecker context initialized!" << std::endl;
+  }
+
+  context->enterScope();
+  visitStmt(stmt); // Pass the instance of Maps to the visitor
+  context->exitScope();
+
   if (!foundMain && isMain) {
-    handleError(0, 0, "No main function found",
-                 "Try adding this function: \n\tconst main := fn() int { \n\t  "
-                 "  return 0\n\t}",
-                 "Type Error");
+    std::string msg = "No main function found";
+    std::string note = "Try adding this function: \n\tconst main := fn() int { \n\t  return 0\n\t}";
+    handleError(0, 0, msg, note, "Type Error");
   }
 }

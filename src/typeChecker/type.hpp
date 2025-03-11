@@ -94,8 +94,9 @@ void processStructFunction(FnStmt *fn_stmt, std::string structName);
 // !TypeChecker functions
 using StmtNodeHandler = std::function<void(Node::Stmt *)>;
 using ExprNodeHandler = std::function<void(Node::Expr *)>;
-extern std::unordered_map<NodeKind, StmtNodeHandler> stmts;
-extern std::unordered_map<NodeKind, ExprNodeHandler> exprs;
+inline std::unordered_map<NodeKind, StmtNodeHandler> stmts;
+inline std::unordered_map<NodeKind, ExprNodeHandler> exprs;
+void initMaps();
 
 Node::Stmt *StmtAstLookup(Node::Stmt *node);
 Node::Expr *ExprAstLookup(Node::Expr *node);

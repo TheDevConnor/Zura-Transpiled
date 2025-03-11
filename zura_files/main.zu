@@ -1,7 +1,4 @@
-<<<<<<< HEAD
 const main := fn () int {
-  return 0;
+  have x: int = 10;
+  return x;
 };
-=======
-const main := fn () int { have a: int = 0; loop(a < 10) { a = a + 1; } return a; };
->>>>>>> 8440d428d13dd65359ddfb51420bae627e65d57c

@@ -54,47 +54,62 @@ void TypeChecker::visitConst(Node::Stmt *stmt) {
 void TypeChecker::visitFn(Node::Stmt *stmt) {
   FnStmt *fn_stmt = static_cast<FnStmt *>(stmt);
 
-  // Enter a new scope
-  context->enterScope();
-
-  // add the function name and params the to the local table
-  context->declareLocal(fn_stmt->name, fn_stmt->returnType);
-
-  std::unordered_map<std::string, Node::Type *> params;
-  for (std::pair<std::string, Node::Type *> &param : fn_stmt->params) {
-    params[param.first] = param.second;
-    context->declareLocal(param.first, param.second);
+  // Debugging: Check context
+  if (!context) {
+      std::cerr << "Error: context is nullptr!" << std::endl;
+      return;
   }
 
-  // declare_fn(map, {fn_stmt->name, fn_stmt->returnType}, fn_stmt->params,
-  //            fn_stmt->line, fn_stmt->pos);
+  // Debugging: Check function name
+  std::cout << "Function: " << fn_stmt->name << std::endl;
+
+  // Debugging: Check returnType
+  if (!fn_stmt->returnType) {
+      std::cerr << "Error: Function returnType is nullptr!" << std::endl;
+      return;
+  }
+
+  // Declare function in local table
+  context->declareLocal(fn_stmt->name, fn_stmt->returnType);
+
+  // Debugging: Ensure function is added
+  if (context->lookup(fn_stmt->name) != fn_stmt->returnType) {
+      std::cerr << "Error: Function not properly declared!" << std::endl;
+      return;
+  }
+
+  // Add function parameters
+  std::unordered_map<std::string, Node::Type *> params;
+  for (std::pair<std::string, Node::Type *> &param : fn_stmt->params) {
+      if (!param.second) {
+          std::cerr << "Error: Parameter " << param.first << " has nullptr type!" << std::endl;
+          continue;
+      }
+      params[param.first] = param.second;
+      context->declareLocal(param.first, param.second);
+  }
+
+  // Add function to functionTable
   context->functionTable.declare(fn_stmt->name, params, fn_stmt->returnType);
 
   visitStmt(fn_stmt->block);
 
+  // Ensure return type is properly checked
   if (return_type == nullptr) {
-    // throw an error (but this should not happen ever)
-    std::string msg = "Return type is not defined";
-    handleError(fn_stmt->line, fn_stmt->pos, msg, "", "Type Error");
+      std::cerr << "Error: Return type is not defined!" << std::endl;
+      handleError(fn_stmt->line, fn_stmt->pos, "Return type is not defined", "", "Type Error");
   }
 
-  if (type_to_string(fn_stmt->returnType) == "void") {
-    // also add the function name to the global table and function table
-    // declare(map->global_symbol_table, fn_stmt->name, fn_stmt->returnType,
-    //         fn_stmt->line, fn_stmt->pos);
-    context->declareGlobal(fn_stmt->name, fn_stmt->returnType);
-
-    return_type = nullptr;
-    context->exitScope(); // clear the local table for the next function
-    return;
-  }
-
-  // Verify that we have a return stmt in the function
+  // Check return statement requirements
   if (!needsReturn && type_to_string(fn_stmt->returnType) != "void") {
-    std::string msg = "Function '" + fn_stmt->name + "' requeries a return stmt, but none was found";
-    handleError(fn_stmt->line, fn_stmt->pos, msg, "", "Type Error");
-    return;
+      std::cerr << "Error: Function requires return statement but none found!" << std::endl;
+      handleError(fn_stmt->line, fn_stmt->pos, "Function requires a return statement", "", "Type Error");
+      return;
   }
+
+  // Ensure function return type matches expected type
+  std::string expectedType = type_to_string(fn_stmt->returnType);
+  std::string actualType = type_to_string(return_type.get());
 
   std::string msg = "Function '" + fn_stmt->name + "' requeries a return type of '" + type_to_string(fn_stmt->returnType) + "' but got '" +
                     type_to_string(return_type.get()) + "' instead.";
@@ -107,13 +122,11 @@ void TypeChecker::visitFn(Node::Stmt *stmt) {
     return;
   }
 
-  // also add the function name to the global table and function table
-  // declare(map->global_symbol_table, fn_stmt->name, fn_stmt->returnType,
-  //         fn_stmt->line, fn_stmt->pos);
+  // Declare function in global scope
   context->declareGlobal(fn_stmt->name, fn_stmt->returnType);
 
   return_type = nullptr;
-  context->exitScope(); // clear the local table for the next function
+  context->exitScope(); // Clear local table for next function
 }
 
 void TypeChecker::visitBlock(Node::Stmt *stmt) {
@@ -352,6 +365,8 @@ void TypeChecker::visitReturn(Node::Stmt *stmt) {
     return;
   }
   needsReturn = true;
+
+  return_stmt->expr->debug();
 
   visitExpr(return_stmt->expr);
 }

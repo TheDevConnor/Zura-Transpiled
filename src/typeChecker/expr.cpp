@@ -1,13 +1,13 @@
 #include "../ast/ast.hpp"
 #include "../ast/types.hpp"
 #include "../helper/math/math.hpp"
-#include "type.hpp"
 #include "typeMaps.hpp"
-#include <algorithm>
-#include <memory>
+#include "type.hpp"
 
-#include <limits>
+#include <algorithm>
 #include <optional>
+#include <memory>
+#include <limits>
 #include <string>
 
 void TypeChecker::visitExpr(Node::Expr *expr) {
@@ -101,13 +101,6 @@ void TypeChecker::visitIdent(Node::Expr *expr) {
   IdentExpr *ident = static_cast<IdentExpr *>(expr);
   Node::Type *res = nullptr;
 
-  // if (map->local_symbol_table.find(ident->name) != map->local_symbol_table.end()) {
-  //   res = map->local_symbol_table[ident->name];
-  //   ident->asmType = createDuplicate(res);
-  // } else if (map->global_symbol_table.find(ident->name) != map->global_symbol_table.end()) {
-  //   res = map->global_symbol_table[ident->name];
-  //   ident->asmType = createDuplicate(res);
-  // }
   for (auto it : context->localScopes) {
     if (it.find(ident->name) != it.end()) {
       res = it[ident->name];
@@ -138,27 +131,28 @@ void TypeChecker::visitIdent(Node::Expr *expr) {
   } else {
     return_type = std::make_shared<SymbolType>(type_to_string(res));
   }
-  if (isLspMode) {
-    // Check if enum type
-    if (map->enum_table.find(ident->name) != map->enum_table.end()) {
-      lsp_idents.push_back(LSPIdentifier{res, LSPIdentifierType::Enum, ident->name, ident->line, ident->pos});
-      return;
-    }
-    // check if struct type
-    if (map->struct_table.find(ident->name) != map->struct_table.end()) {
-      lsp_idents.push_back(LSPIdentifier{res, LSPIdentifierType::Struct, ident->name, ident->line, ident->pos});
-      return;
-    }
-    // check if function
-    // loop over functions
-    for (auto fn : map->function_table) {
-      if (fn.first.first == ident->name) {
-        lsp_idents.push_back(LSPIdentifier{res, LSPIdentifierType::Function, ident->name, ident->line, ident->pos});
-        return;
-      } // my pc is about to explode of battery lol fun lol
-    }
-    lsp_idents.push_back(LSPIdentifier{res, LSPIdentifierType::Variable, ident->name, ident->line, ident->pos});
-  }
+  // TODO: Update this to the new tc system
+  // if (isLspMode) {
+  //   // Check if enum type
+  //   if (map->enum_table.find(ident->name) != map->enum_table.end()) {
+  //     lsp_idents.push_back(LSPIdentifier{res, LSPIdentifierType::Enum, ident->name, ident->line, ident->pos});
+  //     return;
+  //   }
+  //   // check if struct type
+  //   if (map->struct_table.find(ident->name) != map->struct_table.end()) {
+  //     lsp_idents.push_back(LSPIdentifier{res, LSPIdentifierType::Struct, ident->name, ident->line, ident->pos});
+  //     return;
+  //   }
+  //   // check if function
+  //   // loop over functions
+  //   for (auto fn : map->function_table) {
+  //     if (fn.first.first == ident->name) {
+  //       lsp_idents.push_back(LSPIdentifier{res, LSPIdentifierType::Function, ident->name, ident->line, ident->pos});
+  //       return;
+  //     } // my pc is about to explode of battery lol fun lol
+  //   }
+  //   lsp_idents.push_back(LSPIdentifier{res, LSPIdentifierType::Variable, ident->name, ident->line, ident->pos});
+  // }
 }
 
 void TypeChecker::visitBinary(Node::Expr *expr) {
@@ -291,18 +285,15 @@ void TypeChecker::visitAssign(Node::Expr *expr) {
   // check if the lhs is a parameter of a function
   if (assign->assignee->kind == ND_IDENT) {
     IdentExpr *ident = static_cast<IdentExpr *>(assign->assignee);
-    for (auto param : map->function_params) {
-      if (param == ident->name) {
-        std::string msg =
-            "Cannot assign to a function parameter '" + param + "'";
+    for (auto param : context->functionTable.getParams(ident->name, nullptr).params) {
+      if (param.first == ident->name) {
+        std::string msg = "Cannot assign to a function parameter '" + ident->name + "'";
         handleError(assign->line, assign->pos, msg, "", "Type Error");
       }
     }
   }
 
-  std::string msg =
-      "Assignment requires both sides to be the same type, but got '" +
-      type_to_string(lhs.get()) + "' and '" + type_to_string(rhs.get()) + "'";
+  std::string msg = "Assignment requires both sides to be the same type, but got '" + type_to_string(lhs.get()) + "' and '" + type_to_string(rhs.get()) + "'";
   checkTypeMatch(std::make_shared<SymbolType>(type_to_string(lhs.get())),
                  std::make_shared<SymbolType>(type_to_string(rhs.get())), "=",
                  assign->line, assign->pos, msg);
@@ -315,27 +306,42 @@ void TypeChecker::visitCall(Node::Expr *expr) {
   CallExpr *call = static_cast<CallExpr *>(expr);
   Node::Expr *name = call->callee;
 
-  // Lookup function
-  FnVector fn = lookup_fn(map, name, call->line, call->pos);
-
-  if (fn.empty()) {
-    return; // Function not found, error already handled in lookup_fn
-  }
-
-  if (fn.size() > 1) {
-    reportOverloadedFunctionError(call, name);
+  // check if the callee is an identifier
+  if (name->kind != ND_IDENT && name->kind != ND_MEMBER) {
+    std::string msg = "Function call requires the callee to be an identifier";
+    handleError(call->line, call->pos, msg, "", "Type Error");
+    return_type = std::make_shared<SymbolType>("unknown");
+    expr->asmType = new SymbolType("unknown");
     return;
   }
 
-  auto [fnName, fnParams] = fn[0];
+  // check if the callee is a function
+  std::pair<std::string, Node::Type *> fnName;
+  if (name->kind == ND_IDENT) {
+    IdentExpr *ident = static_cast<IdentExpr *>(name);
+    fnName = {ident->name, nullptr};
+  } else {
+    MemberExpr *member = static_cast<MemberExpr *>(name);
+    fnName = {static_cast<IdentExpr *>(member->lhs)->name, nullptr};
+  }
 
-  if (!validateArgumentCount(call, name, fnParams)) {
+  // check if the function is in the function table
+  if (context->functionTable.find({fnName.first, fnName.second}) != context->functionTable.end()) {
+    std::string msg = "Function '" + fnName.first + "' not declared";
+    handleError(call->line, call->pos, msg, "", "Type Error");
+    return_type = std::make_shared<SymbolType>("unknown");
+    expr->asmType = new SymbolType("unknown");
     return;
   }
 
-  if (!validateArgumentTypes(call, name, fnParams)) {
-    return;
-  }
+  // get the function parameters
+  auto it = context->functionTable.getParams(fnName.first, fnName.second);
+  std::unordered_map<std::string, Node::Type *> fnParams;
+  for (auto param : it.params) fnParams[param.first] = param.second;
+
+  if (!validateArgumentCount(call, name, fnParams)) return;
+
+  if (!validateArgumentTypes(call, name, fnParams)) return;
 
   // Set return type to the return of the fn
   if (fnName.second->kind == ND_POINTER_TYPE) {
@@ -366,7 +372,7 @@ void TypeChecker::visitMember(Node::Expr *expr) {
   std::string typeKind = determineTypeKind(lhsType);
 
   // check if the lhs is a struct or enum
-  if (map->struct_table.find(lhsType) == map->struct_table.end() && map->enum_table.find(name) == map->enum_table.end()) {
+  if (context->structTable.find(lhsType) == context->structTable.end() && context->enumTable.find(name) == context->enumTable.end()) {
     std::string msg = "Member access requires the left hand side to be a struct or enum but got '" + lhsType + "'";
     handleError(member->line, member->pos, msg, "", "Type Error");
     return_type = std::make_shared<SymbolType>("unknown");
@@ -434,7 +440,7 @@ void TypeChecker::visitArray(Node::Expr *expr) {
   expr->asmType = at;
 
   // clear the array table
-  map->array_table.clear();
+  array->elements.clear();
 }
 
 void TypeChecker::visitArrayType(Node::Type *type) {
@@ -488,10 +494,12 @@ void TypeChecker::visitArrayAutoFill(Node::Expr *expr) {
   return_type = std::make_shared<ArrayType>(array->fillType, array->fillCount);
   expr->asmType = createDuplicate(return_type.get());
   // assign the fill type to the array type
-  if (array->fillType->kind == ND_SYMBOL_TYPE && 
-    map->struct_table.find(type_to_string(return_type.get())) != map->struct_table.end()) {
-    // mmmm you cant do that
-    handleError(array->line, array->pos, "Auto-filled arrays cannot have a pre-determined struct to copy.", "", "Type Error");
+  if (array->fillType->kind == ND_ARRAY_TYPE) {
+    ArrayType *at = static_cast<ArrayType *>(array->fillType);
+    if (at->constSize != -1) {
+      std::string msg = "Auto-filled arrays cannot have a pre-determined array to copy.";
+      handleError(array->line, array->pos, msg, "", "Type Error");
+    }
   }
 }
 
@@ -520,9 +528,8 @@ void TypeChecker::visitStructExpr(Node::Expr *expr) {
   }
 
   // find the struct in the struct table (no it does not work) I know why
-  if (map->struct_table.find(struct_name) == map->struct_table.end()) {
-    std::string msg =
-        "Struct '" + struct_name + "' is not defined in the scope.";
+  if (context->structTable.find(struct_name) == context->structTable.end()) {
+    std::string msg = "Struct '" + struct_name + "' is not defined in the scope.";
     handleError(struct_expr->line, struct_expr->pos, msg, "", "Type Error");
     return_type = std::make_shared<SymbolType>("unknown");
     struct_expr->asmType = new SymbolType("unknown");
@@ -532,7 +539,7 @@ void TypeChecker::visitStructExpr(Node::Expr *expr) {
   // check if the number of elements in the struct is the same as the number of
   // elements in the struct expression
   int struct_size = 0;
-  struct_size = map->struct_table[struct_name].size();
+  for (auto it : context->structTable[struct_name]) struct_size++;
 
   // We do not need ti check the struct size if the struct expression is empty
   if (struct_expr->values.empty()) {
@@ -557,10 +564,10 @@ void TypeChecker::visitStructExpr(Node::Expr *expr) {
     // find the type of the struct element;
     std::string elem_type = "";
     // set elem_type to the type of the struct element, if it exists
-    for (std::pair<std::string, Node::Type *> member :
-         map->struct_table[struct_name]) {
+    for (const auto& member :
+         context->structTable[struct_name]) {
       if (member.first == elem.first) {
-        elem_type = type_to_string(member.second);
+        elem_type = type_to_string(member.second.first);
         break;
       }
     }
@@ -570,8 +577,7 @@ void TypeChecker::visitStructExpr(Node::Expr *expr) {
                         "' not found in struct '" + struct_name + "'";
       // did you mean?
       std::vector<std::string> known;
-      for (std::pair<std::string, Node::Type *> member :
-           map->struct_table[struct_name]) {
+      for (const auto &member : context->structTable[struct_name]) {
         known.push_back(member.first);
       }
       std::optional<std::string> closest =
@@ -593,17 +599,15 @@ void TypeChecker::visitStructExpr(Node::Expr *expr) {
       struct_expr->asmType = new SymbolType(elem_type);
     }
 
-    visitExpr(map, elem.second);
+    visitExpr(elem.second);
     // check for enums
     if (elem.second->kind == ND_MEMBER) {
       MemberExpr *member = static_cast<MemberExpr *>(elem.second);
       if (member->lhs->kind == ND_IDENT) {
         IdentExpr *ident = static_cast<IdentExpr *>(member->lhs);
-        if (map->enum_table.find(ident->name) != map->enum_table.end()) {
-          processEnumMember(map, member,
-                            ident->name); // Will automatically set return_type
-          member->asmType =
-              createDuplicate(return_type.get()); // maybe this works idrk lmao
+        if (context->enumTable.find(ident->name) != context->enumTable.end()) {
+          processEnumMember(member, ident->name); // Will automatically set return_type
+          member->asmType = createDuplicate(return_type.get()); // maybe this works idrk lmao
         }
       }
     }
@@ -624,7 +628,7 @@ void TypeChecker::visitStructExpr(Node::Expr *expr) {
 void TypeChecker::visitAllocMemory(Node::Expr *expr) {
   AllocMemoryExpr *alloc = static_cast<AllocMemoryExpr *>(expr);
   
-  visitExpr(map, alloc->bytesToAlloc);
+  visitExpr(alloc->bytesToAlloc);
   if (type_to_string(return_type.get()) != "int") {
     std::string msg = "Alloc requires the number of bytes to be of type 'int' but got '" + type_to_string(return_type.get()) + "'";
     handleError(alloc->line, alloc->pos, msg, "", "Type Error");
@@ -636,7 +640,7 @@ void TypeChecker::visitAllocMemory(Node::Expr *expr) {
 
 void TypeChecker::visitFreeMemory(Node::Expr *expr) {
   FreeMemoryExpr *freeMemory = static_cast<FreeMemoryExpr *>(expr);
-  visitExpr(map, freeMemory->whatToFree);
+  visitExpr(freeMemory->whatToFree);
   if (type_to_string(return_type.get())[0] != '*') {
     std::string msg = "Freeing memory requires the memory to be of pointer type but got '" +
                       type_to_string(return_type.get()) + "'";
@@ -645,7 +649,7 @@ void TypeChecker::visitFreeMemory(Node::Expr *expr) {
     // asmtype is a constant int and already handled
   }
 
-  visitExpr(map, freeMemory->bytesToFree);
+  visitExpr(freeMemory->bytesToFree);
   if (type_to_string(return_type.get()) != "int") {
     std::string msg = "Freeing memory requires the number of bytes to be of type 'int' but got '" + type_to_string(return_type.get()) + "'";
     handleError(freeMemory->line, freeMemory->pos, msg, "", "Type Error");
@@ -657,14 +661,14 @@ void TypeChecker::visitFreeMemory(Node::Expr *expr) {
 
 void TypeChecker::visitSizeof(Node::Expr *expr) {
   SizeOfExpr *sizeOf = static_cast<SizeOfExpr *>(expr);
-  visitExpr(map, sizeOf->whatToSizeOf);
+  visitExpr(sizeOf->whatToSizeOf);
   return_type = std::make_shared<SymbolType>("int");
   // asmtype is a constant int and already handled
 }
 
 void TypeChecker::visitMemcpyMemory(Node::Expr *expr) {
   MemcpyExpr *memcpy = static_cast<MemcpyExpr *>(expr);
-  visitExpr(map, memcpy->dest);
+  visitExpr(memcpy->dest);
   if (type_to_string(return_type.get())[0] != '*') {
     std::string msg = "Memcpy requires the destination to be of pointer type but got '" +
                       type_to_string(return_type.get()) + "'";
@@ -673,7 +677,7 @@ void TypeChecker::visitMemcpyMemory(Node::Expr *expr) {
     // asmtype is a constant int and already handled
   }
 
-  visitExpr(map, memcpy->src);
+  visitExpr(memcpy->src);
   if (type_to_string(return_type.get())[0] != '*') {
     std::string msg = "Memcpy requires the source to be of pointer type but got '" +
                       type_to_string(return_type.get()) + "'";
@@ -682,7 +686,7 @@ void TypeChecker::visitMemcpyMemory(Node::Expr *expr) {
     // asmtype is a constant int and already handled
   }
 
-  visitExpr(map, memcpy->bytes);
+  visitExpr(memcpy->bytes);
   if (type_to_string(return_type.get()) != "int") {
     std::string msg = "Memcpy requires the number of bytes to be of type 'int' but got '" + type_to_string(return_type.get()) + "'";
     handleError(memcpy->line, memcpy->pos, msg, "", "Type Error");
@@ -694,7 +698,7 @@ void TypeChecker::visitMemcpyMemory(Node::Expr *expr) {
 
 void TypeChecker::visitOpen(Node::Expr *expr) {
   OpenExpr *open = static_cast<OpenExpr *>(expr);
-  visitExpr(map, open->filename);
+  visitExpr(open->filename);
   if (type_to_string(return_type.get()) != "str"
       && type_to_string(return_type.get()) != "*char"
       && type_to_string(return_type.get()) != "[]char") {
@@ -704,7 +708,7 @@ void TypeChecker::visitOpen(Node::Expr *expr) {
 
   // There are 3 bools that can be passed to open, but they are all optional
   if (open->canRead != nullptr) {
-    visitExpr(map, open->canRead);
+    visitExpr(open->canRead);
     if (type_to_string(return_type.get()) != "bool") {
       std::string msg = "Open expression requires the canRead parameter to be of type 'bool' but got '" + type_to_string(return_type.get()) + "'";
       handleError(open->line, open->pos, msg, "", "Type Error");
@@ -712,7 +716,7 @@ void TypeChecker::visitOpen(Node::Expr *expr) {
   }
 
   if (open->canWrite != nullptr) {
-    visitExpr(map, open->canWrite);
+    visitExpr(open->canWrite);
     if (type_to_string(return_type.get()) != "bool") {
       std::string msg = "Open expression requires the canWrite parameter to be of type 'bool' but got '" + type_to_string(return_type.get()) + "'";
       handleError(open->line, open->pos, msg, "", "Type Error");

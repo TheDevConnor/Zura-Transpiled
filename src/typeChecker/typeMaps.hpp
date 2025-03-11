@@ -8,8 +8,24 @@
 
 struct NameAndType {
   std::string name;
-  Node::Type *type;
+  Node::Type* type;
+
+  bool operator==(const NameAndType& other) const {
+      return name == other.name && type == other.type;
+  }
 };
+
+// Specialization of std::hash for NameAndType
+namespace std {
+  template <>
+  struct hash<NameAndType> {
+      size_t operator()(const NameAndType& nt) const noexcept {
+          size_t h1 = hash<string>{}(nt.name);
+          size_t h2 = hash<Node::Type*>()(nt.type);
+          return h1 ^ (h2 << 1); // Bitwise combination
+      }
+  };
+}
 
 struct ParamAndType {
   std::unordered_map<std::string, Node::Type *> params;
@@ -43,12 +59,18 @@ struct FunctionTable : std::unordered_map<NameAndType, ParamAndType> {
   }
 
   void declare(const std::string &name, std::unordered_map<std::string, Node::Type *> params, Node::Type *returnType) {
+    std::cout << name << std::endl;
+    if (name == "main" && params.size() == 0) TypeChecker::foundMain = true; 
     if (!contains({name, returnType})) {
         insert({{name, returnType}, {params}});
         return;
     }
     std::string msg = "Function already declared: " + name;
     TypeChecker::handleError(line, pos, msg, "", "Type Error");
+  }
+
+  ParamAndType getParams(const std::string &name, Node::Type *type) {
+    return at({name, type});
   }
 
   ParamAndType lookup(const std::string &name, Node::Type *type) {

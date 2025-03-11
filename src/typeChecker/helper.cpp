@@ -1,6 +1,7 @@
 #include "../helper/error/error.hpp"
 #include "../ast/stmt.hpp"
 #include "type.hpp"
+#include "typeMaps.hpp"
 #include <unordered_set>
 #include <memory>
 
@@ -69,67 +70,65 @@ bool TypeChecker::checkTypeMatch(const std::shared_ptr<SymbolType> &lhs,
   return true;
 }
 
-std::string TypeChecker::determineTypeKind(Maps *map, const std::string &type) {
+std::string TypeChecker::determineTypeKind(const std::string &type) {
   std::string real = type;
   if (type.find('*') == 0) {
     real = type.substr(1);
   }
-  if (map->struct_table.find(real) != map->struct_table.end()) {
-      return "struct";
+  if (context->structTable.find(real) != context->structTable.end()) {
+    return "struct";
   }
-  if (type == "enum") { // When enum names get looked up in the symbol table, their type is "enum".
+  if (context->enumTable.find(real) != context->enumTable.end()) {
       return "enum";
   }
   return "unknown";
 }
 
-void TypeChecker::processStructMember(Maps *map, MemberExpr *member, const std::string &name, std::string lhsType) {
+void TypeChecker::processStructMember(MemberExpr *member, const std::string &name, std::string lhsType) {
   std::string realType = lhsType;
   if (lhsType.find('*') == 0) {
     realType = lhsType.substr(1);
   }
 
-  if (map->struct_table.find(realType) != map->struct_table.end()) {
-    // Check if we are looking at a function or a field
-    if (map->struct_table_fn.find(realType) != map->struct_table_fn.end()) {
-      const FnVector &stmts = map->struct_table_fn[realType];
-      const FnVector::const_iterator res = std::find_if(stmts.begin(), stmts.end(), [&member](const Fn &fn) {
-          return fn.first.first == static_cast<IdentExpr *>(member->rhs)->name;
-      });
-      if (res == stmts.end()) {} // This is a field
-      else {
-        return_type = std::make_shared<SymbolType>(type_to_string(res->first.second));
-        member->asmType = createDuplicate(return_type.get());
-        return;
-      }
-    }
-    const std::vector<std::pair<std::string, Node::Type *>> &fields = map->struct_table[realType];
-    const std::vector<std::pair<std::string, Node::Type *>>::const_iterator
-        res = std::find_if(fields.begin(), fields.end(),[&name](const std::pair<std::string, Node::Type *> &field) {
-          return field.first == name;
-        });
-    // this cannot be fields.end() because that is actually a valid return
-    if (res == fields.end()) {
-      std::string msg = "Type '" + realType + "' does not have member '" + name + "'";
-      handleError(member->line, member->pos, msg, "", "Type Error");
-      return_type = std::make_shared<SymbolType>("unknown");
-      return;
-    }
-    return_type = std::make_shared<SymbolType>(type_to_string(res->second));
-    member->asmType = createDuplicate(return_type.get());
-  }
+  // if (map->struct_table.find(realType) != map->struct_table.end()) {
+  //   // Check if we are looking at a function or a field
+  //   if (map->struct_table_fn.find(realType) != map->struct_table_fn.end()) {
+  //     const FnVector &stmts = map->struct_table_fn[realType];
+  //     const FnVector::const_iterator res = std::find_if(stmts.begin(), stmts.end(), [&member](const Fn &fn) {
+  //         return fn.first.first == static_cast<IdentExpr *>(member->rhs)->name;
+  //     });
+  //     if (res == stmts.end()) {} // This is a field
+  //     else {
+  //       return_type = std::make_shared<SymbolType>(type_to_string(res->first.second));
+  //       member->asmType = createDuplicate(return_type.get());
+  //       return;
+  //     }
+  //   }
+  //   const std::vector<std::pair<std::string, Node::Type *>> &fields = map->struct_table[realType];
+  //   const std::vector<std::pair<std::string, Node::Type *>>::const_iterator
+  //       res = std::find_if(fields.begin(), fields.end(),[&name](const std::pair<std::string, Node::Type *> &field) {
+  //         return field.first == name;
+  //       });
+  //   // this cannot be fields.end() because that is actually a valid return
+  //   if (res == fields.end()) {
+  //     std::string msg = "Type '" + realType + "' does not have member '" + name + "'";
+  //     handleError(member->line, member->pos, msg, "", "Type Error");
+  //     return_type = std::make_shared<SymbolType>("unknown");
+  //     return;
+  //   }
+  //   return_type = std::make_shared<SymbolType>(type_to_string(res->second));
+  //   member->asmType = createDuplicate(return_type.get());
+  // }
 }
 
-void TypeChecker::processEnumMember(Maps *map, MemberExpr *member, const std::string &lhsType) {
+void TypeChecker::processEnumMember(MemberExpr *member, const std::string &lhsType) {
     std::string realType = static_cast<IdentExpr *>(member->lhs)->name;
-    const std::vector<std::pair<std::string, int>> &fields = map->enum_table[realType];
-    const std::vector<std::pair<std::string, int>>::const_iterator res = std::find_if(fields.begin(), fields.end(),
-                            [&member](const std::pair<std::string, int> &field) {
-                                return field.first == static_cast<IdentExpr *>(member->rhs)->name;
-                            });
+
+    auto fields = context->enumTable.find(realType)->second;
+    auto res = fields.find(static_cast<IdentExpr *>(member->rhs)->name);
+
     if (res == fields.end()) {
-        std::string msg = "Type '" + realType + "' does not have member '" +
-                          static_cast<IdentExpr *>(member->rhs)->name + "'";
+        std::string msg = "Type '" + realType + "' does not have member '" + static_cast<IdentExpr *>(member->rhs)->name + "'";
         handleError(member->line, member->pos, msg, "", "Type Error");
         return_type = std::make_shared<SymbolType>("unknown");
         return;
@@ -152,8 +151,7 @@ void TypeChecker::reportOverloadedFunctionError(CallExpr *call, Node::Expr *call
   return_type = std::make_shared<SymbolType>("unknown");
 }
 
-bool TypeChecker::validateArgumentCount(CallExpr *call, Node::Expr *callee,
-                                        const std::vector<std::pair<std::string, Node::Type *>> &fnParams) {
+bool TypeChecker::validateArgumentCount(CallExpr *call, Node::Expr *callee, const std::unordered_map<std::string, Node::Type *> &fnParams) {
   // Check if the call is a member expr call or a call on a function from a struct
   bool isFromStruct = callee->kind == ND_MEMBER;
   size_t requiredSize = fnParams.size();
@@ -164,9 +162,7 @@ bool TypeChecker::validateArgumentCount(CallExpr *call, Node::Expr *callee,
 
   if (call->args.size() != requiredSize) {
     std::string functionName = callee->kind == ND_IDENT ? static_cast<IdentExpr *>(callee)->name : static_cast<IdentExpr *>(static_cast<MemberExpr *>(callee)->lhs)->name;
-    std::string msg = "Function '" + functionName + "' requires " +
-                      std::to_string(fnParams.size()) + " arguments but got " +
-                      std::to_string(call->args.size());
+    std::string msg = "Function '" + functionName + "' requires " + std::to_string(fnParams.size()) + " arguments but got " + std::to_string(call->args.size());
     handleError(call->line, call->pos, msg, "", "Type Error");
     return_type = std::make_shared<SymbolType>("unknown");
     return false;
@@ -174,21 +170,18 @@ bool TypeChecker::validateArgumentCount(CallExpr *call, Node::Expr *callee,
   return true;
 }
 
-bool TypeChecker::validateArgumentTypes(Maps *map, CallExpr *call, Node::Expr *callee,
-                                        const std::vector<std::pair<std::string, Node::Type *>> &fnParams) {
+bool TypeChecker::validateArgumentTypes(CallExpr *call, Node::Expr *callee, const std::unordered_map<std::string, Node::Type *> &fnParams) {
   for (size_t i = 0; i < call->args.size(); ++i) {
-    visitExpr(map, call->args[i]);
+    visitExpr(call->args[i]);
     std::string argTypeStr = type_to_string(return_type.get());
-    Node::Type *expectedType = fnParams[i + (callee->kind == ND_MEMBER ? 1 : 0)].second;
+    Node::Type *expectedType = fnParams.at(fnParams.begin()->first);
     std::string expectedTypeStr = type_to_string(expectedType);
 
     if (argTypeStr != expectedTypeStr) {
       // If int is compared to an unsigned int or something, let it go
       if (isIntBasedType(return_type.get()) && isIntBasedType(expectedType)) continue; // They can effectively be casted to one another
       std::string functionName = callee->kind == ND_IDENT ? static_cast<IdentExpr *>(callee)->name : static_cast<IdentExpr *>(static_cast<MemberExpr *>(callee)->lhs)->name;
-      std::string msg = "Function '" + functionName + "' requires argument '" +
-                        fnParams[i].first + "' to be of type '" + expectedTypeStr +
-                        "' but got '" + argTypeStr + "'";
+      std::string msg = "Function '" + functionName + "' requires argument '" + fnParams.begin()->first + "' to be of type '" + expectedTypeStr + "' but got '" + argTypeStr + "'";
       handleError(call->line, call->pos, msg, "", "Type Error");
       return_type = std::make_shared<SymbolType>("unknown");
       return false;
