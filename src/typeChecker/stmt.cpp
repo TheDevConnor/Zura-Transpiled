@@ -54,21 +54,6 @@ void TypeChecker::visitConst(Node::Stmt *stmt) {
 void TypeChecker::visitFn(Node::Stmt *stmt) {
   FnStmt *fn_stmt = static_cast<FnStmt *>(stmt);
 
-  // Debugging: Check context
-  if (!context) {
-      std::cerr << "Error: context is nullptr!" << std::endl;
-      return;
-  }
-
-  // Debugging: Check function name
-  std::cout << "Function: " << fn_stmt->name << std::endl;
-
-  // Debugging: Check returnType
-  if (!fn_stmt->returnType) {
-      std::cerr << "Error: Function returnType is nullptr!" << std::endl;
-      return;
-  }
-
   // Declare function in local table
   context->declareLocal(fn_stmt->name, fn_stmt->returnType);
 
@@ -220,8 +205,7 @@ void TypeChecker::visitEnum(Node::Stmt *stmt) {
   context->declareGlobal(enum_stmt->name, static_cast<Node::Type *>(type));
 
   if (enum_stmt->fields.empty()) {
-    std::string msg =
-        "Enum '" + enum_stmt->name + "' must have at least one field";
+    std::string msg = "Enum '" + enum_stmt->name + "' must have at least one field";
     handleError(enum_stmt->line, enum_stmt->pos, msg, "", "Type Error");
   }
 
@@ -239,8 +223,7 @@ void TypeChecker::visitIf(Node::Stmt *stmt) {
   IfStmt *if_stmt = static_cast<IfStmt *>(stmt);
   visitExpr(if_stmt->condition);
   if (type_to_string(return_type.get()) != "bool") {
-    std::string msg = "If condition must be a 'bool' but got '" +
-                      type_to_string(return_type.get()) + "'";
+    std::string msg = "If condition must be a 'bool' but got '" + type_to_string(return_type.get()) + "'";
     handleError(if_stmt->line, if_stmt->pos, msg, "", "Type Error");
   }
   visitStmt(if_stmt->thenStmt);
@@ -262,8 +245,7 @@ void TypeChecker::visitVar(Node::Stmt *stmt) {
 
   // Now check if we have a template struct
   if (var_stmt->type->kind == ND_TEMPLATE_STRUCT_TYPE) {
-    TemplateStructType *temp =
-        static_cast<TemplateStructType *>(var_stmt->type);
+    TemplateStructType *temp = static_cast<TemplateStructType *>(var_stmt->type);
 
     // auto res = map->struct_table.find(type_to_string(temp->name));
     auto res = context->structTable.contains(type_to_string(temp->name));
@@ -279,8 +261,7 @@ void TypeChecker::visitVar(Node::Stmt *stmt) {
     }
 
     // Now we can set the return type to the underlying type
-    return_type =
-        std::make_shared<SymbolType>(type_to_string(temp->underlying));
+    return_type = std::make_shared<SymbolType>(type_to_string(temp->underlying));
 
     // Now we can set the type of the variable to the underlying type
     var_stmt->type = temp->underlying;
@@ -437,6 +418,10 @@ void TypeChecker::visitWhile(Node::Stmt *stmt) {
     handleError(while_stmt->line, while_stmt->pos, msg, "", "Type Error");
   }
 
+  if (while_stmt->optional != nullptr) {
+    visitExpr(while_stmt->optional);
+  }
+
   // now we visit the block
   visitStmt(while_stmt->block);
 
@@ -519,16 +504,13 @@ void TypeChecker::visitInput(Node::Stmt *stmt) {
   if (type_to_string(return_type.get()) != "str" &&
       type_to_string(return_type.get()) != "*char" &&
       type_to_string(return_type.get()) != "[]char") {
-    std::string msg = "Input variable name must be a 'string', 'char*' or "
-                      "'char[]' but got '" +
-                      type_to_string(return_type.get()) + "'";
+    std::string msg = "Input variable name must be a 'string', 'char*' or 'char[]' but got '" + type_to_string(return_type.get()) + "'";
     handleError(input_stmt->line, input_stmt->pos, msg, "", "Type Error");
   }
 
   visitExpr(input_stmt->maxBytes);
   if (!isIntBasedType(return_type.get())) {
-    std::string msg = "Input max bytes must be a 'int' but got '" +
-                      type_to_string(return_type.get()) + "'";
+    std::string msg = "Input max bytes must be a 'int' but got '" + type_to_string(return_type.get()) + "'";
     handleError(input_stmt->line, input_stmt->pos, msg, "", "Type Error");
   }
 
@@ -539,8 +521,7 @@ void TypeChecker::visitClose(Node::Stmt *stmt) {
   CloseStmt *close_stmt = static_cast<CloseStmt *>(stmt);
   visitExpr(close_stmt->fd);
   if (type_to_string(return_type.get()) != "int") {
-    std::string msg = "Close system call fd must be a 'int' but got '" +
-                      type_to_string(return_type.get()) + "'";
+    std::string msg = "Close system call fd must be a 'int' but got '" + type_to_string(return_type.get()) + "'";
     handleError(close_stmt->line, close_stmt->pos, msg, "", "Type Error");
   }
   return_type = nullptr;

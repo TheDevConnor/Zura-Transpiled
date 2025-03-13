@@ -198,9 +198,7 @@ void TypeChecker::visitUnary(Node::Expr *expr) {
     visitExpr(integer);
 
     if (!isIntBasedType(return_type.get())) {
-      std::string msg = "Unary operation '" + unary->op +
-                        "' requires the type to be an 'int' but got '" +
-                        type_to_string(return_type.get()) + "'";
+      std::string msg = "Unary operation '" + unary->op + "' requires the type to be an 'int' but got '" + type_to_string(return_type.get()) + "'";
       handleError(unary->line, unary->pos, msg, "", "Type Error");
     }
 
@@ -213,18 +211,14 @@ void TypeChecker::visitUnary(Node::Expr *expr) {
   expr->asmType = createDuplicate(return_type.get());
 
   if (unary->op == "!" && type_to_string(return_type.get()) != "bool") {
-    std::string msg = "Unary operation '" + unary->op +
-                      "' requires the type to be a 'bool' but got '" +
-                      type_to_string(return_type.get()) + "'";
+    std::string msg = "Unary operation '" + unary->op + "' requires the type to be a 'bool' but got '" + type_to_string(return_type.get()) + "'";
     handleError(unary->line, unary->pos, msg, "", "Type Error");
   }
 
   // check for ++ and --
   if (unary->op == "++" || unary->op == "--") {
     if (type_to_string(return_type.get()) != "int") {
-      std::string msg = "Unary operation '" + unary->op +
-                        "' requires the type to be an 'int' but got '" +
-                        type_to_string(return_type.get()) + "'";
+      std::string msg = "Unary operation '" + unary->op + "' requires the type to be an 'int' but got '" + type_to_string(return_type.get()) + "'";
       handleError(unary->line, unary->pos, msg, "", "Type Error");
     }
   }
@@ -280,17 +274,6 @@ void TypeChecker::visitAssign(Node::Expr *expr) {
   if (lhs == nullptr || rhs == nullptr) {
     return_type = std::make_shared<SymbolType>("unknown");
     return;
-  }
-
-  // check if the lhs is a parameter of a function
-  if (assign->assignee->kind == ND_IDENT) {
-    IdentExpr *ident = static_cast<IdentExpr *>(assign->assignee);
-    for (auto param : context->functionTable.getParams(ident->name, nullptr).params) {
-      if (param.first == ident->name) {
-        std::string msg = "Cannot assign to a function parameter '" + ident->name + "'";
-        handleError(assign->line, assign->pos, msg, "", "Type Error");
-      }
-    }
   }
 
   std::string msg = "Assignment requires both sides to be the same type, but got '" + type_to_string(lhs.get()) + "' and '" + type_to_string(rhs.get()) + "'";

@@ -59,8 +59,7 @@ struct FunctionTable : std::unordered_map<NameAndType, ParamAndType> {
   }
 
   void declare(const std::string &name, std::unordered_map<std::string, Node::Type *> params, Node::Type *returnType) {
-    std::cout << name << std::endl;
-    if (name == "main" && params.size() == 0) TypeChecker::foundMain = true; 
+    if (name == "main" && params.size() == 0 && static_cast<SymbolType*>(returnType)->name == "int") TypeChecker::foundMain = true;
     if (!contains({name, returnType})) {
         insert({{name, returnType}, {params}});
         return;
@@ -183,7 +182,9 @@ public:
   EnumTable enumTable;
   std::vector<std::string> stackKeys;
 
-  void enterScope() { localScopes.emplace_back(); }
+  void enterScope() { 
+    localScopes.emplace_back(); 
+  }
 
   void exitScope() {
     if (!localScopes.empty()) {
