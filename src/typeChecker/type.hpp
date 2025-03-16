@@ -69,16 +69,14 @@ std::string type_to_string(Node::Type *type);
 
 bool isIntBasedType(Node::Type *type);
 
-std::shared_ptr<SymbolType> checkReturnType(Node::Expr *expr,
-                                            const std::string &defaultType);
-bool checkTypeMatch(const std::shared_ptr<SymbolType> &lhs,
-                    const std::shared_ptr<SymbolType> &rhs,
-                    const std::string &operation, int line, int pos,
-                    std::string &msg);
+bool checkTypeMatch(Node::Type *lhs,
+                    Node::Type *rhs);
 void performCheck(Node::Stmt *stmt, bool isMain = true, bool isLspServer = false);
 void printTables();
 
 std::string determineTypeKind(const std::string &type);
+
+std::shared_ptr<Node::Type> share(Node::Type *type);
 void processStructMember(MemberExpr *member, const std::string &name, std::string lhsType);
 void processEnumMember(MemberExpr *member, const std::string &lhsType);
 void handleUnknownType(MemberExpr *member, const std::string &lhsType);

@@ -40,8 +40,14 @@ void TypeChecker::visitInt(Node::Expr *expr) {
     handleError(integer->line, integer->pos, msg, "", "Type Error");
   }
 
-  return_type = std::make_shared<SymbolType>("int");
-  expr->asmType = new SymbolType("int");
+  if (integer->value < 0) {
+    // It is a signed int
+    return_type = std::make_shared<SymbolType>("int", SymbolType::Signedness::SIGNED);
+    expr->asmType = new SymbolType("int", SymbolType::Signedness::SIGNED);
+  } else {
+    // We don't know, it could be either
+    return_type = std::make_shared<SymbolType>("int", SymbolType::Signedness::INFER);
+  }
 }
 
 void TypeChecker::visitFloat(Node::Expr *expr) {
@@ -50,17 +56,27 @@ void TypeChecker::visitFloat(Node::Expr *expr) {
   // check if the float is within the range of an f32 float
   if (value > std::numeric_limits<float>::max() ||
       value < std::numeric_limits<float>::min()) {
-    std::string msg = "Float '" + floating->value.substr(0, 10) + // We don't need more than 10 bits of precision in the output
-                                                                  // becuase you probably already know what the float in question is
-                      "' is out of range for a 'float' which is 32 bits";
-    handleError(floating->line, floating->pos, msg, "", "Type Error");
+    // Check if it's out of range for a DOUBLE
+    if (value > std::numeric_limits<double>::max() ||
+        value < std::numeric_limits<double>::min()) {
+      std::string msg = "Floating point number '" + floating->value.substr(0, 10) + // We don't need more than 10 bits of precision in the output
+                                                                    // becuase you probably already know what the float in question is
+                        " ...' is out of range for a 'double' which is 64 bits";
+      handleError(floating->line, floating->pos, msg, "", "Type Error");
+    } else {
+      // signedness does not affect doubles (always have a sign bit)
+      // IEEE 754 my beloved
+      return_type = std::make_shared<SymbolType>("double");
+      expr->asmType = new SymbolType("double");
+      return;
+    }
   }
   // TODO: Implement bigger flaot types (double, long double)
   return_type = std::make_shared<SymbolType>("float");
   expr->asmType = new SymbolType("float");
 }
 
-void TypeChecker::visitString(Node::Expr *expr) {
+void TypeChecker::visitString(Node::Expr *expr) { // Although this returns a str, this can be casted to a char* or char[] if needed
   return_type = std::make_shared<SymbolType>("str");
   expr->asmType = new SymbolType("str");
 }
@@ -83,18 +99,15 @@ void TypeChecker::visitDereference(Node::Expr *expr) {
   visitExpr(dereference->left);
 
   // check if the left side is a pointer
-  auto it = checkReturnType(dereference->left, "unknown");  
-  if (type_to_string(it.get()).find("*") == std::string::npos) {
-    std::string msg = "Dereference operation requires the left hand side to be a pointer but got '" + type_to_string(it.get()) + "'";
+  if (return_type.get()->kind != ND_POINTER_TYPE) {
+    std::string msg = "Dereference operation requires the left hand side to be a pointer but got '" + type_to_string(return_type.get()) + "'";
     handleError(dereference->line, dereference->pos, msg, "", "Type Error");
     return_type = std::make_shared<SymbolType>("unknown");
     expr->asmType = new SymbolType("unknown");
     return;
   }
 
-  // remove the '*' from the type
-  std::string ptr = it.get()->name.replace(it.get()->name.find("*"), 1, "");
-  return_type = std::make_shared<SymbolType>(ptr);
+  return_type = share(static_cast<PointerType *>(return_type.get())->underlying);
   expr->asmType = createDuplicate(return_type.get());
 }
 
@@ -126,12 +139,7 @@ void TypeChecker::visitIdent(Node::Expr *expr) {
   // update the ast-node (IdentExpr) to hold the type of the identifier as a
   // property
   ident->type = res;
-  if (res->kind == ND_ARRAY_TYPE) {
-    ArrayType *at = static_cast<ArrayType *>(res);
-    return_type = std::make_shared<ArrayType>(at->underlying, at->constSize);
-  } else {
-    return_type = std::make_shared<SymbolType>(type_to_string(res));
-  }
+  return_type = share(res);
   // TODO: Update this to the new tc system
   // if (isLspMode) {
   //   // Check if enum type
@@ -160,24 +168,25 @@ void TypeChecker::visitBinary(Node::Expr *expr) {
   BinaryExpr *binary = static_cast<BinaryExpr *>(expr);
 
   visitExpr(binary->lhs);
-  std::shared_ptr<SymbolType> lhs = checkReturnType(binary->lhs, "unknown");
+  Node::Type *lhsType = createDuplicate(return_type.get());
   visitExpr(binary->rhs);
-  std::shared_ptr<SymbolType> rhs = checkReturnType(binary->rhs, "unknown");
-
+  Node::Type *rhsType = createDuplicate(return_type.get());
   std::string msg = "Binary operation '" + binary->op +
                     "' requires the type to be an 'int' or 'float' but got '" +
-                    type_to_string(lhs.get()) + "' and '" +
-                    type_to_string(rhs.get()) + "'";
+                    type_to_string(lhsType) + "' and '" +
+                    type_to_string(rhsType) + "'";
   
-  if (!checkTypeMatch(lhs, rhs, binary->op, binary->line, binary->pos, msg)) {
+  if (!checkTypeMatch(lhsType, rhsType)) {
+    // make an error
+    handleError(binary->line, binary->pos, msg, "", "Type Error");
     return_type = std::make_shared<SymbolType>("unknown");
     expr->asmType = new SymbolType("unknown");
     return;
   }
 
   if (mathOps.find(binary->op) != mathOps.end()) {
-    return_type = lhs;
-    expr->asmType = new SymbolType(lhs.get()->name); // This, for some reason, is needed, otherwise the type is not set
+    return_type = share(lhsType);
+    expr->asmType = createDuplicate(lhsType);
   } else if (boolOps.find(binary->op) != boolOps.end()) {
     return_type = std::make_shared<SymbolType>("bool");
     expr->asmType = new SymbolType("bool");
@@ -195,7 +204,6 @@ void TypeChecker::visitUnary(Node::Expr *expr) {
   if (unary->op == "-") {
     // update the bool on the value to be negative
     IntExpr *integer = static_cast<IntExpr *>(unary->expr);
-    integer->isNegative = true;
     visitExpr(integer);
 
     if (!isIntBasedType(return_type.get())) {
@@ -207,9 +215,6 @@ void TypeChecker::visitUnary(Node::Expr *expr) {
   }
 
   visitExpr(unary->expr);
-
-  return_type = checkReturnType(expr, "unknown");
-  expr->asmType = createDuplicate(return_type.get());
 
   if (unary->op == "!" && type_to_string(return_type.get()) != "bool") {
     std::string msg = "Unary operation '" + unary->op + "' requires the type to be a 'bool' but got '" + type_to_string(return_type.get()) + "'";
@@ -228,6 +233,7 @@ void TypeChecker::visitUnary(Node::Expr *expr) {
 void TypeChecker::visitGrouping(Node::Expr *expr) {
   GroupExpr *grouping = static_cast<GroupExpr *>(expr);
   visitExpr(grouping->expr);
+  // no need to set the return type here
   expr->asmType = createDuplicate(return_type.get());
 }
 
@@ -246,44 +252,44 @@ void TypeChecker::visitTernary(Node::Expr *expr) {
   }
 
   visitExpr(ternary->lhs);
-  std::shared_ptr<Node::Type> lhs = return_type;
+  Node::Type *lhs = createDuplicate(return_type.get());
   visitExpr(ternary->rhs);
-  std::shared_ptr<Node::Type> rhs = return_type;
+  Node::Type *rhs = return_type.get(); // Technically, since we are not changing anything in here, we can be fine with not creating a duplicate
 
   if (lhs == nullptr || rhs == nullptr) {
     return_type = std::make_shared<SymbolType>("unknown");
     return;
   }
 
-  if (type_to_string(lhs.get()) != type_to_string(rhs.get())) {
+  if (!checkTypeMatch(lhs, rhs)) {
     std::string msg =
         "Ternary operation requires both sides to be the same type";
     handleError(ternary->line, ternary->pos, msg, "", "Type Error");
   }
 
-  return_type = lhs;
-  expr->asmType = lhs.get();
+  return_type = share(lhs);
+  expr->asmType = lhs;
 }
 
 void TypeChecker::visitAssign(Node::Expr *expr) {
   AssignmentExpr *assign = static_cast<AssignmentExpr *>(expr);
   visitExpr(assign->assignee);
-  std::shared_ptr<Node::Type> lhs = return_type;
+  Node::Type *lhs = createDuplicate(return_type.get());
   visitExpr(assign->rhs);
-  std::shared_ptr<Node::Type> rhs = return_type;
+  Node::Type *rhs = return_type.get(); // This doesn't technically have to be duplicated since we are not changing anything in here
 
   if (lhs == nullptr || rhs == nullptr) {
     return_type = std::make_shared<SymbolType>("unknown");
     return;
   }
 
-  std::string msg = "Assignment requires both sides to be the same type, but got '" + type_to_string(lhs.get()) + "' and '" + type_to_string(rhs.get()) + "'";
-  checkTypeMatch(std::make_shared<SymbolType>(type_to_string(lhs.get())),
-                 std::make_shared<SymbolType>(type_to_string(rhs.get())), "=",
-                 assign->line, assign->pos, msg);
+  std::string msg = "Assignment requires both sides to be the same type, but got '" + type_to_string(lhs) + "' and '" + type_to_string(rhs) + "'";
+  if (!checkTypeMatch(lhs, rhs)) {
+    handleError(assign->line, assign->pos, msg, "", "Type Error");
+  }
 
-  return_type = lhs;
-  expr->asmType = lhs.get();
+  return_type = share(lhs);
+  expr->asmType = lhs; // this could be either because they are both the same
 }
 
 void TypeChecker::visitCall(Node::Expr *expr) {
@@ -292,6 +298,7 @@ void TypeChecker::visitCall(Node::Expr *expr) {
 
   // check if the callee is an identifier
   if (name->kind != ND_IDENT && name->kind != ND_MEMBER) {
+    // For now, we pretend like calling function pointers don't exist
     std::string msg = "Function call requires the callee to be an identifier";
     handleError(call->line, call->pos, msg, "", "Type Error");
     return_type = std::make_shared<SymbolType>("unknown");
@@ -328,17 +335,9 @@ void TypeChecker::visitCall(Node::Expr *expr) {
   if (!validateArgumentTypes(call, name, fnParams)) return;
 
   // Set return type to the return of the fn
-  if (fnName.second->kind == ND_POINTER_TYPE) {
-    return_type = std::make_shared<PointerType>(
-        static_cast<PointerType *>(fnName.second)->underlying);
-  } else if (fnName.second->kind == ND_ARRAY_TYPE) {
-    ArrayType *at = static_cast<ArrayType *>(fnName.second);
-    return_type = std::make_shared<ArrayType>(at->underlying, at->constSize);
-  } else {
-    return_type = std::make_shared<SymbolType>(type_to_string(fnName.second));
-  }
+  return_type = share(fnName.second);
   expr->asmType = createDuplicate(return_type.get());
-  // add an ident // ok bye its about to shutdown now grab the charger! im too far :(((((  RUNNNNNNNNNN 
+  // add an ident
   if (isLspMode) {
     lsp_idents.push_back(LSPIdentifier{fnName.second, LSPIdentifierType::Function, fnName.first, static_cast<IdentExpr *>(call->callee)->line, static_cast<IdentExpr *>(call->callee)->pos});
   }
@@ -350,7 +349,7 @@ void TypeChecker::visitMember(Node::Expr *expr) {
   // Verify that the lhs is a struct or enum
   visitExpr(member->lhs);
   std::string lhsType = type_to_string(return_type.get());
-  if (lhsType.at(0) == '*') {
+  if (lhsType.at(0) == '*') { // This can remain a string becuase most operations here will be happening on SymbolTypes and not on anything else
     lhsType = lhsType.substr(1);
   }
   std::string name = static_cast<IdentExpr *>(member->rhs)->name;
@@ -412,11 +411,7 @@ void TypeChecker::visitArray(Node::Expr *expr) {
       expr->asmType = createDuplicate(return_type.get());
       return;
     }
-    if (type_to_string(return_type.get()) != type_to_string(at->underlying)) {
-      // It might be an int comparison that's really weird
-      if (isIntBasedType(return_type.get()) && isIntBasedType(at->underlying)) {
-        continue; // Don't error- this is okay.
-      }
+    if (!checkTypeMatch(at->underlying, return_type.get())) {
       std::string msg = "Array requires all elements to be of type '" +
                         type_to_string(at->underlying) + "' but got '" +
                         type_to_string(return_type.get()) + "'";
@@ -435,9 +430,7 @@ void TypeChecker::visitArray(Node::Expr *expr) {
 }
 
 void TypeChecker::visitArrayType(Node::Type *type) {
-  ArrayType *array = static_cast<ArrayType *>(type);
-  return_type =
-      std::make_shared<ArrayType>(array->underlying, array->constSize);
+  return_type = share(type); // Easy lol
 }
 
 void TypeChecker::visitIndex(Node::Expr *expr) {
@@ -446,16 +439,16 @@ void TypeChecker::visitIndex(Node::Expr *expr) {
   auto rhs = index->rhs;
 
   visitExpr(lhs);
-  std::shared_ptr<Node::Type> lhsType = return_type;
+  Node::Type *lhsType = createDuplicate(return_type.get());
 
   visitExpr(rhs);
-  std::shared_ptr<Node::Type> rhsType = return_type;
+  Node::Type *rhsType = createDuplicate(return_type.get());
 
   // search for '[]' in the lhs type and 'int' in the rhs type
-  auto lhsStr = type_to_string(lhsType.get());
-  auto rhsStr = type_to_string(rhsType.get());
+  std::string lhsStr = type_to_string(lhsType);
+  std::string rhsStr = type_to_string(rhsType);
 
-  if (lhsStr.find("[]") == std::string::npos) {
+  if (lhsType->kind != ND_ARRAY_TYPE) {
     std::string msg = "Indexing requires the left hand side to be an array but got '" + lhsStr + "'";
     handleError(index->line, index->pos, msg, "", "Type Error");
     return_type = std::make_shared<SymbolType>("unknown");
@@ -472,7 +465,7 @@ void TypeChecker::visitIndex(Node::Expr *expr) {
   }
 
   // set the return type to the underlying type of the array
-  return_type = std::make_shared<SymbolType>(lhsStr.substr(2, lhsStr.size() - 2)); // remove the '[]' from the type
+  return_type = share(static_cast<ArrayType *>(lhsType)->underlying);
   expr->asmType = createDuplicate(return_type.get());
 }
 
@@ -487,7 +480,7 @@ void TypeChecker::visitArrayAutoFill(Node::Expr *expr) {
   // assign the fill type to the array type
   if (array->fillType->kind == ND_ARRAY_TYPE) {
     ArrayType *at = static_cast<ArrayType *>(array->fillType);
-    if (at->constSize != -1) {
+    if (at->constSize < 1) {
       std::string msg = "Auto-filled arrays cannot have a pre-determined array to copy.";
       handleError(array->line, array->pos, msg, "", "Type Error");
     }
@@ -500,7 +493,7 @@ void TypeChecker::visitCast(Node::Expr *expr) {
   // Visit the inside (update it's inner asmType)
   visitExpr(cast->castee);
   expr->asmType = cast->castee_type;
-  return_type = std::make_shared<SymbolType>(type_to_string(cast->castee_type));
+  return_type = share(cast->castee_type);
 }
 
 void TypeChecker::visitStructExpr(Node::Expr *expr) {
@@ -529,7 +522,7 @@ void TypeChecker::visitStructExpr(Node::Expr *expr) {
 
   // check if the number of elements in the struct is the same as the number of
   // elements in the struct expression
-  int struct_size = 0;
+  size_t struct_size = 0;
   for (auto it : context->structTable[struct_name]) struct_size++;
 
   // We do not need ti check the struct size if the struct expression is empty
@@ -539,7 +532,7 @@ void TypeChecker::visitStructExpr(Node::Expr *expr) {
     return;
   }
 
-  if ((size_t)struct_size != struct_expr->values.size()) {
+  if (struct_size != struct_expr->values.size()) {
     std::string msg = "Struct '" + struct_name + "' requires " +
                       std::to_string(struct_size) + " elements but got " +
                       std::to_string(struct_expr->values.size());
@@ -553,17 +546,17 @@ void TypeChecker::visitStructExpr(Node::Expr *expr) {
   // expression elements
   for (std::pair<std::string, Node::Expr *> elem : struct_expr->values) {
     // find the type of the struct element;
-    std::string elem_type = "";
+    Node::Type *elem_type = nullptr;
     // set elem_type to the type of the struct element, if it exists
     for (const auto& member :
          context->structTable[struct_name]) {
       if (member.first == elem.first) {
-        elem_type = type_to_string(member.second.first);
+        elem_type = member.second.first;
         break;
       }
     }
 
-    if (elem_type == "") {
+    if (elem_type == nullptr) {
       std::string msg = "Named member '" + elem.first +
                         "' not found in struct '" + struct_name + "'";
       // did you mean?
@@ -585,9 +578,10 @@ void TypeChecker::visitStructExpr(Node::Expr *expr) {
     }
     // find if the type of the struct expression element is a nested struct of a
     // bigger one
-    if (elem.second->kind == ND_STRUCT) {
-      return_type = std::make_shared<SymbolType>(elem_type);
-      struct_expr->asmType = new SymbolType(elem_type);
+    if (elem.second->kind == ND_STRUCT) { // The work of typechecking the little guy has already been done for us
+      return_type = share(elem_type);
+      struct_expr->asmType = createDuplicate(return_type.get());
+      return;
     }
 
     visitExpr(elem.second);
@@ -598,14 +592,14 @@ void TypeChecker::visitStructExpr(Node::Expr *expr) {
         IdentExpr *ident = static_cast<IdentExpr *>(member->lhs);
         if (context->enumTable.find(ident->name) != context->enumTable.end()) {
           processEnumMember(member, ident->name); // Will automatically set return_type
-          member->asmType = createDuplicate(return_type.get()); // maybe this works idrk lmao
+          member->asmType = new SymbolType(ident->name); // maybe this works idrk lmao
         }
       }
     }
-    std::string expected = type_to_string(elem.second->asmType);
-    if (checkReturnType(elem.second, expected) == nullptr) {
+    Node::Type *expected = context->structTable[type_to_string(elem_type)][elem.first].first;
+    if (checkTypeMatch(return_type.get(), expected)) {
       std::string msg = "Struct element '" + elem.first + "' requires type '" +
-                        elem_type + "' but got '" + expected + "'";
+                        type_to_string(expected) + "' but got '" + type_to_string(return_type.get()) + "'";
       handleError(struct_expr->line, struct_expr->pos, msg, "", "Type Error");
       return_type = std::make_shared<SymbolType>("unknown");
       return;
@@ -620,7 +614,7 @@ void TypeChecker::visitAllocMemory(Node::Expr *expr) {
   AllocMemoryExpr *alloc = static_cast<AllocMemoryExpr *>(expr);
   
   visitExpr(alloc->bytesToAlloc);
-  if (type_to_string(return_type.get()) != "int") {
+  if (!isIntBasedType(return_type.get())) {
     std::string msg = "Alloc requires the number of bytes to be of type 'int' but got '" + type_to_string(return_type.get()) + "'";
     handleError(alloc->line, alloc->pos, msg, "", "Type Error");
   }
@@ -632,7 +626,7 @@ void TypeChecker::visitAllocMemory(Node::Expr *expr) {
 void TypeChecker::visitFreeMemory(Node::Expr *expr) {
   FreeMemoryExpr *freeMemory = static_cast<FreeMemoryExpr *>(expr);
   visitExpr(freeMemory->whatToFree);
-  if (type_to_string(return_type.get())[0] != '*') {
+  if (return_type.get()->kind != ND_POINTER_TYPE) {
     std::string msg = "Freeing memory requires the memory to be of pointer type but got '" +
                       type_to_string(return_type.get()) + "'";
     handleError(freeMemory->line, freeMemory->pos, msg, "", "Type Error");
@@ -641,7 +635,7 @@ void TypeChecker::visitFreeMemory(Node::Expr *expr) {
   }
 
   visitExpr(freeMemory->bytesToFree);
-  if (type_to_string(return_type.get()) != "int") {
+  if (!isIntBasedType(return_type.get())) {
     std::string msg = "Freeing memory requires the number of bytes to be of type 'int' but got '" + type_to_string(return_type.get()) + "'";
     handleError(freeMemory->line, freeMemory->pos, msg, "", "Type Error");
   }
@@ -653,14 +647,14 @@ void TypeChecker::visitFreeMemory(Node::Expr *expr) {
 void TypeChecker::visitSizeof(Node::Expr *expr) {
   SizeOfExpr *sizeOf = static_cast<SizeOfExpr *>(expr);
   visitExpr(sizeOf->whatToSizeOf);
-  return_type = std::make_shared<SymbolType>("int");
+  return_type = std::make_shared<SymbolType>("int"); // This is always positive, but less than the max value, therefore it can be passed off as 'inferred' type.
   // asmtype is a constant int and already handled
 }
 
 void TypeChecker::visitMemcpyMemory(Node::Expr *expr) {
   MemcpyExpr *memcpy = static_cast<MemcpyExpr *>(expr);
   visitExpr(memcpy->dest);
-  if (type_to_string(return_type.get())[0] != '*') {
+  if (return_type.get()->kind != ND_POINTER_TYPE) {
     std::string msg = "Memcpy requires the destination to be of pointer type but got '" +
                       type_to_string(return_type.get()) + "'";
     handleError(memcpy->line, memcpy->pos, msg, "", "Type Error");
@@ -669,7 +663,7 @@ void TypeChecker::visitMemcpyMemory(Node::Expr *expr) {
   }
 
   visitExpr(memcpy->src);
-  if (type_to_string(return_type.get())[0] != '*') {
+  if (return_type.get()->kind != ND_POINTER_TYPE) {
     std::string msg = "Memcpy requires the source to be of pointer type but got '" +
                       type_to_string(return_type.get()) + "'";
     handleError(memcpy->line, memcpy->pos, msg, "", "Type Error");
@@ -678,7 +672,7 @@ void TypeChecker::visitMemcpyMemory(Node::Expr *expr) {
   }
 
   visitExpr(memcpy->bytes);
-  if (type_to_string(return_type.get()) != "int") {
+  if (!isIntBasedType(return_type.get())) {
     std::string msg = "Memcpy requires the number of bytes to be of type 'int' but got '" + type_to_string(return_type.get()) + "'";
     handleError(memcpy->line, memcpy->pos, msg, "", "Type Error");
   }
@@ -714,6 +708,6 @@ void TypeChecker::visitOpen(Node::Expr *expr) {
     }
   }
 
-  return_type = std::make_shared<SymbolType>("int");
+  return_type = std::make_shared<SymbolType>("int"); // Just like before, the fd is always positive but less than the limit, so it can be inferred
   // asmtype is a constant int and already handled
 }

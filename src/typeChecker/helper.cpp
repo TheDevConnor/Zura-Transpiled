@@ -41,33 +41,76 @@ std::string TypeChecker::type_to_string(Node::Type *type) {
   }
 }
 
-std::shared_ptr<SymbolType> TypeChecker::checkReturnType(Node::Expr *expr, const std::string &defaultType) {
-    if (return_type == nullptr) {
-        expr->asmType = new SymbolType(defaultType);
-        return std::make_shared<SymbolType>(defaultType);
-    }
-
-    // check if we have a return type of any
-    if (type_to_string(return_type.get()) == "any") {
-        expr->asmType = new SymbolType(defaultType);
-        return std::make_shared<SymbolType>(defaultType); // return the default type
-    }
-    return std::static_pointer_cast<SymbolType>(return_type);
-}
-
-bool TypeChecker::checkTypeMatch(const std::shared_ptr<SymbolType> &lhs,
-                                 const std::shared_ptr<SymbolType> &rhs,
-                                 const std::string &operation, int line,
-                                 int pos, std::string &msg) {
-  if (type_to_string(lhs.get()) != type_to_string(rhs.get())) {
-    // if one side is of type 'any' let the other side be the type so it is not an error
-    if (type_to_string(lhs.get()) == "any" || type_to_string(rhs.get()) == "any") return true;
-    // Compare any int type to the builtin int typeturn true;
-    if (isIntBasedType(lhs.get()) && isIntBasedType(rhs.get())) return true;
-    handleError(line, pos, msg, "", "Type Error");
+bool TypeChecker::checkTypeMatch(Node::Type *lhs, Node::Type *rhs) {
+  if (lhs == nullptr || rhs == nullptr) {
+    return_type = std::make_shared<SymbolType>("unknown");
     return false;
   }
-  return true;
+  if (isIntBasedType(lhs) && isIntBasedType(rhs)) {
+    return true;
+  }
+  if (lhs->kind == ND_POINTER_TYPE && rhs->kind == ND_POINTER_TYPE) {
+    PointerType *l = static_cast<PointerType *>(lhs);
+    PointerType *r = static_cast<PointerType *>(rhs);
+    return checkTypeMatch(l->underlying, r->underlying);
+  }
+  if (lhs->kind == ND_ARRAY_TYPE && rhs->kind == ND_ARRAY_TYPE) {
+    ArrayType *l = static_cast<ArrayType *>(lhs);
+    ArrayType *r = static_cast<ArrayType *>(rhs);
+    if (l->constSize != r->constSize) return false;
+    return checkTypeMatch(l->underlying, r->underlying);
+  }
+  if (lhs->kind == ND_TEMPLATE_STRUCT_TYPE && rhs->kind == ND_TEMPLATE_STRUCT_TYPE) {
+    TemplateStructType *l = static_cast<TemplateStructType *>(lhs);
+    TemplateStructType *r = static_cast<TemplateStructType *>(rhs);
+    if (l->name != r->name) return false;
+    return checkTypeMatch(l->underlying, r->underlying);
+  }
+  if (lhs->kind == ND_FUNCTION_TYPE && rhs->kind == ND_FUNCTION_TYPE) {
+    FunctionType *l = static_cast<FunctionType *>(lhs);
+    FunctionType *r = static_cast<FunctionType *>(rhs);
+    if (l->args.size() != r->args.size()) return false;
+    for (size_t i = 0; i < l->args.size(); i++) {
+      if (!checkTypeMatch(l->args[i], r->args[i])) return false;
+    }
+    return checkTypeMatch(l->ret, r->ret);
+  }
+  if (lhs->kind == ND_SYMBOL_TYPE && rhs->kind == ND_SYMBOL_TYPE) {
+    SymbolType *l = static_cast<SymbolType *>(lhs);
+    SymbolType *r = static_cast<SymbolType *>(rhs);
+    // Do not check signedness ON PURPOSEEEEE
+    return l->name == r->name;
+  }
+
+  throw new std::runtime_error("Not implemented checkTypeMatch helper.cpp:47");
+}
+
+std::shared_ptr<Node::Type> TypeChecker::share(Node::Type *type) {
+  if (type == nullptr) return std::make_shared<SymbolType>("unknown");
+  switch (type->kind) {
+  case NodeKind::ND_SYMBOL_TYPE: {
+    SymbolType *st = static_cast<SymbolType *>(type);
+    return std::make_shared<SymbolType>(st->name, st->signedness);
+  }
+  case NodeKind::ND_ARRAY_TYPE: {
+    ArrayType *at = static_cast<ArrayType *>(type);
+    return std::make_shared<ArrayType>(at->underlying, at->constSize);
+  }
+  case NodeKind::ND_POINTER_TYPE:
+    return std::make_shared<PointerType>(static_cast<PointerType *>(type)->underlying);
+  case NodeKind::ND_TEMPLATE_STRUCT_TYPE: {
+    TemplateStructType *temp = static_cast<TemplateStructType *>(type);
+    return std::make_shared<TemplateStructType>(temp->name, temp->underlying);
+  }
+  case NodeKind::ND_FUNCTION_TYPE: {
+    FunctionType *fn = static_cast<FunctionType *>(type);
+    return std::make_shared<FunctionType>(fn->args, fn->ret);
+  }
+  default:
+    handleError(0, 0, "Unknown type for share", "", "Type Error");
+    return std::make_shared<SymbolType>("unknown");
+  }
+  
 }
 
 std::string TypeChecker::determineTypeKind(const std::string &type) {
@@ -204,8 +247,10 @@ Node::Type *TypeChecker::createDuplicate(Node::Type *type) {
 
 bool TypeChecker::isIntBasedType(Node::Type *type) {
   const static std::unordered_set<std::string> intTypes = {
-    "int", "signed int", "unsigned int", "char"
+    "int", "char", "short", "long"
   };
-
-  return intTypes.find(type_to_string(type)) != intTypes.end();
+  // Do not check for signedness ON PURPOSE
+  if (type->kind != ND_SYMBOL_TYPE) return false;
+  SymbolType *sym = static_cast<SymbolType *>(type);
+  return intTypes.find(sym->name) != intTypes.end();
 }

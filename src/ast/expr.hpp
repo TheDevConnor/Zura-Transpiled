@@ -11,7 +11,6 @@ class IntExpr : public Node::Expr {
 public:
   int line, pos;
   long long value;
-  bool isNegative = false;
 
   IntExpr(int line, int pos, long long value, int file) : line(line), pos(pos), value(value) {
     kind =  NodeKind::ND_INT;
@@ -23,7 +22,6 @@ public:
   void debug(int indent = 0) const override {
     Node::printIndent(indent);
     std::cout << "IntExpr: " << value << "\n";
-    std::cout << "Is negative: " << isNegative << "\n";
   }
 };
 

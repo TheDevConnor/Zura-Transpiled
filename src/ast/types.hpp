@@ -6,15 +6,42 @@
 
 class SymbolType : public Node::Type {
 public:
+
+  enum class Signedness {
+    INFER,  // For example, all int literals have this- when you declare an unsigned variable and set it to one of those, it will change
+    SIGNED,
+    UNSIGNED,
+  };
+  
   // ex: T, int, float, double, char, etc.
   std::string name;
+  // signed int, unsigned int
+  Signedness signedness = Signedness::UNSIGNED;
 
-  SymbolType(std::string name) : name(name) { kind = NodeKind::ND_SYMBOL_TYPE; }
+
+  SymbolType(std::string name, Signedness signedness = Signedness::INFER) : name(name), signedness(signedness) { kind = NodeKind::ND_SYMBOL_TYPE; }
 
   void debug(int indent = 0) const override { 
     std::cout << "Type: \n";
     Node::printIndent(indent + 1);
     std::cout << name << "\n";
+    // signeddness
+    Node::printIndent(indent + 1);
+    std::cout << "Signedness: ";
+    switch (signedness) {
+      case Signedness::INFER:
+        std::cout << "Inferred\n";
+        break;
+      case Signedness::SIGNED:
+        std::cout << "Signed\n";
+        break;
+      case Signedness::UNSIGNED:
+        std::cout << "Unsigned\n";
+        break;
+      default:
+        std::cout << "Unknown\n";
+        break;
+    };
   }
 };
 

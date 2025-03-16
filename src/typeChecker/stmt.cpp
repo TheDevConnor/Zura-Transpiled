@@ -17,6 +17,7 @@ void TypeChecker::visitStmt(Node::Stmt *stmt) {
 void TypeChecker::visitExprStmt(Node::Stmt *stmt) {
   ExprStmt *expr_stmt = static_cast<ExprStmt *>(stmt);
   visitExpr(expr_stmt->expr);
+  return_type = nullptr;
 }
 
 void TypeChecker::visitProgram(Node::Stmt *stmt) {
@@ -81,13 +82,11 @@ void TypeChecker::visitFn(Node::Stmt *stmt) {
 
   // Ensure return type is properly checked
   if (return_type == nullptr) {
-      std::cerr << "Error: Return type is not defined!" << std::endl;
       handleError(fn_stmt->line, fn_stmt->pos, "Return type is not defined", "", "Type Error");
   }
 
   // Check return statement requirements
   if (!needsReturn && type_to_string(fn_stmt->returnType) != "void") {
-      std::cerr << "Error: Function requires return statement but none found!" << std::endl;
       handleError(fn_stmt->line, fn_stmt->pos, "Function requires a return statement", "", "Type Error");
       return;
   }
@@ -98,11 +97,9 @@ void TypeChecker::visitFn(Node::Stmt *stmt) {
 
   std::string msg = "Function '" + fn_stmt->name + "' requeries a return type of '" + type_to_string(fn_stmt->returnType) + "' but got '" +
                     type_to_string(return_type.get()) + "' instead.";
-  bool check = checkTypeMatch(
-      std::make_shared<SymbolType>(type_to_string(fn_stmt->returnType)),
-      std::make_shared<SymbolType>(type_to_string(return_type.get())),
-      fn_stmt->name, fn_stmt->line, fn_stmt->pos, msg);
+  bool check = checkTypeMatch(fn_stmt->returnType, return_type.get());
   if (!check) {
+    handleError(fn_stmt->line, fn_stmt->pos, msg, "", "Type Error");
     return_type = std::make_shared<SymbolType>("unknown");
     return;
   }
@@ -180,11 +177,9 @@ void TypeChecker::visitStruct(Node::Stmt *stmt) {
                       "' requeries a return type of '" +
                       type_to_string(fn_stmt->returnType) + "' but got '" +
                       type_to_string(return_type.get()) + "' instead.";
-    bool check = checkTypeMatch(
-        std::make_shared<SymbolType>(type_to_string(fn_stmt->returnType)),
-        std::make_shared<SymbolType>(type_to_string(return_type.get())),
-        fn_stmt->name, fn_stmt->line, fn_stmt->pos, msg);
+    bool check = checkTypeMatch(fn_stmt->returnType, return_type.get()); 
     if (!check) {
+      handleError(fn_stmt->line, fn_stmt->pos, msg, "", "Type Error");
       return_type = std::make_shared<SymbolType>("unknown");
       return;
     }
@@ -243,7 +238,7 @@ void TypeChecker::visitVar(Node::Stmt *stmt) {
   // check if the type is a struct or enum
   if (context->structTable.contains(type_to_string(var_stmt->type)) ||
       context->enumTable.contains(type_to_string(var_stmt->type))) {
-    return_type = std::make_shared<SymbolType>(type_to_string(var_stmt->type));
+    return_type = share(var_stmt->type);
   }
 
   // Now check if we have a template struct
@@ -264,7 +259,7 @@ void TypeChecker::visitVar(Node::Stmt *stmt) {
     }
 
     // Now we can set the return type to the underlying type
-    return_type = std::make_shared<SymbolType>(type_to_string(temp->underlying));
+    return_type = share(temp->underlying);
 
     // Now we can set the type of the variable to the underlying type
     var_stmt->type = temp->underlying;
@@ -294,18 +289,16 @@ void TypeChecker::visitVar(Node::Stmt *stmt) {
     }
     array_expr->type =
         new ArrayType(array_type->underlying, array_expr->elements.size());
-    return_type = std::make_shared<ArrayType>(array_type->underlying,
-                                              array_type->constSize);
+    return_type = share(array_type);
     visitExpr(var_stmt->expr); // Visit the array, and by extension, its elements
-    return_type = std::make_shared<ArrayType>(array_type->underlying,
-                                              array_type->constSize);
+    return_type = share(array_type);
   } else if (var_stmt->type->kind == ND_POINTER_TYPE) {
     PointerType *ptr = static_cast<PointerType *>(var_stmt->type);
     if (var_stmt->expr->kind == NodeKind::ND_NULL) {
-      return_type = std::make_shared<PointerType>(ptr->underlying);
+      return_type = share(ptr);
     } else {
       visitExpr(var_stmt->expr);
-      return_type = std::make_shared<PointerType>(ptr->underlying);
+      return_type = share(ptr);
     }
   } else {
     visitExpr(var_stmt->expr);
@@ -315,10 +308,9 @@ void TypeChecker::visitVar(Node::Stmt *stmt) {
   std::string msg = "Variable '" + var_stmt->name + "' requires type '" +
                     type_to_string(var_stmt->type) + "' but got '" +
                     type_to_string(return_type.get()) + "'";
-  checkTypeMatch(
-      std::make_shared<SymbolType>(type_to_string(var_stmt->type)),
-      std::make_shared<SymbolType>(type_to_string(return_type.get())),
-      var_stmt->name, var_stmt->line, var_stmt->pos, msg);
+  if (!checkTypeMatch(var_stmt->type, return_type.get())) {
+    handleError(var_stmt->line, var_stmt->pos, msg, "", "Type Error");
+  }
 
   return_type = nullptr;
 }
@@ -495,7 +487,7 @@ void TypeChecker::visitInput(Node::Stmt *stmt) {
   InputStmt *input_stmt = static_cast<InputStmt *>(stmt);
 
   visitExpr(input_stmt->fd);
-  if (type_to_string(return_type.get()) != "int") {
+  if (!isIntBasedType(return_type.get())) {
     std::string msg = "Input system call fd must be a 'int' but got '" +
                       type_to_string(return_type.get()) + "'";
     handleError(input_stmt->line, input_stmt->pos, msg, "", "Type Error");
@@ -521,7 +513,7 @@ void TypeChecker::visitInput(Node::Stmt *stmt) {
 void TypeChecker::visitClose(Node::Stmt *stmt) {
   CloseStmt *close_stmt = static_cast<CloseStmt *>(stmt);
   visitExpr(close_stmt->fd);
-  if (type_to_string(return_type.get()) != "int") {
+  if (!isIntBasedType(return_type.get())) {
     std::string msg = "Close system call fd must be a 'int' but got '" + type_to_string(return_type.get()) + "'";
     handleError(close_stmt->line, close_stmt->pos, msg, "", "Type Error");
   }
