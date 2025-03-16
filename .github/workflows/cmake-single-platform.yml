@@ -5,53 +5,49 @@ on:
     branches: [ "main" ]
 
 jobs:
-  pre-release:
-    name: "Pre-release (Linux)"
+  build:
+    name: "Build Artifacts"
     runs-on: ubuntu-latest
 
     steps:
-      - name: "Checkout code"
+      - name: "Checkout Code"
         uses: actions/checkout@v3
 
-      - name: "Install Ninja"
+      - name: "Install Dependencies"
         run: |
           sudo apt-get update
           sudo apt-get install -y ninja-build
 
-      - name: "Build environment (Linux)"
+      - name: "Run Build Script"
         run: |
           chmod +x ./build.sh
           ./build.sh release
 
-      - name: "List build directory contents"
-        run: |
-          ls -R ./release
-
-      - name: "Upload artifacts (Linux)"
+      - name: "Upload Artifacts (Build Executable)"
         uses: actions/upload-artifact@v2
         with:
           name: linux-artifacts
           path: ./release/zura
         
-      - name: "Upload version file"
+      - name: "Upload Artifacts (Version File)"
         uses: actions/upload-artifact@v2
         with:
           name: version
           path: version.txt
 
-  combine-artifacts:
+  finalize:
     name: "Combine Artifacts"
     runs-on: ubuntu-latest
-    needs: [pre-release]
+    needs: [build]
 
     steps:
-      - name: "Download Linux artifacts"
+      - name: "Download Linux Artifacts (Executable)"
         uses: actions/download-artifact@v2
         with:
           name: linux-artifacts
           path: ./linux-artifacts
 
-      - name: "Download version file"
+      - name: "Download Artifact (Version File)"
         uses: actions/download-artifact@v2
         with:
           name: version
@@ -61,7 +57,7 @@ jobs:
         id: set_version
         run: echo "VERSION=$(cat ./version/version.txt)" >> $GITHUB_ENV
 
-      - name: "Create GitHub Release"
+      - name: "Create GitHub Release (Upload Artifacts)"
         uses: marvinpinto/action-automatic-releases@latest
         with:
           repo_token: ${{ secrets.GITHUB_TOKEN }}
