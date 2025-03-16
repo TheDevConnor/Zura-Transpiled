@@ -341,7 +341,6 @@ void TypeChecker::visitCall(Node::Expr *expr) {
       return_type = std::make_shared<SymbolType>(type_to_string(it.first.type));
     }
   }
-  std::cout << "Return type: " << type_to_string(return_type.get()) << std::endl;
   expr->asmType = createDuplicate(return_type.get());
 
   // add an ident // ok bye its about to shutdown now grab the charger! im too far :(((((  RUNNNNNNNNNN 
