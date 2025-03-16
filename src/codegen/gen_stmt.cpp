@@ -193,6 +193,10 @@ void codegen::funcDecl(Node::Stmt *stmt) {
              .type = InstrType::Linker},
        Section::Main);
 
+  pushLinker("endbr64\n\t", Section::Main); //? This instruction is really stupid and complicated, but it boils down to this:
+                                            //- This instruction is necessary for function pointers because when you jump some
+                                            //- stupid shit happens. Also, C does it.
+
   // Define literally (do not adjust cfa for this)
   push(Instr{.var = PushInstr{.what = "%rbp", .whatSize = DataSize::Qword},
              .type = InstrType::Push},

@@ -130,6 +130,11 @@ Node::Expr *CompileOptimizer::optimizeBinary(BinaryExpr *expr) {
     if (rhsVal == 2) {
       return new BinaryExpr(expr->line, expr->pos, lhs, rhs, ">>", expr->file_id);
     }
+    // check the value of the lhs
+    // if it was 0, the answer is also 0
+    if (static_cast<IntExpr *>(lhs)->value == 0) {
+      return new IntExpr(expr->line, expr->pos, 0, expr->file_id);
+    }
     return expr;
   }
   if (op == "*") {
