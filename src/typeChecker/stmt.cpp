@@ -54,15 +54,10 @@ void TypeChecker::visitConst(Node::Stmt *stmt) {
 
 void TypeChecker::visitFn(Node::Stmt *stmt) {
   FnStmt *fn_stmt = static_cast<FnStmt *>(stmt);
+  context->enterScope(); // Enter function scope
 
   // Declare function in local table
   context->declareLocal(fn_stmt->name, fn_stmt->returnType);
-
-  // Debugging: Ensure function is added
-  if (context->lookup(fn_stmt->name) != fn_stmt->returnType) {
-      std::cerr << "Error: Function not properly declared!" << std::endl;
-      return;
-  }
 
   // Add function parameters
   std::unordered_map<std::string, Node::Type *> params;
@@ -108,7 +103,7 @@ void TypeChecker::visitFn(Node::Stmt *stmt) {
   context->declareGlobal(fn_stmt->name, fn_stmt->returnType);
 
   return_type = nullptr;
-  context->exitScope(); // Clear local table for next function
+  context->exitScope();
 }
 
 void TypeChecker::visitBlock(Node::Stmt *stmt) {

@@ -119,6 +119,7 @@ void TypeChecker::visitIdent(Node::Expr *expr) {
     if (it.find(ident->name) != it.end()) {
       res = it[ident->name];
       ident->asmType = createDuplicate(res);
+      break;
     }
   }
 
@@ -298,7 +299,6 @@ void TypeChecker::visitCall(Node::Expr *expr) {
 
   // check if the callee is an identifier
   if (name->kind != ND_IDENT && name->kind != ND_MEMBER) {
-    // For now, we pretend like calling function pointers don't exist
     std::string msg = "Function call requires the callee to be an identifier";
     handleError(call->line, call->pos, msg, "", "Type Error");
     return_type = std::make_shared<SymbolType>("unknown");
@@ -325,19 +325,26 @@ void TypeChecker::visitCall(Node::Expr *expr) {
     return;
   }
 
-  // get the function parameters
-  auto it = context->functionTable.getParams(fnName.first, fnName.second);
-  std::unordered_map<std::string, Node::Type *> fnParams;
-  for (auto param : it.params) fnParams[param.first] = param.second;
+  // // get the function parameters
+  // std::unordered_map<std::string, Node::Type *> fnParams;
+  // if (context->functionTable.find({fnName.first, fnName.second}) != context->functionTable.end()) {
+  //   fnParams = context->functionTable.at({fnName.first, fnName.second}).params;
+  // }
 
-  if (!validateArgumentCount(call, name, fnParams)) return;
+  // if (!validateArgumentCount(call, name, fnParams)) return;
 
-  if (!validateArgumentTypes(call, name, fnParams)) return;
+  // if (!validateArgumentTypes(call, name, fnParams)) return;
 
-  // Set return type to the return of the fn
-  return_type = share(fnName.second);
+  // set the return type of the call to the return type of the function
+  for (auto it : context->functionTable) {
+    if (it.first.name == fnName.first) {
+      return_type = std::make_shared<SymbolType>(type_to_string(it.first.type));
+    }
+  }
+  std::cout << "Return type: " << type_to_string(return_type.get()) << std::endl;
   expr->asmType = createDuplicate(return_type.get());
-  // add an ident
+
+  // add an ident // ok bye its about to shutdown now grab the charger! im too far :(((((  RUNNNNNNNNNN 
   if (isLspMode) {
     lsp_idents.push_back(LSPIdentifier{fnName.second, LSPIdentifierType::Function, fnName.first, static_cast<IdentExpr *>(call->callee)->line, static_cast<IdentExpr *>(call->callee)->pos});
   }

@@ -76,6 +76,10 @@ struct FunctionTable : std::unordered_map<NameAndType, ParamAndType> {
   ParamAndType lookup(const std::string &name, Node::Type *type) {
     return at({name, type});
   }
+
+  void clearFunctionScope() {
+    clear();
+  }
 };
 
 struct StructTable : std::unordered_map<std::string, std::map<std::string, std::pair<Node::Type *, std::unordered_map<std::string, Node::Type *>>>> {
