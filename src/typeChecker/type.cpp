@@ -13,7 +13,6 @@ void TypeChecker::performCheck(Node::Stmt *stmt, bool isMain, bool isLspServer) 
 
   if (!context) {
     context = std::make_unique<TypeCheckerContext>();
-    std::cout << "TypeChecker context initialized!" << std::endl;
   }
 
   context->enterScope();

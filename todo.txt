@@ -1,19 +1,20 @@
 Add and recognize more int types in asm. (Ex. byte, short, long, quad).
  - IMPORTANT - Update stmt::enumDecl IMMEDIATELY after adding longs
 
- Implement an open/close method that returns a fd. Can be easily implemented alongside @output and @input
-  - Implement constant flags and allow native functions to pass them (for example, O_RDONLY or O_CREAT in @open)
- Add in alloc, free, cast, memcpy, and sizeof functions. (done => alloc, free, cast, sizeof, memcpy)
+- Implement constant flags and allow native functions to pass them (for example, O_RDONLY or O_CREAT in @open)
+  - Kind of, but only for boolean literals. Nowhere else besides that though
+
+  Finish TC rewrite
 
  Add in proper support for arrays and index over strings, arrays, etc.
 
  Add in uint and int types.
 
- TODO: Fix the typeCheckers indexing for chars as well as nested member exprs. (Fixed: nested member expr)
+ TODO: Fix the typeCheckers indexing for chars
 
  add in the lsp fully
   Fix Hover requests to be put in the right place
-  Fix Completion requests to not just hang and eventually crash (Infinite loop)
+  Fix Completion requests to not just hang and eventually crash (Infinite loop?)
  NOTE: Read into the calling convention for the lsp to comminicat with vscode and nvim respectfully
  NOTE: Good source for lsp integration 
         https://code.visualstudio.com/api/language-extensions/language-server-extension-guide

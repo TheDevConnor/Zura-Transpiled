@@ -30,9 +30,12 @@ public:
 class FloatExpr : public Node::Expr {
 public:
   int line, pos;
-  float value;
+  std::string value; // The reason we are using the string and not the float converston
+                     // is because the user may want more precision that could be cut off later
+                     // in the stof function. "Long double" literals exist, and we cannot risk
+                     // the loss of precision (otherwise, why use a long double at all?)
 
-  FloatExpr(int line, int pos, float value, int file)
+  FloatExpr(int line, int pos, std::string value, int file)
       : line(line), pos(pos), value(value) {
     file_id = file;
     kind = NodeKind::ND_FLOAT;

@@ -46,15 +46,16 @@ void TypeChecker::visitInt(Node::Expr *expr) {
 
 void TypeChecker::visitFloat(Node::Expr *expr) {
   FloatExpr *floating = static_cast<FloatExpr *>(expr);
-
+  long double value = std::stold(floating->value); // When comparing values like this, we want as much precision as possible.
   // check if the float is within the range of an f32 float
-  if (floating->value > std::numeric_limits<float>::max() ||
-      floating->value < std::numeric_limits<float>::min()) {
-    std::string msg = "Float '" + std::to_string(floating->value) +
+  if (value > std::numeric_limits<float>::max() ||
+      value < std::numeric_limits<float>::min()) {
+    std::string msg = "Float '" + floating->value.substr(0, 10) + // We don't need more than 10 bits of precision in the output
+                                                                  // becuase you probably already know what the float in question is
                       "' is out of range for a 'float' which is 32 bits";
     handleError(floating->line, floating->pos, msg, "", "Type Error");
   }
-
+  // TODO: Implement bigger flaot types (double, long double)
   return_type = std::make_shared<SymbolType>("float");
   expr->asmType = new SymbolType("float");
 }
@@ -349,6 +350,9 @@ void TypeChecker::visitMember(Node::Expr *expr) {
   // Verify that the lhs is a struct or enum
   visitExpr(member->lhs);
   std::string lhsType = type_to_string(return_type.get());
+  if (lhsType.at(0) == '*') {
+    lhsType = lhsType.substr(1);
+  }
   std::string name = static_cast<IdentExpr *>(member->rhs)->name;
 
   // Determine if lhs is a struct or enum
@@ -357,6 +361,10 @@ void TypeChecker::visitMember(Node::Expr *expr) {
   // check if the lhs is a struct or enum
   if (context->structTable.find(lhsType) == context->structTable.end() && context->enumTable.find(name) == context->enumTable.end()) {
     std::string msg = "Member access requires the left hand side to be a struct or enum but got '" + lhsType + "'";
+    std::string note = "";
+    if (lhsType.at(0) == '*') {
+      note = "Try dereferencing the pointer first";
+    }
     handleError(member->line, member->pos, msg, "", "Type Error");
     return_type = std::make_shared<SymbolType>("unknown");
     expr->asmType = new SymbolType("unknown");

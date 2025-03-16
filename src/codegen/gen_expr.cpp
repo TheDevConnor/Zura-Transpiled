@@ -131,7 +131,7 @@ void codegen::primary(Node::Expr *expr) {
          Section::ReadonlyData);
 
     // Push the string onto the data section
-    push(Instr{.var = Comment{.comment = std::to_string(floating->value)},
+    push(Instr{.var = Comment{.comment = floating->value},
                .type = InstrType::Comment},
          Section::ReadonlyData);
     push(Instr{.var =
@@ -746,10 +746,58 @@ void codegen::memberExpr(Node::Expr *expr) {
      */
     // It likely looks like this: leaq -8(%rbp), %rcx --- pushq %rcx. We want to
     // get that RBP offset there!!
-    text_section.pop_back(); // Push
-    std::string whatWasPushed =
-        std::get<LeaInstr>(text_section.at(text_section.size() - 1).var).src;
-    text_section.pop_back();
+    std::string whatWasPushed = "";
+    if (text_section.at(text_section.size() - 2).type != InstrType::Lea) {
+      // It was just a push. This means that it was a pointer and we have to actually just do the work here.
+      whatWasPushed = std::get<PushInstr>(text_section.at(text_section.size() - 1)
+                                             .var).what;
+      short offsetFromBase = 0;
+      for (size_t i = 0; i < fields.size(); i++) {
+        if (fields[i].first == static_cast<IdentExpr *>(e->rhs)->name) {
+          offsetFromBase = -(fields[i].second.second);
+          break;
+        }
+      }
+      bool resultIsStruct = structByteSizes.find(getUnderlying(e->asmType)) !=
+                            structByteSizes.end();
+      
+      popToRegister("%rcx");
+      if (resultIsStruct) {
+        DataSize size = DataSize::Qword;
+        push(Instr{.var = LeaInstr{.size = DataSize::Qword,
+                                    .dest = "%rcx",
+                                    .src = std::to_string(offsetFromBase) + "(%rcx)"},
+                    .type = InstrType::Lea},
+              Section::Main);
+        pushRegister("%rcx");
+      } else {
+        DataSize size = DataSize::Qword;
+        switch (getByteSizeOfType(e->asmType)) {
+        case 1:
+          size = DataSize::Byte;
+          break;
+        case 2:
+          size = DataSize::Word;
+          break;
+        case 4:
+          size = DataSize::Dword;
+          break;
+        case 8:
+        default:
+          size = DataSize::Qword;
+          break;
+        }
+        push(Instr{.var=PushInstr{.what = std::to_string(offsetFromBase) + "(%rcx)",
+                                  .whatSize = size},
+                  .type = InstrType::Push},
+              Section::Main);
+      }
+      return;
+    }
+    text_section.pop_back(); // Just a push. Nobody cares.
+    whatWasPushed = std::get<LeaInstr>(text_section.at(text_section.size() - 1)
+                                           .var).src;
+    text_section.pop_back(); // The lea instruction
     bool pushedHasOffset = whatWasPushed.find("(") != std::string::npos;
     signed int whatWasPushedOffset =
         pushedHasOffset

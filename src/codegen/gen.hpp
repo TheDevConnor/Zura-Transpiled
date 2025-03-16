@@ -105,7 +105,7 @@ void declareStructVariable(Node::Expr *expr, std::string structName, std::string
 void declareArrayVariable(Node::Expr *expr, short int arrayLength, std::string varName);
 
 size_t sizeOfLEB(int64_t value);
-int convertFloatToInt(float input); // Float input. Crazy, right?
+int convertFloatToInt(std::string input); // Float input. Crazy, right?
 int round(int num, int multiple); // Round a number up to the nearest multiple
 
 // <name, <type, offset>>

@@ -34,7 +34,7 @@ Node::Expr *Parser::primary(PStruct *psr) {
     return new IntExpr(line, column, std::stoll(psr->advance(psr).value), codegen::getFileID(psr->current_file));
   }
   case TokenKind::FLOAT: {
-    return new FloatExpr(line, column, std::stof(psr->advance(psr).value), codegen::getFileID(psr->current_file));
+    return new FloatExpr(line, column, psr->advance(psr).value, codegen::getFileID(psr->current_file));
   }
   case TokenKind::IDENTIFIER: {
     return new IdentExpr(line, column, psr->advance(psr).value, nullptr, codegen::getFileID(psr->current_file));

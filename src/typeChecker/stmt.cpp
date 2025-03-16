@@ -129,6 +129,9 @@ void TypeChecker::visitStruct(Node::Stmt *stmt) {
   context->declareLocal(struct_stmt->name, static_cast<Node::Type *>(type));
   context->declareGlobal(struct_stmt->name, static_cast<Node::Type *>(type));
 
+
+  context->structTable.insert({struct_stmt->name, {}}); // Declare blank and insert later
+
   // visit the fields Aka the variables
   for (std::pair<std::string, Node::Type *> &field : struct_stmt->fields) {
     context->structTable.addMember(struct_stmt->name, field.first, field.second);
@@ -346,8 +349,6 @@ void TypeChecker::visitReturn(Node::Stmt *stmt) {
     return;
   }
   needsReturn = true;
-
-  return_stmt->expr->debug();
 
   visitExpr(return_stmt->expr);
 }

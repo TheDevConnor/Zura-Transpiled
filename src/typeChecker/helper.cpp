@@ -87,38 +87,22 @@ std::string TypeChecker::determineTypeKind(const std::string &type) {
 void TypeChecker::processStructMember(MemberExpr *member, const std::string &name, std::string lhsType) {
   std::string realType = lhsType;
   if (lhsType.find('*') == 0) {
-    realType = lhsType.substr(1);
+    realType = lhsType.substr(1); // We know the type directly under this is a struct (otherwise we wouldnt be here)
   }
-
-  // if (map->struct_table.find(realType) != map->struct_table.end()) {
-  //   // Check if we are looking at a function or a field
-  //   if (map->struct_table_fn.find(realType) != map->struct_table_fn.end()) {
-  //     const FnVector &stmts = map->struct_table_fn[realType];
-  //     const FnVector::const_iterator res = std::find_if(stmts.begin(), stmts.end(), [&member](const Fn &fn) {
-  //         return fn.first.first == static_cast<IdentExpr *>(member->rhs)->name;
-  //     });
-  //     if (res == stmts.end()) {} // This is a field
-  //     else {
-  //       return_type = std::make_shared<SymbolType>(type_to_string(res->first.second));
-  //       member->asmType = createDuplicate(return_type.get());
-  //       return;
-  //     }
-  //   }
-  //   const std::vector<std::pair<std::string, Node::Type *>> &fields = map->struct_table[realType];
-  //   const std::vector<std::pair<std::string, Node::Type *>>::const_iterator
-  //       res = std::find_if(fields.begin(), fields.end(),[&name](const std::pair<std::string, Node::Type *> &field) {
-  //         return field.first == name;
-  //       });
-  //   // this cannot be fields.end() because that is actually a valid return
-  //   if (res == fields.end()) {
-  //     std::string msg = "Type '" + realType + "' does not have member '" + name + "'";
-  //     handleError(member->line, member->pos, msg, "", "Type Error");
-  //     return_type = std::make_shared<SymbolType>("unknown");
-  //     return;
-  //   }
-  //   return_type = std::make_shared<SymbolType>(type_to_string(res->second));
-  //   member->asmType = createDuplicate(return_type.get());
-  // }
+  if (!context->structTable.contains(realType)) {
+    // if we got this far, it probably exists, but its worth checking for anyway
+    std::string msg = "Type '" + lhsType + "' does not have members";
+    handleError(member->line, member->pos, msg, "", "Type Error");
+    return_type = std::make_shared<SymbolType>("unknown");
+    return;
+  }
+  for (auto it : context->structTable.at(realType)) {
+    if (it.first == name) {
+      return_type = std::make_shared<SymbolType>(type_to_string(it.second.first));
+      member->asmType = createDuplicate(return_type.get());
+      return;
+    }
+  }
 }
 
 void TypeChecker::processEnumMember(MemberExpr *member, const std::string &lhsType) {

@@ -1,6 +1,7 @@
 #pragma once
 
 #include <string>
+#include <map>
 #include <unordered_map>
 
 #include "../ast/ast.hpp"
@@ -77,7 +78,7 @@ struct FunctionTable : std::unordered_map<NameAndType, ParamAndType> {
   }
 };
 
-struct StructTable : std::unordered_map<std::string, std::unordered_map<std::string, std::pair<Node::Type *, std::unordered_map<std::string, Node::Type *>>>> {
+struct StructTable : std::unordered_map<std::string, std::map<std::string, std::pair<Node::Type *, std::unordered_map<std::string, Node::Type *>>>> {
     int line, pos;
     bool contains(const std::string &name) {
         return find(name) != end();

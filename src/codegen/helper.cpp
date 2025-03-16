@@ -173,12 +173,12 @@ void codegen::handleReturnCleanup() {
   push(Instr{.var = Ret{}, .type = InstrType::Ret}, Section::Main);
 }
 
-int codegen::convertFloatToInt(float input) {
+int codegen::convertFloatToInt(std::string input) {
   union {
-    float f; // 32-bit float
-    int i;   // 32-bit int
+    double f; // 32-bit float
+    signed long long int i;   // 32-bit int
   } u;
-  u.f = input;
+  u.f = std::stod(input);
   return u.i;
 }
 
@@ -300,7 +300,7 @@ void codegen::handleLiteralDisplay(Node::Expr *fd, Node::Expr *arg) {
   };
   if (arg->kind == ND_FLOAT) {
     FloatExpr *floatExpr = static_cast<FloatExpr *>(arg);
-    stringValue = std::to_string(floatExpr->value);
+    stringValue = floatExpr->value;
     push(Instr{.var=Comment{.comment="Print float literal for some reason"},.type=InstrType::Comment},Section::Main);
   };
   if (arg->kind == ND_STRING) {
