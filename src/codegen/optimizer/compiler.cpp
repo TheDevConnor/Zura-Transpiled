@@ -38,6 +38,7 @@ Node::Stmt *CompileOptimizer::optimizeIfStmt(IfStmt *stmt) {
 
 Node::Expr *CompileOptimizer::optimizeExpr(Node::Expr *expr) {
   switch (expr->kind) {
+    // NOTE: PLEASE COME BACK HERE!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     case NodeKind::ND_BINARY: return optimizeBinary(static_cast<BinaryExpr *>(expr));
     case NodeKind::ND_GROUP:  return optimizeExpr(static_cast<GroupExpr *>(expr)->expr);
     case NodeKind::ND_UNARY:  return optimizeUnary(static_cast<UnaryExpr *>(expr));
@@ -121,21 +122,20 @@ Node::Expr *CompileOptimizer::optimizeBinary(BinaryExpr *expr) {
       if (op == "<<") result = lhsVal << rhsVal;
       if (op == ">>") result = lhsVal >> rhsVal;
       return new IntExpr(expr->line, expr->pos, result, expr->file_id);
-    } else {
-      return expr;
     }
   }
   if (lhs->kind == ND_INT && op == "/") {
     int rhsVal = static_cast<IntExpr *>(rhs)->value;
-    if (rhsVal == 2) {
-      return new BinaryExpr(expr->line, expr->pos, lhs, rhs, ">>", expr->file_id);
+    if (rhsVal == 2 && static_cast<SymbolType *>(lhs->asmType)->signedness != SymbolType::Signedness::SIGNED) {
+      BinaryExpr *temp = new BinaryExpr(expr->line, expr->pos, lhs, rhs, ">>", expr->file_id);
+      temp->asmType = rhs->asmType;
+      return temp;
     }
     // check the value of the lhs
     // if it was 0, the answer is also 0
     if (static_cast<IntExpr *>(lhs)->value == 0) {
       return new IntExpr(expr->line, expr->pos, 0, expr->file_id);
     }
-    return expr;
   }
   if (op == "*") {
     // check if either side was a useless calculation (0 * x, 1 * x)
@@ -178,8 +178,91 @@ Node::Expr *CompileOptimizer::optimizeBinary(BinaryExpr *expr) {
       int lhsVal = static_cast<IntExpr *>(lhs)->value;
       if (lhsVal == 0) return rhs;
     }
+    // check if it is the same operation on both sides
+    // x + x = 2x
+    // x - x = 0
+    if (lhs->kind == ND_IDENT && rhs->kind == ND_IDENT) {
+      IdentExpr *lhsIdent = static_cast<IdentExpr *>(lhs);
+      IdentExpr *rhsIdent = static_cast<IdentExpr *>(rhs);
+      if (lhsIdent->name == rhsIdent->name) {
+        if (op == "-") return new IntExpr(expr->line, expr->pos, 0, expr->file_id);
+        if (op == "+") {
+          // Check if the type is unsigned (this could be FURTHER optimized into a << )
+          if (static_cast<SymbolType *>(lhs->asmType)->signedness != SymbolType::Signedness::SIGNED) {
+            BinaryExpr *temp = new BinaryExpr(expr->line, expr->pos, lhsIdent, new IntExpr(rhsIdent->line, rhsIdent->pos, 1, rhsIdent->file_id), "<<", expr->file_id);
+            temp->asmType = lhs->asmType;
+            return temp;
+          }
+          // Just do a *2
+          return new BinaryExpr(expr->line, expr->pos, lhsIdent, new IntExpr(rhsIdent->line, rhsIdent->pos, 2, rhsIdent->file_id), "*", expr->file_id);
+        }
+      }
+    }
   }
 
+
+  // Check for MORE int literal math
+  // Ex: x + 4 + 4 + 4 -> (((x + 4) + 4) + 4) which cant be analyzed
+  if (lhs->kind == ND_INT && rhs->kind == ND_BINARY) {
+    BinaryExpr *rhsBin = static_cast<BinaryExpr *>(rhs);
+    if (rhsBin->lhs->kind == ND_INT) {
+      long long lhsLhsVal = static_cast<IntExpr *>(lhs)->value;
+      long long rhsLhsVal = static_cast<IntExpr *>(rhsBin->lhs)->value;
+      long long result = 0;
+      // ex: 4 + x + 4 -> (4 + x) + 4 -> 8 + x
+      // ex: 4 - x + 4 -> (4 - x) + 4 -> x
+      if (op == "+") result = lhsLhsVal + rhsLhsVal;
+      if (op == "*") result = lhsLhsVal * rhsLhsVal;
+      if (op == "-") result = lhsLhsVal - rhsLhsVal;
+      BinaryExpr *temp =  new BinaryExpr(expr->line, expr->pos, new IntExpr(expr->line, expr->pos, result, expr->file_id), rhsBin->rhs, rhsBin->op, expr->file_id);
+      temp->asmType = rhs->asmType;
+      return temp;
+    }
+    // same thing, other side
+    if (rhsBin->rhs->kind == ND_INT) {
+      long long lhsRhsVal = static_cast<IntExpr *>(lhs)->value;
+      long long rhsRhsVal = static_cast<IntExpr *>(rhsBin->rhs)->value;
+      long long result = 0;
+      // ex: 4 + 4 + x -> (4 + 4) + x -> 8 + x
+      // ex: 4 + 4 - x -> (4 + 4) - x -> 8 - x
+      if (op == "+") result = lhsRhsVal + rhsRhsVal;
+      if (op == "*") result = lhsRhsVal * rhsRhsVal;
+      if (op == "-") result = lhsRhsVal - rhsRhsVal;
+      BinaryExpr *temp = new BinaryExpr(expr->line, expr->pos, rhsBin->lhs, new IntExpr(expr->line, expr->pos, result, expr->file_id), rhsBin->op, expr->file_id);
+      temp->asmType = rhs->asmType;
+      return temp;
+    }
+  }
+  if (lhs->kind == ND_BINARY && rhs->kind == ND_INT) {
+    BinaryExpr *lhsBin = static_cast<BinaryExpr *>(lhs);
+    if (lhsBin->lhs->kind == ND_INT) {
+      long long lhsLhsVal = static_cast<IntExpr *>(lhsBin->lhs)->value;
+      long long rhsVal = static_cast<IntExpr *>(rhs)->value;
+      long long result = 0;
+      // ex: x + 4 + 4 -> (x + 4) + 4 -> x + 8
+      // ex: x - 4 + 4 -> (x - 4) + 4 -> x
+      if (op == "+") result = lhsLhsVal + rhsVal;
+      if (op == "*") result = lhsLhsVal * rhsVal;
+      if (op == "-") result = lhsLhsVal - rhsVal;
+      BinaryExpr *temp = new BinaryExpr(expr->line, expr->pos, new IntExpr(expr->line, expr->pos, result, expr->file_id), lhsBin->rhs, lhsBin->op, expr->file_id);
+      temp->asmType = lhs->asmType;
+      return temp;
+    }
+    // same thing, other side
+    if (lhsBin->rhs->kind == ND_INT) {
+      long long lhsRhsVal = static_cast<IntExpr *>(lhsBin->rhs)->value;
+      long long rhsVal = static_cast<IntExpr *>(rhs)->value;
+      long long result = 0;
+      // ex: 4 + x + 4 -> (4 + x) + 4 -> 8 + x
+      // ex: 4 - x + 4 -> (4 - x) + 4 -> 4 + 4
+      if (op == "+") result = lhsRhsVal + rhsVal;
+      if (op == "*") result = lhsRhsVal * rhsVal;
+      if (op == "-") result = lhsRhsVal - rhsVal;
+      BinaryExpr *temp = new BinaryExpr(expr->line, expr->pos, lhsBin->lhs, new IntExpr(expr->line, expr->pos, result, expr->file_id), lhsBin->op, expr->file_id);
+      temp->asmType = lhs->asmType;
+      return temp;
+    } 
+  }
   // We've made all the optimizations we can (for now)
 
   return expr;

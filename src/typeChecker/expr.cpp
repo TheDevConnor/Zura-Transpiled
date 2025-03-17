@@ -308,13 +308,8 @@ void TypeChecker::visitCall(Node::Expr *expr) {
 
   // check if the callee is a function
   std::pair<std::string, Node::Type *> fnName;
-  if (name->kind == ND_IDENT) {
-    IdentExpr *ident = static_cast<IdentExpr *>(name);
-    fnName = {ident->name, nullptr};
-  } else {
-    MemberExpr *member = static_cast<MemberExpr *>(name);
-    fnName = {static_cast<IdentExpr *>(member->lhs)->name, nullptr};
-  }
+  auto ident = (name->kind == ND_IDENT) ? static_cast<IdentExpr *>(name) 
+                                        : static_cast<IdentExpr *>(static_cast<MemberExpr *>(name)->lhs);
 
   // check if the function is in the function table
   if (context->functionTable.find({fnName.first, fnName.second}) != context->functionTable.end()) {
@@ -336,14 +331,10 @@ void TypeChecker::visitCall(Node::Expr *expr) {
   // if (!validateArgumentTypes(call, name, fnParams)) return;
 
   // set the return type of the call to the return type of the function
-  for (auto it : context->functionTable) {
-    if (it.first.name == fnName.first) {
-      return_type = std::make_shared<SymbolType>(type_to_string(it.first.type));
-    }
-  }
+  for (auto it : context->functionTable) return_type = share(it.first.type);
   expr->asmType = createDuplicate(return_type.get());
 
-  // add an ident // ok bye its about to shutdown now grab the charger! im too far :(((((  RUNNNNNNNNNN 
+  // add an ident for the lsp
   if (isLspMode) {
     lsp_idents.push_back(LSPIdentifier{fnName.second, LSPIdentifierType::Function, fnName.first, static_cast<IdentExpr *>(call->callee)->line, static_cast<IdentExpr *>(call->callee)->pos});
   }

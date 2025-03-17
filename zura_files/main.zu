@@ -1,1 +1,15 @@
-const main := fn () int { have a: int = 0; loop(a < 10) { a = a + 1; } return a; };
+const newFeature1 := fn () int {
+  have x: int = 42;
+  return x + x; # Optimizer turns into 2 * x, which turns into x << 1 which turns into 84
+};
+
+const newFeature2 := fn () int {
+  have x: int = 10;
+  return x + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4; # Optimizer will know what to do with this now
+  # Before, it would be (((x + 4) + 4) + 4) and it wouldnt be able to do anything with all the "closed groups"/"seperations"
+  # Now it can easily just do x + 64
+};
+
+const main := fn () int {
+  return newFeature1() + newFeature2();
+};

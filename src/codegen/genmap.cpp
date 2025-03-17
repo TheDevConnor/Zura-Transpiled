@@ -51,11 +51,11 @@ void codegen::initMaps() {
   };
   opMap = {{"+", "add"},   {"-", "sub"},    {"*", "imul"}, {"/", "idiv"},
            {"%", "mod"}, // mod is div but special
-           {"^", "exp"},
+           {"^", "exp"},   {"~", "not"},    {"<<", "shl"},  {">>", "shr"},
 
            {"==", "sete"}, {"!=", "setne"}, {">", "setg"}, {">=", "setge"},
            {"<", "setl"},  {"<=", "setle"}, {"||", "lor"}, {"|", "bor"},
-           {"&&", "land"}, {"&", "band"}};
+           {"&&", "land"}};
   typeSizes = {
       {"int", 8},  {"float", 4}, {"enum", 8}, {"str", 8},
       {"char", 1}, {"bool", 1},  {"void", 0}, {"unsigned int", 8},

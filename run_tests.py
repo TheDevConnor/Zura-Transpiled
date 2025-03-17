@@ -30,15 +30,32 @@ class TestZuraPrograms(unittest.TestCase):
     def test_return_variable(self):
         run_test("const main := fn () int { have a: int = 10; return a; };", expected_exit_code=10)
     
-    def test_variable_reference(self):
+    def test_variable_order(self):
         run_test("const main := fn () int { have a: int = 10; have b: int = 5; return a; };", expected_exit_code=10)
     
-    def test_binary_operation(self):
+    def test_binary_operation_add(self):
         run_test("const main := fn () int { return 13 + 7; };", expected_exit_code=20)
     
-    def test_binary_operation_with_variables(self):
+    def test_binary_operation_add_with_variables(self):
         run_test("const main := fn () int { have a: int = 13; have b: int = 12; return a + b; };", expected_exit_code=25)
     
+    def test_binary_operation_mul(self):
+        run_test("const main := fn () int { return 13 * 7; };", expected_exit_code=91)
+    
+    def test_binary_operation_mul_with_variables(self):
+        run_test("const main := fn () int { have a: int = 13; have b: int = 12; return a * b; };", expected_exit_code=156)
+    
+    # Compiler Optimizer Tests (All of these cases will be simplified by the compiler optimizer and we are testing its capabilities here)
+    def test_binary_operation_oop(self):
+        run_test("const main := fn () int { return 18 - 7 * 4 / 2; };", expected_exit_code=4)
+
+    def test_a_lot_of_operations(self):
+        run_test("const main := fn () int { have x: int = 4; return x + 10 + 10 + 10 + 10 + 10 + 10 + 10 + 10 + 10 + 10 + 10 + 10; };", expected_exit_code=124)
+
+    def test_add_to_itself(self):
+        run_test("const main := fn () int { have x: int = 4; return x + x; };", expected_exit_code=8)
+
+    # End of Compiler Optimizer Tests
     def test_print_string_literal(self):
         run_test("const main := fn () int { @output(1, \"Hello, World!\"); return 0; };", expected_output="Hello, World!", expected_exit_code=0)
     
@@ -52,10 +69,10 @@ class TestZuraPrograms(unittest.TestCase):
         run_test("const main := fn () int { have a: int = 0; loop(a < 10) { a = a + 1; } return a; };", expected_exit_code=10)
     
     def test_struct_field_access(self):
-        run_test("const a:=struct{x:int,};const main:=fn()int{have b:a={x:72};return b.x;};", expected_exit_code=72)
+        run_test("const a := struct { x: int, }; const main := fn () int { have b: a = { x: 72 }; return b.x; };", expected_exit_code=72)
       
     def test_point_to_struct(self):
-        run_test("const a:=struct{x:int,};const main:=fn()int{have b:a={x:72};have c:*a=&b;return c.x;};", expected_exit_code=72)
+        run_test("const a := struct { x: int, }; const main := fn () int { have b: a = { x: 72 }; have c: *a = &b; return c.x; };", expected_exit_code=72)
 
 if __name__ == "__main__":
     unittest.main()

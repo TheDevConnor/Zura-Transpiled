@@ -43,7 +43,7 @@ struct SymbolTable : std::unordered_map<std::string, Node::Type *> {
             insert({name, type});
             return;
         }
-        std::string msg = "Variable already declared: " + name;
+        std::string msg = "Variable '" + name + "' already declared";
         TypeChecker::handleError(line, pos, msg, "", "Type Error");
     }
 

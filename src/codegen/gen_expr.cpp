@@ -168,6 +168,7 @@ void codegen::binary(Node::Expr *expr) {
   pushDebug(e->line, expr->file_id, e->pos);
   SymbolType *returnType = static_cast<SymbolType *>(e->asmType);
 
+  // TODO: Replace with "isIntBasedType" Function
   if (returnType->name == "int") {
     int lhsDepth = getExpressionDepth(e->lhs);
     int rhsDepth = getExpressionDepth(e->rhs);
@@ -195,6 +196,33 @@ void codegen::binary(Node::Expr *expr) {
         pushRegister("%rdx"); // Push remainder
       else
         pushRegister("%rax"); // Push result
+    } else if (op == "shl" || op == "shr") {
+      // Shift operations require either the CL register or an immediate
+      // Check if there is an immediate
+      if (e->rhs->kind == ND_INT) {
+        int shiftAmount = static_cast<IntExpr *>(e->rhs)->value;
+        if (shiftAmount == 1) {
+          // This requires NO number 1
+          pushLinker(op + " %rax\n\t", Section::Main);
+          pushRegister("%rax"); // Push the result
+          return;
+        }
+        push(Instr{.var=BinaryInstr{.op=op, .src="$" + std::to_string(shiftAmount), .dst="%rbx"},
+                   .type=InstrType::Binary},
+             Section::Main);
+        // push the result
+        pushRegister("%rbx");
+      } else {
+        // If there is no immediate, we need to pop the value into CL
+        push(Instr{.var = MovInstr{.dest = "%cl", .src = "%rbx", .destSize = DataSize::Byte, .srcSize = DataSize::Qword},
+                   .type = InstrType::Mov},
+             Section::Main);
+        push(Instr{.var=BinaryInstr{.op=op, .src="%cl", .dst="%rax"},
+                   .type=InstrType::Binary},
+             Section::Main);
+        // push the result
+        pushRegister("%rax");
+      }
     } else {
       // Every other operation ...
       push(Instr{.var = BinaryInstr{.op = op, .src = "%rbx", .dst = "%rax"},
@@ -203,8 +231,9 @@ void codegen::binary(Node::Expr *expr) {
       pushRegister("%rax"); // Push the result
     }
     return; // Done
-  } else if (returnType->name == "float") {
+  } else if (returnType->name == "float" || returnType->name == "double") {
     // Similar logic for floats
+    std::string suffix = returnType->name == "float" ? "ss" : "sd";
     int lhsDepth = getExpressionDepth(static_cast<BinaryExpr *>(e->lhs));
     int rhsDepth = getExpressionDepth(static_cast<BinaryExpr *>(e->rhs));
     if (lhsDepth > rhsDepth) {
@@ -221,13 +250,15 @@ void codegen::binary(Node::Expr *expr) {
 
     std::string op;
     if (e->op == "+")
-      op = "addss";
+      op = "add" + suffix;
     if (e->op == "-")
-      op = "subss";
+      op = "sub" + suffix;
     if (e->op == "*")
-      op = "mulss";
+      op = "mul" + suffix;
     if (e->op == "/")
-      op = "divss";
+      op = "div" + suffix;
+
+    // Doubles also work on the XMM registers so its ok
 
     push(Instr{.var = BinaryInstr{.op = op, .src = "%xmm1", .dst = "%xmm0"},
                .type = InstrType::Binary},
