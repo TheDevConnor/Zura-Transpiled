@@ -1,14 +1,9 @@
-Add and recognize more int types in asm. (Ex. byte, short, long, quad).
  - IMPORTANT - Update stmt::enumDecl IMMEDIATELY after adding longs
 
 - Implement constant flags and allow native functions to pass them (for example, O_RDONLY or O_CREAT in @open)
   - Kind of, but only for boolean literals. Nowhere else besides that though
 
-  Finish TC rewrite
-
- Add in proper support for arrays and index over strings, arrays, etc.
-
- Add in uint and int types.
+ Add in proper support for arrays and index over strings, arrays, etc. - Add standard test for this.
 
  TODO: Fix the typeCheckers indexing for chars
 
@@ -19,6 +14,8 @@ Add and recognize more int types in asm. (Ex. byte, short, long, quad).
  NOTE: Good source for lsp integration 
         https://code.visualstudio.com/api/language-extensions/language-server-extension-guide
         https://microsoft.github.io/language-server-protocol/specifications/lsp/3.17/specification/
+
+Allow integer literals to be inferred into whatever size they need; kind of like the signedness except for char, longs, shorts, etc.
 
 A test for if adding TCP/HTTP requests
 Change @input/@output to be @read/@write and make file descriptor manually declared (0 for stdin; 1 for stdout)

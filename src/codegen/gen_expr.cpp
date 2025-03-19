@@ -1,6 +1,7 @@
 #include "gen.hpp"
 #include "optimizer/compiler.hpp"
 #include "optimizer/instr.hpp"
+#include "../typeChecker/type.hpp"
 #include <string>
 
 void codegen::visitExpr(Node::Expr *expr) {
@@ -167,35 +168,116 @@ void codegen::binary(Node::Expr *expr) {
   BinaryExpr *e = static_cast<BinaryExpr *>(expr);
   pushDebug(e->line, expr->file_id, e->pos);
   SymbolType *returnType = static_cast<SymbolType *>(e->asmType);
+  DataSize size = DataSize::Qword;
+  std::string lhsReg = "";
+  std::string rhsReg = "";
+  switch (getByteSizeOfType(returnType)) {
+    case 1:
+      size = DataSize::Byte;
+      lhsReg = "%al";
+      rhsReg = "%bl";
+      break;
+    case 2:
+      size = DataSize::Word;
+      lhsReg = "%ax";
+      rhsReg = "%bx"; 
+      break;
+    case 4:
+      size = DataSize::Dword;
+      lhsReg = "%eax";
+      rhsReg = "%ebx";
+      break;
+    case 8:
+    default: // Not like i'll be dealing with 3-byte integers anyways
+      size = DataSize::Qword;
+      lhsReg = "%rax";
+      rhsReg = "%rbx";
+      break;
+  }
 
   // TODO: Replace with "isIntBasedType" Function
-  if (returnType->name == "int") {
+  if (TypeChecker::isIntBasedType(returnType)) {
     int lhsDepth = getExpressionDepth(e->lhs);
     int rhsDepth = getExpressionDepth(e->rhs);
     if (lhsDepth > rhsDepth) {
       visitExpr(e->lhs);
       visitExpr(e->rhs);
-      popToRegister("%rbx"); // Pop RHS into RBX
-      popToRegister("%rax"); // Pop LHS into RAX
+      push(Instr{.var=PopInstr{.where = rhsReg, .whereSize = size}, .type=InstrType::Pop}, Section::Main);
+      push(Instr{.var=PopInstr{.where = lhsReg, .whereSize = size}, .type=InstrType::Pop}, Section::Main);
     } else {
       visitExpr(e->rhs);
       visitExpr(e->lhs);
-      popToRegister("%rax"); // Pop LHS into RAX
-      popToRegister("%rbx"); // Pop RHS into RBX
+      push(Instr{.var=PopInstr{.where = lhsReg, .whereSize = size}, .type=InstrType::Pop}, Section::Main);
+      push(Instr{.var=PopInstr{.where = rhsReg, .whereSize = size}, .type=InstrType::Pop}, Section::Main);
     }
 
     // Perform the operation
     std::string op = lookup(opMap, e->op);
     if (op == "idiv" || op == "div" || op == "mod") {
-      // Division requires special handling because of RDX:RAX input
-      pushLinker("cqto\n\t", Section::Main);
-      push(Instr{.var = DivInstr{.from = "%rbx", .isSigned = true},
-                 .type = InstrType::Div},
-           Section::Main);
-      if (op == "mod")
-        pushRegister("%rdx"); // Push remainder
-      else
-        pushRegister("%rax"); // Push result
+      // Division requires special handling because of RDX:RAX input (more precision or something)
+      // We cannot check the result of the division, as a (neg / neg = pos) and that would ruin this
+      bool isSignedOp = (static_cast<SymbolType *>(e->lhs->asmType))->signedness == SymbolType::Signedness::SIGNED || 
+                        (static_cast<SymbolType *>(e->rhs->asmType))->signedness == SymbolType::Signedness::SIGNED; 
+      if (isSignedOp) {
+        // Although C likes making really stupid optimizations, technically, it works without them.
+        switch (size) {
+          default:
+          case DataSize::Qword:
+            pushLinker("cqto\n\t", Section::Main);
+            break;
+          case DataSize::Dword:
+            pushLinker("cltd\n\t", Section::Main);
+            break;
+          case DataSize::Word:
+            pushLinker("movswl " + lhsReg + ", %eax", Section::Main);
+            break;
+          case DataSize::Byte:
+            pushLinker("movsbw " + lhsReg + ", %ax" , Section::Main);
+            break;
+        }
+        push(Instr{.var = DivInstr{.from = rhsReg, .isSigned = true, .size = size}, .type = InstrType::Div}, Section::Main);
+      } else {
+        // it was unsigned so we have way less shit to worry about
+        DataSize size = DataSize::Qword;
+        push(Instr{.var=XorInstr{.lhs="%rdi", .rhs="%rdi"},.type=InstrType::Xor},Section::Main);
+        switch (getByteSizeOfType(returnType)) {
+          case 1:
+            size = DataSize::Byte;
+            break;
+          case 2:
+            size = DataSize::Word;
+            break;
+          case 4:
+            size = DataSize::Dword;
+            break;
+          case 8:
+          default:
+            size = DataSize::Qword;
+            break;
+        }
+        push(Instr{.var=DivInstr{.from=rhsReg, .isSigned = false, .size = size}, .type = InstrType::Div}, Section::Main);
+      }
+
+      if (op == "mod") {
+        switch (getByteSizeOfType(returnType)) {
+          case 1:
+            push(Instr{.var=PushInstr{.what="%dl", .whatSize = DataSize::Byte},.type = InstrType::Push}, Section::Main);
+            break;
+          case 2:
+            push(Instr{.var=PushInstr{.what="%dx", .whatSize = DataSize::Word},.type = InstrType::Push}, Section::Main);
+            break;
+          case 4:
+            push(Instr{.var=PushInstr{.what="%ebx", .whatSize = DataSize::Dword},.type = InstrType::Push}, Section::Main);
+             break;
+          case 8:
+          default:
+            push(Instr{.var=PushInstr{.what="%rbx", .whatSize = DataSize::Qword},.type = InstrType::Push}, Section::Main);
+            break;
+        }
+      } else {
+        // It doesnt matter, push the real thing and get out of here
+        push(Instr{.var=PushInstr{.what=lhsReg, .whatSize = size},.type = InstrType::Push}, Section::Main);
+      }
     } else if (op == "shl" || op == "shr") {
       // Shift operations require either the CL register or an immediate
       // Check if there is an immediate
@@ -299,24 +381,19 @@ void codegen::unary(Node::Expr *expr) {
   pushDebug(e->line, expr->file_id, e->pos);
   visitExpr(e->expr);
   // Its gonna be a pop guys
-  PushInstr instr =
-      std::get<PushInstr>(text_section.at(text_section.size() - 1).var);
+  PushInstr instr = std::get<PushInstr>(text_section.at(text_section.size() - 1).var);
   std::string whatWasPushed = instr.what;
 
   text_section.pop_back();
-
-  if (e->op == "++" || e->op == "--") {
+  
+  if (e->op == "-") {
+    // Perform the operation
+    push(Instr{.var = NegInstr{.what = whatWasPushed}, .type = InstrType::Neg}, Section::Main);
+  } else if (e->op == "++" || e->op == "--") {
     // Perform the operation
     std::string res = (e->op == "++") ? "inc" : "dec";
     // Dear code reader, i apologize
-    push(
-        Instr{
-            .var =
-                LinkerDirective{.value = res + "q " + whatWasPushed + "\n\t"},
-            .type = InstrType::Linker // Hey do you know why this infinatly
-                                      // loops? show asm
-        },
-        Section::Main);
+    push(Instr{.var = LinkerDirective{.value = res + "q " + whatWasPushed + "\n\t"}, .type = InstrType::Linker }, Section::Main);
   }
   // Push the result
   pushRegister(whatWasPushed);

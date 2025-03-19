@@ -56,8 +56,10 @@ Node::Expr *CompileOptimizer::optimizeUnary(UnaryExpr *expr) {
       return new IntExpr(expr->line, expr->pos, ~value, expr->file_id);
     }
     if (expr->op == "-") { // negation
-      return new IntExpr(expr->line, expr->pos, -value, expr->file_id); // (Somehow, -10 in plain source code is read as Unary - of 10 rather than an int of -10)
-    }
+      IntExpr *temp = new IntExpr(expr->line, expr->pos, -value, expr->file_id); // (Somehow, -10 in plain source code is read as Unary - of 10 rather than an int of -10)
+      temp->isUnsigned = false; // We ARE signed now!
+      return temp;
+    } 
   }
   if (operand->kind == ND_BOOL) {
     bool value = static_cast<BoolExpr *>(operand)->value;

@@ -74,6 +74,10 @@ Node::Expr *Parser::unary(PStruct *psr) {
   Lexer::Token op = psr->advance(psr);
   Node::Expr *right = parseExpr(psr, defaultValue);
 
+  if (op.value == "-" && right->kind == ND_INT) {
+    return new IntExpr(line, column, -(static_cast<IntExpr*>(right)->value), codegen::getFileID(psr->current_file));
+  }
+
   return new UnaryExpr(line, column, right, op.value, codegen::getFileID(psr->current_file));
 }
 

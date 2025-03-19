@@ -15,10 +15,17 @@ Node::Type *Parser::parseType(PStruct *psr, BindingPower bp) {
   return left;
 }
 Node::Type *Parser::symbol_table(PStruct *psr) {
-  return new SymbolType(
-      psr->expect(psr, TokenKind::IDENTIFIER,
-                  "Expected an identifier for a symbol table!")
-          .value);
+  // check if the next values are a ? or a ! for singed or unsigned
+  std::string name = psr->expect(psr, TokenKind::IDENTIFIER, "Expected an identifier for a symbol table!").value;
+  if (psr->peek(psr).kind == TokenKind::BANG) {
+    psr->advance(psr);
+    return new SymbolType(name, SymbolType::Signedness::UNSIGNED);
+  } else if (psr->peek(psr).kind == TokenKind::QUESTION) {
+    psr->advance(psr);
+    return new SymbolType(name, SymbolType::Signedness::SIGNED);
+  } else {
+    return new SymbolType(name);
+  }
 }
 
 Node::Type *Parser::array_type(PStruct *psr) {

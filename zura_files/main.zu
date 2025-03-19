@@ -1,15 +1,13 @@
-const newFeature1 := fn () int {
-  have x: int = 42;
-  return x + x; # Optimizer turns into 2 * x, which turns into x << 1 which turns into 84
-};
+# Use int! for unsigned and int? for signed.
+const main := fn () int! { 
+  # ...
+  return -4; # Error: Signedness mismatch
 
-const newFeature2 := fn () int {
-  have x: int = 10;
-  return x + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4; # Optimizer will know what to do with this now
-  # Before, it would be (((x + 4) + 4) + 4) and it wouldnt be able to do anything with all the "closed groups"/"seperations"
-  # Now it can easily just do x + 64
-};
-
-const main := fn () int {
-  return newFeature1() + newFeature2();
-};
+  # ...
+  have x: int! = -18; # Error: Signedness mismatch
+  
+  # ...
+  have x: int? = -18; 
+  have y: int? = -9; 
+  return x / y;
+};#anyways you can make the commit now, im gonna go 

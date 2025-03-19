@@ -126,9 +126,9 @@ std::string ErrorClass::error(int line, int pos, const std::string &msg,
       return line_error;
     }
 
-    line_error += (line > 0) ? currentLine(line - 1, pos, lexer, isParser, isTypeError, tokens) : "";
-    line_error += col.color(currentLine(line, pos, lexer, isParser, isTypeError, tokens), Color::GRAY, false, true);
-    line_error += currentLine(line + 1, pos, lexer, isParser, isTypeError, tokens);
+    line_error += (line > 0) ? col.color(currentLine(line - 1, pos, lexer, isParser, isTypeError, tokens), Color::GRAY, false, false) : "";
+    line_error += col.color(currentLine(line, pos, lexer, isParser, isTypeError, tokens), Color::WHITE, false, true);
+    line_error += col.color(currentLine(line + 1, pos, lexer, isParser, isTypeError, tokens), Color::GRAY, false, false);
     errors.push_back(line_error);
     return line_error;
   }

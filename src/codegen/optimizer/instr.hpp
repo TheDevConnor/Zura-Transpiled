@@ -52,21 +52,25 @@ struct BinaryInstr {
 struct AddInstr {
   std::string lhs;
   std::string rhs;
+  DataSize size; // This helps understand overflow
 };
 
 struct SubInstr {
   std::string lhs;
   std::string rhs;
+  DataSize size; // This helps with overflow
 };
 
 struct MulInstr {
   std::string from;
   bool isSigned; // IMUL or MUL
+  DataSize size; // Avoid size mismatch i suppose
 };
 
 struct DivInstr {
   std::string from;
   bool isSigned; // IDIV or DIV
+  DataSize size; // Understand what to divide i guess, i dont even know anymore
 };
 
 struct Label {

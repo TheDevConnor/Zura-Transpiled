@@ -121,7 +121,6 @@ void TypeChecker::visitStruct(Node::Stmt *stmt) {
   context->declareLocal(struct_stmt->name, static_cast<Node::Type *>(type));
   context->declareGlobal(struct_stmt->name, static_cast<Node::Type *>(type));
 
-
   context->structTable.insert({struct_stmt->name, {}}); // Declare blank and insert later
 
   // visit the fields Aka the variables
@@ -162,14 +161,14 @@ void TypeChecker::visitStruct(Node::Stmt *stmt) {
     // Verify that we have a return stmt in the function
     if (!needsReturn && type_to_string(fn_stmt->returnType) != "void") {
       std::string msg = "Function '" + fn_stmt->name +
-                        "' requeries a return stmt "
+                        "' requires a return stmt "
                         "but none was found";
       handleError(fn_stmt->line, fn_stmt->pos, msg, "", "Type Error");
       return;
     }
 
     std::string msg = "Function '" + fn_stmt->name +
-                      "' requeries a return type of '" +
+                      "' requires a return type of '" +
                       type_to_string(fn_stmt->returnType) + "' but got '" +
                       type_to_string(return_type.get()) + "' instead.";
     bool check = checkTypeMatch(fn_stmt->returnType, return_type.get()); 
@@ -314,7 +313,7 @@ void TypeChecker::visitPrint(Node::Stmt *stmt) {
   OutputStmt *print_stmt = static_cast<OutputStmt *>(stmt);
   visitExpr(print_stmt->fd);
   if (!isIntBasedType(return_type.get())) {
-    std::string msg = "Print requires the file descriptor to be of type 'int' "
+    std::string msg = "Print requires the file descriptor to be of type 'int?' "
                       "but got '" + type_to_string(return_type.get()) + "'";
     handleError(print_stmt->line, print_stmt->pos, msg, "", "Type Error");
   }
@@ -374,10 +373,12 @@ void TypeChecker::visitFor(Node::Stmt *stmt) {
 
   visitExpr(for_stmt->condition);
 
-  if (type_to_string(return_type.get()) != "bool") {
-    std::string msg = "For loop condition must be a 'bool' but got '" +
-                      type_to_string(return_type.get()) + "'";
-    handleError(for_stmt->line, for_stmt->pos, msg, "", "Type Error");
+  if (return_type.get()->kind != ND_SYMBOL_TYPE) {
+    if (static_cast<SymbolType *>(return_type.get())->name != "bool") {
+      std::string msg = "For loop condition must be a 'bool' but got '" +
+                        type_to_string(return_type.get()) + "'";
+      handleError(for_stmt->line, for_stmt->pos, msg, "", "Type Error");
+    }
   }
 
   // Now check if we have the increment in an optional parameter
@@ -400,12 +401,14 @@ void TypeChecker::visitWhile(Node::Stmt *stmt) {
   // check the condition of the while loop
   visitExpr(while_stmt->condition);
 
-  if (type_to_string(return_type.get()) != "bool") {
-    std::string msg = "While loop condition must be a 'bool' but got '" +
-                      type_to_string(return_type.get()) + "'";
-    handleError(while_stmt->line, while_stmt->pos, msg, "", "Type Error");
+  if (return_type.get()->kind != ND_SYMBOL_TYPE) {
+    if (static_cast<SymbolType *>(return_type.get())->name != "bool") {
+      std::string msg = "While loop condition must be a 'bool' but got '" +
+                        type_to_string(return_type.get()) + "'";
+      handleError(while_stmt->line, while_stmt->pos, msg, "", "Type Error");
+    }
   }
-
+  
   if (while_stmt->optional != nullptr) {
     visitExpr(while_stmt->optional);
   }

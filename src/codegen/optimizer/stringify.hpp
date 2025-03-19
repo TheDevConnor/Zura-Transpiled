@@ -75,19 +75,25 @@ public:
         return "xorq " + instr.lhs + ", " + instr.rhs + "\n\t";
       }
       std::string operator()(AddInstr instr) const {
-        return "addq " + instr.rhs + ", " + instr.lhs + "\n\t";
+        return "add" + dsToChar(instr.size) + " " + instr.rhs + ", " + instr.lhs + "\n\t";
       }
       std::string operator()(LeaInstr instr) const {
         return "lea" + dsToChar(instr.size) + " " + instr.src + ", " + instr.dest + "\n\t";
       };
       std::string operator()(SubInstr instr) const {
-        return "subq " + instr.rhs + ", " + instr.lhs + "\n\t";
+        return "sub" + dsToChar(instr.size) + " " + instr.rhs + ", " + instr.lhs + "\n\t";
       }
       std::string operator()(MulInstr instr) const {
-        return "mulq " + instr.from + "\n\t";
+        if (instr.isSigned) {
+          return "imul" + dsToChar(instr.size) + " " + instr.from + "\n\t";
+        }
+        return "mul" + dsToChar(instr.size) + " " + instr.from + "\n\t";
       }
       std::string operator()(DivInstr instr) const {
-        return "divq " + instr.from + "\n\t";
+        if (instr.isSigned) {
+          return "idiv" + dsToChar(instr.size) + " " + instr.from + "\n\t";
+        }
+        return "div" + dsToChar(instr.size) + " " + instr.from + "\n\t";
       }
       std::string operator()(Label instr) const {
         return "\n" + instr.name + ":\n\t";
