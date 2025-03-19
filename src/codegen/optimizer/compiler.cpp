@@ -1,3 +1,5 @@
+// library for log2 function (you will see where this is used)
+#include <cmath>
 #include "compiler.hpp"
 #include "../gen.hpp"
 
@@ -125,14 +127,20 @@ Node::Expr *CompileOptimizer::optimizeBinary(BinaryExpr *expr) {
     }
   }
   if (lhs->kind == ND_INT && op == "/") {
-    int rhsVal = static_cast<IntExpr *>(rhs)->value;
-    if (rhsVal == 2 && static_cast<SymbolType *>(lhs->asmType)->signedness != SymbolType::Signedness::SIGNED) {
-      BinaryExpr *temp = new BinaryExpr(expr->line, expr->pos, lhs, rhs, ">>", expr->file_id);
-      temp->asmType = rhs->asmType;
+    IntExpr *rhsExpr = static_cast<IntExpr *>(rhs);
+    int rhsVal = rhsExpr->value;
+    double shiftAmount = log2(rhsVal); // If this number is a whole number, it is a true power of 2
+    
+    // Right shifting still works even with a negative number; so I removed that check!
+    if (shiftAmount == floor(shiftAmount)) {
+      BinaryExpr *temp = new BinaryExpr(expr->line, expr->pos, lhs, new IntExpr(rhsExpr->line, rhsExpr->pos, (long long)shiftAmount, rhsExpr->file_id), ">>", expr->file_id);
+      temp->asmType = lhs->asmType;
       return temp;
     }
     // check the value of the lhs
     // if it was 0, the answer is also 0
+    // 0 / 2 = 0
+    // 0 / 17 = 0
     if (static_cast<IntExpr *>(lhs)->value == 0) {
       return new IntExpr(expr->line, expr->pos, 0, expr->file_id);
     }
@@ -140,21 +148,35 @@ Node::Expr *CompileOptimizer::optimizeBinary(BinaryExpr *expr) {
   if (op == "*") {
     // check if either side was a useless calculation (0 * x, 1 * x)
     if (lhs->kind == ND_INT) {
-      int lhsVal = static_cast<IntExpr *>(lhs)->value;
+      IntExpr *lhsExpr = static_cast<IntExpr *>(lhs);
+      int lhsVal = lhsExpr->value;
       if (lhsVal == 0) {
         return new IntExpr(expr->line, expr->pos, 0, expr->file_id);
       }
       if (lhsVal == 1) {
         return rhs;
       }
+      double shiftAmount = log2(lhsVal); // If this number is a whole number, it is a true power of 2
+      if (shiftAmount == floor(shiftAmount)) {
+        BinaryExpr *temp = new BinaryExpr(expr->line, expr->pos, rhs, new IntExpr(lhsExpr->line, lhsExpr->pos, (long long)shiftAmount, lhsExpr->file_id), "<<>>>>", expr->file_id);
+        temp->asmType = rhs->asmType;
+        return temp;
+      }
     }
     if (rhs->kind == ND_INT) {
-      int rhsVal = static_cast<IntExpr *>(rhs)->value;
+      IntExpr *rhsExpr = static_cast<IntExpr *>(rhs);
+      int rhsVal = rhsExpr->value;
       if (rhsVal == 0) {
         return new IntExpr(expr->line, expr->pos, 0, expr->file_id);
       }
       if (rhsVal == 1) {
         return lhs;
+      }
+      double shiftAmount = log2(rhsVal); // If this number is a whole number, it is a true power of 2
+      if (shiftAmount == floor(shiftAmount)) {
+        BinaryExpr *temp = new BinaryExpr(expr->line, expr->pos, rhs, new IntExpr(rhsExpr->line, rhsExpr->pos, (long long)shiftAmount, rhsExpr->file_id), "<<>>>>", expr->file_id);
+        temp->asmType = rhs->asmType;
+        return temp;
       }
     }
   }
@@ -168,6 +190,7 @@ Node::Expr *CompileOptimizer::optimizeBinary(BinaryExpr *expr) {
       if (rhsVal == 0) {
         std::string msg = "Dividing by zero is not allowed!";
         codegen::handleError(expr->line, expr->pos, msg, "Compile Error");
+        return expr;
       }
     }
     // TODO: Check if dividing by an even 1/x float to try optimizing into a Multiply
