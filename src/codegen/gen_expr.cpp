@@ -1363,6 +1363,24 @@ void codegen::assignStructMember(Node::Expr *expr) {
 void codegen::assignDereference(Node::Expr *expr) {
   AssignmentExpr *e = static_cast<AssignmentExpr *>(expr);
 
+  if (structByteSizes.find(getUnderlying(e->asmType)) != structByteSizes.end()) {
+    visitExpr(e->rhs);
+    PushInstr instr =
+        std::get<PushInstr>(text_section.at(text_section.size() - 1).var);
+    text_section.pop_back();
+    std::string offsetRegister = instr.what.find('(')
+                                     ? instr.what.substr(instr.what.find('(') + 1,
+                                                         instr.what.size() -
+                                                             instr.what.find('(') -
+                                                             2)
+                                     : instr.what;
+    int offset = instr.what.find('(')
+                             ? std::stoi(instr.what.substr(0, instr.what.find('(')))
+                             : 0;
+    dereferenceStructPtr(static_cast<DereferenceExpr *>(e->assignee)->left, getUnderlying(e->asmType), offsetRegister, offset);
+    return;
+  }
+
   visitExpr(e->rhs);  // Generate code for the right-hand side (RHS) value
   popToRegister("%rax"); // Get the value from the stack into %rax
 

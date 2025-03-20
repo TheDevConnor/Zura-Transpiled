@@ -1,5 +1,1 @@
-const main := fn () int! {
-  have x: int! = 32;
-  @output(1, x); # OLD: "32\0" NEW: "32" - no null terminator so "expected" outputs do not need to account for it
-  return 0;
-};
+const main := fn () int! { have a: int! = 0; loop(a < 10) { a = a + 1; } return a; };

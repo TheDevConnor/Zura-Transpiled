@@ -44,14 +44,14 @@ void codegen::gen(Node::Stmt *stmt, bool isSaved, std::string output_filename,
                   output_filename +
                   ".s' - ensure Zura has permissions to write/create files", "Codegen Error");
   
-  file << "# ┌---------------------------------┐\n"
-          "# |   Zura Syntax by TheDevConnor   |\n"
-          "# |   assembly by Soviet Pancakes   |\n"
-          "# └---------------------------------┘\n"
+  file << "# ╔═════════════════════════════════╗\n"
+          "# ║   Zura Syntax by TheDevConnor   ║\n"
+          "# ║   assembly by Soviet Pancakes   ║\n"
+          "# ╚═════════════════════════════════╝\n"
           "# "
         << ZuraVersion
         << "\n"
-          "# What's New: Opening & Closing files. @input & @output take in FDs\n"
+          "# What's New: Dereferencing structs\n"
         << "\n# Everything beyond this point was generated automatically by the Zura compiler.\n" 
            ".att_syntax\n";
   

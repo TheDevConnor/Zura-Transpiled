@@ -99,7 +99,9 @@ bool TypeChecker::checkTypeMatch(Node::Type *lhs, Node::Type *rhs) {
     return l->name == r->name;
   }
 
-  throw new std::runtime_error("Not implemented checkTypeMatch helper.cpp:47");
+  std::cerr << "helper.cpp:102" << std::endl;
+  std::cerr << "Unknown checkTypeMatch! lhs: " << type_to_string(lhs) << " rhs: " << type_to_string(rhs) << std::endl;
+  return false;
 }
 
 std::shared_ptr<Node::Type> TypeChecker::share(Node::Type *type) {

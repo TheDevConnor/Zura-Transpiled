@@ -67,10 +67,10 @@ class TestZuraPrograms(unittest.TestCase):
     def test_print_variable_and_string(self):
         run_test("const main := fn () int! { have a: int! = 10; @output(1, \"The number is: \", a); return 0; };", expected_output="The number is: 10", expected_exit_code=0)
 
-    # End of Compiler Optimizer Tests
     def test_print_string_literal(self):
         run_test("const main := fn () int! { @output(1, \"Hello, World!\"); return 0; };", expected_output="Hello, World!", expected_exit_code=0)
     
+    # End of Compiler Optimizer Tests
     def test_function_returning_parameter(self):
         run_test("const foo := fn (a: int!, b: int!) int { return b; }; const main := fn () int! { return foo(83, 40); };", expected_exit_code=40)
     
@@ -83,8 +83,18 @@ class TestZuraPrograms(unittest.TestCase):
     def test_struct_field_access(self):
         run_test("const a := struct { x: int!, }; const main := fn () int! { have b: a = { x: 72 }; return b.x; };", expected_exit_code=72)
       
-    def test_point_to_struct(self):
+    def test_struct_field_access_on_ptr(self):
         run_test("const a := struct { x: int!, }; const main := fn () int! { have b: a = { x: 72 }; have c: *a = &b; return c.x; };", expected_exit_code=72)
+
+    def test_variable_equal_deref_struct(self):
+        run_test("const a := struct { x: int!, }; const main := fn () int! { have b: a = { x: 72 }; have c: *a = &b; have d: a = c&; return d.x; };", expected_exit_code=72)
+
+    def test_big_struct_field_access_on_ptr(self):
+        run_test("const a := struct { x: int!, y: int!, z: int!, }; const main := fn () int! { have b: a = { x: 72, y: 12, z: 42 }; have c: *a = &b; return c.y + c.z; };", expected_exit_code=54)
+    
+    def test_variable_equal_deref_big_struct(self):
+        run_test("const a := struct { x: int!, y: int!, z: int!, }; const main := fn () int! { have b: a = { x: 72, y: 12, z: 42 }; have c: *a = &b; have d: a = c&; return d.y + d.z; };", expected_exit_code=54)
+
 
 if __name__ == "__main__":
     # Run the build.sh script to build the project in release mode
