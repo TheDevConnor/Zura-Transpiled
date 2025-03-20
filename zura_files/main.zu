@@ -1,5 +1,7 @@
 const main := fn () int! {
-  have x: int? = -30;
-  @outputln(1, x);
+  have x: int? = -42;
+
+  @output(1, x, "\n"); # -42
+
   return 0;
 };
