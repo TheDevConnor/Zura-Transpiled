@@ -351,32 +351,39 @@ void codegen::handleStrDisplay(Node::Expr *fd, Node::Expr *arg) {
 
 void codegen::handlePrimitiveDisplay(Node::Expr *fd, Node::Expr *arg) {
   nativeFunctionsUsed[NativeASMFunc::strlen] = true;
-  nativeFunctionsUsed[NativeASMFunc::itoa] = true;
   visitExpr(arg);
+  bool isSigned = static_cast<SymbolType *>(arg->asmType)->signedness == SymbolType::Signedness::SIGNED;
   switch (getByteSizeOfType(arg->asmType)) {
     case 1:
       push(Instr{.var=PopInstr{.where="%al",.whereSize=DataSize::Byte},.type=InstrType::Pop},Section::Main);
-      pushLinker("movzx %al, %rdi\n\t",Section::Main);
-      // Sign extend
+      if (isSigned) pushLinker("movsbq %al, %rdi\n\t",Section::Main);
+      else pushLinker("movzbq %al, %rdi\n\t",Section::Main);
       break;
     case 2:
       push(Instr{.var=PopInstr{.where="%ax",.whereSize=DataSize::Word},.type=InstrType::Pop},Section::Main);
-      pushLinker("movzx %ax, %rdi\n\t",Section::Main);
+      if (isSigned) pushLinker("movswq %ax, %rdi\n\t",Section::Main);
+      else pushLinker("movzwq %ax, %rdi\n\t",Section::Main);
       break;
     case 4:
       push(Instr{.var=PopInstr{.where="%eax",.whereSize=DataSize::Dword},.type=InstrType::Pop},Section::Main);
-      pushLinker("movzx %eax, %rdi\n\t",Section::Main);
+      if (isSigned) pushLinker("movswq %eax, %rdi\n\t",Section::Main);
+      else pushLinker("movzwq %eax, %rdi\n\t",Section::Main);
       break;
     case 8:
     default:
-      // Prev: Wrong register lol
       push(Instr{.var=PopInstr{.where="%rdi",.whereSize=DataSize::Qword},.type=InstrType::Pop},Section::Main);
       break;
   }
   // subtract rsp
   push(Instr{.var=SubInstr{.lhs="%rsp",.rhs="$"+std::to_string(variableCount)},.type=InstrType::Sub},Section::Main);
-  push(Instr{.var = CallInstr{.name = "native_itoa"}, .type = InstrType::Call},
-       Section::Main); // Convert int to string
+  // Convert the number to a printable string
+  if (isSigned) {
+    push(Instr{.var = CallInstr{.name = "native_itoa"}, .type = InstrType::Call}, Section::Main);
+    nativeFunctionsUsed[NativeASMFunc::itoa] = true;
+  } else {
+    push(Instr{.var = CallInstr{.name = "native_uitoa"}, .type = InstrType::Call}, Section::Main);
+    nativeFunctionsUsed[NativeASMFunc::uitoa] = true;
+  }
   moveRegister("%rdi", "%rax", DataSize::Qword, DataSize::Qword);
   moveRegister("%rsi", "%rdi", DataSize::Qword, DataSize::Qword);
   // Now we have the integer string in %rax (assuming %rax holds the pointer to the result)

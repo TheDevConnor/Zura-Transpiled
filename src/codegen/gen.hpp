@@ -140,6 +140,7 @@ Section {
 enum class NativeASMFunc {
     strlen,
     itoa,
+    uitoa,
     memcpy,
 };
 
