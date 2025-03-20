@@ -1,13 +1,5 @@
-# Use int! for unsigned and int? for signed.
-const main := fn () int! { 
-  # ...
-  return -4; # Error: Signedness mismatch
-
-  # ...
-  have x: int! = -18; # Error: Signedness mismatch
-  
-  # ...
-  have x: int? = -18; 
-  have y: int? = -9; 
-  return x / y;
+const main := fn () int! {
+  have x: int? = -30;
+  @outputln(1, x);
+  return 0;
 };
