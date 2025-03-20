@@ -1,7 +1,5 @@
 const main := fn () int! {
-  have x: int? = -42;
-
-  @output(1, x, "\n"); # -42
-
+  have x: int! = 32;
+  @output(1, x); # OLD: "32\0" NEW: "32" - no null terminator so "expected" outputs do not need to account for it
   return 0;
 };

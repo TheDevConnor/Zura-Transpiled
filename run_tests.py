@@ -4,9 +4,6 @@ import os
 
 def run_test(code: str, expected_exit_code=None, expected_output=None):
     """Helper function to compile and run a Zura program, checking exit code and/or output."""
-    # Check if release directory exists and a zura binary is present
-    if not os.path.exists("release/zura"):
-        raise FileNotFoundError("Zura binary not found. Please build the project in release mode first using './build.sh release'.")
 
     with open("zura_files/main.zu", "w") as f:
         f.write(code)
@@ -58,6 +55,18 @@ class TestZuraPrograms(unittest.TestCase):
     def test_add_to_itself(self):
         run_test("const main := fn () int! { have x: int! = 4; return x + x; };", expected_exit_code=8)
 
+    def test_add_negatives(self):
+        run_test("const main := fn () int! { have x: int? = -4; return 7 + x; };", expected_exit_code=3)
+    
+    def test_print_variable(self):
+        run_test("const main := fn () int! { have a: int! = 10; @output(1, a); return 0; };", expected_output="10", expected_exit_code=0)
+      
+    def test_print_negative_variable(self):
+        run_test("const main := fn () int! { have a: int? = -10; @output(1, a); return 0; };", expected_output="-10", expected_exit_code=0)
+    
+    def test_print_variable_and_string(self):
+        run_test("const main := fn () int! { have a: int! = 10; @output(1, \"The number is: \", a); return 0; };", expected_output="The number is: 10", expected_exit_code=0)
+
     # End of Compiler Optimizer Tests
     def test_print_string_literal(self):
         run_test("const main := fn () int! { @output(1, \"Hello, World!\"); return 0; };", expected_output="Hello, World!", expected_exit_code=0)
@@ -78,4 +87,11 @@ class TestZuraPrograms(unittest.TestCase):
         run_test("const a := struct { x: int!, }; const main := fn () int! { have b: a = { x: 72 }; have c: *a = &b; return c.x; };", expected_exit_code=72)
 
 if __name__ == "__main__":
+    # Run the build.sh script to build the project in release mode
+    if not os.path.exists("./build.sh"):
+        raise FileNotFoundError("Zura build script not found. In the worst case scenario, run the cmake --build command manually.")
+    subprocess.run(["./build.sh", "release"], check=True)
+
+    if not os.path.exists("./release/zura"):
+        raise FileNotFoundError("Zura executable not found after building. Check the build script output for errors.")
     unittest.main()

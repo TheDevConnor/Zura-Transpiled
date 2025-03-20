@@ -170,7 +170,7 @@ void TypeChecker::visitBinary(Node::Expr *expr) {
                     type_to_string(lhsType) + "' and '" +
                     type_to_string(rhsType) + "'";
   
-  if (!checkTypeMatch(lhsType, rhsType)) {
+  if (!checkTypeMatch(lhsType, rhsType) && !(isIntBasedType(lhsType) && isIntBasedType(rhsType))) {
     // make an error
     handleError(binary->line, binary->pos, msg, "", "Type Error");
     return_type = std::make_shared<SymbolType>("unknown");
