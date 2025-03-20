@@ -135,10 +135,10 @@ void codegen::gen(Node::Stmt *stmt, bool isSaved, std::string output_filename,
           "\n    addq $32, %rsp          # Restore the stack"
           "\n    ret"
           "\n"
-          ".size native_itoa, .-native_uitoa\n";
+          ".size native_uitoa, .-native_uitoa\n";
   }
   if (nativeFunctionsUsed[NativeASMFunc::itoa] == true) {
-    file << ".type native_uitoa, @function\n"
+    file << ".type native_itoa, @function\n"
             "native_itoa:"
             "\n    # Allocate space for the string on the stack"
             "\n    subq $32, %rsp          # Allocate 32 bytes (characters) for the buffer"
