@@ -8,11 +8,12 @@ enum class JumpCondition;
 
 enum class DataSize {
   None,  // None/auto type
-  Byte,  // 8 bits
-  Word,  // 16 bits
-  Dword, // 32 bits
-  Qword, // 64 bits
-  SS,    // 24-bits - yes its weird. Scalar single-precision float.
+  Byte,  // 8 bits  (aka char)
+  Word,  // 16 bits (aka short)
+  Dword, // 32 bits (aka long)
+  Qword, // 64 bits (aka long long)
+  SS,    // 32-bits (aka float) Scalar single-precision float
+  SD,    // 64-bits (aka double) Scalar double-precision float
 };
 
 struct MovInstr {

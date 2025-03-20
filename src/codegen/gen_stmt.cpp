@@ -268,6 +268,7 @@ void codegen::funcDecl(Node::Stmt *stmt) {
     // Push a ret anyway
     // Otherwise we SEGFAULTT
     popToRegister("%rbp");
+    pushLinker(".cfi_def_cfa 7, 8\n\t", Section::Main);
     push(Instr{.var = Ret{.fromWhere = funcName}, .type = InstrType::Ret},
          Section::Main);
   }
@@ -326,7 +327,30 @@ void codegen::varDecl(Node::Stmt *stmt) {
       variableCount += (getByteSizeOfType(at->underlying) * at->constSize) + 8;
     } else {
       visitExpr(s->expr);
-      popToRegister(where); // For values small enough to fit in a register.
+      DataSize size = DataSize::Qword;
+      switch (getByteSizeOfType(s->type)) {
+        case 1:
+          size = DataSize::Byte;
+          break;
+        case 2:
+          size = DataSize::Word;
+          break;
+        case 4:
+          size = DataSize::Dword;
+          break;
+        case 8:
+        default:
+          size = DataSize::Qword;
+          break;
+      }
+      if (s->type->kind == ND_SYMBOL_TYPE) {
+        if (getUnderlying(s->type) == "float") {
+          size = DataSize::SS;
+        } else if (getUnderlying(s->type) == "double") {
+          size = DataSize::SD;
+        }
+      }
+      push(Instr{.var=PopInstr{.where = where, .whereSize = size}, .type = InstrType::Pop}, Section::Main); // For values small enough to fit in a register.
       variableTable.insert({s->name, where});
       variableCount += getByteSizeOfType(s->type);
     }
@@ -632,14 +656,12 @@ void codegen::_return(Node::Stmt *stmt) {
   }
   // Generate return value for the function
   codegen::visitExpr(returnStmt->expr);
-  // Check the type of what the hell was returned
   if (isEntryPoint) {
     popToRegister("%rdi");
     handleExitSyscall();
     return;
   }
   if (returnStmt->expr->asmType->kind == ND_POINTER_TYPE ||
-      returnStmt->expr->asmType->kind == ND_ARRAY_TYPE || 
       returnStmt->expr->asmType->kind == ND_FUNCTION_TYPE ||
       returnStmt->expr->asmType->kind == ND_FUNCTION_TYPE_PARAM) {
     popToRegister("%rax"); // rax is fine in this case- it is ALWAYS 8 bytes
@@ -650,10 +672,32 @@ void codegen::_return(Node::Stmt *stmt) {
   SymbolType *st = static_cast<SymbolType *>(returnStmt->expr->asmType);
   if (st->name == "float" || st->name == "double") {
     push(Instr{.var=PopInstr{.where="%xmm0",.whereSize=DataSize::SS},.type=InstrType::Pop},Section::Main);
+    handleReturnCleanup();
   } else {
-    popToRegister("%rax");
+    int byteSize = getByteSizeOfType(returnStmt->expr->asmType);
+    if (byteSize <= 8) {
+      switch (byteSize) {
+        case 1:
+          push(Instr{.var=PopInstr{.where="%al",.whereSize=DataSize::Byte},.type=InstrType::Pop},Section::Main);
+          break;
+        case 2:
+          push(Instr{.var=PopInstr{.where="%ax",.whereSize=DataSize::Word},.type=InstrType::Pop},Section::Main);
+          break;
+        case 4:
+          push(Instr{.var=PopInstr{.where="%eax",.whereSize=DataSize::Dword},.type=InstrType::Pop},Section::Main);
+          break;
+        case 8:
+          push(Instr{.var=PopInstr{.where="%rax",.whereSize=DataSize::Qword},.type=InstrType::Pop},Section::Main);
+          break;
+        default:
+          push(Instr{.var=PopInstr{.where="%rax",.whereSize=DataSize::Qword},.type=InstrType::Pop},Section::Main);
+          break;
+      }
+      handleReturnCleanup();
+      return;
+    }
+    // TODO: Return things LARGER than 8 bytes!
   }
-  handleReturnCleanup();
 }
 
 void codegen::forLoop(Node::Stmt *stmt) {

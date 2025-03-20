@@ -50,6 +50,24 @@ public:
         if (instr.destSize != instr.srcSize) {
           // Operands are different sizes...
           // movzx dest, src
+          if (instr.destSize == DataSize::SD &&
+              instr.srcSize == DataSize::Qword) {
+              // Just go ahead with it
+              std::stringstream ss;
+              ss << "mov" << dsToChar(instr.destSize) << " " << instr.src << ", " << instr.dest << "\n\t";
+              return ss.str();
+          }
+          if (instr.destSize == DataSize::SS &&
+              instr.srcSize == DataSize::Dword) {
+              // Just go ahead with it
+              std::stringstream ss;
+              ss << "mov" << dsToChar(instr.destSize) << " " << instr.src << ", " << instr.dest << "\n\t";
+              return ss.str();
+          }
+          // Everything else, we must assume a zero-extend
+          std::stringstream ss;
+          ss << "movz" << dsToChar(instr.srcSize) << dsToChar(instr.destSize) << " " << instr.src << ", " << instr.dest << "\n\t";
+          return ss.str();
         }
         if (instr.src.starts_with("$")) {
           // it's a number! if its larger than 2^32, we must use movabsq
@@ -104,7 +122,7 @@ public:
         cmpq $8, $16
         jg example # JUMPS IF 16 > 8 ???!?!?
         */
-        return "cmpq " + instr.rhs + ", " + instr.lhs + "\n\t";
+        return "cmp " + instr.rhs + ", " + instr.lhs + "\n\t";
       }
       std::string operator()(JumpInstr instr) const {
         std::string keyword = {};

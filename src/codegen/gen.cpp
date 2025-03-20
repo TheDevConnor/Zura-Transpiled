@@ -73,10 +73,13 @@ void codegen::gen(Node::Stmt *stmt, bool isSaved, std::string output_filename,
     file << ".Ltext0:\n.weak .Ltext0\n";
   }
   file << "_start:\n"
+          "  .cfi_startproc\n"
           "  call main\n"
           "  xorq %rdi, %rdi\n"
           "  movq $60, %rax\n"
-          "  syscall\n";
+          "  syscall\n"
+          "  .cfi_endproc\n"
+          ".size _start, .-_start\n";
   file << Stringifier::stringifyInstrs(text_section);
   if (nativeFunctionsUsed.size() > 0) file << "\n# zura functions\n";
   if (nativeFunctionsUsed[NativeASMFunc::strlen] == true) {
