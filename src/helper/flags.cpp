@@ -1,4 +1,3 @@
-
 #include "flags.hpp"
 #include "../common.hpp"
 #include "../lexer/lexer.hpp"

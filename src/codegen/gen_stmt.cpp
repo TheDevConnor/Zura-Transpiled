@@ -268,6 +268,7 @@ void codegen::funcDecl(Node::Stmt *stmt) {
     // Push a ret anyway
     // Otherwise we SEGFAULTT
     popToRegister("%rbp");
+    pushLinker(".cfi_def_cfa 7, 8\n\t", Section::Main);
     push(Instr{.var = Ret{.fromWhere = funcName}, .type = InstrType::Ret},
          Section::Main);
   }
@@ -326,7 +327,30 @@ void codegen::varDecl(Node::Stmt *stmt) {
       variableCount += (getByteSizeOfType(at->underlying) * at->constSize) + 8;
     } else {
       visitExpr(s->expr);
-      popToRegister(where); // For values small enough to fit in a register.
+      DataSize size = DataSize::Qword;
+      switch (getByteSizeOfType(s->type)) {
+        case 1:
+          size = DataSize::Byte;
+          break;
+        case 2:
+          size = DataSize::Word;
+          break;
+        case 4:
+          size = DataSize::Dword;
+          break;
+        case 8:
+        default:
+          size = DataSize::Qword;
+          break;
+      }
+      if (s->type->kind == ND_SYMBOL_TYPE) {
+        if (getUnderlying(s->type) == "float") {
+          size = DataSize::SS;
+        } else if (getUnderlying(s->type) == "double") {
+          size = DataSize::SD;
+        }
+      }
+      push(Instr{.var=PopInstr{.where = where, .whereSize = size}, .type = InstrType::Pop}, Section::Main); // For values small enough to fit in a register.
       variableTable.insert({s->name, where});
       variableCount += getByteSizeOfType(s->type);
     }
@@ -632,14 +656,12 @@ void codegen::_return(Node::Stmt *stmt) {
   }
   // Generate return value for the function
   codegen::visitExpr(returnStmt->expr);
-  // Check the type of what the hell was returned
   if (isEntryPoint) {
     popToRegister("%rdi");
     handleExitSyscall();
     return;
   }
   if (returnStmt->expr->asmType->kind == ND_POINTER_TYPE ||
-      returnStmt->expr->asmType->kind == ND_ARRAY_TYPE || 
       returnStmt->expr->asmType->kind == ND_FUNCTION_TYPE ||
       returnStmt->expr->asmType->kind == ND_FUNCTION_TYPE_PARAM) {
     popToRegister("%rax"); // rax is fine in this case- it is ALWAYS 8 bytes
@@ -650,10 +672,32 @@ void codegen::_return(Node::Stmt *stmt) {
   SymbolType *st = static_cast<SymbolType *>(returnStmt->expr->asmType);
   if (st->name == "float" || st->name == "double") {
     push(Instr{.var=PopInstr{.where="%xmm0",.whereSize=DataSize::SS},.type=InstrType::Pop},Section::Main);
+    handleReturnCleanup();
   } else {
-    popToRegister("%rax");
+    int byteSize = getByteSizeOfType(returnStmt->expr->asmType);
+    if (byteSize <= 8) {
+      switch (byteSize) {
+        case 1:
+          push(Instr{.var=PopInstr{.where="%al",.whereSize=DataSize::Byte},.type=InstrType::Pop},Section::Main);
+          break;
+        case 2:
+          push(Instr{.var=PopInstr{.where="%ax",.whereSize=DataSize::Word},.type=InstrType::Pop},Section::Main);
+          break;
+        case 4:
+          push(Instr{.var=PopInstr{.where="%eax",.whereSize=DataSize::Dword},.type=InstrType::Pop},Section::Main);
+          break;
+        case 8:
+          push(Instr{.var=PopInstr{.where="%rax",.whereSize=DataSize::Qword},.type=InstrType::Pop},Section::Main);
+          break;
+        default:
+          push(Instr{.var=PopInstr{.where="%rax",.whereSize=DataSize::Qword},.type=InstrType::Pop},Section::Main);
+          break;
+      }
+      handleReturnCleanup();
+      return;
+    }
+    // TODO: Return things LARGER than 8 bytes!
   }
-  handleReturnCleanup();
 }
 
 void codegen::forLoop(Node::Stmt *stmt) {
@@ -912,9 +956,78 @@ void codegen::matchStmt(Node::Stmt *stmt) {
   conditionalCount += s->cases.size();
 };
 
+void codegen::dereferenceStructPtr(Node::Expr *expr, std::string structName,
+                                    std::string offsetRegister, int startOffset) {
+  // have DerefStruct: StructName = Struct&;
+  // see how large the struct is
+  DereferenceExpr *deref = static_cast<DereferenceExpr *>(expr);
+  int structSize = structByteSizes[structName].first;
+  if (structSize > 16) {
+    // we should optimize into a rep mov
+    // The lhs of the deref is probably an ident
+    // so we should evlauate it
+    visitExpr(deref->left);
+    PushInstr prevPush =
+        std::get<PushInstr>(text_section[text_section.size() - 1].var);
+    if (prevPush.what.find('(') == std::string::npos) popToRegister("%rsi");
+    else {
+      text_section.pop_back();
+      // leaq
+      push(Instr{.var=LeaInstr{.size=DataSize::Qword,.dest="%rsi",.src=prevPush.what},.type=InstrType::Lea},Section::Main);
+    }
+    // the destination is just the offset register and the offset, lol
+    push(Instr{.var=Comment{.comment="Optimized struct copy"},.type=InstrType::Comment},Section::Main);
+    // lea the dest
+    push(Instr{.var=LeaInstr{.size=DataSize::Qword,.dest="%rdi",.src=std::to_string(-(startOffset+structSize))+"("+offsetRegister+")"},.type=InstrType::Lea},Section::Main);
+    // if divisible by 8, do qword, if 4, do dword, etc
+    if (structSize % 8 == 0) {
+      moveRegister("%rcx", "$" + std::to_string(structSize / 8), DataSize::Qword, DataSize::Qword);
+      pushLinker("rep movsq\n\t", Section::Main);
+    } else if (structSize % 4 == 0) {
+      moveRegister("%rcx", "$" + std::to_string(structSize / 4), DataSize::Qword, DataSize::Qword);
+      pushLinker("rep movsd\n\t", Section::Main);
+    } else if (structSize % 2 == 0) {
+      moveRegister("%rcx", "$" + std::to_string(structSize / 2), DataSize::Qword, DataSize::Qword);
+      pushLinker("rep movsw\n\t", Section::Main);
+    } else {
+      moveRegister("%rcx", "$" + std::to_string(structSize), DataSize::Qword, DataSize::Qword);
+      pushLinker("rep movsb\n\t", Section::Main);
+    }
+    return;
+  }
+  // The struct was pretty small, so a rep would be counterintuitive
+  // so we will just copy the bytes manually
+  visitExpr(deref->left);
+  popToRegister("%rsi");
+  while (structSize > 0) {
+    if (structSize >= 8) {
+      // move a qword from src to dst
+      structSize -= 8;
+      moveRegister("%rax", std::to_string(structSize) + "(%rsi)", DataSize::Qword, DataSize::Qword);
+      moveRegister(std::to_string(-(startOffset + structSize)) + "(" + offsetRegister + ")", "%rax", DataSize::Qword, DataSize::Qword);
+    } else if (structSize >= 4) {
+      structSize -= 4;
+      moveRegister("%eax", std::to_string(structSize) + "(%rsi)", DataSize::Dword, DataSize::Dword);
+      moveRegister(std::to_string(-(startOffset + structSize)) + "(" + offsetRegister + ")", "%eax", DataSize::Dword, DataSize::Dword);
+    } else if (structSize >= 2) {
+      structSize -= 2;
+      moveRegister("%ax", std::to_string(structSize) + "(%rsi)", DataSize::Word, DataSize::Word);
+      moveRegister(std::to_string(-(startOffset + structSize)) + "(" + offsetRegister + ")", "%ax", DataSize::Word, DataSize::Word);
+    } else {
+      structSize -= 1;
+      moveRegister("%al", std::to_string(structSize) + "(%rsi)", DataSize::Byte, DataSize::Byte);
+      moveRegister(std::to_string(-(startOffset + structSize)) + "(" + offsetRegister + ")", "%al", DataSize::Byte, DataSize::Byte);
+    }
+  }
+}
+
 // Structname passed by the varStmt's "type" field
 void codegen::declareStructVariable(Node::Expr *expr, std::string structName,
                                     std::string offsetRegister, int startOffset) {
+  if (expr->kind == ND_DEREFERENCE) {
+    dereferenceStructPtr(expr, structName, offsetRegister, startOffset);
+    return; // We do not want to continue!
+  }
   StructExpr *s = static_cast<StructExpr *>(expr);
   // The only purpose of this function is to put memory in the right place
   // it does not declare the struct in the variable table or modify the variable count

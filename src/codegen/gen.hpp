@@ -17,7 +17,6 @@ using StmtHandler = std::function<void(Node::Stmt *)>;
 using ExprHandler = std::function<void(Node::Expr *)>;
 using TypeHandler = std::function<void(Node::Type *)>;
 
-inline std::unordered_map<NodeKind, TypeHandler> typeHandlers;
 inline std::unordered_map<NodeKind, StmtHandler> stmtHandlers;
 inline std::unordered_map<NodeKind, ExprHandler> exprHandlers;
 inline std::unordered_map<std::string, std::string> opMap;
@@ -49,10 +48,6 @@ inline std::string insideStructName = "";
 
 void visitStmt(Node::Stmt *stmt);
 void visitExpr(Node::Expr *expr);
-
-void symbolType(Node::Type *type);
-void arrayType(Node::Type *type);
-void pointerType(Node::Type *type);
 
 void importDecl(Node::Stmt *stmt);
 void structDecl(Node::Stmt *stmt);
@@ -101,6 +96,7 @@ void openExpr(Node::Expr *expr);
 void assignStructMember(Node::Expr *expr);
 void assignArray(Node::Expr *expr);
 void assignDereference(Node::Expr *expr);
+void dereferenceStructPtr(Node::Expr *expr, std::string structName, std::string offsetRegister, int startOffset);
 void declareStructVariable(Node::Expr *expr, std::string structName, std::string offsetRegister, int startOffset);
 void declareArrayVariable(Node::Expr *expr, short int arrayLength, std::string varName);
 
@@ -140,6 +136,7 @@ Section {
 enum class NativeASMFunc {
     strlen,
     itoa,
+    uitoa,
     memcpy,
 };
 
@@ -271,10 +268,10 @@ inline static const std::vector<std::string> floatArgOrder = {"%xmm0", "%xmm1", 
 void prepareSyscallWrite();
 void handlePtrDisplay(Node::Expr *fd, Node::Expr *arg, int line, int pos);
 void handleArrayDisplay(Node::Expr *fd, Node::Expr *arg, int line, int pos); // []char only, realistically
+void handleFloatDisplay(Node::Expr *fd, Node::Expr *arg, int line, int pos);
 void handleLiteralDisplay(Node::Expr *fd, Node::Expr *arg);
 void handleStrDisplay(Node::Expr *fd, Node::Expr *arg);
 void handlePrimitiveDisplay(Node::Expr *fd, Node::Expr *arg);
-void handleFloatDisplay(Node::Expr *fd, Node::Expr *arg);
 
 // Helper function to pop the value from the stack to a register
 void moveRegister(const std::string &dest, const std::string &src, DataSize dest_size, DataSize src_size);

@@ -40,8 +40,8 @@ struct LSPIdentifier {
   Node::Type *underlying;
   LSPIdentifierType type;
   std::string ident;
-  int line;
-  int pos;
+  size_t line;
+  size_t pos;
 };
 
 inline std::vector<LSPIdentifier> lsp_idents = {};

@@ -11,6 +11,7 @@ class IntExpr : public Node::Expr {
 public:
   int line, pos;
   long long value;
+  bool isUnsigned = true; // this HAS to be true, because the only time an intExpr would be negative would be unaryexpr's -
 
   IntExpr(int line, int pos, long long value, int file) : line(line), pos(pos), value(value) {
     kind =  NodeKind::ND_INT;
@@ -831,7 +832,7 @@ public:
   Node::Expr *canCreate;
 
   OpenExpr(int line, int pos, Node::Expr *filename, Node::Expr *canRead, Node::Expr *canWrite, Node::Expr *canCreate, int file)
-      : line(line), pos(pos), filename(filename), flags(flags), canRead(canRead), canWrite(canWrite), canCreate(canCreate) {
+      :  line(line), pos(pos),  filename(filename),   canRead(canRead),    canWrite(canWrite),  canCreate(canCreate) {
     file_id = file;
     kind = NodeKind::ND_OPEN;
     asmType = new SymbolType("int");

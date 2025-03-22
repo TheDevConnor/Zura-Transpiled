@@ -74,6 +74,10 @@ Node::Expr *Parser::unary(PStruct *psr) {
   Lexer::Token op = psr->advance(psr);
   Node::Expr *right = parseExpr(psr, defaultValue);
 
+  if (op.value == "-" && right->kind == ND_INT) {
+    return new IntExpr(line, column, -(static_cast<IntExpr*>(right)->value), codegen::getFileID(psr->current_file));
+  }
+
   return new UnaryExpr(line, column, right, op.value, codegen::getFileID(psr->current_file));
 }
 
@@ -126,7 +130,7 @@ Node::Expr *Parser::castExpr(PStruct *psr) {
   Node::Type *castee_type = nullptr;
 
   psr->expect(psr, TokenKind::LESS, "Expected a 'LESS' to start a cast!");
-  castee_type = parseType(psr, defaultValue);
+  castee_type = parseType(psr);
   psr->expect(psr, TokenKind::GREATER, "Expected GREATER to begin a cast!");
 
   psr->expect(psr, TokenKind::LEFT_PAREN,
@@ -178,6 +182,7 @@ Node::Expr *Parser::memcpyExpr(PStruct *psr) {
   return new MemcpyExpr(line, column, dest, src, size, codegen::getFileID(psr->current_file));
 }
 
+// TODO: fix unused parameter bp
 Node::Expr *Parser::_postfix(PStruct *psr, Node::Expr *left, BindingPower bp) {
   int line = psr->tks[psr->pos].line;
   int column = psr->tks[psr->pos].column;

@@ -1,11 +1,6 @@
 #include "gen.hpp"
 
 void codegen::initMaps() {
-  typeHandlers = {
-      {ND_SYMBOL_TYPE, symbolType},
-      {ND_ARRAY_TYPE, arrayType},
-      {ND_POINTER_TYPE, pointerType},
-  };
   stmtHandlers = {
       {ND_PROGRAM, program},         {ND_CONST_STMT, constDecl},
       {ND_VAR_STMT, varDecl},        {ND_FN_STMT, funcDecl},
@@ -51,11 +46,11 @@ void codegen::initMaps() {
   };
   opMap = {{"+", "add"},   {"-", "sub"},    {"*", "imul"}, {"/", "idiv"},
            {"%", "mod"}, // mod is div but special
-           {"^", "exp"},
+           {"^", "exp"},   {"~", "not"},    {"<<", "shl"},  {">>", "shr"},
 
            {"==", "sete"}, {"!=", "setne"}, {">", "setg"}, {">=", "setge"},
            {"<", "setl"},  {"<=", "setle"}, {"||", "lor"}, {"|", "bor"},
-           {"&&", "land"}, {"&", "band"}};
+           {"&&", "land"}};
   typeSizes = {
       {"int", 8},  {"float", 4}, {"enum", 8}, {"str", 8},
       {"char", 1}, {"bool", 1},  {"void", 0}, {"unsigned int", 8},

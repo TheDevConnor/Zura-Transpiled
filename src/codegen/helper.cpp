@@ -274,6 +274,13 @@ void codegen::handlePtrDisplay(Node::Expr *fd, Node::Expr *arg, int line, int po
 }
 
 void codegen::handleArrayDisplay(Node::Expr *fd, Node::Expr *arg, int line, int pos) {
+  if (getUnderlying(arg->asmType) != "char") {
+    handleError(line, pos,
+                "Cannot print array of type '" + getUnderlying(arg->asmType) + "'. Only []char is supported.",
+                "Codegen Error");
+    return; // Refuse to print
+  }
+
   // this function will only ever happen in a []char and never anywhere else
   ArrayType *at = static_cast<ArrayType *>(arg->asmType);
   visitExpr(arg); // the lea
@@ -321,7 +328,7 @@ void codegen::handleLiteralDisplay(Node::Expr *fd, Node::Expr *arg) {
   // Ensure that each time we see a backslash, we subtract 1 from the count
   // Ex: \tHello, world!\n would be reduced 2 times.
   int count = stringValue.size();
-  for (int i = 0; i < stringValue.size(); i++) {
+  for (size_t i = 0; i < stringValue.size(); i++) {
     char c = stringValue.at(i);
     if (c == '\\') count--;
     if (i > 0 && stringValue.at(i - 1) == '\\' && c == '\\') count++; // '\\' = just a backslash, which is still one character
@@ -338,11 +345,11 @@ void codegen::handleStrDisplay(Node::Expr *fd, Node::Expr *arg) {
   popToRegister("%rsi"); // String address
   // calls might mess up any variables on the stack
   // lets make sure that does not happen by subtracting from stack
-  push(Instr{.var=SubInstr{.lhs="%rsp",.rhs="$"+std::to_string(variableCount)},.type=InstrType::Sub},Section::Main);
+  push(Instr{.var=SubInstr{.lhs="%rsp",.rhs="$"+std::to_string(variableCount), .size = DataSize::Qword},.type=InstrType::Sub},Section::Main);
   moveRegister("%rdi", "%rsi", DataSize::Qword, DataSize::Qword);
   push(Instr{.var = CallInstr{.name = "native_strlen"}, .type = InstrType::Call},
        Section::Main);
-  push(Instr{.var=AddInstr{.lhs="%rsp",.rhs="$"+std::to_string(variableCount)},.type=InstrType::Sub},Section::Main);
+  push(Instr{.var=AddInstr{.lhs="%rsp",.rhs="$"+std::to_string(variableCount), .size = DataSize::Qword},.type=InstrType::Sub},Section::Main);
   moveRegister("%rdx", "%rax", DataSize::Qword, DataSize::Qword); // Length of string
   visitExpr(fd);
   popToRegister("%rdi");
@@ -351,47 +358,56 @@ void codegen::handleStrDisplay(Node::Expr *fd, Node::Expr *arg) {
 
 void codegen::handlePrimitiveDisplay(Node::Expr *fd, Node::Expr *arg) {
   nativeFunctionsUsed[NativeASMFunc::strlen] = true;
-  nativeFunctionsUsed[NativeASMFunc::itoa] = true;
   visitExpr(arg);
+  bool isSigned = static_cast<SymbolType *>(arg->asmType)->signedness == SymbolType::Signedness::SIGNED;
   switch (getByteSizeOfType(arg->asmType)) {
     case 1:
       push(Instr{.var=PopInstr{.where="%al",.whereSize=DataSize::Byte},.type=InstrType::Pop},Section::Main);
-      pushLinker("movzx %al, %rdi\n\t",Section::Main);
-      // Sign extend
+      if (isSigned) pushLinker("movsbq %al, %rdi\n\t",Section::Main);
+      else pushLinker("movzbq %al, %rdi\n\t",Section::Main);
       break;
     case 2:
       push(Instr{.var=PopInstr{.where="%ax",.whereSize=DataSize::Word},.type=InstrType::Pop},Section::Main);
-      pushLinker("movzx %ax, %rdi\n\t",Section::Main);
+      if (isSigned) pushLinker("movswq %ax, %rdi\n\t",Section::Main);
+      else pushLinker("movzwq %ax, %rdi\n\t",Section::Main);
       break;
     case 4:
       push(Instr{.var=PopInstr{.where="%eax",.whereSize=DataSize::Dword},.type=InstrType::Pop},Section::Main);
-      pushLinker("movzx %eax, %rdi\n\t",Section::Main);
+      if (isSigned) pushLinker("movswq %eax, %rdi\n\t",Section::Main);
+      else pushLinker("movzwq %eax, %rdi\n\t",Section::Main);
       break;
     case 8:
     default:
-      // Prev: Wrong register lol
       push(Instr{.var=PopInstr{.where="%rdi",.whereSize=DataSize::Qword},.type=InstrType::Pop},Section::Main);
       break;
   }
   // subtract rsp
-  push(Instr{.var=SubInstr{.lhs="%rsp",.rhs="$"+std::to_string(variableCount)},.type=InstrType::Sub},Section::Main);
-  push(Instr{.var = CallInstr{.name = "native_itoa"}, .type = InstrType::Call},
-       Section::Main); // Convert int to string
+  push(Instr{.var=SubInstr{.lhs="%rsp",.rhs="$"+std::to_string(variableCount), .size = DataSize::Qword},.type=InstrType::Sub},Section::Main);
+  // Convert the number to a printable string
+  if (isSigned) {
+    push(Instr{.var = CallInstr{.name = "native_itoa"}, .type = InstrType::Call}, Section::Main);
+    nativeFunctionsUsed[NativeASMFunc::itoa] = true;
+  } else {
+    push(Instr{.var = CallInstr{.name = "native_uitoa"}, .type = InstrType::Call}, Section::Main);
+    nativeFunctionsUsed[NativeASMFunc::uitoa] = true;
+  }
   moveRegister("%rdi", "%rax", DataSize::Qword, DataSize::Qword);
   moveRegister("%rsi", "%rdi", DataSize::Qword, DataSize::Qword);
   // Now we have the integer string in %rax (assuming %rax holds the pointer to the result)
   push(Instr{.var = CallInstr{.name = "native_strlen"}, .type = InstrType::Call},
        Section::Main);
-  push(Instr{.var=AddInstr{.lhs="%rsp",.rhs="$"+std::to_string(variableCount)},.type=InstrType::Sub},Section::Main);
+  push(Instr{.var=AddInstr{.lhs="%rsp",.rhs="$"+std::to_string(variableCount), .size = DataSize::Qword},.type=InstrType::Sub},Section::Main);
   moveRegister("%rdx", "%rax", DataSize::Qword, DataSize::Qword); // Length of number string
   visitExpr(fd);
   popToRegister("%rdi");
   prepareSyscallWrite();
 }
 
-void codegen::handleFloatDisplay(Node::Expr *fd, Node::Expr *arg) {
+void codegen::handleFloatDisplay(Node::Expr *fd, Node::Expr *arg, int line, int pos) {
+    // Still try printing something, to make it worth the trouble.
+    handleLiteralDisplay(fd, new StringExpr(line, pos, "\"Printing floats is not supported yet.\"", arg->file_id));
     std::string msg = "Printing floats is not supported yet.";
-    handleError(0, 0, msg, "Codegen Error");
+    handleError(line, pos, msg, "Codegen Error");
 }
 
 // Add 1

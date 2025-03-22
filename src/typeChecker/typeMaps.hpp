@@ -43,7 +43,7 @@ struct SymbolTable : std::unordered_map<std::string, Node::Type *> {
             insert({name, type});
             return;
         }
-        std::string msg = "Variable already declared: " + name;
+        std::string msg = "Variable '" + name + "' already declared";
         TypeChecker::handleError(line, pos, msg, "", "Type Error");
     }
 
@@ -58,9 +58,15 @@ struct FunctionTable : std::unordered_map<NameAndType, ParamAndType> {
   bool contains(const NameAndType &nameAndType) {
     return find(nameAndType) != end();
   }
-
   void declare(const std::string &name, std::unordered_map<std::string, Node::Type *> params, Node::Type *returnType) {
-    if (name == "main" && params.size() == 0 && static_cast<SymbolType*>(returnType)->name == "int") TypeChecker::foundMain = true;
+    if (name == "main" && params.size() == 0) {
+      if (returnType->kind == ND_SYMBOL_TYPE) {
+        SymbolType *sym = static_cast<SymbolType *>(returnType);
+        if (sym->signedness == SymbolType::Signedness::UNSIGNED) {
+          TypeChecker::foundMain = true;
+        }
+      }
+    }
     if (!contains({name, returnType})) {
         insert({{name, returnType}, {params}});
         return;

@@ -91,7 +91,7 @@ Node::Type *type_nud(PStruct *psr);
 
 Node::Type *symbol_table(PStruct *psr);
 Node::Type *array_type(PStruct *psr);
-Node::Type *parseType(PStruct *psr, BindingPower bp);
+Node::Type *parseType(PStruct *psr);
 Node::Type *pointer_type(PStruct *psr);
 Node::Expr *nullType(PStruct *psr);
 Node::Type *type_application(PStruct *psr);

@@ -9,6 +9,7 @@
 #include <memory>
 #include <limits>
 #include <string>
+#include <cstdlib>
 
 void TypeChecker::visitExpr(Node::Expr *expr) {
   ExprAstLookup(expr);
@@ -31,22 +32,14 @@ void TypeChecker::visitExternalCall(Node::Expr *expr) {
 
 void TypeChecker::visitInt(Node::Expr *expr) {
   IntExpr *integer = static_cast<IntExpr *>(expr);
-
-  // check if the integer is within the range of an i64 int
-  if (integer->value > std::numeric_limits<signed long long int>::max() ||
-      integer->value < std::numeric_limits<signed long long int>::min()) {
-    std::string msg = "Integer '" + std::to_string(integer->value) +
-                      "' is out of range for an 'int' which is 64 bits";
-    handleError(integer->line, integer->pos, msg, "", "Type Error");
-  }
-
   if (integer->value < 0) {
-    // It is a signed int
+    // It is signed
     return_type = std::make_shared<SymbolType>("int", SymbolType::Signedness::SIGNED);
     expr->asmType = new SymbolType("int", SymbolType::Signedness::SIGNED);
   } else {
-    // We don't know, it could be either
-    return_type = std::make_shared<SymbolType>("int", SymbolType::Signedness::INFER);
+    // It is an unsigned int
+    return_type = std::make_shared<SymbolType>("int", SymbolType::Signedness::UNSIGNED);
+    expr->asmType = new SymbolType("int", SymbolType::Signedness::UNSIGNED);
   }
 }
 
@@ -177,7 +170,7 @@ void TypeChecker::visitBinary(Node::Expr *expr) {
                     type_to_string(lhsType) + "' and '" +
                     type_to_string(rhsType) + "'";
   
-  if (!checkTypeMatch(lhsType, rhsType)) {
+  if (!checkTypeMatch(lhsType, rhsType) && !(isIntBasedType(lhsType) && isIntBasedType(rhsType))) {
     // make an error
     handleError(binary->line, binary->pos, msg, "", "Type Error");
     return_type = std::make_shared<SymbolType>("unknown");
@@ -186,6 +179,18 @@ void TypeChecker::visitBinary(Node::Expr *expr) {
   }
 
   if (mathOps.find(binary->op) != mathOps.end()) {
+    // Check additionally if this was a multiplication or division on signed ints
+    if (binary->op == "*" || binary->op == "/") {
+      if (lhsType->kind == ND_SYMBOL_TYPE && rhsType->kind == ND_SYMBOL_TYPE) {
+        if (static_cast<SymbolType *>(lhsType)->signedness == SymbolType::Signedness::SIGNED &&
+            static_cast<SymbolType *>(rhsType)->signedness == SymbolType::Signedness::SIGNED) {
+          expr->asmType = createDuplicate(lhsType);
+          static_cast<SymbolType *>(expr->asmType)->signedness = SymbolType::Signedness::UNSIGNED; // ignore this beaut
+          return_type = share(expr->asmType);
+          return;
+        }
+      }
+    }
     return_type = share(lhsType);
     expr->asmType = createDuplicate(lhsType);
   } else if (boolOps.find(binary->op) != boolOps.end()) {
@@ -201,20 +206,7 @@ void TypeChecker::visitBinary(Node::Expr *expr) {
 
 void TypeChecker::visitUnary(Node::Expr *expr) {
   UnaryExpr *unary = static_cast<UnaryExpr *>(expr);
-
-  if (unary->op == "-") {
-    // update the bool on the value to be negative
-    IntExpr *integer = static_cast<IntExpr *>(unary->expr);
-    visitExpr(integer);
-
-    if (!isIntBasedType(return_type.get())) {
-      std::string msg = "Unary operation '" + unary->op + "' requires the type to be an 'int' but got '" + type_to_string(return_type.get()) + "'";
-      handleError(unary->line, unary->pos, msg, "", "Type Error");
-    }
-
-    return;
-  }
-
+  
   visitExpr(unary->expr);
 
   if (unary->op == "!" && type_to_string(return_type.get()) != "bool") {
@@ -224,7 +216,7 @@ void TypeChecker::visitUnary(Node::Expr *expr) {
 
   // check for ++ and --
   if (unary->op == "++" || unary->op == "--") {
-    if (type_to_string(return_type.get()) != "int") {
+    if (!isIntBasedType(return_type.get())) {
       std::string msg = "Unary operation '" + unary->op + "' requires the type to be an 'int' but got '" + type_to_string(return_type.get()) + "'";
       handleError(unary->line, unary->pos, msg, "", "Type Error");
     }
@@ -308,8 +300,6 @@ void TypeChecker::visitCall(Node::Expr *expr) {
 
   // check if the callee is a function
   std::pair<std::string, Node::Type *> fnName;
-  auto ident = (name->kind == ND_IDENT) ? static_cast<IdentExpr *>(name) 
-                                                     : static_cast<IdentExpr *>(static_cast<MemberExpr *>(name)->lhs);
 
   // check if the function is in the function table
   if (context->functionTable.find({fnName.first, fnName.second}) != context->functionTable.end()) {
@@ -334,9 +324,9 @@ void TypeChecker::visitCall(Node::Expr *expr) {
   for (auto it : context->functionTable) return_type = share(it.first.type);
   expr->asmType = createDuplicate(return_type.get());
 
-  // add an ident // ok bye its about to shutdown now grab the charger! im too far :(((((  RUNNNNNNNNNN 
+  // add an ident for the lsp
   if (isLspMode) {
-    lsp_idents.push_back(LSPIdentifier{fnName.second, LSPIdentifierType::Function, fnName.first, static_cast<IdentExpr *>(call->callee)->line, static_cast<IdentExpr *>(call->callee)->pos});
+    lsp_idents.push_back(LSPIdentifier{fnName.second, LSPIdentifierType::Function, fnName.first, (size_t)static_cast<IdentExpr *>(call->callee)->line, (size_t)static_cast<IdentExpr *>(call->callee)->pos});
   }
 }
 
@@ -394,7 +384,7 @@ void TypeChecker::visitArray(Node::Expr *expr) {
     return;
   }
 
-  if (at->constSize != array->elements.size()) {
+  if ((size_t)at->constSize != array->elements.size()) {
     std::string msg = "Array requires " +
                       std::to_string(at->constSize) + " elements but got " +
                       std::to_string(array->elements.size());

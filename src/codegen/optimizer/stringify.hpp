@@ -50,6 +50,24 @@ public:
         if (instr.destSize != instr.srcSize) {
           // Operands are different sizes...
           // movzx dest, src
+          if (instr.destSize == DataSize::SD &&
+              instr.srcSize == DataSize::Qword) {
+              // Just go ahead with it
+              std::stringstream ss;
+              ss << "mov" << dsToChar(instr.destSize) << " " << instr.src << ", " << instr.dest << "\n\t";
+              return ss.str();
+          }
+          if (instr.destSize == DataSize::SS &&
+              instr.srcSize == DataSize::Dword) {
+              // Just go ahead with it
+              std::stringstream ss;
+              ss << "mov" << dsToChar(instr.destSize) << " " << instr.src << ", " << instr.dest << "\n\t";
+              return ss.str();
+          }
+          // Everything else, we must assume a zero-extend
+          std::stringstream ss;
+          ss << "movz" << dsToChar(instr.srcSize) << dsToChar(instr.destSize) << " " << instr.src << ", " << instr.dest << "\n\t";
+          return ss.str();
         }
         if (instr.src.starts_with("$")) {
           // it's a number! if its larger than 2^32, we must use movabsq
@@ -75,19 +93,25 @@ public:
         return "xorq " + instr.lhs + ", " + instr.rhs + "\n\t";
       }
       std::string operator()(AddInstr instr) const {
-        return "addq " + instr.rhs + ", " + instr.lhs + "\n\t";
+        return "add" + dsToChar(instr.size) + " " + instr.rhs + ", " + instr.lhs + "\n\t";
       }
       std::string operator()(LeaInstr instr) const {
         return "lea" + dsToChar(instr.size) + " " + instr.src + ", " + instr.dest + "\n\t";
       };
       std::string operator()(SubInstr instr) const {
-        return "subq " + instr.rhs + ", " + instr.lhs + "\n\t";
+        return "sub" + dsToChar(instr.size) + " " + instr.rhs + ", " + instr.lhs + "\n\t";
       }
       std::string operator()(MulInstr instr) const {
-        return "mulq " + instr.from + "\n\t";
+        if (instr.isSigned) {
+          return "imul" + dsToChar(instr.size) + " " + instr.from + "\n\t";
+        }
+        return "mul" + dsToChar(instr.size) + " " + instr.from + "\n\t";
       }
       std::string operator()(DivInstr instr) const {
-        return "divq " + instr.from + "\n\t";
+        if (instr.isSigned) {
+          return "idiv" + dsToChar(instr.size) + " " + instr.from + "\n\t";
+        }
+        return "div" + dsToChar(instr.size) + " " + instr.from + "\n\t";
       }
       std::string operator()(Label instr) const {
         return "\n" + instr.name + ":\n\t";
@@ -98,7 +122,7 @@ public:
         cmpq $8, $16
         jg example # JUMPS IF 16 > 8 ???!?!?
         */
-        return "cmpq " + instr.rhs + ", " + instr.lhs + "\n\t";
+        return "cmp " + instr.rhs + ", " + instr.lhs + "\n\t";
       }
       std::string operator()(JumpInstr instr) const {
         std::string keyword = {};
@@ -192,7 +216,7 @@ public:
         return ".asciz " + instr.what + "\n\t";
       }
       // return from %rip and trace back up the call stack
-      std::string operator()(Ret instr) const { return "ret\n\t"; }
+      std::string operator()(Ret instr) const { return "ret # " + instr.fromWhere + "\n\t"; }
       // self explanatory
       std::string operator()(Comment instr) const {
         return "# " + instr.comment + "\n\t";

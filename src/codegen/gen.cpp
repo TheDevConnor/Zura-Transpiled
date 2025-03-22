@@ -44,14 +44,14 @@ void codegen::gen(Node::Stmt *stmt, bool isSaved, std::string output_filename,
                   output_filename +
                   ".s' - ensure Zura has permissions to write/create files", "Codegen Error");
   
-  file << "# ┌---------------------------------┐\n"
-          "# |   Zura Syntax by TheDevConnor   |\n"
-          "# |   assembly by Soviet Pancakes   |\n"
-          "# └---------------------------------┘\n"
+  file << "# ╔═════════════════════════════════╗\n"
+          "# ║   Zura Syntax by TheDevConnor   ║\n"
+          "# ║   assembly by Soviet Pancakes   ║\n"
+          "# ╚═════════════════════════════════╝\n"
           "# "
         << ZuraVersion
         << "\n"
-          "# What's New: Opening & Closing files. @input & @output take in FDs\n"
+          "# What's New: Dereferencing structs\n"
         << "\n# Everything beyond this point was generated automatically by the Zura compiler.\n" 
            ".att_syntax\n";
   
@@ -73,10 +73,13 @@ void codegen::gen(Node::Stmt *stmt, bool isSaved, std::string output_filename,
     file << ".Ltext0:\n.weak .Ltext0\n";
   }
   file << "_start:\n"
+          "  .cfi_startproc\n"
           "  call main\n"
           "  xorq %rdi, %rdi\n"
           "  movq $60, %rax\n"
-          "  syscall\n";
+          "  syscall\n"
+          "  .cfi_endproc\n"
+          ".size _start, .-_start\n";
   file << Stringifier::stringifyInstrs(text_section);
   if (nativeFunctionsUsed.size() > 0) file << "\n# zura functions\n";
   if (nativeFunctionsUsed[NativeASMFunc::strlen] == true) {
@@ -85,16 +88,17 @@ void codegen::gen(Node::Stmt *stmt, bool isSaved, std::string output_filename,
             "\n  #input in rdi"
             "\n  movb $0, %al"
             "\n  movq $0xFFFFFFF, %rcx"
-            "\n  repne scasb"
+            "\n  repne scasb # repeat while (%rdi) not zero, decrease %rcx"
             "\n  movq $0xFFFFFFF, %rbx"
-            "\n  subq %rcx, %rbx"
+            "\n  subq %rcx, %rbx # subtract to get total length"
             "\n  movq %rbx, %rax"
+            "\n  decq %rax # the rep instruction also includes the NUL, so we must remove it here"
             "\n  ret"
             "\n.size native_strlen, .-native_strlen\n";
   }
-  if (nativeFunctionsUsed[NativeASMFunc::itoa] == true) {
-    file << ".type native_itoa, @function\n"
-          "native_itoa:" // Unsigned itoa... Does not check for '-' sign and will print 0xFFFFFFFFFFFFFFFF (18446744073709551615) as -1 so don't do that...
+  if (nativeFunctionsUsed[NativeASMFunc::uitoa] == true) {
+    file << ".type native_uitoa, @function\n"
+          "native_uitoa:"
           "\n    # Allocate space for the string on the stack"
           "\n    subq $32, %rsp          # Allocate 32 bytes for the buffer"
           "\n    movq %rsp, %rcx         # Save buffer address in %rcx"
@@ -103,7 +107,7 @@ void codegen::gen(Node::Stmt *stmt, bool isSaved, std::string output_filename,
           "\n    # Check if the input is zero"
           "\n    movq %rdi, %rax         # Copy input number to %rax"
           "\n    testq %rax, %rax        # Check if %rax == 0"
-          "\n    jnz .uitoa_loop         # If not zero, process the digits"
+          "\n    jnz .uitoa_loop    # If not zero, process the digits"
           "\n    # Special case for zero"
           "\n    movb $'0', -1(%rcx)     # Store '0' before the null terminator"
           "\n    leaq -1(%rcx), %rax     # Return pointer to the string in %rax"
@@ -111,13 +115,13 @@ void codegen::gen(Node::Stmt *stmt, bool isSaved, std::string output_filename,
           "\n    ret"
           "\n.uitoa_loop:"
           "\n    # Process each digit"
-          "\n    movq $10, %rbx          # Divisor = 10"
+          "\n    movq $10, %rbx          # Divide by 10"
           "\n.uitoa_div:"
           "\n    xorq %rdx, %rdx         # Clear %rdx for division"
-          "\n    divq %rbx               # Divide %rax by 10, remainder in %rdx, quotient in %rax"
+          "\n    divq %rbx               # Divide %rax by 10"
           "\n    addb $'0', %dl          # Convert remainder to ASCII"
-          "\n    decq %rcx               # Move buffer pointer backward BEFORE storing character"
-          "\n    movb %dl, (%rcx)        # Store ASCII character at the current buffer position"
+          "\n    decq %rcx               # Move buffer pointer"
+          "\n    movb %dl, (%rcx)        # Store ASCII digit"
           "\n    testq %rax, %rax        # Check if quotient is zero"
           "\n    jnz .uitoa_div          # Repeat if quotient != 0"
           "\n    # Prepare return value"
@@ -125,7 +129,48 @@ void codegen::gen(Node::Stmt *stmt, bool isSaved, std::string output_filename,
           "\n    addq $32, %rsp          # Restore the stack"
           "\n    ret"
           "\n"
-          ".size native_itoa, .-native_itoa\n";
+          ".size native_uitoa, .-native_uitoa\n";
+  }
+  if (nativeFunctionsUsed[NativeASMFunc::itoa] == true) {
+    file << ".type native_itoa, @function\n"
+            "native_itoa:"
+            "\n    # Allocate space for the string on the stack"
+            "\n    subq $32, %rsp          # Allocate 32 bytes (characters) for the buffer"
+            "\n    movb $0, %r8b           # used to store the - sign if necessary"
+            "\n    movq %rsp, %rcx         # Save buffer address in %rcx"
+            "\n    addq $31, %rcx          # Point to the end of the buffer (minus null terminator)"
+            "\n    movb $0, (%rcx)         # Null-terminate the string"
+            "\n    movq %rdi, %rax         # Copy input number to %rax"
+            "\n    testq %rax, %rax           # Test if input is already zero (we cannot do the loop if so)"
+            "\n    jns .itoa_zero_check"
+            "\n    movb $'-', %r8b"
+            "\n    negq %rax"
+            "\n.itoa_zero_check:"
+            "\n    jnz .itoa_loop          # If not zero, process the digits"
+            "\n    # Special case for zero"
+            "\n    movb $'0', -1(%rcx)     # Store '0' before the null terminator"
+            "\n    leaq -1(%rcx), %rax     # Return pointer to the string in %rax"
+            "\n    addq $32, %rsp          # Restore the stack"
+            "\n    ret"
+            "\n.itoa_loop:"
+            "\n    # Process each digit"
+            "\n    movq $10, %rbx          # Divisor = 10"
+            "\n.itoa_div:"
+            "\n    xorq %rdx, %rdx         # Clear %rdx for division"
+            "\n    divq %rbx               # Divide %rax by 10, remainder in %rdx, quotient in %rax"
+            "\n    addb $'0', %dl          # Convert remainder to ASCII"
+            "\n    decq %rcx               # Move buffer pointer backward BEFORE storing character"
+            "\n    movb %dl, (%rcx)        # Store ASCII character at the current buffer position"
+            "\n    testq %rax, %rax        # Check if quotient is zero"
+            "\n    jnz .itoa_div           # Repeat if quotient != 0"
+            "\n    # Prepare return value"
+            "\n    decq %rcx"
+            "\n    movb %r8b, (%rcx)"
+            "\n    leaq (%rcx), %rax       # Return pointer to the start of the string in %rax"
+            "\n    addq $32, %rsp          # Restore the stack"
+            "\n    ret"
+            "\n"
+            ".size native_itoa, .-native_itoa\n";
   }
   if (nativeFunctionsUsed[NativeASMFunc::memcpy] == true) {
     file << ".type native_memcpy, @function\n"

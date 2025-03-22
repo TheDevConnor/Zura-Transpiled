@@ -21,8 +21,17 @@ std::string TypeChecker::type_to_string(Node::Type *type) {
   if (type == nullptr)
     return "unknown";
   switch (type->kind) {
-  case NodeKind::ND_SYMBOL_TYPE:
-    return static_cast<SymbolType *>(type)->name;
+  case NodeKind::ND_SYMBOL_TYPE: {
+    switch (static_cast<SymbolType *>(type)->signedness) {
+      case SymbolType::Signedness::SIGNED:
+        return static_cast<SymbolType *>(type)->name + '?';
+      case SymbolType::Signedness::UNSIGNED:
+        return static_cast<SymbolType *>(type)->name + '!';
+      default:
+      case SymbolType::Signedness::INFER:
+        return static_cast<SymbolType *>(type)->name;
+    };
+  }
   case NodeKind::ND_ARRAY_TYPE:
     return "[]" + type_to_string(static_cast<ArrayType *>(type)->underlying);
   case NodeKind::ND_POINTER_TYPE: 
@@ -47,7 +56,16 @@ bool TypeChecker::checkTypeMatch(Node::Type *lhs, Node::Type *rhs) {
     return false;
   }
   if (isIntBasedType(lhs) && isIntBasedType(rhs)) {
-    return true;
+    // Check the signedness of both sides
+    SymbolType *l = static_cast<SymbolType *>(lhs);
+    SymbolType *r = static_cast<SymbolType *>(rhs);
+    if (l->name != r->name) return false; // different sizes; ie int vs char or long vs short
+    // now it is int vs int or stuff liek that
+    if (l->signedness == r->signedness) return true;
+    if (l->signedness == SymbolType::Signedness::SIGNED && r->signedness == SymbolType::Signedness::UNSIGNED) return true; // its fine because all unsigned integers can be casted
+    // Check if either side is inferred. Its automatically true
+    if (l->signedness == SymbolType::Signedness::INFER || r->signedness == SymbolType::Signedness::INFER) return true;
+    return false; // assign signed to unsigned
   }
   if (lhs->kind == ND_POINTER_TYPE && rhs->kind == ND_POINTER_TYPE) {
     PointerType *l = static_cast<PointerType *>(lhs);
@@ -82,7 +100,9 @@ bool TypeChecker::checkTypeMatch(Node::Type *lhs, Node::Type *rhs) {
     return l->name == r->name;
   }
 
-  throw new std::runtime_error("Not implemented checkTypeMatch helper.cpp:47");
+  std::cerr << "helper.cpp:102" << std::endl;
+  std::cerr << "Unknown checkTypeMatch! lhs: " << type_to_string(lhs) << " rhs: " << type_to_string(rhs) << std::endl;
+  return false;
 }
 
 std::shared_ptr<Node::Type> TypeChecker::share(Node::Type *type) {
@@ -141,7 +161,7 @@ void TypeChecker::processStructMember(MemberExpr *member, const std::string &nam
   }
   for (auto it : context->structTable.at(realType)) {
     if (it.first == name) {
-      return_type = std::make_shared<SymbolType>(type_to_string(it.second.first));
+      return_type = share(it.second.first);
       member->asmType = createDuplicate(return_type.get());
       return;
     }
@@ -149,19 +169,17 @@ void TypeChecker::processStructMember(MemberExpr *member, const std::string &nam
 }
 
 void TypeChecker::processEnumMember(MemberExpr *member, const std::string &lhsType) {
-    std::string realType = static_cast<IdentExpr *>(member->lhs)->name;
-
-    auto fields = context->enumTable.find(realType)->second;
+    auto fields = context->enumTable.find(lhsType)->second;
     auto res = fields.find(static_cast<IdentExpr *>(member->rhs)->name);
 
     if (res == fields.end()) {
-        std::string msg = "Type '" + realType + "' does not have member '" + static_cast<IdentExpr *>(member->rhs)->name + "'";
+        std::string msg = "Type '" + lhsType + "' does not have member '" + static_cast<IdentExpr *>(member->rhs)->name + "'";
         handleError(member->line, member->pos, msg, "", "Type Error");
         return_type = std::make_shared<SymbolType>("unknown");
         return;
     }
 
-    return_type = std::make_shared<SymbolType>(realType);
+    return_type = std::make_shared<SymbolType>(lhsType);
     member->asmType = createDuplicate(return_type.get());
 }
 
@@ -200,15 +218,14 @@ bool TypeChecker::validateArgumentCount(CallExpr *call, Node::Expr *callee, cons
 bool TypeChecker::validateArgumentTypes(CallExpr *call, Node::Expr *callee, const std::unordered_map<std::string, Node::Type *> &fnParams) {
   for (size_t i = 0; i < call->args.size(); ++i) {
     visitExpr(call->args[i]);
-    std::string argTypeStr = type_to_string(return_type.get());
+    Node::Type *argType = return_type.get();
     Node::Type *expectedType = fnParams.at(fnParams.begin()->first);
-    std::string expectedTypeStr = type_to_string(expectedType);
 
-    if (argTypeStr != expectedTypeStr) {
+    if (!checkTypeMatch(argType, expectedType)) {
       // If int is compared to an unsigned int or something, let it go
-      if (isIntBasedType(return_type.get()) && isIntBasedType(expectedType)) continue; // They can effectively be casted to one another
+      if (isIntBasedType(argType) && isIntBasedType(expectedType)) continue; // They can effectively be casted to one another
       std::string functionName = callee->kind == ND_IDENT ? static_cast<IdentExpr *>(callee)->name : static_cast<IdentExpr *>(static_cast<MemberExpr *>(callee)->lhs)->name;
-      std::string msg = "Function '" + functionName + "' requires argument '" + fnParams.begin()->first + "' to be of type '" + expectedTypeStr + "' but got '" + argTypeStr + "'";
+      std::string msg = "Function '" + functionName + "' requires argument '" + fnParams.begin()->first + "' to be of type '" + type_to_string(expectedType) + "' but got '" + type_to_string(argType) + "'";
       handleError(call->line, call->pos, msg, "", "Type Error");
       return_type = std::make_shared<SymbolType>("unknown");
       return false;
@@ -223,7 +240,7 @@ Node::Type *TypeChecker::createDuplicate(Node::Type *type) {
   switch(type->kind) {
     case NodeKind::ND_SYMBOL_TYPE: {
       SymbolType *sym = static_cast<SymbolType *>(type);
-      return new SymbolType(sym->name);
+      return new SymbolType(sym->name, sym->signedness);
     }
     case NodeKind::ND_ARRAY_TYPE: {
       ArrayType *arr = static_cast<ArrayType *>(type);
@@ -247,8 +264,9 @@ Node::Type *TypeChecker::createDuplicate(Node::Type *type) {
 
 bool TypeChecker::isIntBasedType(Node::Type *type) {
   const static std::unordered_set<std::string> intTypes = {
-    "int", "char", "short", "long"
+    "int", "char", "short", "long", // add more, maybe even a superlong for 128-bit lmao
   };
+
   // Do not check for signedness ON PURPOSE
   if (type->kind != ND_SYMBOL_TYPE) return false;
   SymbolType *sym = static_cast<SymbolType *>(type);
