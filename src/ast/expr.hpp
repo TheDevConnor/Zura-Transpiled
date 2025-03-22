@@ -832,7 +832,7 @@ public:
   Node::Expr *canCreate;
 
   OpenExpr(int line, int pos, Node::Expr *filename, Node::Expr *canRead, Node::Expr *canWrite, Node::Expr *canCreate, int file)
-      : line(line), pos(pos), filename(filename), flags(flags), canRead(canRead), canWrite(canWrite), canCreate(canCreate) {
+      :  line(line), pos(pos),  filename(filename),   canRead(canRead),    canWrite(canWrite),  canCreate(canCreate) {
     file_id = file;
     kind = NodeKind::ND_OPEN;
     asmType = new SymbolType("int");

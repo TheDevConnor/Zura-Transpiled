@@ -216,7 +216,7 @@ public:
         return ".asciz " + instr.what + "\n\t";
       }
       // return from %rip and trace back up the call stack
-      std::string operator()(Ret instr) const { return "ret\n\t"; }
+      std::string operator()(Ret instr) const { return "ret # " + instr.fromWhere + "\n\t"; }
       // self explanatory
       std::string operator()(Comment instr) const {
         return "# " + instr.comment + "\n\t";

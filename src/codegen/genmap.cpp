@@ -1,11 +1,6 @@
 #include "gen.hpp"
 
 void codegen::initMaps() {
-  typeHandlers = {
-      {ND_SYMBOL_TYPE, symbolType},
-      {ND_ARRAY_TYPE, arrayType},
-      {ND_POINTER_TYPE, pointerType},
-  };
   stmtHandlers = {
       {ND_PROGRAM, program},         {ND_CONST_STMT, constDecl},
       {ND_VAR_STMT, varDecl},        {ND_FN_STMT, funcDecl},

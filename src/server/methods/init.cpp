@@ -4,31 +4,33 @@
 nlohmann::ordered_json lsp::methods::initialize(nlohmann::json& request) {
   using namespace nlohmann;
   // check if the client supports the capabilities that WE provide
-  const bool supportsCompletions = true;
-  const bool supportsHover = true;
-  const bool supportsTextSync = true;
+  // const bool supportsCompletions = true;
+  // const bool supportsHover = true;
+  // const bool supportsTextSync = true;
 
   // literally broken lol
-  // supportsCompletions = request.contains("completionProvider");
-  // supportsHover = request.contains("hoverProvider");
-  // supportsTextSync = request.contains("textDocumentSync");
+  const bool supportsCompletions = request.contains("completionProvider");
+  const bool supportsHover = request.contains("hoverProvider");
+  const bool supportsTextSync = request.contains("textDocumentSync");
 
   ordered_json response = {
     {"capabilities", {
-      {"completionProvider", {
-        {"resolveProvider", false},
-        {"triggerCharacters", json::array({"@", "."})},
-        {"completionItem", {
-          {"snippetSupport", true}
-        }}
-      }},
-      {"textDocumentSync", TextDocumentSyncKind::Incremental},
-      {"hoverProvider", true}
+      {"textDocumentSync", supportsTextSync ? TextDocumentSyncKind::Incremental : TextDocumentSyncKind::None},
+      {"hoverProvider", supportsHover}
     }},
     {"serverInfo", {
       {"name", "zura-lsp"},
       {"version", "0.0.1"}
     }}
   };
+  if (supportsCompletions) {
+    response["capabilities"]["completionProvider"] = {
+      {"resolveProvider", false},
+      {"triggerCharacters", json::array({"@", "."})},
+      {"completionItem", {
+        {"snippetSupport", true}
+      }}
+    };
+  }
   return response;
 }

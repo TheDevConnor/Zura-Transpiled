@@ -21,9 +21,9 @@ void codegen::print(Node::Stmt *stmt) {
       handleStrDisplay(print->fd, optimizedArg);
     else if (TypeChecker::isIntBasedType(arg->asmType))
       handlePrimitiveDisplay(print->fd, optimizedArg);
-    else if (argType == "float")
-      handleFloatDisplay(print->fd, optimizedArg);
-    else if (argType == "[]char") // must always be a char array, no other type of arr is allowed (char[] are also literally just char* anyway so lol)
+    else if (argType == "float" || argType == "double")
+      handleFloatDisplay(print->fd, optimizedArg, print->line, print->pos);
+    else if (optimizedArg->asmType->kind == ND_ARRAY_TYPE) // must always be a char array, no other type of arr is allowed (char[] are also literally just char* anyway so lol)
       handleArrayDisplay(print->fd, optimizedArg, print->line, print->pos);
     else
       handleError(print->line, print->pos,

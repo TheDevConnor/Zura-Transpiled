@@ -139,7 +139,7 @@ nlohmann::ordered_json lsp::methods::hover(nlohmann::json& request) {
 
 TypeChecker::LSPIdentifier lsp::getIdentifierUnderPos(lsp::Position pos) {
   using namespace TypeChecker;
-  if (lsp_idents.empty()) return LSPIdentifier { .ident = "*" };
+  if (lsp_idents.empty()) return LSPIdentifier { .underlying = nullptr, .type = LSPIdentifierType::Unknown, .ident = "*", .line = pos.line, .pos = pos.character };
   for (LSPIdentifier &ident : lsp_idents) {
     if ((ident.line - 1) == pos.line
         && pos.character >= ident.pos
@@ -147,5 +147,5 @@ TypeChecker::LSPIdentifier lsp::getIdentifierUnderPos(lsp::Position pos) {
       return ident;
     }
   }
-  return LSPIdentifier { .ident = "*" };
+  return LSPIdentifier { .underlying = nullptr, .type = LSPIdentifierType::Unknown, .ident = "*", .line = pos.line, .pos = pos.character };
 }

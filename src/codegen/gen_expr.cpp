@@ -437,7 +437,8 @@ void codegen::call(Node::Expr *expr) {
     int offsetAmount = round(variableCount - 8, 8);
     if (offsetAmount)
       push(Instr{.var = SubInstr{.lhs = "%rsp",
-                                 .rhs = "$" + std::to_string(offsetAmount)},
+                                 .rhs = "$" + std::to_string(offsetAmount),
+                                .size = DataSize::Qword},
                  .type = InstrType::Sub},
            Section::Main);
     int intArgCount = 0;
@@ -494,7 +495,8 @@ void codegen::call(Node::Expr *expr) {
          Section::Main);
     if (offsetAmount)
       push(Instr{.var = AddInstr{.lhs = "%rsp",
-                                 .rhs = "$" + std::to_string(offsetAmount)},
+                                 .rhs = "$" + std::to_string(offsetAmount),
+                                 .size = DataSize::Qword},
                  .type = InstrType::Sub},
            Section::Main);
     // What we push as the result depends on the return type of the function
@@ -568,7 +570,8 @@ void codegen::call(Node::Expr *expr) {
     int offsetAmount = round(variableCount - 8, 8);
     if (offsetAmount)
       push(Instr{.var = SubInstr{.lhs = "%rsp",
-                                 .rhs = "$" + std::to_string(offsetAmount)},
+                                 .rhs = "$" + std::to_string(offsetAmount),
+                                 .size = DataSize::Qword},
                  .type = InstrType::Sub},
            Section::Main);
     for (size_t i = 0; i < e->args.size(); i++) {
@@ -589,7 +592,8 @@ void codegen::call(Node::Expr *expr) {
          Section::Main);
     if (offsetAmount)
       push(Instr{.var = AddInstr{.lhs = "%rsp",
-                                 .rhs = "$" + std::to_string(offsetAmount)},
+                                 .rhs = "$" + std::to_string(offsetAmount),
+                                 .size = DataSize::Qword},
                  .type = InstrType::Sub},
            Section::Main);
     if (e->asmType->kind == ND_POINTER_TYPE ||
@@ -850,7 +854,6 @@ void codegen::memberExpr(Node::Expr *expr) {
       exit(-1);
     }
     // Now we can access the struct's fields
-    int size = structByteSizes[structName].first;
     std::vector<StructMember> &fields = structByteSizes[structName].second;
     // Eval lhs (this will put the struct's address onto the stack)
     visitExpr(e->lhs); // this could be an ident or something
@@ -887,8 +890,7 @@ void codegen::memberExpr(Node::Expr *expr) {
       
       popToRegister("%rcx");
       if (resultIsStruct) {
-        DataSize size = DataSize::Qword;
-        push(Instr{.var = LeaInstr{.size = DataSize::Qword,
+        push(Instr{.var = LeaInstr{.size = DataSize::Qword, // Leas will always be qword, because we are 64-bit
                                     .dest = "%rcx",
                                     .src = std::to_string(offsetFromBase) + "(%rcx)"},
                     .type = InstrType::Lea},
@@ -1533,6 +1535,10 @@ void codegen::openExpr(Node::Expr *expr) {
 
 void codegen::nullExpr(Node::Expr *expr) {
   // Has implicit value of 0.
-  pushRegister("$0");
+  NullExpr *e = static_cast<NullExpr *>(expr);
+  push(Instr{.var=Comment{.comment = "Null on " + std::to_string(e->line) },
+            .type=InstrType::Comment},
+       Section::Main);
+  pushRegister("$0"); // 8 bytes is fine here, since it is a pointer
   return;
 }

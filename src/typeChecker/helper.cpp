@@ -27,6 +27,7 @@ std::string TypeChecker::type_to_string(Node::Type *type) {
         return static_cast<SymbolType *>(type)->name + '?';
       case SymbolType::Signedness::UNSIGNED:
         return static_cast<SymbolType *>(type)->name + '!';
+      default:
       case SymbolType::Signedness::INFER:
         return static_cast<SymbolType *>(type)->name;
     };
@@ -168,19 +169,17 @@ void TypeChecker::processStructMember(MemberExpr *member, const std::string &nam
 }
 
 void TypeChecker::processEnumMember(MemberExpr *member, const std::string &lhsType) {
-    std::string realType = static_cast<IdentExpr *>(member->lhs)->name;
-
-    auto fields = context->enumTable.find(realType)->second;
+    auto fields = context->enumTable.find(lhsType)->second;
     auto res = fields.find(static_cast<IdentExpr *>(member->rhs)->name);
 
     if (res == fields.end()) {
-        std::string msg = "Type '" + realType + "' does not have member '" + static_cast<IdentExpr *>(member->rhs)->name + "'";
+        std::string msg = "Type '" + lhsType + "' does not have member '" + static_cast<IdentExpr *>(member->rhs)->name + "'";
         handleError(member->line, member->pos, msg, "", "Type Error");
         return_type = std::make_shared<SymbolType>("unknown");
         return;
     }
 
-    return_type = std::make_shared<SymbolType>(realType);
+    return_type = std::make_shared<SymbolType>(lhsType);
     member->asmType = createDuplicate(return_type.get());
 }
 

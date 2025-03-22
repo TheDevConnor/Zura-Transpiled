@@ -3,8 +3,7 @@ cmake_minimum_required(VERSION 3.15)
 project(zura LANGUAGES CXX)
 
 set(CMAKE_CXX_STANDARD 20)
-
-add_compile_options(-Wall -Wpedantic -Werror -Wfatal-errors -Wextra)
+add_compile_options(-Wall -Wpedantic -Wfatal-errors -Werror -Wextra -Wno-unused-parameter)
 
 # Specify header and source files
 set(ZURA_HEADER_FILES
@@ -79,7 +78,6 @@ set(ZURA_SOURCE_FILES
     src/codegen/builtin.cpp
     src/codegen/gen_expr.cpp
     src/codegen/gen_stmt.cpp
-    src/codegen/gen_type.cpp
     src/codegen/genmap.cpp
     src/codegen/helper.cpp
     src/codegen/gen.cpp

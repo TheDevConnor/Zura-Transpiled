@@ -590,7 +590,7 @@ public:
   Node::Expr *fd;
   
   InputStmt(int line, int pos, Node::Expr *fd, Node::Expr *bufferOut, Node::Expr * sysCall, int file)
-      : line(line), pos(pos), fd(fd), bufferOut(bufferOut), maxBytes(sysCall) {
+      : line(line), pos(pos), bufferOut(bufferOut), maxBytes(sysCall), fd(fd) {
     file_id = file;
     kind = NodeKind::ND_INPUT_STMT;
   }

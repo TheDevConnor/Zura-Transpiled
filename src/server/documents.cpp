@@ -34,7 +34,7 @@ lsp::Word lsp::document::wordUnderPos(std::string uri, Position pos) {
   // get all characters surrounding the current one until a whitespace or special character is found
   // _ and - are allowed
   std::string word = "";
-  size_t firstCol;
+  size_t firstCol = 0;
   for (size_t i = column; i > 0; i--) {
     char c = line.at(i);
     firstCol = i;
@@ -44,7 +44,7 @@ lsp::Word lsp::document::wordUnderPos(std::string uri, Position pos) {
     }
     word = c + word;
   };
-  size_t lastCol;
+  size_t lastCol = line.size();
   for (size_t i = column + 1; i < line.size(); i++) {
     char c = line.at(i);
     lastCol = i;

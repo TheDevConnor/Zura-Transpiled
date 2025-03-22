@@ -351,7 +351,7 @@ void TypeChecker::visitTemplateStmt(Node::Stmt *stmt) {
   //   declare(map->global_symbol_table, name, static_cast<Node::Type *>(type),
   //           templateStmt->line, templateStmt->pos);
   // }
-  std::cout << "TemplateStmt not implemented yet" << std::endl;
+  std::cout << "TemplateStmt not implemented yet. Attempted on function named '" << templateStmt->typenames[0] << "'" << std::endl;
   exit(1);
 }
 

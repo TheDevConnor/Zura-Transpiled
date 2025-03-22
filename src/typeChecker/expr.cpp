@@ -300,8 +300,6 @@ void TypeChecker::visitCall(Node::Expr *expr) {
 
   // check if the callee is a function
   std::pair<std::string, Node::Type *> fnName;
-  auto ident = (name->kind == ND_IDENT) ? static_cast<IdentExpr *>(name) 
-                                        : static_cast<IdentExpr *>(static_cast<MemberExpr *>(name)->lhs);
 
   // check if the function is in the function table
   if (context->functionTable.find({fnName.first, fnName.second}) != context->functionTable.end()) {
@@ -328,7 +326,7 @@ void TypeChecker::visitCall(Node::Expr *expr) {
 
   // add an ident for the lsp
   if (isLspMode) {
-    lsp_idents.push_back(LSPIdentifier{fnName.second, LSPIdentifierType::Function, fnName.first, static_cast<IdentExpr *>(call->callee)->line, static_cast<IdentExpr *>(call->callee)->pos});
+    lsp_idents.push_back(LSPIdentifier{fnName.second, LSPIdentifierType::Function, fnName.first, (size_t)static_cast<IdentExpr *>(call->callee)->line, (size_t)static_cast<IdentExpr *>(call->callee)->pos});
   }
 }
 
@@ -386,7 +384,7 @@ void TypeChecker::visitArray(Node::Expr *expr) {
     return;
   }
 
-  if (at->constSize != array->elements.size()) {
+  if ((size_t)at->constSize != array->elements.size()) {
     std::string msg = "Array requires " +
                       std::to_string(at->constSize) + " elements but got " +
                       std::to_string(array->elements.size());

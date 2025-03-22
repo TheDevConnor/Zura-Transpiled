@@ -86,7 +86,7 @@ Node::Stmt *Parser::varStmt(PStruct *psr, std::string name) {
   psr->expect(psr, TokenKind::COLON,
               "Expected a COLON after the variable name in a var stmt to "
               "define the type of the variable");
-  Node::Type *varType = parseType(psr, BindingPower::defaultValue);
+  Node::Type *varType = parseType(psr);
 
   if (psr->current(psr).kind == TokenKind::SEMICOLON) {
     psr->expect(psr, TokenKind::SEMICOLON,
@@ -206,7 +206,7 @@ Node::Stmt *Parser::funStmt(PStruct *psr, std::string name) {
             .value;
     psr->expect(psr, TokenKind::COLON,
                 "Expected a COLON after the parameter name in a function stmt");
-    Node::Type *paramType = parseType(psr, BindingPower::defaultValue);
+    Node::Type *paramType = parseType(psr);
     if (paramType == nullptr)
       ErrorClass::error(line, column, "Expected a type for the parameter",
                         "", "Parser Error", psr->current_file.c_str(), lexer,
@@ -220,7 +220,7 @@ Node::Stmt *Parser::funStmt(PStruct *psr, std::string name) {
   psr->expect(psr, TokenKind::RIGHT_PAREN,
               "Expected a R_PAREN to end the parameters in a function stmt");
 
-  Node::Type *returnType = parseType(psr, BindingPower::defaultValue);
+  Node::Type *returnType = parseType(psr);
   if (returnType == nullptr)
     ErrorClass::error(line, column, "Expected a return type for the function",
                       "", "Parser Error", psr->current_file.c_str(), lexer,
@@ -318,10 +318,17 @@ Node::Stmt *Parser::structStmt(PStruct *psr, std::string name) {
       
       psr->expect(psr, TokenKind::COLON,
                   "Expected a COLON after the field name in a struct stmt");
-      Node::Type *fieldType = parseType(psr, BindingPower::defaultValue);
+      Node::Type *fieldType = parseType(psr);
       fields.push_back({fieldName, fieldType});
       if (psr->peek(psr).kind == TokenKind::RIGHT_BRACE) break; // who cares about the semicolon/comma?
-      psr->expect(psr, TokenKind::COMMA, "Semicolons are non-standard for struct field lists; use commas instead");
+      if (warnForSemi) {
+        psr->expect(psr, TokenKind::COMMA, "Semicolons are non-standard for struct field lists; use commas instead");
+      } else {
+        if (psr->current(psr).kind == TokenKind::COMMA) {
+          psr->advance(psr);
+        }
+        psr->expect(psr, TokenKind::SEMICOLON, "Expected a comma or a semicolon for struct field list");
+      }
       break;
     }
     case TokenKind::SEMICOLON: {
@@ -359,10 +366,10 @@ Node::Stmt *Parser::loopStmt(PStruct *psr, std::string name) {
               "Expected a L_PAREN to start a loop stmt");
 
   std::string varName;
-  Node::Expr *forLoop;
-  Node::Expr *condition;
-  Node::Expr *whileLoop;
-  Node::Expr *opCondition;
+  Node::Expr *forLoop = nullptr;
+  Node::Expr *condition = nullptr;
+  Node::Expr *whileLoop = nullptr;
+  Node::Expr *opCondition = nullptr;
   bool isForLoop = false;
   bool isOptional = false;
 

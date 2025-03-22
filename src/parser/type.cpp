@@ -4,7 +4,7 @@
 
 #include <iostream>
 
-Node::Type *Parser::parseType(PStruct *psr, BindingPower bp) {
+Node::Type *Parser::parseType(PStruct *psr) {
   Node::Type *left = type_nud(psr);
 
   // TODO: Fix the weird bug with the getBP function for types
@@ -51,22 +51,22 @@ Node::Type *Parser::array_type(PStruct *psr) {
   }
    
   // Else you are good and can continue
-  Node::Type *underlying = parseType(psr, defaultValue);
+  Node::Type *underlying = parseType(psr);
   return new ArrayType(underlying, size);
 }
 
 Node::Type *Parser::pointer_type(PStruct *psr) {
   psr->advance(psr);
-  Node::Type *underlying = parseType(psr, defaultValue);
+  Node::Type *underlying = parseType(psr);
   return new PointerType(underlying);
 }
 
 Node::Type *Parser::type_application(PStruct *psr) {
   psr->advance(psr); // Skip the <
-  Node::Type *left = parseType(psr, defaultValue);
+  Node::Type *left = parseType(psr);
   psr->expect(psr, TokenKind::GREATER,
               "Expected a greater than symbol after a type application!");
-  Node::Type *right = parseType(psr, defaultValue);
+  Node::Type *right = parseType(psr);
   return new TemplateStructType(right, left);
 }
 
@@ -76,13 +76,13 @@ Node::Type *Parser::function_type(PStruct *psr) {
               "Expected a left parenthesis after a function type!");
   std::vector<Node::Type *> args;
   while (psr->peek(psr).kind != TokenKind::RIGHT_PAREN) {
-    args.push_back(parseType(psr, defaultValue));
+    args.push_back(parseType(psr));
     if (psr->peek(psr).kind == TokenKind::COMMA) {
       psr->advance(psr);
     }
   }
   psr->advance(psr); // Skip the right parenthesis
-  Node::Type *ret = parseType(psr, defaultValue);
+  Node::Type *ret = parseType(psr);
   
   return new FunctionType(args, ret);
 }
