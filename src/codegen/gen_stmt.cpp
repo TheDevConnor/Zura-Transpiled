@@ -375,30 +375,25 @@ void codegen::varDecl(Node::Stmt *stmt) {
   dwarf::useType(s->type);
   dwarf::useAbbrev(dwarf::DIEAbbrev::Variable);
   dwarf::useAbbrev(dwarf::DIEAbbrev::Type);
+  short int fbreg_loc = whereBytes - 16;
+  // if struct, we must change this fbreg loc because of stinky reasons
+  if (s->type->kind == ND_SYMBOL_TYPE &&
+      structByteSizes.find(getUnderlying(s->type)) != structByteSizes.end()) {
+    // Fbreg = location of last member of struct - 16
+    Struct &st = structByteSizes[getUnderlying(s->type)];
+    fbreg_loc = whereBytes - st.second[st.second.size() - 1].second.second - 16;
+  }
   pushLinker(
       ".uleb128 " + std::to_string((int)dwarf::DIEAbbrev::Variable) +
-          "\n.long .L" + s->name +
-          "_string\n"
-          ".byte " +
-          std::to_string(s->file_id) +
-          "\n" // File index
-          ".byte " +
-          std::to_string(s->line) +
-          "\n" // Line number
-          ".byte " +
-          std::to_string(s->pos) +
-          "\n" // Line column
-          ".long .L" +
-          asmName +
-          "_debug_type\n" // Type - point to the DIE of the DW_TAG_base_type
-          ".uleb128 " +
-          std::to_string(
-              1 + sizeOfLEB(whereBytes - 16)) + // Length of data in location
-                                                // definition - 3 bytes long
-          "\n.byte 0x91\n"                      // DW_OP_fbreg (first byte)
-
-          ".sleb128 " +
-          std::to_string(whereBytes - 16) + "\n",
+          "\n.long .L" + s->name + "_string\n"
+          ".byte " + std::to_string(s->file_id) + "\n"          // File index
+          ".byte " + std::to_string(s->line) + "\n   "          // Line number
+          ".byte " + std::to_string(s->pos) + "\n"              // Line column
+          ".long .L" + asmName + "_debug_type\n"                // Type - point to the DIE of the DW_TAG_base_type
+          ".uleb128 " + std::to_string(                         // Length of data in location
+            1 + sizeOfLEB(fbreg_loc)) +                         // DW_OP_fbreg (length of data)
+          "\n.byte 0x91\n"                                      // DW_OP_fbreg (first byte determines variable is offset from frame pointer rbp)
+          ".sleb128 " + std::to_string(fbreg_loc) + "\n",       // DW_OP_fbreg (actual offset)
       Section::DIE);
 
   // DIE String pointer
@@ -565,11 +560,11 @@ void codegen::structDecl(Node::Stmt *stmt) {
   StructStmt *s = static_cast<StructStmt *>(stmt);
   // As a declaration, this cannot have a loc directive
   //! pushDebug(s->line, stmt->file_id, s->pos);
-  int size = 0;
+  short size = 0;
   std::vector<StructMember> members;
   // Calculate size by adding the size of members
   for (std::pair<std::string, Node::Type *> field : s->fields) {
-    int fieldSize = getByteSizeOfType(field.second);
+    short fieldSize = getByteSizeOfType(field.second);
     members.push_back({field.first, {field.second, size}}); // Place the "size" (offset) BEFORE we add to the total
     size += fieldSize; // Yes, even calculates the size of nested structs.
   }
@@ -602,7 +597,7 @@ void codegen::structDecl(Node::Stmt *stmt) {
                    std::to_string(s->file_id) +           // File ID
                    "\n.byte " + std::to_string(s->line) + // Line number
                    "\n.byte " + std::to_string(s->pos) +  // Line column
-                   "\n.byte " + std::to_string(size) +    // Size of struct
+                   "\n.short " + std::to_string(size) +    // Size of struct
                    "\n",
                Section::DIE);
     // Push name
@@ -614,13 +609,10 @@ void codegen::structDecl(Node::Stmt *stmt) {
       dwarf::useType(field.second);
       pushLinker(".uleb128 " +
                      std::to_string((int)dwarf::DIEAbbrev::StructMember) +
-                     "\n.long .L" + field.first +
-                     "_string"
-                     "\n.long .L" +
-                     type_to_diename(field.second) +
-                     "_debug_type"
-                     "\n.byte " +
-                     std::to_string(currentByte) + // Offset in struct
+                     "\n.long .L" + field.first + "_string"
+                     "\n.long .L" + type_to_diename(field.second) + "_debug_type"
+                    //  "\n.byte " + std::to_string(sizeOfLEB(-currentByte)) +
+                     "\n.sleb128 " + std::to_string(size - currentByte - getByteSizeOfType(s->fields[0].second)) + // Offset in struct
                      "\n",
                  Section::DIE);
       // push name in string
@@ -1212,7 +1204,7 @@ void codegen::inputStmt(Node::Stmt *stmt) {
   popToRegister("%rsi");   // rsi
   // RAX and RDI are constant in this case- constant syscall number and constant file descriptor (fd of stdin is 0)
   push(Instr{.var=XorInstr{.lhs="%rax",.rhs="%rax"},.type=InstrType::Xor},Section::Main);
-  push(Instr{.var=Syscall{.name="read"},.type=InstrType::Syscall},Section::Main);
+  push(Instr{.var=Syscall{.name="SYS_READ"},.type=InstrType::Syscall},Section::Main);
 }
 
 
@@ -1227,5 +1219,5 @@ void codegen::closeStmt(Node::Stmt *stmt) {
   // RAX is constant in this case- constant syscall number
   // Stupid AI! Rax is not 0...
   moveRegister("%rax", "$3", DataSize::Qword, DataSize::Qword);
-  push(Instr{.var=Syscall{.name="close"},.type=InstrType::Syscall},Section::Main);
+  push(Instr{.var=Syscall{.name="SYS_CLOSE"},.type=InstrType::Syscall},Section::Main);
 }

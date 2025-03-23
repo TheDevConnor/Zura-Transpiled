@@ -132,17 +132,17 @@ public:
 
   void initLexer(const char *source, std::string file);
 
-  Token scanToken();
+  Token scanToken(void);
   Token errorToken(std::string message);
 
   const char *tokenToString(TokenKind kind);
 
   const char *lineStart(int line);
 
-  void reset();
-  char advance();
-  bool isAtEnd();
-  char peek();
+  void reset(void);
+  char advance(void);
+  bool isAtEnd(void);
+  char peek(void);
 
   using WhiteSpaceFunction = std::function<void(Lexer &)>;
   std::unordered_map<TokenKind, const char *> tokenToStringMap;
@@ -152,19 +152,19 @@ public:
   std::unordered_map<std::string, TokenKind> dcMap;
   std::unordered_map<char, TokenKind> scMap;
 
-  void initMap();
+  void initMap(void);
 
 private:
   bool match(char expected);
 
   Token makeToken(TokenKind kind);
-  Token identifier();
-  Token number();
-  Token String();
-  Token Char();
+  Token identifier(void);
+  Token number(void);
+  Token String(void);
+  Token Char(void);
 
   TokenKind checkIdentMap(std::string identifier);
   TokenKind sc_dc_lookup(char c);
 
-  void skipWhitespace();
+  void skipWhitespace(void);
 };

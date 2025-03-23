@@ -1,6 +1,8 @@
 import unittest
 import subprocess
 import os
+import random
+import string
 
 def run_test(code: str, expected_exit_code=None, expected_output=None):
     """Helper function to compile and run a Zura program, checking exit code and/or output."""
@@ -95,6 +97,35 @@ class TestZuraPrograms(unittest.TestCase):
     def test_variable_equal_deref_big_struct(self):
         run_test("const a := struct { x: int!, y: int!, z: int!, }; const main := fn () int! { have b: a = { x: 72, y: 12, z: 42 }; have c: *a = &b; have d: a = c&; return d.y + d.z; };", expected_exit_code=54)
 
+    def test_useless_malloc(self):
+        run_test("const main := fn () int! { have x: *void = @alloc(8); @free(x, 8); return 0; };", expected_exit_code=0)
+
+    def test_read_file_char_arr(self):
+        # create filenames of random characters until we find one not in use
+        filename = "".join(random.choices(string.ascii_letters, k=8))
+        while os.path.exists(f'test{filename}.txt'):
+            filename = "".join(random.choices(string.ascii_letters, k=8))
+        
+        expected_output = ''.join(random.choices(string.ascii_letters, k=100))
+        with open(f'test{filename}.txt', "w") as f:
+            f.write(expected_output)
+        
+        run_test(f"const main := fn () int! {{ have chars: [100]char = [0]; have filepath: str = \"test{filename}.txt\"; have fd: int = @open(filepath, true, false, false); @input(fd, chars, 100); @close(fd); @output(1, chars); return 42; }};", expected_output=expected_output, expected_exit_code=42)
+        # delete test file
+        os.remove(f'test{filename}.txt') # NOTE: If test fails, the program will exit before this line is reached
+
+    def test_read_file_malloc(self):
+        # instead of using a [100]char, we will use a *char = @alloc(100)
+        filename = "".join(random.SystemRandom().choices(string.ascii_letters, k=8))
+        while os.path.exists(f'test{filename}.txt'):
+            filename = "".join(random.SystemRandom().choices(string.ascii_letters, k=8))
+        
+        expected_output = ''.join(random.SystemRandom().choices(string.ascii_letters, k=100))
+        with open(f'test{filename}.txt', "w") as f:
+            f.write(expected_output)
+        
+        run_test(f"const main := fn () int! {{ have chars: *char = @cast<*char>(@alloc(100)); have filepath: str = \"test{filename}.txt\"; have fd: int = @open(filepath, true, false, false); @input(fd, chars, 100); @close(fd); @output(1, chars); @free(chars, 100); return 42; }};", expected_output=expected_output, expected_exit_code=42)
+        os.remove(f'test{filename}.txt') # NOTE: If test fails, the program will exit before this line is reached
 
 if __name__ == "__main__":
     # Run the build.sh script to build the project in release mode

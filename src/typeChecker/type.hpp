@@ -72,7 +72,7 @@ bool isIntBasedType(Node::Type *type);
 bool checkTypeMatch(Node::Type *lhs,
                     Node::Type *rhs);
 void performCheck(Node::Stmt *stmt, bool isMain = true, bool isLspServer = false);
-void printTables();
+void printTables(void);
 
 std::string determineTypeKind(const std::string &type);
 
@@ -94,7 +94,7 @@ using StmtNodeHandler = std::function<void(Node::Stmt *)>;
 using ExprNodeHandler = std::function<void(Node::Expr *)>;
 inline std::unordered_map<NodeKind, StmtNodeHandler> stmts;
 inline std::unordered_map<NodeKind, ExprNodeHandler> exprs;
-void initMaps();
+void initMaps(void);
 
 Node::Stmt *StmtAstLookup(Node::Stmt *node);
 Node::Expr *ExprAstLookup(Node::Expr *node);

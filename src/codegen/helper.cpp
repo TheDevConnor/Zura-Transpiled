@@ -1,4 +1,5 @@
 #include "../helper/error/error.hpp"
+#include "../typeChecker/type.hpp"
 #include "optimizer/compiler.hpp"
 #include "optimizer/instr.hpp"
 #include "gen.hpp"
@@ -259,7 +260,7 @@ void codegen::prepareSyscallWrite() {
 }
 
 void codegen::handlePtrDisplay(Node::Expr *fd, Node::Expr *arg, int line, int pos) {
-  if (getUnderlying(arg->asmType).find("char") == 1) {
+  if (getUnderlying(arg->asmType) == "char") {
     // Printing a char*
     visitExpr(arg);
     popToRegister("%rsi");
@@ -508,7 +509,25 @@ std::string codegen::type_to_diename(Node::Type *type) {
   }
   if (type->kind == ND_SYMBOL_TYPE) { // Yes, structs are symbols too
     SymbolType *s = static_cast<SymbolType *>(type);
-    return s->name;
+    std::string signedness = "";
+    // check if builtin type
+    bool builtin = typeSizes.find(s->name) != typeSizes.end();
+    if (builtin) { // only builtin types can have signedness
+      switch (s->signedness) {
+        case SymbolType::Signedness::SIGNED:
+          signedness = "_s";
+          break;
+        case SymbolType::Signedness::UNSIGNED:
+          signedness = "_u";
+          break;
+        default:
+        case SymbolType::Signedness::INFER:
+          signedness = "_i";
+          break;
+      }
+    }
+
+    return s->name + signedness;
   }
   // Unreachable!
   return "";

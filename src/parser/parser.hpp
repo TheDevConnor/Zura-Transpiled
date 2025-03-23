@@ -67,7 +67,7 @@ static std::vector<std::pair<TokenKind, NudHandler>> nud_lu;
 static std::vector<std::pair<TokenKind, LedHandler>> led_lu;
 static std::vector<std::pair<TokenKind, BindingPower>> bp_lu;
 static std::vector<TokenKind> ignore_tokens;
-void createMaps();
+void createMaps(void);
 
 Node::Expr *led(PStruct *psr, Node::Expr *left, BindingPower bp);
 BindingPower getBP(TokenKind tk);
@@ -83,7 +83,7 @@ using TypeLedHandler =
 static std::vector<std::pair<TokenKind, TypeNudHandler>> type_nud_lu;
 static std::vector<std::pair<TokenKind, TypeLedHandler>> type_led_lu;
 static std::vector<std::pair<TokenKind, BindingPower>> type_bp_lu;
-void createTypeMaps();
+void createTypeMaps(void);
 
 Node::Type *type_led(PStruct *psr, Node::Type *left, BindingPower bp);
 BindingPower type_getBP(PStruct *psr, TokenKind tk);

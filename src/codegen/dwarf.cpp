@@ -223,7 +223,7 @@ std::string codegen::dwarf::generateAbbreviations() {
                          "\n.uleb128 0x39 # AT_decl_column"
                          "\n.uleb128 0xb # FORM_data1"
                          "\n.uleb128 0xb # AT_byte_size"
-                         "\n.uleb128 0xb # FORM_data1"
+                         "\n.uleb128 0x05 # FORM_data2"
                          "\n";
         break;
       }
@@ -236,7 +236,7 @@ std::string codegen::dwarf::generateAbbreviations() {
                          "\n.uleb128 0x49 # AT_type"
                          "\n.uleb128 0x13 # FORM_ref4"
                          "\n.uleb128 0x38 # AT_data_member_location"
-                         "\n.uleb128 0xb # FORM_data1"
+                         "\n.uleb128 0x0d # FORM_sdata"
                          "\n";
         break;
       }
@@ -359,4 +359,108 @@ void codegen::dwarf::useStringP(std::string what) {
   // Create the thing :)
   push(Instr{.var = Label{.name = ".L" + what + "_string"}, .type = InstrType::Label}, Section::DIEString);
   pushLinker(".string \"" + what + "\"\n", Section::DIEString);
+}
+
+void codegen::dwarf::emitTypes(void) {
+  // for each used builtin type, append the DIE to the section
+  if (dieNamesUsed.size() == 0) return;
+  // int types
+  // int (8)
+  if (dieNamesUsed.find("int_u") != dieNamesUsed.end()) { // unsigned 8 byte integer type
+    push(Instr{.var = Label{.name = ".Lint_u_debug_type"}, .type = InstrType::Label}, Section::DIETypes);
+    pushLinker(".uleb128 " + std::to_string((int)DIEAbbrev::Type) +
+               "\n.byte 8 # AT_byte_size"
+                "\n.uleb128 0x7 # AT_encoding = ATE_unsigned"
+                "\n.string \"int!\"\n"
+    , Section::DIETypes);
+  }
+  if (dieNamesUsed.find("int?") != dieNamesUsed.end()) { // signed 8 byte integer type
+    push(Instr{.var = Label{.name = ".Lint_s_debug_type"}, .type = InstrType::Label}, Section::DIETypes);
+    pushLinker(".uleb128 " + std::to_string((int)DIEAbbrev::Type) +
+               "\n.byte 8 # AT_byte_size"
+                "\n.uleb128 0x5 # AT_encoding = ATE_signed"
+                "\n.string \"int?\"\n"
+    , Section::DIETypes);
+  }
+  // char
+  if (dieNamesUsed.find("char!") != dieNamesUsed.end()) {
+    push(Instr{.var = Label{.name = ".Lchar_u_debug_type"}, .type = InstrType::Label}, Section::DIETypes);
+    pushLinker(".uleb128 " + std::to_string((int)DIEAbbrev::Type) +
+               "\n.byte 1 # AT_byte_size"
+               "\n.uleb128 0x8 # AT_encoding = ATE_unsigned_char"
+               "\n.string \"char!\"\n"
+    , Section::DIETypes);
+  }
+  if (dieNamesUsed.find("char?") != dieNamesUsed.end()) {
+    push(Instr{.var = Label{.name = ".Lchar_s_debug_type"}, .type = InstrType::Label}, Section::DIETypes);
+    pushLinker(".uleb128 " + std::to_string((int)DIEAbbrev::Type) +
+               "\n.byte 1 # AT_byte_size"
+               "\n.uleb128 0x6 # AT_encoding = ATE_signed_char"
+               "\n.string \"char?\"\n"
+    , Section::DIETypes);
+  }
+  // short
+  if (dieNamesUsed.find("short_u") != dieNamesUsed.end()) {
+    push(Instr{.var = Label{.name = ".Lshort_u_debug_type"}, .type = InstrType::Label}, Section::DIETypes);
+    pushLinker(".uleb128 " + std::to_string((int)DIEAbbrev::Type) +
+               "\n.byte 2 # AT_byte_size"
+               "\n.uleb128 0x7 # AT_encoding = ATE_unsigned"
+               "\n.string \"short!\"\n"
+    , Section::DIETypes);
+  }
+  if (dieNamesUsed.find("short?") != dieNamesUsed.end()) {
+    push(Instr{.var = Label{.name = ".Lshort_s_debug_type"}, .type = InstrType::Label}, Section::DIETypes);
+    pushLinker(".uleb128 " + std::to_string((int)DIEAbbrev::Type) +
+               "\n.byte 2 # AT_byte_size"
+               "\n.uleb128 0x5 # AT_encoding = ATE_signed"
+               "\n.string \"short?\"\n"
+    , Section::DIETypes);
+  }
+  // long
+  if (dieNamesUsed.find("long_u") != dieNamesUsed.end()) {
+    push(Instr{.var = Label{.name = ".Llong_u_debug_type"}, .type = InstrType::Label}, Section::DIETypes);
+    pushLinker(".uleb128 " + std::to_string((int)DIEAbbrev::Type) +
+               "\n.byte 4 # AT_byte_size"
+               "\n.uleb128 0x7 # AT_encoding = ATE_unsigned"
+               "\n.string \"long!\"\n"
+    , Section::DIETypes);
+  }
+  if (dieNamesUsed.find("long?") != dieNamesUsed.end()) {
+    push(Instr{.var = Label{.name = ".Llong_s_debug_type"}, .type = InstrType::Label}, Section::DIETypes);
+    pushLinker(".uleb128 " + std::to_string((int)DIEAbbrev::Type) +
+               "\n.byte 4 # AT_byte_size"
+               "\n.uleb128 0x5 # AT_encoding = ATE_signed"
+               "\n.string \"long?\"\n"
+    , Section::DIETypes);
+  }
+  // non-int types
+  // bool (no signedness)
+  if (dieNamesUsed.find("bool") != dieNamesUsed.end()) {
+    push(Instr{.var = Label{.name = ".Lbool_debug_type"}, .type = InstrType::Label}, Section::DIETypes);
+    pushLinker(".uleb128 " + std::to_string((int)DIEAbbrev::Type) +
+               "\n.byte 1 # AT_byte_size"
+               "\n.uleb128 0x2 # AT_encoding = ATE_boolean"
+               "\n.string \"bool\"\n"
+    , Section::DIETypes);
+  }
+  // float
+  if (dieNamesUsed.find("float") != dieNamesUsed.end()) {
+    push(Instr{.var = Label{.name = ".Lfloat_debug_type"}, .type = InstrType::Label}, Section::DIETypes);
+    pushLinker(".uleb128 " + std::to_string((int)DIEAbbrev::Type) +
+               "\n.byte 4 # AT_byte_size"
+               "\n.uleb128 0x4 # AT_encoding = ATE_float"
+               "\n.string \"float\"\n"
+    , Section::DIETypes);
+  }
+  // double (float with 8 bytes)
+  if (dieNamesUsed.find("double") != dieNamesUsed.end()) {
+    push(Instr{.var = Label{.name = ".Ldouble_debug_type"}, .type = InstrType::Label}, Section::DIETypes);
+    pushLinker(".uleb128 " + std::to_string((int)DIEAbbrev::Type) +
+               "\n.byte 8 # AT_byte_size"
+               "\n.uleb128 0x4 # AT_encoding = ATE_float"
+               "\n.string \"double\"\n"
+    , Section::DIETypes);
+  }
+
+  // TODO: Make custom structs for the @ functions (like sockaddr)
 }

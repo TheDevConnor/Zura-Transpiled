@@ -13,7 +13,7 @@ void codegen::print(Node::Stmt *stmt) {
   for (Node::Expr *arg : print->args) {
     std::string argType = TypeChecker::type_to_string(arg->asmType);
     Node::Expr *optimizedArg = CompileOptimizer::optimizeExpr(arg);
-    if (argType.find("*") == 0)
+    if (optimizedArg->asmType->kind == ND_POINTER_TYPE)
       handlePtrDisplay(print->fd, arg, print->line, print->pos);
     else if (optimizedArg->kind == ND_INT || optimizedArg->kind == ND_BOOL || optimizedArg->kind == ND_CHAR || optimizedArg->kind == ND_FLOAT || optimizedArg->kind == ND_STRING)
       handleLiteralDisplay(print->fd, optimizedArg);
@@ -198,7 +198,7 @@ void codegen::allocExpr(Node::Expr *expr) {
   moveRegister("%r10", "$34", DataSize::Qword, DataSize::Qword); // Memory flags: MAP_PRIVATE | MAP_ANONYMOUS
   moveRegister("%r8", "$-1", DataSize::Qword, DataSize::Qword); // There is no file descriptor associated here- the memory is anonymous
   moveRegister("%r9", "$0", DataSize::Qword, DataSize::Qword); // Offset- Once again, the memory is anonymous, so we do not care
-  push(Instr{.var=Syscall{.name="mmap"},.type=InstrType::Syscall},Section::Main);
+  push(Instr{.var=Syscall{.name="SYS_MMAP"},.type=InstrType::Syscall},Section::Main);
   pushRegister("%rax");
 };
 
@@ -212,7 +212,7 @@ void codegen::freeExpr(Node::Expr *expr) {
   popToRegister("%rdi");
   // rax is constant- the syscall number
   moveRegister("%rax", "$11", DataSize::Qword, DataSize::Qword); // Syscall number
-  push(Instr{.var=Syscall{.name="munmap"},.type=InstrType::Syscall},Section::Main);
+  push(Instr{.var=Syscall{.name="SYS_MUNMAP"},.type=InstrType::Syscall},Section::Main);
   pushRegister("%rax");
 };
 

@@ -33,7 +33,7 @@ T lookup(const std::unordered_map<U, T> &map, U key) {
 // Map for type sizes
 inline std::unordered_map<std::string, int> typeSizes;
 
-void initMaps();
+void initMaps(void);
 
 // Signed 64-bit integer
 
@@ -193,7 +193,8 @@ void useType(Node::Type *type);
 void useStringP(std::string what);
 inline std::set<std::string> dieNamesUsed = {};
 inline std::set<std::string> dieStringsUsed = {};
-std::string generateAbbreviations();
+std::string generateAbbreviations(void);
+void emitTypes(void); // create the debug_info entries for the builtin zura types
 inline bool nextBlockDIE = true;
 
 inline static const std::unordered_map<std::string, int> argOP_regs = {
@@ -254,7 +255,7 @@ void push(Instr instr, Section section = Section::Main);
 void pushLinker(std::string val, Section section);
 
 int getFileID(const std::string &file);
-void pushCompAsExpr(); // assuming compexpr's will already do the "cmp" and "jmp", we will push 0x0 or 0x1 depending on the result
+void pushCompAsExpr(void); // assuming compexpr's will already do the "cmp" and "jmp", we will push 0x0 or 0x1 depending on the result
 
 inline const char* file_name;
 
@@ -265,7 +266,7 @@ inline static const std::vector<std::string> intArgOrder = {"%rdi", "%rsi", "%rd
 inline static const std::vector<std::string> floatArgOrder = {"%xmm0", "%xmm1", "%xmm2", "%xmm3", "%xmm4", "%xmm5"};
 
 // Helper functions for printing to the console
-void prepareSyscallWrite();
+void prepareSyscallWrite(void);
 void handlePtrDisplay(Node::Expr *fd, Node::Expr *arg, int line, int pos);
 void handleArrayDisplay(Node::Expr *fd, Node::Expr *arg, int line, int pos); // []char only, realistically
 void handleFloatDisplay(Node::Expr *fd, Node::Expr *arg, int line, int pos);
@@ -278,9 +279,9 @@ void moveRegister(const std::string &dest, const std::string &src, DataSize dest
 void popToRegister(const std::string &reg);
 void pushRegister(const std::string &reg);
 void pushDebug(int line, int file, int column = -1);
-void handleExitSyscall();
-void handleInputSyscall();
-void handleReturnCleanup();
+void handleExitSyscall(void);
+void handleInputSyscall(void);
+void handleReturnCleanup(void);
 
 // Helper for the if statement condition
 JumpCondition processComparison(Node::Expr *cond);

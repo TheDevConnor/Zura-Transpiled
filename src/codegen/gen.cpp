@@ -221,44 +221,10 @@ void codegen::gen(Node::Stmt *stmt, bool isSaved, std::string output_filename,
             "\n";
     // Attributes or whatever that follow
     file << Stringifier::stringifyInstrs(die_section) << "\n";
-    file << Stringifier::stringifyInstrs(diet_section) << "\n";
-    // Ensure that these TYPES are public
+    dwarf::emitTypes();
+    file << Stringifier::stringifyInstrs(diet_section) << "\n"; // types, both builtin and user-defined
     // If they are INSIDE the compile unit (before the byte 0 above here),
     // then they are not visible to other CU's (other files)
-    if (dwarf::isUsed(dwarf::DIEAbbrev::Type)) {
-      file << ".Lint_debug_type:\n"
-            ".uleb128 " + std::to_string((int)dwarf::DIEAbbrev::Type) +
-            "\n.byte 8\n" // 8 bytes
-            ".byte 5\n" // DW_ATE_signed - basically `signed long long int` in c
-            ".string \"int\"\n";
-      file << ".Llong_debug_type:\n"
-            ".uleb128 " + std::to_string((int)dwarf::DIEAbbrev::Type) +
-            "\n.byte 4\n" // 4 bytes
-            ".byte 7\n" // DW_ATE_unsigned - basically `unsigned long int` in c
-            ".string \"long\"\n";
-      file << ".Lbool_debug_type:\n"
-            ".uleb128 " + std::to_string((int)dwarf::DIEAbbrev::Type) +
-            "\n.byte 1\n" // 1 byte
-            ".byte 0x02\n" // DW_ATE_boolean - basically `bool` in c
-            ".string \"bool\"\n";
-    file << ".Lfloat_debug_type:\n"
-            ".uleb128 " + std::to_string((int)dwarf::DIEAbbrev::Type) +
-            "\n.byte 4" // 4 bytes
-            "\n.byte 4" // DW_ATE_float - basically `float` in c, or a "single precision, scalar" float in 🤓 CPU terms
-            "\n.string \"float\"\n";
-    // Str type is a pointer type
-    // Might as well just let it in.
-    dwarf::useAbbrev(dwarf::DIEAbbrev::PointerType);
-    file << ".Lstr_debug_type:\n"
-            ".uleb128 " + std::to_string((int)dwarf::DIEAbbrev::PointerType) +
-            "\n.byte 8\n" // 8 bytes (pointers are 8 bytes in x64)
-            ".long .Lchar_debug_type\n"; // char*
-    file << ".Lchar_debug_type:\n"
-            ".uleb128 " + std::to_string((int)dwarf::DIEAbbrev::Type) +
-            "\n.byte 1\n" // 1 byte
-            ".byte 6\n" // DW_ATE_signed
-            ".string \"char\"\n";
-    }
     file << ".byte 0\n"; // End of compile unit's children -- THIS ACTUALLY NEEDS TO GO HERE!
     file << ".Ldebug_end:\n";
     file << ".section .debug_abbrev,\"\",@progbits\n";

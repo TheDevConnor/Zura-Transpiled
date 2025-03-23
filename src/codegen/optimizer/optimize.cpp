@@ -1,25 +1,30 @@
 #include "optimize.hpp"
+#include "../gen.hpp"
 void Optimizer::optimizePair(std::vector<Instr> *output, Instr &prev, Instr &curr) {
-    if (!prev.optimize || !curr.optimize) {
-        appendAndResetPrev(output, curr, prev);
-        return;
-    }
-    
-    if (curr.type == InstrType::Comment) {
-      output->push_back(curr);
-      return; // We don't need to simplify this, or even calculate it's "prev".
-    }
+  if (!prev.optimize || !curr.optimize) {
+    appendAndResetPrev(output, curr, prev);
+    return;
+  }
+  // do not show comments if in release mode (they are not necessary)
+  if (curr.type == InstrType::Comment && !codegen::debug) {
+    return;
+  }
 
-    if (curr.type == InstrType::Mov) {
-        processMov(output, prev, curr);
-    } else if (curr.type == InstrType::Linker && prev.type == InstrType::Linker) {
-        // simplifyDebug(output, prev, curr);
-        output->push_back(curr);
-    } else if (prev.type == opposites.at(curr.type)) {
-        processOppositePair(output, prev, curr);
-    } else {
-        output->push_back(curr);
-    }
+  if (!prev.optimize || !curr.optimize) {
+      appendAndResetPrev(output, curr, prev);
+      return;
+  }
+
+  if (curr.type == InstrType::Mov) {
+      processMov(output, prev, curr);
+  } else if (curr.type == InstrType::Linker && prev.type == InstrType::Linker) {
+      // simplifyDebug(output, prev, curr);
+      output->push_back(curr);
+  } else if (prev.type == opposites.at(curr.type)) {
+      processOppositePair(output, prev, curr);
+  } else {
+      output->push_back(curr);
+  }
 }
 
 // Will run more instruction-specific optimizations depending on the type of the pair.

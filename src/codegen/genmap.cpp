@@ -54,6 +54,6 @@ void codegen::initMaps() {
   typeSizes = {
       {"int", 8},  {"float", 4}, {"enum", 8}, {"str", 8},
       {"char", 1}, {"bool", 1},  {"void", 0}, {"unsigned int", 8},
-      {"signed int", 8}, {"double", 8}, {"long double", 10}
+      {"int!", 8}, {"double", 8}, {"long double", 10}
   };
 }
