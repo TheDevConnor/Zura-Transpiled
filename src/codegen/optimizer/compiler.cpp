@@ -51,7 +51,7 @@ Node::Expr *CompileOptimizer::optimizeExpr(Node::Expr *expr) {
 Node::Expr *CompileOptimizer::optimizeUnary(UnaryExpr *expr) {
   Node::Expr *operand = CompileOptimizer::optimizeExpr(expr->expr);
   if (operand->kind == ND_INT) {
-    int value = static_cast<IntExpr *>(operand)->value;
+    size_t value = static_cast<IntExpr *>(operand)->value;
     if (expr->op == "~") { // binary not each bit
       return new IntExpr(expr->line, expr->pos, ~value, expr->file_id);
     }
@@ -98,8 +98,8 @@ Node::Expr *CompileOptimizer::optimizeBinary(BinaryExpr *expr) {
   Node::Expr *rhs = CompileOptimizer::optimizeExpr(expr->rhs);
   std::string op = expr->op;
   if (lhs->kind == ND_INT && rhs->kind == ND_INT) {
-    int lhsVal = static_cast<IntExpr *>(lhs)->value;
-    int rhsVal = static_cast<IntExpr *>(rhs)->value;
+    long long lhsVal = static_cast<IntExpr *>(lhs)->value;
+    long long rhsVal = static_cast<IntExpr *>(rhs)->value;
     // Check if the operation is a comparison (||, &&, ==, !=, <, >, <=, >=)
     if (boolOperations.contains(op)) {
       // Evaluate the expression
@@ -130,8 +130,8 @@ Node::Expr *CompileOptimizer::optimizeBinary(BinaryExpr *expr) {
   }
   if (lhs->kind == ND_INT && op == "/") {
     IntExpr *rhsExpr = static_cast<IntExpr *>(rhs);
-    int rhsVal = rhsExpr->value;
-    double shiftAmount = log2(rhsVal); // If this number is a whole number, it is a true power of 2
+    long long rhsVal = rhsExpr->value;
+    double shiftAmount = log2((double)rhsVal); // If this number is a whole number, it is a true power of 2
     
     // Right shifting still works even with a negative number; so I removed that check!
     if (shiftAmount == floor(shiftAmount)) {
@@ -151,14 +151,14 @@ Node::Expr *CompileOptimizer::optimizeBinary(BinaryExpr *expr) {
     // check if either side was a useless calculation (0 * x, 1 * x)
     if (lhs->kind == ND_INT) {
       IntExpr *lhsExpr = static_cast<IntExpr *>(lhs);
-      int lhsVal = lhsExpr->value;
+      long long lhsVal = lhsExpr->value;
       if (lhsVal == 0) {
         return new IntExpr(expr->line, expr->pos, 0, expr->file_id);
       }
       if (lhsVal == 1) {
         return rhs;
       }
-      double shiftAmount = log2(lhsVal); // If this number is a whole number, it is a true power of 2
+      double shiftAmount = log2((double)lhsVal); // If this number is a whole number, it is a true power of 2
       if (shiftAmount == floor(shiftAmount)) {
         BinaryExpr *temp = new BinaryExpr(expr->line, expr->pos, rhs, new IntExpr(lhsExpr->line, lhsExpr->pos, (long long)shiftAmount, lhsExpr->file_id), "<<>>>>", expr->file_id);
         temp->asmType = rhs->asmType;
@@ -167,14 +167,14 @@ Node::Expr *CompileOptimizer::optimizeBinary(BinaryExpr *expr) {
     }
     if (rhs->kind == ND_INT) {
       IntExpr *rhsExpr = static_cast<IntExpr *>(rhs);
-      int rhsVal = rhsExpr->value;
+      long long rhsVal = rhsExpr->value;
       if (rhsVal == 0) {
         return new IntExpr(expr->line, expr->pos, 0, expr->file_id);
       }
       if (rhsVal == 1) {
         return lhs;
       }
-      double shiftAmount = log2(rhsVal); // If this number is a whole number, it is a true power of 2
+      double shiftAmount = log2((double)rhsVal); // If this number is a whole number, it is a true power of 2
       if (shiftAmount == floor(shiftAmount)) {
         BinaryExpr *temp = new BinaryExpr(expr->line, expr->pos, rhs, new IntExpr(rhsExpr->line, rhsExpr->pos, (long long)shiftAmount, rhsExpr->file_id), "<<>>>>", expr->file_id);
         temp->asmType = rhs->asmType;
@@ -185,7 +185,7 @@ Node::Expr *CompileOptimizer::optimizeBinary(BinaryExpr *expr) {
   if (op == "/") {
     // check if the operation was useless (x / 1 or error x / 0)
     if (rhs->kind == ND_INT) {
-      int rhsVal = static_cast<IntExpr *>(rhs)->value;
+      long long rhsVal = static_cast<IntExpr *>(rhs)->value;
       if (rhsVal == 1) {
         return lhs;
       }
@@ -200,7 +200,7 @@ Node::Expr *CompileOptimizer::optimizeBinary(BinaryExpr *expr) {
   if (op == "+" || op == "-") {
     // check if useless (one of the sides is 0)
     if (lhs->kind == ND_INT) {
-      int lhsVal = static_cast<IntExpr *>(lhs)->value;
+      long long lhsVal = static_cast<IntExpr *>(lhs)->value;
       if (lhsVal == 0) return rhs;
     }
     // check if it is the same operation on both sides

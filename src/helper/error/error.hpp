@@ -9,7 +9,7 @@
 
 namespace ErrorClass {
 inline static std::vector<std::string> errors = {};
-inline int ErrorPos = 0;
+inline size_t ErrorPos = 0;
 
 std::string formatLineWithTokens(int line, int pos,
                                  const std::vector<Lexer::Token> &tokens,

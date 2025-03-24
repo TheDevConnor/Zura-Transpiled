@@ -144,7 +144,7 @@ struct StructTable : std::unordered_map<std::string, std::map<std::string, std::
     }
 };
 
-struct EnumTable : std::unordered_map<std::string, std::unordered_map<std::string, int>> {
+struct EnumTable : std::unordered_map<std::string, std::unordered_map<std::string, long long>> {
     int line, pos;
     bool contains(const std::string &name) {
         return find(name) != end();
@@ -159,7 +159,7 @@ struct EnumTable : std::unordered_map<std::string, std::unordered_map<std::strin
         TypeChecker::handleError(line, pos, msg, "", "Type Error");
     }
 
-    void addMember(const std::string &enumName, const std::string &memberName, int position) {
+    void addMember(const std::string &enumName, const std::string &memberName, long long position) {
         if (contains(enumName)) {
             at(enumName)[memberName] = position;
             return;
@@ -168,7 +168,7 @@ struct EnumTable : std::unordered_map<std::string, std::unordered_map<std::strin
         TypeChecker::handleError(line, pos, msg, "", "Type Error");
     }
 
-    int lookup(const std::string &enumName, const std::string &memberName) {
+    size_t lookup(const std::string &enumName, const std::string &memberName) {
         if (contains(enumName)) {
             auto it = at(enumName).find(memberName);
             if (it != at(enumName).end()) {

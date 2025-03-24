@@ -174,10 +174,10 @@ void codegen::handleReturnCleanup() {
   push(Instr{.var = Ret{}, .type = InstrType::Ret}, Section::Main);
 }
 
-int codegen::convertFloatToInt(std::string input) {
+size_t codegen::convertFloatToInt(std::string input) {
   union {
-    double f; // 32-bit float
-    signed long long int i;   // 32-bit int
+    double f; // 64-bit float
+    size_t i;   // 64-bit int
   } u;
   u.f = std::stod(input);
   return u.i;
@@ -328,7 +328,7 @@ void codegen::handleLiteralDisplay(Node::Expr *fd, Node::Expr *arg) {
   push(Instr{.var=LeaInstr{.size=DataSize::Qword, .dest="%rsi",.src=strLabel+"(%rip)"},.type=InstrType::Lea},Section::Main);
   // Ensure that each time we see a backslash, we subtract 1 from the count
   // Ex: \tHello, world!\n would be reduced 2 times.
-  int count = stringValue.size();
+  size_t count = stringValue.size();
   for (size_t i = 0; i < stringValue.size(); i++) {
     char c = stringValue.at(i);
     if (c == '\\') count--;
@@ -412,17 +412,17 @@ void codegen::handleFloatDisplay(Node::Expr *fd, Node::Expr *arg, int line, int 
 }
 
 // Add 1
-int codegen::getFileID(const std::string &file) {
-  for (size_t i = 0; i < fileIDs.size(); i++) {
-    if (fileIDs[i] == file) {
-      return i;
-    }
+size_t codegen::getFileID(const std::string &file) {
+  // check if fileIDs has the file using an iterator
+  auto it = std::find(fileIDs.begin(), fileIDs.end(), file); // Im assuming the standard library function would be efficient here
+  if (it != fileIDs.end()) {
+    return std::distance(fileIDs.begin(), it);
   }
   fileIDs.push_back(file);
   return fileIDs.size() - 1;
 }
 
-void codegen::pushDebug(int line, int file, int column) {
+void codegen::pushDebug(size_t line, size_t file, long column) {
   // If not in debug mode, this funciton will pretty much be a massive nop.
   if (!debug) return;
   if (column != -1) {
@@ -537,7 +537,7 @@ std::string codegen::type_to_diename(Node::Type *type) {
 // Multiple: 8
 // 16 -> 16
 // 17 -> 24
-int codegen::round(int num, int multiple) {
+size_t codegen::round(size_t num, size_t multiple) {
   return (num + multiple - 1) / multiple * multiple;
 };
 

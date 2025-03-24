@@ -99,9 +99,8 @@ Node::Stmt *Parser::varStmt(PStruct *psr, std::string name) {
   Node::Expr *assignedValue = parseExpr(psr, BindingPower::defaultValue);
   psr->expect(psr, TokenKind::SEMICOLON,
               "Expected a SEMICOLON at the end of a var stmt");
-  int currFileID = codegen::getFileID(psr->current_file);
   return new VarStmt(line, column, isConst, name, varType,
-                     assignedValue, currFileID);
+                     assignedValue, codegen::getFileID(psr->current_file));
 }
 
 Node::Stmt *Parser::printStmt(PStruct *psr, std::string name) {

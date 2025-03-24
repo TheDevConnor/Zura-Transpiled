@@ -39,9 +39,9 @@ nlohmann::ordered_json lsp::methods::hover(nlohmann::json& request) {
     std::string funcName = text.word.substr(1);
     if (atFunctions.find(funcName) == atFunctions.end()) {
       std::string closestMatch = "";
-      int closestDst = 1000;
+      size_t closestDst = 1000;
       for (auto& [key, value] : atFunctions) {
-        int dst = levenshtein_distance(funcName, key);
+        size_t dst = levenshtein_distance(funcName, key);
         if (dst < closestDst) {
           closestDst = dst;
           closestMatch = key;

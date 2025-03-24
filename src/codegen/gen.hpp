@@ -31,7 +31,7 @@ T lookup(const std::unordered_map<U, T> &map, U key) {
 }
 
 // Map for type sizes
-inline std::unordered_map<std::string, int> typeSizes;
+inline std::unordered_map<std::string, short int> typeSizes;
 
 void initMaps(void);
 
@@ -96,18 +96,18 @@ void openExpr(Node::Expr *expr);
 void assignStructMember(Node::Expr *expr);
 void assignArray(Node::Expr *expr);
 void assignDereference(Node::Expr *expr);
-void dereferenceStructPtr(Node::Expr *expr, std::string structName, std::string offsetRegister, int startOffset);
-void declareStructVariable(Node::Expr *expr, std::string structName, std::string offsetRegister, int startOffset);
-void declareArrayVariable(Node::Expr *expr, short int arrayLength, std::string varName);
+void dereferenceStructPtr(Node::Expr *expr, std::string structName, std::string offsetRegister, size_t startOffset);
+void declareStructVariable(Node::Expr *expr, std::string structName, std::string offsetRegister, size_t startOffset);
+void declareArrayVariable(Node::Expr *expr, long long arrayLength, std::string varName);
 
 size_t sizeOfLEB(int64_t value);
-int convertFloatToInt(std::string input); // Float input. Crazy, right?
-int round(int num, int multiple); // Round a number up to the nearest multiple
+size_t convertFloatToInt(std::string input); // Float input. Crazy, right?
+size_t round(size_t num, size_t multiple=8); // Round a number up to the nearest multiple
 
 // <name, <type, offset>>
 using StructMember = std::pair<std::string, std::pair<Node::Type *, unsigned short int>>;
 // <size, <StructMember>>
-using Struct = std::pair<size_t, std::vector<StructMember>>;
+using Struct = std::pair<unsigned short, std::vector<StructMember>>;
 inline std::unordered_map<std::string, Struct> structByteSizes = {}; // Name of a struct and its size in bytes
 
 signed short int getByteSizeOfType(Node::Type *type); // Return the size of a type in bytes, ie pointers are a size_t (os specific macros baby!)
@@ -254,7 +254,7 @@ inline size_t funcBlockStart = -1; // Set to "stackSize" on FuncDecl blocks, wil
 void push(Instr instr, Section section = Section::Main);
 void pushLinker(std::string val, Section section);
 
-int getFileID(const std::string &file);
+size_t getFileID(const std::string &file);
 void pushCompAsExpr(void); // assuming compexpr's will already do the "cmp" and "jmp", we will push 0x0 or 0x1 depending on the result
 
 inline const char* file_name;
@@ -278,7 +278,7 @@ void handlePrimitiveDisplay(Node::Expr *fd, Node::Expr *arg);
 void moveRegister(const std::string &dest, const std::string &src, DataSize dest_size, DataSize src_size);
 void popToRegister(const std::string &reg);
 void pushRegister(const std::string &reg);
-void pushDebug(int line, int file, int column = -1);
+void pushDebug(size_t line, size_t file, long column = -1);
 void handleExitSyscall(void);
 void handleInputSyscall(void);
 void handleReturnCleanup(void);

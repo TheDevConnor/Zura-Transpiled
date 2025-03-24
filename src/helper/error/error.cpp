@@ -28,7 +28,7 @@ ErrorClass::formatLineWithTokens(int line, int pos,
                                  bool highlightPos = false, bool getLastToken) {
   std::string formattedLine = lineNumber(line) + std::to_string(line) + " | ";
   const Lexer::Token *lastToken = nullptr;
-  int errorPos = formattedLine.size();
+  size_t errorPos = formattedLine.size();
   ErrorPos = 0;
 
   for (const Lexer::Token &tk : tokens) {

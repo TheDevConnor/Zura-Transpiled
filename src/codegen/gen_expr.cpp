@@ -282,7 +282,7 @@ void codegen::binary(Node::Expr *expr) {
       // Shift operations require either the CL register or an immediate
       // Check if there is an immediate
       if (e->rhs->kind == ND_INT) {
-        int shiftAmount = static_cast<IntExpr *>(e->rhs)->value;
+        long long shiftAmount = static_cast<IntExpr *>(e->rhs)->value;
         if (shiftAmount == 1) {
           // This requires NO number 1
           pushLinker(op + " " + lhsReg + "\n\t", Section::Main);
@@ -434,7 +434,7 @@ void codegen::call(Node::Expr *expr) {
                 << std::endl;
       exit(-1);
     }
-    int offsetAmount = round(variableCount - 8, 8);
+    size_t offsetAmount = round(variableCount - 8, 8);
     if (offsetAmount)
       push(Instr{.var = SubInstr{.lhs = "%rsp",
                                  .rhs = "$" + std::to_string(offsetAmount),
@@ -567,7 +567,7 @@ void codegen::call(Node::Expr *expr) {
     popToRegister(intArgOrder[0]);
     int intArgCount = 1; // 1st is preserved for struct ptr above
     int floatArgCount = 0;
-    int offsetAmount = round(variableCount - 8, 8);
+    size_t offsetAmount = round(variableCount - 8, 8);
     if (offsetAmount)
       push(Instr{.var = SubInstr{.lhs = "%rsp",
                                  .rhs = "$" + std::to_string(offsetAmount),
@@ -721,7 +721,7 @@ void codegen::arrayElem(Node::Expr *expr) {
       IdentExpr *ident = static_cast<IdentExpr *>(e->lhs);
       Node::Type *underlying = static_cast<ArrayType *>(e->asmType)->underlying;
       std::string whereBytes = variableTable[ident->name];
-      int offset = std::stoi(whereBytes.substr(
+      long long offset = std::stoll(whereBytes.substr(
           0, whereBytes.find("("))); // this is the base of the array - the
                                      // first byte of the first element
       offset -= (index->value * getByteSizeOfType(underlying));
@@ -738,8 +738,8 @@ void codegen::arrayElem(Node::Expr *expr) {
                                  .src = whatWasPushed},
                  .type = InstrType::Lea},
            Section::Main);
-      int byteSize = getByteSizeOfType(e->lhs->asmType);
-      int offset = -index->value * byteSize;
+      short byteSize = getByteSizeOfType(e->lhs->asmType);
+      size_t offset = -index->value * byteSize;
       if (offset == 0)
         pushRegister("(%rcx)");
       else
@@ -878,7 +878,7 @@ void codegen::memberExpr(Node::Expr *expr) {
       // It was just a push. This means that it was a pointer and we have to actually just do the work here.
       whatWasPushed = std::get<PushInstr>(text_section.at(text_section.size() - 1)
                                              .var).what;
-      short offsetFromBase = 0;
+      int offsetFromBase = 0;
       for (size_t i = 0; i < fields.size(); i++) {
         if (fields[i].first == static_cast<IdentExpr *>(e->rhs)->name) {
           offsetFromBase = -(fields[i].second.second);
@@ -948,10 +948,10 @@ void codegen::memberExpr(Node::Expr *expr) {
     short offset = 0;
     for (size_t i = 0; i < structByteSizes[structName].second.size(); i++) {
       if (structByteSizes[structName].second.at(i).first == fieldName) {
-        offset = -structByteSizes[structName]
+        offset = -(signed short)(structByteSizes[structName]
                       .second.at(i)
                       .second
-                      .second; // This is the offset, not the size of the type!
+                      .second); // This is the offset, not the size of the type!
         break;
       }
     }
@@ -1401,13 +1401,13 @@ void codegen::assignArray(Node::Expr *expr) {
   if (assign->assignee->kind == ND_INDEX) {
     IndexExpr *e = static_cast<IndexExpr *>(assign->assignee);
     IntExpr *index = static_cast<IntExpr *>(e->rhs);
-    int idx = index->value;
+    signed long long idx = index->value;
     // lhs is likely an identifier to an array
     // it doesn't matter for this example, though
     visitExpr(e->lhs);
     popToRegister("%rcx"); // rcx now has the base of the array
-    int size = getByteSizeOfType(e->lhs->asmType);
-    int offset = idx * size;
+    signed short int size = getByteSizeOfType(e->lhs->asmType);
+    size_t offset = idx * size;
     visitExpr(e->rhs);
     popToRegister(std::to_string(offset) + "(%rcx)");
     // Push the value again

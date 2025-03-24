@@ -246,7 +246,7 @@ void Optimizer::processLeaMovPair(std::vector<Instr> *output, Instr &prev, Instr
 // Ok look, I fed the previous code into chatgpt until it gave me something good. Don't judge me!
 void Optimizer::optimizeSpacedPairs(std::vector<Instr> &firstPass) {
     Instr prev = {.var = {}, .type = InstrType::NONE};
-    int prevIndex = 0;
+    size_t prevIndex = 0;
 
     for (size_t i = 0; i < firstPass.size(); ++i) {
         Instr &instr = firstPass[i];

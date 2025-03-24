@@ -216,7 +216,7 @@ void codegen::funcDecl(Node::Stmt *stmt) {
 
   // Function args
   // Reset the variableCount first, though
-  int preVC = variableCount;
+  size_t preVC = variableCount;
   variableCount = 8;
   int intArgCount = 0;
   int floatArgCount = 0;
@@ -303,7 +303,7 @@ void codegen::varDecl(Node::Stmt *stmt) {
   // push another .loc
   pushDebug(s->line, stmt->file_id, s->pos);
 
-  int whereBytes = -variableCount;
+  size_t whereBytes = -variableCount;
   std::string where = std::to_string(whereBytes) + "(%rbp)";
   if (s->expr != nullptr) {
     // The first clause: If it's a literal, straight up, struct declaration.
@@ -375,7 +375,7 @@ void codegen::varDecl(Node::Stmt *stmt) {
   dwarf::useType(s->type);
   dwarf::useAbbrev(dwarf::DIEAbbrev::Variable);
   dwarf::useAbbrev(dwarf::DIEAbbrev::Type);
-  short int fbreg_loc = whereBytes - 16;
+  size_t fbreg_loc = whereBytes - 16;
   // if struct, we must change this fbreg loc because of stinky reasons
   if (s->type->kind == ND_SYMBOL_TYPE &&
       structByteSizes.find(getUnderlying(s->type)) != structByteSizes.end()) {
@@ -949,7 +949,7 @@ void codegen::matchStmt(Node::Stmt *stmt) {
 };
 
 void codegen::dereferenceStructPtr(Node::Expr *expr, std::string structName,
-                                    std::string offsetRegister, int startOffset) {
+                                    std::string offsetRegister, size_t startOffset) {
   // have DerefStruct: StructName = Struct&;
   // see how large the struct is
   DereferenceExpr *deref = static_cast<DereferenceExpr *>(expr);
@@ -1015,7 +1015,7 @@ void codegen::dereferenceStructPtr(Node::Expr *expr, std::string structName,
 
 // Structname passed by the varStmt's "type" field
 void codegen::declareStructVariable(Node::Expr *expr, std::string structName,
-                                    std::string offsetRegister, int startOffset) {
+                                    std::string offsetRegister, size_t startOffset) {
   if (expr->kind == ND_DEREFERENCE) {
     dereferenceStructPtr(expr, structName, offsetRegister, startOffset);
     return; // We do not want to continue!
@@ -1102,23 +1102,23 @@ void codegen::declareStructVariable(Node::Expr *expr, std::string structName,
   }
 }
 
-void codegen::declareArrayVariable(Node::Expr *expr, short int arrayLength,
+void codegen::declareArrayVariable(Node::Expr *expr, long long arrayLength,
                                    std::string varName) {
   if (expr->kind == ND_ARRAY_AUTO_FILL) {
     // This is an implicit shorthand version of setting an array to [0, 0, 0, 0, ....]
     ArrayAutoFill *s = static_cast<ArrayAutoFill *>(expr);
-    int totalSize = arrayLength * getByteSizeOfType(s->fillType);
+    size_t totalSize = arrayLength * getByteSizeOfType(s->fillType);
     if (totalSize <= 256) {
       // Small enough for manual labor hehe
       // Ensure that filling happens from the top
-      int maxQwords = totalSize / 8;
+      size_t maxQwords = totalSize / 8;
       // find remainder bytes later if any
-      for (int i = 0; i < maxQwords; i++) {
+      for (size_t i = 0; i < maxQwords; i++) {
         push(Instr{.var=MovInstr{.dest=std::to_string(-(variableCount + totalSize - (i * 8))) + "(%rbp)", .src="$0", .destSize=DataSize::Qword, .srcSize=DataSize::Qword}, .type=InstrType::Mov}, Section::Main);
       }
-      if (int remainderBytes = totalSize % 8) {
+      if (size_t remainderBytes = totalSize % 8) {
         // Fill the remainder bytes
-        for (int i = 0; i < remainderBytes; i++) {
+        for (size_t i = 0; i < remainderBytes; i++) {
           push(Instr{.var=MovInstr{.dest=std::to_string(-(variableCount + totalSize - remainderBytes + i)) + "(%rbp)", .src="$0", .destSize=DataSize::Byte, .srcSize=DataSize::Byte}, .type=InstrType::Mov}, Section::Main);
         }
       }
@@ -1127,7 +1127,7 @@ void codegen::declareArrayVariable(Node::Expr *expr, short int arrayLength,
     }
     // C allocates 16 bytes near the top for some reason, let's rip them off and do the same
     // Assuming the autofill is small enough, we could manually fill them with 0's mov by mov
-    int preVarCount = variableCount;
+    size_t preVarCount = variableCount;
     variableCount = round(variableCount, 16);
     push(Instr{.var=MovInstr{.dest=std::to_string(-(variableCount + totalSize)) + "(%rbp)", .src="$0", .destSize=DataSize::Qword, .srcSize=DataSize::Qword}, .type=InstrType::Mov}, Section::Main);
     push(Instr{.var=MovInstr{.dest=std::to_string(-(variableCount + totalSize - 8)) + "(%rbp)", .src="$0", .destSize=DataSize::Qword, .srcSize=DataSize::Qword}, .type=InstrType::Mov}, Section::Main);
@@ -1135,7 +1135,7 @@ void codegen::declareArrayVariable(Node::Expr *expr, short int arrayLength,
     push(Instr{.var = LeaInstr{.size = DataSize::Qword, .dest = "%rdx", .src = "-" + std::to_string(variableCount + arrayLength - 16) + "(%rbp)"}, .type = InstrType::Lea}, Section::Main);
     push(Instr{.var = XorInstr{.lhs = "%rax", .rhs = "%rax"}, .type = InstrType::Xor}, Section::Main);
     moveRegister("%rdi", "%rdx", DataSize::Qword, DataSize::Qword);
-    int newSize = totalSize - 16;
+    size_t newSize = totalSize - 16;
     if (newSize % 8 == 0) {
       moveRegister("%rcx", "$" + std::to_string(newSize / 8), DataSize::Qword,
                   DataSize::Qword);
@@ -1164,15 +1164,15 @@ void codegen::declareArrayVariable(Node::Expr *expr, short int arrayLength,
   dwarf::useType(s->type);
   int underlyingByteSize =
       getByteSizeOfType(at->underlying);
-  int arrayBase = variableCount;
+  size_t arrayBase = variableCount;
   // Evaluate the orderedFields and store them in the struct!!!!
-  for (int i = s->elements.size(); i > 0; i--) {
+  for (size_t i = s->elements.size(); i > 0; i--) {
     Node::Expr *element = s->elements[s->elements.size() - i];
     // Evaluate the expression
     if (element->kind == ND_STRUCT) {
       // Structs cannot be generated in the expr.
       // We must assign each value to its place in the array.
-      int startingPoint = arrayBase + ((i-1) * underlyingByteSize);
+      size_t startingPoint = arrayBase + ((i-1) * underlyingByteSize);
       declareStructVariable(element, getUnderlying(at), "%rbp", startingPoint);
       continue;
     }
@@ -1184,7 +1184,7 @@ void codegen::declareArrayVariable(Node::Expr *expr, short int arrayLength,
 
   // NOTE: The value of arrays, when referencing their variable name, is a pointer to element #1.
   // NOTE: So let's do the same calculation as earlier to find that very 1st byte.
-  int firstByteOffset = -(arrayBase + ((s->elements.size()) * underlyingByteSize));
+  size_t firstByteOffset = -(arrayBase + ((s->elements.size()) * underlyingByteSize));
   variableTable.insert({varName, std::to_string(firstByteOffset) + "(%rbp)"});
 }
 

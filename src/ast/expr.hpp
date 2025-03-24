@@ -13,7 +13,7 @@ public:
   long long value;
   bool isUnsigned = true; // this HAS to be true, because the only time an intExpr would be negative would be unaryexpr's -
 
-  IntExpr(int line, int pos, long long value, int file) : line(line), pos(pos), value(value) {
+  IntExpr(int line, int pos, long long value, size_t file) : line(line), pos(pos), value(value) {
     kind =  NodeKind::ND_INT;
     file_id = file;
     // make a new type of "int"
@@ -34,7 +34,7 @@ public:
                      // in the stof function. "Long double" literals exist, and we cannot risk
                      // the loss of precision (otherwise, why use a long double at all?)
 
-  FloatExpr(int line, int pos, std::string value, int file)
+  FloatExpr(int line, int pos, std::string value, size_t file)
       : line(line), pos(pos), value(value) {
     file_id = file;
     kind = NodeKind::ND_FLOAT;
@@ -62,7 +62,7 @@ public:
   // we don't know that.
 
   ExternalCall(int line, int pos, std::string name, std::vector<Node::Expr *> args, 
-                int file)
+                size_t file)
       : line(line), pos(pos), name(name),  args(args) {
     kind = NodeKind::ND_EXTERNAL_CALL;
     file_id = file;
@@ -89,7 +89,7 @@ public:
   std::string name;
   Node::Type *type;
 
-  IdentExpr(int line, int pos, std::string name, Node::Type *type, int file)
+  IdentExpr(int line, int pos, std::string name, Node::Type *type, size_t file)
       : line(line), pos(pos), name(name), type(type) {
     kind = NodeKind::ND_IDENT;
     file_id = file;
@@ -113,7 +113,7 @@ public:
   int line, pos;
   std::string value;
 
-  StringExpr(int line, int pos, std::string value, int file)
+  StringExpr(int line, int pos, std::string value, size_t file)
       : line(line), pos(pos), value(value) {
     file_id = file;
     kind = NodeKind::ND_STRING;
@@ -131,7 +131,7 @@ public:
   int line, pos;
   char value;
 
-  CharExpr(int line, int pos, char value, int file)
+  CharExpr(int line, int pos, char value, size_t file)
       : line(line), pos(pos), value(value) {
     file_id = file;
     kind = NodeKind::ND_CHAR;
@@ -150,7 +150,7 @@ public:
   Node::Expr *castee;
   Node::Type *castee_type;
 
-  CastExpr(int line, int pos, Node::Expr *castee, Node::Type *castee_type, int file)
+  CastExpr(int line, int pos, Node::Expr *castee, Node::Type *castee_type, size_t file)
       : line(line), pos(pos), castee(castee), castee_type(castee_type) {
     file_id = file;
     kind = NodeKind::ND_CAST;
@@ -180,7 +180,7 @@ public:
   std::string op;
 
   BinaryExpr(int line, int pos, Node::Expr *lhs, Node::Expr *rhs,
-             std::string op, int file)
+             std::string op, size_t file)
       : line(line), pos(pos), lhs(lhs), rhs(rhs), op(op) {
     kind = NodeKind::ND_BINARY;
     file_id = file;
@@ -205,7 +205,7 @@ public:
   Node::Expr *expr;
   std::string op;
 
-  UnaryExpr(int line, int pos, Node::Expr *expr, std::string op, int file)
+  UnaryExpr(int line, int pos, Node::Expr *expr, std::string op, size_t file)
       : line(line), pos(pos), expr(expr), op(op) {
     file_id = file;
     kind = NodeKind::ND_UNARY;
@@ -232,7 +232,7 @@ public:
   Node::Expr *expr;
   std::string op;
 
-  PrefixExpr(int line, int pos, Node::Expr *expr, std::string op, int file)
+  PrefixExpr(int line, int pos, Node::Expr *expr, std::string op, size_t file)
       : line(line), pos(pos), expr(expr), op(op) {
     file_id = file;
     kind = NodeKind::ND_PREFIX;
@@ -255,7 +255,7 @@ public:
   Node::Expr *expr;
   std::string op;
 
-  PostfixExpr(int line, int pos, Node::Expr *expr, std::string op, int file)
+  PostfixExpr(int line, int pos, Node::Expr *expr, std::string op, size_t file)
       : line(line), pos(pos), expr(expr), op(op) {
     file_id = file;
     kind = NodeKind::ND_POSTFIX;
@@ -278,7 +278,7 @@ public:
   int line, pos;
   Node::Expr *expr;
 
-  GroupExpr(int line, int pos, Node::Expr *expr, int file)
+  GroupExpr(int line, int pos, Node::Expr *expr, size_t file)
       : line(line), pos(pos), expr(expr) {
     file_id = file;
     kind = NodeKind::ND_GROUP;
@@ -298,7 +298,7 @@ class NullExpr : public Node::Expr {
 public:
   int line, pos;
 
-  NullExpr(int line, int pos, int file) : line(line), pos(pos) {
+  NullExpr(int line, int pos, size_t file) : line(line), pos(pos) {
     file_id = file;
     kind = NodeKind::ND_NULL;
     asmType = new PointerType(new SymbolType("void"));
@@ -317,7 +317,7 @@ public:
   int line, pos;
   Node::Expr *right;
 
-  AddressExpr(int line, int pos, Node::Expr *right, int file)
+  AddressExpr(int line, int pos, Node::Expr *right, size_t file)
       : line(line), pos(pos), right(right) {
     file_id = file;
     kind = NodeKind::ND_ADDRESS;
@@ -337,7 +337,7 @@ public:
   int line, pos;
   Node::Expr *left;
 
-  DereferenceExpr(int line, int pos, Node::Expr *left, int file)
+  DereferenceExpr(int line, int pos, Node::Expr *left, size_t file)
       : line(line), pos(pos), left(left) {
     file_id = file;
     kind = NodeKind::ND_DEREFERENCE;
@@ -359,7 +359,7 @@ public:
   std::vector<Node::Expr *> elements;
 
   ArrayExpr(int line, int pos, Node::Type *type,
-            std::vector<Node::Expr *> elements, int file)
+            std::vector<Node::Expr *> elements, size_t file)
       : line(line), pos(pos), type(type), elements(std::move(elements)) {
     file_id = file;
     kind = NodeKind::ND_ARRAY;
@@ -383,7 +383,7 @@ public:
   Node::Expr *lhs;
   Node::Expr *rhs;
 
-  IndexExpr(int line, int pos, Node::Expr *lhs, Node::Expr *rhs, int file)
+  IndexExpr(int line, int pos, Node::Expr *lhs, Node::Expr *rhs, size_t file)
       : line(line), pos(pos), lhs(lhs), rhs(rhs) {
     file_id = file;
     kind = NodeKind::ND_INDEX;
@@ -408,10 +408,10 @@ public:
 class ArrayAutoFill : public Node::Expr {
 public:
   int line, pos;
-  int fillCount;
+  size_t fillCount;
   Node::Type *fillType;
 
-  ArrayAutoFill(int line, int pos, int file)
+  ArrayAutoFill(int line, int pos, size_t file)
       : line(line), pos(pos) {
     file_id = file;
     kind = NodeKind::ND_ARRAY_AUTO_FILL;
@@ -433,7 +433,7 @@ public:
   Node::Expr *lhs;
   Node::Expr *rhs;
 
-  PopExpr(int line, int pos, Node::Expr *lhs, Node::Expr *rhs, int file)
+  PopExpr(int line, int pos, Node::Expr *lhs, Node::Expr *rhs, size_t file)
       : line(line), pos(pos), lhs(lhs), rhs(rhs) {
     file_id = file;
     kind = NodeKind::ND_POP;
@@ -466,7 +466,7 @@ public:
   Node::Expr *index;
 
   PushExpr(int line, int pos, Node::Expr *lhs, Node::Expr *rhs,
-           Node::Expr *index, int file)
+           Node::Expr *index, size_t file)
       : line(line), pos(pos), lhs(lhs), rhs(rhs), index(index) {
     kind = NodeKind::ND_PUSH;
     asmType = lhs->asmType;
@@ -499,7 +499,7 @@ public:
   std::string op;
   Expr *rhs;
 
-  AssignmentExpr(int line, int pos, Expr *assignee, std::string op, Expr *rhs, int file)
+  AssignmentExpr(int line, int pos, Expr *assignee, std::string op, Expr *rhs, size_t file)
       : line(line), pos(pos), assignee(assignee), op(op), rhs(rhs) {
     file_id = file;
     kind = NodeKind::ND_ASSIGN;
@@ -529,7 +529,7 @@ public:
   std::vector<Node::Expr *> args;
 
   CallExpr(int line, int pos, Node::Expr *callee,
-           std::vector<Node::Expr *> args, int file)
+           std::vector<Node::Expr *> args, size_t file)
       : line(line), pos(pos), callee(callee), args(std::move(args)) {
     file_id = file;
     kind = NodeKind::ND_CALL;
@@ -560,7 +560,7 @@ public:
   Node::Expr *args;
 
   TemplateCallExpr(int line, int pos, Node::Expr *callee, Node::Type *template_type,
-                   Node::Expr *args, int file)
+                   Node::Expr *args, size_t file)
       : line(line), pos(pos), callee(callee), template_type(template_type), args(args) {
     file_id = file;
     kind = NodeKind::ND_TEMPLATE_CALL;
@@ -593,7 +593,7 @@ public:
   Node::Expr *rhs;
 
   TernaryExpr(int line, int pos, Node::Expr *condition, Node::Expr *lhs,
-              Node::Expr *rhs, int file)
+              Node::Expr *rhs, size_t file)
       : line(line), pos(pos), condition(condition), lhs(lhs), rhs(rhs) {
     file_id = file;
     kind = NodeKind::ND_TERNARY;
@@ -622,7 +622,7 @@ public:
   Node::Expr *lhs;
   Node::Expr *rhs;
 
-  MemberExpr(int line, int pos, Node::Expr *lhs, Node::Expr *rhs, int file)
+  MemberExpr(int line, int pos, Node::Expr *lhs, Node::Expr *rhs, size_t file)
       : line(line), pos(pos), lhs(lhs), rhs(rhs) {
     file_id = file;
     kind = NodeKind::ND_MEMBER;
@@ -649,7 +649,7 @@ public:
   Node::Expr *lhs;
   Node::Expr *rhs;
 
-  ResolutionExpr(int line, int pos, Node::Expr *lhs, Node::Expr *rhs, int file)
+  ResolutionExpr(int line, int pos, Node::Expr *lhs, Node::Expr *rhs, size_t file)
       : line(line), pos(pos), lhs(lhs), rhs(rhs) {
     file_id = file;
     kind = NodeKind::ND_RESOLUTION;
@@ -675,7 +675,7 @@ public:
   int line, pos;
   bool value;
 
-  BoolExpr(int line, int pos, bool value, int file) : line(line), pos(pos), value(value) {
+  BoolExpr(int line, int pos, bool value, size_t file) : line(line), pos(pos), value(value) {
     file_id = file;
     kind = NodeKind::ND_BOOL;
     asmType = new SymbolType("bool");
@@ -695,7 +695,7 @@ public:
   int line, pos;
   std::unordered_map<std::string, Node::Expr *> values;
 
-  StructExpr(int line, int pos, std::unordered_map<std::string, Node::Expr *> values, int file)
+  StructExpr(int line, int pos, std::unordered_map<std::string, Node::Expr *> values, size_t file)
       : line(line), pos(pos), values(std::move(values)) {
     file_id = file;
     kind = NodeKind::ND_STRUCT;
@@ -727,7 +727,7 @@ public:
   int line, pos;
   Node::Expr *bytesToAlloc;
 
-  AllocMemoryExpr(int line, int pos, Node::Expr *bytes, int file)
+  AllocMemoryExpr(int line, int pos, Node::Expr *bytes, size_t file)
       : line(line), pos(pos), bytesToAlloc(bytes) {
     file_id = file;
     kind = NodeKind::ND_ALLOC_MEMORY;
@@ -750,7 +750,7 @@ public:
   Node::Expr *whatToFree;
   Node::Expr *bytesToFree;
 
-  FreeMemoryExpr(int line, int pos, Node::Expr *whatToFree, Node::Expr *bytesToFree, int file)
+  FreeMemoryExpr(int line, int pos, Node::Expr *whatToFree, Node::Expr *bytesToFree, size_t file)
       : line(line), pos(pos), whatToFree(whatToFree), bytesToFree(bytesToFree) {
     file_id = file;
     kind = NodeKind::ND_FREE_MEMORY;
@@ -774,7 +774,7 @@ public:
   int line, pos;
   Node::Expr *whatToSizeOf;
 
-  SizeOfExpr(int line, int pos, Node::Expr *whatToSizeOf, int file)
+  SizeOfExpr(int line, int pos, Node::Expr *whatToSizeOf, size_t file)
       : line(line), pos(pos), whatToSizeOf(whatToSizeOf) {
     file_id = file;
     kind = NodeKind::ND_SIZEOF;
@@ -797,7 +797,7 @@ public:
   Node::Expr *src;
   Node::Expr *bytes;
 
-  MemcpyExpr(int line, int pos, Node::Expr *dest, Node::Expr *src, Node::Expr *bytes, int file)
+  MemcpyExpr(int line, int pos, Node::Expr *dest, Node::Expr *src, Node::Expr *bytes, size_t file)
       : line(line), pos(pos), dest(dest), src(src), bytes(bytes) {
     file_id = file;
     kind = NodeKind::ND_MEMCPY_MEMORY;
@@ -831,7 +831,7 @@ public:
   Node::Expr *canWrite;
   Node::Expr *canCreate;
 
-  OpenExpr(int line, int pos, Node::Expr *filename, Node::Expr *canRead, Node::Expr *canWrite, Node::Expr *canCreate, int file)
+  OpenExpr(int line, int pos, Node::Expr *filename, Node::Expr *canRead, Node::Expr *canWrite, Node::Expr *canCreate, size_t file)
       :  line(line), pos(pos),  filename(filename),   canRead(canRead),    canWrite(canWrite),  canCreate(canCreate) {
     file_id = file;
     kind = NodeKind::ND_OPEN;

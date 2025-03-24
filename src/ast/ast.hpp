@@ -92,7 +92,7 @@ public:
   
   struct Expr {
     NodeKind kind;
-    int file_id;
+    size_t file_id;
     Type *asmType;
     virtual void debug(int ident = 0) const = 0;
     virtual ~Expr() = default;
@@ -100,7 +100,7 @@ public:
 
   struct Stmt {
     NodeKind kind;
-    int file_id;
+    size_t file_id;
     virtual void debug(int ident = 0) const = 0;
     virtual ~Stmt() = default;
   };

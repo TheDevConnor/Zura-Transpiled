@@ -16,8 +16,8 @@ using namespace std;
 void Flags::updateProgressBar(double progress) {
     const int barWidth = 50;
     std::cout << "\033[2K\r[";
-    int pos = barWidth * progress;
-    for (int i = 0; i < barWidth; ++i) {
+    size_t pos = (size_t)(barWidth * progress); // truncation is fine here
+    for (size_t i = 0; i < barWidth; ++i) {
         if (i < pos) std::cout << "=";
         else if (i == pos) std::cout << ">";
         else std::cout << " ";

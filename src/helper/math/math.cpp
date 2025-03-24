@@ -1,15 +1,15 @@
 #include "math.hpp"
 
 std::optional<std::string> string_distance(std::vector<std::string> known,
-                                           std::string unknown, int limit = 3) {
+                                           std::string unknown, size_t limit = 3) {
   // Find the smallest levenshtein distance and return
   // the closest match within the limit
   // if there is none within limit, return {}
 
-  int min = limit;
+  size_t min = limit;
   std::string closest = "";
   for (std::string &curr : known) {
-    int dist = levenshtein_distance(curr, unknown);
+    size_t dist = levenshtein_distance(curr, unknown);
     if (dist < min) {
       min = dist;
       closest = curr;
@@ -24,7 +24,7 @@ std::optional<std::string> string_distance(std::vector<std::string> known,
 }
 
 // Thank you AI, i have no idea what this means!
-int levenshtein_distance(std::string s1, std::string s2) {
+size_t levenshtein_distance(std::string s1, std::string s2) {
   // Find the levenshtein distance between two strings
   // This is a dynamic programming algorithm
   // that finds the minimum number of operations
