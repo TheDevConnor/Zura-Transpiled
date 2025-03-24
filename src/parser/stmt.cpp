@@ -106,6 +106,7 @@ Node::Stmt *Parser::varStmt(PStruct *psr, std::string name) {
 Node::Stmt *Parser::printStmt(PStruct *psr, std::string name) {
   int line = psr->tks[psr->pos].line;
   int column = psr->tks[psr->pos].column;
+  (void)name; // mark it as unused
 
   psr->expect(psr, TokenKind::PRINT,
               "Expected a PRINT keyword to start an output stmt");
@@ -139,6 +140,7 @@ Node::Stmt *Parser::printStmt(PStruct *psr, std::string name) {
 Node::Stmt *Parser::printlnStmt(PStruct *psr, std::string name) {
   int line = psr->tks[psr->pos].line;
   int column = psr->tks[psr->pos].column;
+  (void)name; // mark it as unused
 
   psr->expect(psr, TokenKind::PRINTLN,
               "Expected a PRINTLN keyword to start an output stmt");
@@ -237,6 +239,7 @@ Node::Stmt *Parser::funStmt(PStruct *psr, std::string name) {
 Node::Stmt *Parser::returnStmt(PStruct *psr, std::string name) {
   int line = psr->tks[psr->pos].line;
   int column = psr->tks[psr->pos].column;
+  (void)name; // mark it as unused
 
   psr->expect(psr, TokenKind::RETURN,
               "Expected a RETURN keyword to start a return stmt");
@@ -534,6 +537,7 @@ Node::Stmt *Parser::templateStmt(PStruct *psr, std::string name) {
   // template <typealias T>
   int line = psr->tks[psr->pos].line;
   int column = psr->tks[psr->pos].column;
+  (void)name; // mark it as unused
 
   psr->expect(psr, TokenKind::TEMPLATE,
               "Expected a TEMPLATE keyword to start a template stmt");
@@ -563,7 +567,7 @@ Node::Stmt *Parser::templateStmt(PStruct *psr, std::string name) {
 Node::Stmt *Parser::importStmt(PStruct *psr, std::string name) {
   int line = psr->tks[psr->pos].line;
   int column = psr->tks[psr->pos].column;
-
+  (void)name; // mark it as unused
 
   psr->expect(psr, TokenKind::IMPORT,
               "Expected an IMPORT keyword to start an import stmt");
@@ -605,6 +609,7 @@ Node::Stmt *Parser::importStmt(PStruct *psr, std::string name) {
 Node::Stmt *Parser::linkStmt(PStruct *psr, std::string name) {
   int line = psr->tks[psr->pos].line;
   int column = psr->tks[psr->pos].column;
+  (void)name; // mark it as unused
 
   // @link "path";
   psr->expect(psr, TokenKind::LINK,
@@ -621,6 +626,7 @@ Node::Stmt *Parser::linkStmt(PStruct *psr, std::string name) {
 Node::Stmt *Parser::externStmt(PStruct *psr, std::string name) {
   int line = psr->tks[psr->pos].line;
   int column = psr->tks[psr->pos].column;
+  (void)name; // mark it as unused
 
   std::vector<std::string> externs;
 
@@ -659,6 +665,8 @@ Node::Stmt *Parser::externStmt(PStruct *psr, std::string name) {
 Node::Stmt *Parser::breakStmt(PStruct *psr, std::string name) {
   int line = psr->tks[psr->pos].line;
   int column = psr->tks[psr->pos].column;
+  (void)name; // mark it as unused
+
   psr->expect(psr, TokenKind::BREAK,
               "Expected a BREAK keyword to start a break stmt");
   psr->expect(psr, TokenKind::SEMICOLON,
@@ -669,6 +677,8 @@ Node::Stmt *Parser::breakStmt(PStruct *psr, std::string name) {
 Node::Stmt *Parser::continueStmt(PStruct *psr, std::string name) {
   int line = psr->tks[psr->pos].line;
   int column = psr->tks[psr->pos].column;
+  (void)name; // mark it as unused
+
   psr->expect(psr, TokenKind::CONTINUE,
               "Expected a CONTINUE keyword to start a continue stmt");
   psr->expect(psr, TokenKind::SEMICOLON,
@@ -679,7 +689,8 @@ Node::Stmt *Parser::continueStmt(PStruct *psr, std::string name) {
 Node::Stmt *Parser::inputStmt(PStruct *psr, std::string name) {
   int line = psr->tks[psr->pos].line;
   int column = psr->tks[psr->pos].column;
-
+  (void)name; // mark it as unused
+  
   psr->expect(psr, TokenKind::INPUT, "Expected an INPUT keyword to start an input stmt");
   psr->expect(psr, TokenKind::LEFT_PAREN, "Expected a L_PAREN to start an input stmt");
   
@@ -700,6 +711,8 @@ Node::Stmt *Parser::inputStmt(PStruct *psr, std::string name) {
 Node::Stmt *Parser::closeStmt(PStruct *psr, std::string name) {
   int line = psr->tks[psr->pos].line;
   int column = psr->tks[psr->pos].column;
+  (void)name; // mark it as unused
+
   psr->expect(psr, TokenKind::CLOSE, "Expected a CLOSE keyword to start a close stmt");
   psr->expect(psr, TokenKind::LEFT_PAREN, "Expected a L_PAREN to start a close stmt");
   Node::Expr *fd = parseExpr(psr, BindingPower::defaultValue);

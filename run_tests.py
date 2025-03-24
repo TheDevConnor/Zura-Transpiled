@@ -97,6 +97,9 @@ class TestZuraPrograms(unittest.TestCase):
     def test_variable_equal_deref_big_struct(self):
         run_test("const a := struct { x: int!, y: int!, z: int!, }; const main := fn () int! { have b: a = { x: 72, y: 12, z: 42 }; have c: *a = &b; have d: a = c&; return d.y + d.z; };", expected_exit_code=54)
 
+    def test_factorial_function(self):
+        run_test("const factorial := fn (n: int!) int! { have res: int = 1; loop (i=2; i<=n) : (i++) { res = res * i; } return res; }; const main := fn () int! { @outputln(1, factorial(50)); return 0; };", expected_output="15188249005818642432")
+
     def test_useless_malloc(self):
         run_test("const main := fn () int! { have x: *void = @alloc(8); @free(x, 8); return 0; };", expected_exit_code=0)
 

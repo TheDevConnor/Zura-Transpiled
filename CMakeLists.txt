@@ -3,7 +3,8 @@ cmake_minimum_required(VERSION 3.15)
 project(zura LANGUAGES CXX)
 
 set(CMAKE_CXX_STANDARD 20)
-add_compile_options(-Wall -Werror -Wpedantic -Wextra -Wundef -Wwrite-strings -Wredundant-decls -Wdisabled-optimization -Wdouble-promotion -Wmissing-declarations -Wconversion -Wstrict-overflow=2 -fstack-protector-all -Wvla -Wno-unused-parameter)
+add_compile_options(-Wall -Wpedantic -Wextra -Wundef -Wwrite-strings -Wredundant-decls -Wdisabled-optimization 
+                    -Wdouble-promotion -Wmissing-declarations -Wconversion -Wstrict-overflow=2 -fstack-protector-all -Wvla)
 
 # Specify header and source files
 set(ZURA_HEADER_FILES

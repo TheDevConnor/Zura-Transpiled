@@ -203,7 +203,7 @@ void TypeChecker::visitEnum(Node::Stmt *stmt) {
 
   // visit the fields Aka the variables
   for (size_t i = 0; i < enum_stmt->fields.size(); i++) {
-    context->enumTable.addMember(enum_stmt->name, enum_stmt->fields[i], i);
+    context->enumTable.addMember(enum_stmt->name, enum_stmt->fields[i], (long long)i);
     context->declareLocal(enum_stmt->fields[i], static_cast<Node::Type *>(new SymbolType("int")));
   }
 
@@ -268,8 +268,7 @@ void TypeChecker::visitVar(Node::Stmt *stmt) {
     if (array_type->constSize < 1) {
       // If the array was declared but its type was []
       // we assume the constSize is the size of the array expr
-      var_stmt->type =
-          new ArrayType(array_type->underlying, array_expr->elements.size());
+      var_stmt->type = new ArrayType(array_type->underlying, (long long)array_expr->elements.size());
     } else if(var_stmt->expr->kind == NodeKind::ND_ARRAY) { // auto filled arrays will always have 1 element (the one to autofill) so do not error in that case
       // If the array was declared with a size we need to check if the size
       // of the array expr is the same as the size of the array type
@@ -281,8 +280,7 @@ void TypeChecker::visitVar(Node::Stmt *stmt) {
         handleError(var_stmt->line, var_stmt->pos, msg, "", "Type Error");
       }
     }
-    array_expr->type =
-        new ArrayType(array_type->underlying, array_expr->elements.size());
+    array_expr->type = new ArrayType(array_type->underlying, (long long)array_expr->elements.size());
     return_type = share(array_type);
     visitExpr(var_stmt->expr); // Visit the array, and by extension, its elements
     return_type = share(array_type);
@@ -464,18 +462,22 @@ void TypeChecker::visitMatch(Node::Stmt *stmt) {
 }
 
 void TypeChecker::visitLink(Node::Stmt *stmt) {
+  (void)stmt; // Mark it as unused
   // nothing to do here
 }
 
 void TypeChecker::visitExtern(Node::Stmt *stmt) {
+  (void)stmt; // mark it as unused
   // nothing to do here
 }
 
 void TypeChecker::visitBreak(Node::Stmt *stmt) {
+  (void)stmt; // mark it as unused
   // nothing to do here
 }
 
 void TypeChecker::visitContinue(Node::Stmt *stmt) {
+  (void)stmt; // mark it as unused
   // nothing to do here
 }
 

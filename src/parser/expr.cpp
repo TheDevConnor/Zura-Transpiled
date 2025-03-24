@@ -186,6 +186,7 @@ Node::Expr *Parser::memcpyExpr(PStruct *psr) {
 Node::Expr *Parser::_postfix(PStruct *psr, Node::Expr *left, BindingPower bp) {
   int line = psr->tks[psr->pos].line;
   int column = psr->tks[psr->pos].column;
+  (void)bp;
 
   Lexer::Token op = psr->advance(psr);
   return new PostfixExpr(line, column, left, op.value, codegen::getFileID(psr->current_file));
@@ -251,6 +252,7 @@ Node::Expr *Parser::binary(PStruct *psr, Node::Expr *left, BindingPower bp) {
 Node::Expr *Parser::index(PStruct *psr, Node::Expr *left, BindingPower bp) {
   int line = psr->tks[psr->pos].line;
   int column = psr->tks[psr->pos].column;
+  (void)bp; // mark it as unused
 
   psr->expect(psr, TokenKind::LEFT_BRACKET,
               "Expected a L_Bracket to start an index expr!");
@@ -308,17 +310,18 @@ Node::Expr *Parser::index(PStruct *psr, Node::Expr *left, BindingPower bp) {
 Node::Expr *Parser::assign(PStruct *psr, Node::Expr *left, BindingPower bp) {
   int line = psr->tks[psr->pos].line;
   int column = psr->tks[psr->pos].column;
-
+  (void)bp; // mark it as unused
+  
   Lexer::Token op = psr->advance(psr);
   Node::Expr *right = parseExpr(psr, defaultValue);
 
   return new AssignmentExpr(line, column, left, op.value, right, codegen::getFileID(psr->current_file));
 }
 
-Node::Expr *Parser::parse_call(PStruct *psr, Node::Expr *left,
-                               BindingPower bp) {
+Node::Expr *Parser::parse_call(PStruct *psr, Node::Expr *left, BindingPower bp) {
   int line = psr->tks[psr->pos].line;
   int column = psr->tks[psr->pos].column;
+  (void)bp; // mark it as unused
 
   psr->expect(psr, TokenKind::LEFT_PAREN,
               "Expected a L_Paran to start a call expr!");
@@ -341,6 +344,7 @@ Node::Expr *Parser::parse_call(PStruct *psr, Node::Expr *left,
 Node::Expr *Parser::_ternary(PStruct *psr, Node::Expr *left, BindingPower bp) {
   int line = psr->tks[psr->pos].line;
   int column = psr->tks[psr->pos].column;
+  (void)bp; // mark it as unused
 
   psr->expect(psr, TokenKind::QUESTION,
               "Expected a '?' to define the true value of an ternary expr!");
@@ -392,16 +396,17 @@ Node::Expr *Parser::externalCall(PStruct *psr) {
 Node::Expr *Parser::_member(PStruct *psr, Node::Expr *left, BindingPower bp) {
   int line = psr->tks[psr->pos].line;
   int column = psr->tks[psr->pos].column;
+  (void)bp; // mark it as unused
 
   Lexer::Token op = psr->advance(psr); // This should be a DOT
   Node::Expr *right = parseExpr(psr, member);
   return new MemberExpr(line, column, left, right, codegen::getFileID(psr->current_file));
 }
 
-Node::Expr *Parser::resolution(PStruct *psr, Node::Expr *left,
-                               BindingPower bp) {
+Node::Expr *Parser::resolution(PStruct *psr, Node::Expr *left, BindingPower bp) {
   int line = psr->tks[psr->pos].line;
   int column = psr->tks[psr->pos].column;
+  (void)bp; // mark it as unused
 
   Lexer::Token op = psr->advance(psr);
   Node::Expr *right = parseExpr(psr, member);
@@ -461,6 +466,8 @@ Node::Expr *Parser::address(PStruct *psr) {
 Node::Expr *Parser::dereference(PStruct *psr, Node::Expr *left, BindingPower bp) {
   int line = psr->tks[psr->pos].line;
   int column = psr->tks[psr->pos].column;
+  (void)bp; // mark it as unused
+
   Lexer::Token op = psr->advance(psr);
 
   return new DereferenceExpr(line, column, left, codegen::getFileID(psr->current_file));

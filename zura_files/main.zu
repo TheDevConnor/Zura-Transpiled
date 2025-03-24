@@ -1,4 +1,11 @@
-const main := fn () int! {
-  have x: int! = 1;
-  return x + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1;
+const a := struct { 
+  x: int!, 
+  y: int!, 
+  z: int!, 
+}; 
+
+const main := fn () int! { 
+  have b: a = { x: 72, y: 12, z: 42 }; 
+  have c: *a = &b; 
+  return c.y + c.z; 
 };

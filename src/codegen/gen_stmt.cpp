@@ -1085,17 +1085,17 @@ void codegen::declareStructVariable(Node::Expr *expr, std::string structName,
     visitExpr(field);
     switch (getByteSizeOfType(field->asmType)) {
       case 1:
-        push(Instr{.var=PopInstr{.where=std::to_string(-(startOffset + offset)) + "(" + offsetRegister + ")",.whereSize=DataSize::Byte},.type=InstrType::Pop},Section::Main);
+        push(Instr{.var=PopInstr{.where=std::to_string(-((long long)startOffset + offset)) + "(" + offsetRegister + ")",.whereSize=DataSize::Byte},.type=InstrType::Pop},Section::Main);
         break;
       case 2:
-        push(Instr{.var=PopInstr{.where=std::to_string(-(startOffset + offset)) + "(" + offsetRegister + ")",.whereSize=DataSize::Word},.type=InstrType::Pop},Section::Main);
+        push(Instr{.var=PopInstr{.where=std::to_string(-((long long)startOffset + offset)) + "(" + offsetRegister + ")",.whereSize=DataSize::Word},.type=InstrType::Pop},Section::Main);
         break;
       case 4:
-        push(Instr{.var=PopInstr{.where=std::to_string(-(startOffset + offset)) + "(" + offsetRegister + ")",.whereSize=DataSize::Dword},.type=InstrType::Pop},Section::Main);
+        push(Instr{.var=PopInstr{.where=std::to_string(-((long long)startOffset + offset)) + "(" + offsetRegister + ")",.whereSize=DataSize::Dword},.type=InstrType::Pop},Section::Main);
         break;
       case 8:
       default:
-        push(Instr{.var=PopInstr{.where=std::to_string(-(startOffset + offset)) + "(" + offsetRegister + ")",.whereSize=DataSize::Qword},.type=InstrType::Pop},Section::Main);
+        push(Instr{.var=PopInstr{.where=std::to_string(-((long long)startOffset + offset)) + "(" + offsetRegister + ")",.whereSize=DataSize::Qword},.type=InstrType::Pop},Section::Main);
         break;
     }
     continue;

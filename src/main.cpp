@@ -40,6 +40,7 @@ std::string get_version(const char *path) {
 }
 
 void FlagConfig::print(int argc, char **argv) {
+    (void)argc;
     using condition = bool (*)(const char *);
     condition conditions[] = {
         [](const char *arg) { return strcmp(arg, "--version") == 0; },
