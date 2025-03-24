@@ -31,9 +31,9 @@ void codegen::gen(Node::Stmt *stmt, bool isSaved, std::string output_filename,
   visitStmt(stmt);
 
   // Make 3 passes of optimization
-  // text_section = Optimizer::optimizeInstrs(text_section);
-  // text_section = Optimizer::optimizeInstrs(text_section);
-  // text_section = Optimizer::optimizeInstrs(text_section);
+  text_section = Optimizer::optimizeInstrs(text_section);
+  text_section = Optimizer::optimizeInstrs(text_section);
+  text_section = Optimizer::optimizeInstrs(text_section);
   
   // data section cannot be optimized
   // rodata section cant be optimized either
