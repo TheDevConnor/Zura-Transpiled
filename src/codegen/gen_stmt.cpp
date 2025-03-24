@@ -222,7 +222,7 @@ void codegen::funcDecl(Node::Stmt *stmt) {
   int floatArgCount = 0;
   for (size_t i = 0; i < s->params.size(); i++) {
     // Move the argument to the stack
-    std::string where = std::to_string(-variableCount) + "(%rbp)";
+    std::string where = std::to_string(-(long long)(variableCount)) + "(%rbp)";
     if (getUnderlying(s->params.at(i).second) == "float")
       // Floats are passed in xmm registers
       moveRegister(where, floatArgOrder[floatArgCount++], DataSize::Qword,
@@ -303,7 +303,7 @@ void codegen::varDecl(Node::Stmt *stmt) {
   // push another .loc
   pushDebug(s->line, stmt->file_id, s->pos);
 
-  size_t whereBytes = -variableCount;
+  long long whereBytes = -variableCount;
   std::string where = std::to_string(whereBytes) + "(%rbp)";
   if (s->expr != nullptr) {
     // The first clause: If it's a literal, straight up, struct declaration.

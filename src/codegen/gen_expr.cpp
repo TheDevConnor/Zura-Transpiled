@@ -434,7 +434,7 @@ void codegen::call(Node::Expr *expr) {
                 << std::endl;
       exit(-1);
     }
-    size_t offsetAmount = round(variableCount - 8, 8);
+    long long offsetAmount = round(variableCount - 8, 8);
     if (offsetAmount)
       push(Instr{.var = SubInstr{.lhs = "%rsp",
                                  .rhs = "$" + std::to_string(offsetAmount),
@@ -567,7 +567,7 @@ void codegen::call(Node::Expr *expr) {
     popToRegister(intArgOrder[0]);
     int intArgCount = 1; // 1st is preserved for struct ptr above
     int floatArgCount = 0;
-    size_t offsetAmount = round(variableCount - 8, 8);
+    long long offsetAmount = round(variableCount - 8, 8);
     if (offsetAmount)
       push(Instr{.var = SubInstr{.lhs = "%rsp",
                                  .rhs = "$" + std::to_string(offsetAmount),
