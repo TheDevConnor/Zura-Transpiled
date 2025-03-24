@@ -320,6 +320,7 @@ void codegen::varDecl(Node::Stmt *stmt) {
     } else if (s->type->kind == ND_ARRAY_TYPE ||
                s->type->kind == ND_ARRAY_AUTO_FILL) {
       ArrayType *at = static_cast<ArrayType *>(s->type);
+
       declareArrayVariable(
           s->expr, static_cast<ArrayType *>(s->type)->constSize,
           s->name); // s->name so it can be inserted to variableTable, s->type
@@ -708,13 +709,10 @@ void codegen::forLoop(Node::Stmt *stmt) {
   AssignmentExpr *assign = static_cast<AssignmentExpr *>(s->forLoop);
   IdentExpr *assignee = static_cast<IdentExpr *>(assign->assignee);
 
-  push(Instr{.var = Comment{.comment = "For loop variable declaration"},
-             .type = InstrType::Comment},
-       Section::Main);
+  push(Instr{.var = Comment{.comment = "For loop variable declaration"}, .type = InstrType::Comment}, Section::Main);
   pushDebug(s->line, stmt->file_id, s->pos);
   // assign var
-  variableTable.insert(
-      {assignee->name, std::to_string(-variableCount) + "(%rbp)"});
+  variableTable.insert({assignee->name, std::to_string(-variableCount) + "(%rbp)"});
   variableCount += 8;
   // Push a variable declaration for the loop variable
   if (debug) {
@@ -1107,35 +1105,35 @@ void codegen::declareArrayVariable(Node::Expr *expr, long long arrayLength,
   if (expr->kind == ND_ARRAY_AUTO_FILL) {
     // This is an implicit shorthand version of setting an array to [0, 0, 0, 0, ....]
     ArrayAutoFill *s = static_cast<ArrayAutoFill *>(expr);
-    size_t totalSize = arrayLength * getByteSizeOfType(s->fillType);
+    long long totalSize = arrayLength * getByteSizeOfType(s->fillType);
     if (totalSize <= 256) {
       // Small enough for manual labor hehe
       // Ensure that filling happens from the top
-      size_t maxQwords = totalSize / 8;
+      long long maxQwords = totalSize / 8;
       // find remainder bytes later if any
-      for (size_t i = 0; i < maxQwords; i++) {
-        push(Instr{.var=MovInstr{.dest=std::to_string(-(variableCount + totalSize - (i * 8))) + "(%rbp)", .src="$0", .destSize=DataSize::Qword, .srcSize=DataSize::Qword}, .type=InstrType::Mov}, Section::Main);
+      for (long long i = 0; i < maxQwords; i++) {
+        push(Instr{.var=MovInstr{.dest=std::to_string(-((long long)variableCount + totalSize - (i * 8))) + "(%rbp)", .src="$0", .destSize=DataSize::Qword, .srcSize=DataSize::Qword}, .type=InstrType::Mov}, Section::Main);
       }
-      if (size_t remainderBytes = totalSize % 8) {
+      if (long long remainderBytes = totalSize % 8) {
         // Fill the remainder bytes
-        for (size_t i = 0; i < remainderBytes; i++) {
-          push(Instr{.var=MovInstr{.dest=std::to_string(-(variableCount + totalSize - remainderBytes + i)) + "(%rbp)", .src="$0", .destSize=DataSize::Byte, .srcSize=DataSize::Byte}, .type=InstrType::Mov}, Section::Main);
+        for (long long i = 0; i < remainderBytes; i++) {
+          push(Instr{.var=MovInstr{.dest=std::to_string(-((long long)variableCount + totalSize - remainderBytes + i)) + "(%rbp)", .src="$0", .destSize=DataSize::Byte, .srcSize=DataSize::Byte}, .type=InstrType::Mov}, Section::Main);
         }
       }
-      variableTable.insert({varName, std::to_string(-(variableCount + totalSize)) + "(%rbp)"});
+      variableTable.insert({varName, std::to_string(-((long long)variableCount + totalSize)) + "(%rbp)"});
       return;
     }
     // C allocates 16 bytes near the top for some reason, let's rip them off and do the same
     // Assuming the autofill is small enough, we could manually fill them with 0's mov by mov
-    size_t preVarCount = variableCount;
-    variableCount = round(variableCount, 16);
+    size_t preVarCount = (size_t)variableCount;
+    variableCount = (int64_t)round((size_t)variableCount, 16);
     push(Instr{.var=MovInstr{.dest=std::to_string(-(variableCount + totalSize)) + "(%rbp)", .src="$0", .destSize=DataSize::Qword, .srcSize=DataSize::Qword}, .type=InstrType::Mov}, Section::Main);
     push(Instr{.var=MovInstr{.dest=std::to_string(-(variableCount + totalSize - 8)) + "(%rbp)", .src="$0", .destSize=DataSize::Qword, .srcSize=DataSize::Qword}, .type=InstrType::Mov}, Section::Main);
     // Prepare the registers for the rep stosq instruction
     push(Instr{.var = LeaInstr{.size = DataSize::Qword, .dest = "%rdx", .src = "-" + std::to_string(variableCount + arrayLength - 16) + "(%rbp)"}, .type = InstrType::Lea}, Section::Main);
     push(Instr{.var = XorInstr{.lhs = "%rax", .rhs = "%rax"}, .type = InstrType::Xor}, Section::Main);
     moveRegister("%rdi", "%rdx", DataSize::Qword, DataSize::Qword);
-    size_t newSize = totalSize - 16;
+    long long newSize = totalSize - 16;
     if (newSize % 8 == 0) {
       moveRegister("%rcx", "$" + std::to_string(newSize / 8), DataSize::Qword,
                   DataSize::Qword);
@@ -1162,11 +1160,10 @@ void codegen::declareArrayVariable(Node::Expr *expr, long long arrayLength,
   ArrayExpr *s = static_cast<ArrayExpr *>(expr);
   ArrayType *at = static_cast<ArrayType *>(s->type);
   dwarf::useType(s->type);
-  int underlyingByteSize =
-      getByteSizeOfType(at->underlying);
-  size_t arrayBase = variableCount;
+  long long underlyingByteSize = getByteSizeOfType(at->underlying);
+  long long arrayBase = variableCount;
   // Evaluate the orderedFields and store them in the struct!!!!
-  for (size_t i = s->elements.size(); i > 0; i--) {
+  for (long long i = (long long)s->elements.size(); i > 0; i--) {
     Node::Expr *element = s->elements[s->elements.size() - i];
     // Evaluate the expression
     if (element->kind == ND_STRUCT) {
@@ -1184,7 +1181,7 @@ void codegen::declareArrayVariable(Node::Expr *expr, long long arrayLength,
 
   // NOTE: The value of arrays, when referencing their variable name, is a pointer to element #1.
   // NOTE: So let's do the same calculation as earlier to find that very 1st byte.
-  size_t firstByteOffset = -(arrayBase + ((s->elements.size()) * underlyingByteSize));
+  long long firstByteOffset = -(arrayBase + ((s->elements.size()) * underlyingByteSize)); // can i see the assembly bro
   variableTable.insert({varName, std::to_string(firstByteOffset) + "(%rbp)"});
 }
 

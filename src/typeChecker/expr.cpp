@@ -133,6 +133,7 @@ void TypeChecker::visitIdent(Node::Expr *expr) {
   // update the ast-node (IdentExpr) to hold the type of the identifier as a
   // property
   ident->type = res;
+  ident->asmType = res;
   return_type = share(res);
   // TODO: Update this to the new tc system
   // if (isLspMode) {
@@ -374,7 +375,6 @@ void TypeChecker::visitArray(Node::Expr *expr) {
   ArrayExpr *array = static_cast<ArrayExpr *>(expr);
   ArrayType *at = static_cast<ArrayType *>(createDuplicate(return_type.get()));
 
-  
   // check if the array is empty
   if (array->elements.empty()) {
     std::string msg = "Array must have at least one element!";
@@ -384,7 +384,7 @@ void TypeChecker::visitArray(Node::Expr *expr) {
     return;
   }
 
-  if ((size_t)at->constSize != array->elements.size()) {
+  if (at->constSize != (long long)array->elements.size()) {
     std::string msg = "Array requires " +
                       std::to_string(at->constSize) + " elements but got " +
                       std::to_string(array->elements.size());
@@ -411,9 +411,6 @@ void TypeChecker::visitArray(Node::Expr *expr) {
 
   return_type = std::make_shared<ArrayType>(at);
   expr->asmType = at;
-
-  // clear the array table
-  array->elements.clear();
 }
 
 void TypeChecker::visitArrayType(Node::Type *type) {
@@ -443,7 +440,7 @@ void TypeChecker::visitIndex(Node::Expr *expr) {
     return;
   }
 
-  if (rhsStr != "int") {
+  if (!isIntBasedType(rhsType)) {
     std::string msg = "Indexing requires the right hand side to be an 'int' but got '" + rhsStr + "'";
     handleError(index->line, index->pos, msg, "", "Type Error");
     return_type = std::make_shared<SymbolType>("unknown");

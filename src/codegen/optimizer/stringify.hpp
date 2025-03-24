@@ -1,6 +1,7 @@
 #pragma once
 
 #include "instr.hpp"
+#include "../gen.hpp"
 
 #include <iostream>
 #include <string>
@@ -219,7 +220,9 @@ public:
       std::string operator()(Ret instr) const { return "ret # " + instr.fromWhere + "\n\t"; }
       // self explanatory
       std::string operator()(Comment instr) const {
-        return "# " + instr.comment + "\n\t";
+        if (codegen::debug)
+          return "# " + instr.comment + "\n\t";
+        return "";
       }
       // binary operation (Add, Sub, Mul, Div, ...)
       std::string operator()(BinaryInstr instr) const {

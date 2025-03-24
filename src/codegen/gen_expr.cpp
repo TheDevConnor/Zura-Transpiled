@@ -719,18 +719,29 @@ void codegen::arrayElem(Node::Expr *expr) {
     IntExpr *index = static_cast<IntExpr *>(e->rhs);
     if (e->lhs->kind == ND_IDENT) {
       IdentExpr *ident = static_cast<IdentExpr *>(e->lhs);
-      Node::Type *underlying = static_cast<ArrayType *>(e->asmType)->underlying;
+      Node::Type *underlying = static_cast<ArrayType *>(ident->type)->underlying;
       std::string whereBytes = variableTable[ident->name];
       long long offset = std::stoll(whereBytes.substr(
           0, whereBytes.find("("))); // this is the base of the array - the
                                      // first byte of the first element
-      offset -= (index->value * getByteSizeOfType(underlying));
-      pushRegister(std::to_string(offset) + "(%rbp)");
+      // if struct type
+      if (structByteSizes.find(getUnderlying(underlying)) != structByteSizes.end()) {
+        // It's a struct. an LEA is expected, even if the struct is less than 16 bytes
+        // Arrays are declared backwards (relatively)
+        push(Instr{.var = LeaInstr{.size = DataSize::Qword, 
+                                   .dest = "%rcx",
+                                   .src = std::to_string(offset + ((index->value + 1) * structByteSizes[getUnderlying(underlying)].first)) + "(%rbp)"},
+                   .type = InstrType::Lea},
+             Section::Main);
+        pushRegister("%rcx");
+      } else {
+        pushRegister(std::to_string(offset + (index->value * getByteSizeOfType(underlying))) + "(%rbp)");
+      }
+      return;
     } else {
       visitExpr(e->lhs);
       // it is an array type so we must actually lea this!
-      PushInstr instr =
-          std::get<PushInstr>(text_section.at(text_section.size() - 1).var);
+      PushInstr instr = std::get<PushInstr>(text_section.at(text_section.size() - 1).var);
       std::string whatWasPushed = instr.what;
       text_section.pop_back();
       push(Instr{.var = LeaInstr{.size = DataSize::Qword,
@@ -739,7 +750,7 @@ void codegen::arrayElem(Node::Expr *expr) {
                  .type = InstrType::Lea},
            Section::Main);
       short byteSize = getByteSizeOfType(e->lhs->asmType);
-      size_t offset = -index->value * byteSize;
+      long long offset = -index->value *byteSize;
       if (offset == 0)
         pushRegister("(%rcx)");
       else
@@ -758,8 +769,7 @@ void codegen::arrayElem(Node::Expr *expr) {
     } else {
       visitExpr(e->lhs);
       // lhs is always gonna be an array, but we need it to hold the addr
-      PushInstr instr =
-          std::get<PushInstr>(text_section.at(text_section.size() - 1).var);
+      PushInstr instr = std::get<PushInstr>(text_section.at(text_section.size() - 1).var);
       std::string whatWasPushed = instr.what;
       text_section.pop_back();
       push(Instr{.var = LeaInstr{.size = DataSize::Qword,

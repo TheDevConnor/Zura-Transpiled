@@ -5,15 +5,6 @@ void Optimizer::optimizePair(std::vector<Instr> *output, Instr &prev, Instr &cur
     appendAndResetPrev(output, curr, prev);
     return;
   }
-  // do not show comments if in release mode (they are not necessary)
-  if (curr.type == InstrType::Comment && !codegen::debug) {
-    return;
-  }
-
-  if (!prev.optimize || !curr.optimize) {
-      appendAndResetPrev(output, curr, prev);
-      return;
-  }
 
   if (curr.type == InstrType::Mov) {
       processMov(output, prev, curr);
@@ -99,28 +90,29 @@ void Optimizer::processOppositePair(std::vector<Instr> *output, Instr &prev, Ins
         tryPop(output);
         simplifyPushPopPair(output, prev, curr);
         prev = Instr {.var = {}, .type=InstrType::NONE}; // Reset prev after processing
+    } else if (curr.type == InstrType::Lea) {
+        // Check if the previous lea had the same source and destination
+        LeaInstr currAsLea = std::get<LeaInstr>(curr.var);
+        LeaInstr prevAsLea = std::get<LeaInstr>(prev.var);
+        
+        if (currAsLea.dest == prevAsLea.dest &&
+            currAsLea.src == prevAsLea.src &&
+            !(currAsLea.src.find(prevAsLea.dest) != std::string::npos)) {
+            // leaq -8(%rbp), %rax
+            // leaq -8(%rbp), %rax
+            // will be replaced, BUT
+
+            // leaq -8(%rax), %rax
+            // leaq -8(%rax), %rax
+            // IS VERY NEEDED!!!!!!
+            
+            return; // Prev was already pushed, so we can keep that one
+        }
+        output->push_back(curr);
     } else {
         output->push_back(curr);
     }
 }
-
-// void Optimizer::simplifyDebug(std::vector<Instr> *output, Instr &prev, Instr &curr) {
-//   // LinkerDirective prevL = std::get<LinkerDirective>(prev.var);
-//   // LinkerDirective currL = std::get<LinkerDirective>(curr.var);
-//   // // Keep both of them if one of them is not a .loc
-//   // if (prevL.value.find(".loc") == std::string::npos || currL.value.find(".loc") == std::string::npos) {
-//   //   output->push_back(curr);
-//   //   return;
-//   // }
-//   // // otherwise just push the second loc
-//   // output->pop_back();
-
-//   // That stuff above didn't really work
-//   // when using "next" in the debugger CLI.
-//   // It works like this and optimizations?
-//   // ... Who cares, right?
-//   output->push_back(curr);
-// }
 
 // Turn push/pops into mov's or xor's
 void Optimizer::simplifyPushPopPair(std::vector<Instr> *output, Instr &prev, Instr &curr) {

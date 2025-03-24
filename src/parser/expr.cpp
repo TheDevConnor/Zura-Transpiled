@@ -72,8 +72,7 @@ Node::Expr *Parser::unary(PStruct *psr) {
   int column = psr->tks[psr->pos].column;
 
   Lexer::Token op = psr->advance(psr);
-  Node::Expr *right = parseExpr(psr, defaultValue);
-
+  Node::Expr *right = parseExpr(psr, postfix);
   if (op.value == "-" && right->kind == ND_INT) {
     return new IntExpr(line, column, -(static_cast<IntExpr*>(right)->value), codegen::getFileID(psr->current_file));
   }
@@ -204,12 +203,10 @@ Node::Expr *Parser::array(PStruct *psr) {
     if (psr->current(psr).kind == TokenKind::LEFT_BRACE) {
       elements.push_back(structExpr(psr));
     } else {
-      elements.push_back(parseExpr(psr, defaultValue));
+      elements.push_back(parseExpr(psr, BindingPower::_primary));
     }
 
-    if (psr->current(psr).kind == TokenKind::COMMA)
-      psr->expect(psr, TokenKind::COMMA,
-                  "Expected a COMMA after an element in an array expr!");
+    if (psr->current(psr).kind == TokenKind::COMMA) psr->advance(psr);
   }
 
   psr->expect(psr, TokenKind::RIGHT_BRACKET,

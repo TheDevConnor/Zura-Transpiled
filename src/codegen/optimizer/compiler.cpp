@@ -155,6 +155,9 @@ Node::Expr *CompileOptimizer::optimizeBinary(BinaryExpr *expr) {
       if (lhsVal == 0) {
         return new IntExpr(expr->line, expr->pos, 0, expr->file_id);
       }
+      if (lhsVal == -1) {
+        return new UnaryExpr(expr->line, expr->pos, rhs, "-", expr->file_id);
+      }
       if (lhsVal == 1) {
         return rhs;
       }
@@ -170,6 +173,9 @@ Node::Expr *CompileOptimizer::optimizeBinary(BinaryExpr *expr) {
       long long rhsVal = rhsExpr->value;
       if (rhsVal == 0) {
         return new IntExpr(expr->line, expr->pos, 0, expr->file_id);
+      }
+      if (rhsVal == -1) {
+        return new UnaryExpr(expr->line, expr->pos, lhs, "-", expr->file_id);
       }
       if (rhsVal == 1) {
         return lhs;

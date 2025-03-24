@@ -1,11 +1,1 @@
-const a := struct { 
-  x: int!, 
-  y: int!, 
-  z: int!, 
-}; 
-
-const main := fn () int! { 
-  have b: a = { x: 72, y: 12, z: 42 }; 
-  have c: *a = &b; 
-  return c.y + c.z; 
-};
+const main := fn () int! { have a: int! = 0; loop(a < 10) { a = a + 1; } return a; };

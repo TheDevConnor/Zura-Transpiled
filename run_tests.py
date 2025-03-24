@@ -98,8 +98,24 @@ class TestZuraPrograms(unittest.TestCase):
         run_test("const a := struct { x: int!, y: int!, z: int!, }; const main := fn () int! { have b: a = { x: 72, y: 12, z: 42 }; have c: *a = &b; have d: a = c&; return d.y + d.z; };", expected_exit_code=54)
 
     def test_factorial_function(self):
-        run_test("const factorial := fn (n: int!) int! { have res: int = 1; loop (i=2; i<=n) : (i++) { res = res * i; } return res; }; const main := fn () int! { @outputln(1, factorial(50)); return 0; };", expected_output="15188249005818642432")
+        run_test("const factorial := fn (n: int!) int! { have res: int! = 1; loop (i=2; i<=n) : (i++) { res = res * i; } return res; }; const main := fn () int! { @outputln(1, factorial(50)); return 0; };", expected_output="15188249005818642432")
 
+    def test_unsigned_arrays(self):
+        run_test("const main := fn () int! { have a: [5]int! = [1, 2, 3, 4, 5]; return a[2]; };", expected_exit_code=3)
+
+    def test_signed_arrays(self):
+        run_test("const main := fn () int! { have a: [5]int? = [-1, -2, -3, -4, -5]; return (a[2] * -1); };", expected_exit_code=3)
+
+    # no ! or ? symbol in the underlying type
+    def test_inferred_signedness_arrays(self):
+        run_test("const main := fn () int! { have a: [5]int = [1, 2, 3, 4, 5]; return a[2]; };", expected_exit_code=3)
+
+    def test_array_of_structs(self):
+        run_test("const a := struct { x: int!, y: int!, }; const main := fn () int! { have b: [2]a = [{ x: 1, y: 2 }, { x: 3, y: 4 }]; return b[1].x; };", expected_exit_code=3)
+    
+    def test_loop_over_array(self):
+        run_test("const main := fn () int! { have a: [5]int! = [1, 2, 3, 4, 5]; have total: int! = 0; loop (i=0; i<5) : (i++) { total = total + a[i]; } return total; };", expected_exit_code=15)
+   
     def test_useless_malloc(self):
         run_test("const main := fn () int! { have x: *void = @alloc(8); @free(x, 8); return 0; };", expected_exit_code=0)
 
