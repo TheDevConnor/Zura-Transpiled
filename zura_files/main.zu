@@ -1,1 +1,25 @@
-const main := fn () int! { have a: int! = 0; loop(a < 10) { a = a + 1; } return a; };
+const kind := enum {
+  number, 
+  plus,
+  minus,
+  times,
+  divide,
+};
+
+const token := struct {
+  k: int!,
+  v: str,
+};
+
+const main := fn () int! {
+  have t: [1]token = [ 
+    { 
+      k: kind.number, # This does not work
+      v: "1"
+    }, 
+  ]; 
+
+  @outputln(1, t[0].v);
+
+  return 0;
+};

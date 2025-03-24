@@ -196,6 +196,9 @@ void TypeChecker::visitEnum(Node::Stmt *stmt) {
   context->declareLocal(enum_stmt->name, static_cast<Node::Type *>(type));
   context->declareGlobal(enum_stmt->name, static_cast<Node::Type *>(type));
 
+  // delcare the enum in the enum table 
+  context->enumTable.declare(enum_stmt->name);
+
   if (enum_stmt->fields.empty()) {
     std::string msg = "Enum '" + enum_stmt->name + "' must have at least one field";
     handleError(enum_stmt->line, enum_stmt->pos, msg, "", "Type Error");

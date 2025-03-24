@@ -334,37 +334,33 @@ void TypeChecker::visitCall(Node::Expr *expr) {
 void TypeChecker::visitMember(Node::Expr *expr) {
   MemberExpr *member = static_cast<MemberExpr *>(expr);
 
-  // Verify that the lhs is a struct or enum
+  std::string rhs = static_cast<IdentExpr*>(member->rhs)->name;
+  std::string note = "";
+
   visitExpr(member->lhs);
-  std::string lhsType = type_to_string(return_type.get());
-  if (lhsType.at(0) == '*') { // This can remain a string becuase most operations here will be happening on SymbolTypes and not on anything else
-    lhsType = lhsType.substr(1);
+  std::string type = type_to_string(return_type.get());
+  if (type.at(0) == '*') {
+    type = type.substr(1);
   }
-  std::string name = static_cast<IdentExpr *>(member->rhs)->name;
 
-  // Determine if lhs is a struct or enum
-  std::string typeKind = determineTypeKind(lhsType);
-
-  // check if the lhs is a struct or enum
-  if (context->structTable.find(lhsType) == context->structTable.end() && context->enumTable.find(name) == context->enumTable.end()) {
-    std::string msg = "Member access requires the left hand side to be a struct or enum but got '" + lhsType + "'";
-    std::string note = "";
-    if (lhsType.at(0) == '*') {
-      note = "Try dereferencing the pointer first";
-    }
+  // if the lhs is not a struct or enum, return an error
+  if (context->structTable.find(type) == context->structTable.end() && context->enumTable.find(type) == context->enumTable.end()) {
+    std::string msg = "Member access requires the left hand side to be a struct or enum but got '" + type + "'";
+    if (type.at(0) == '*') note = "Try dereferencing the pointer first";
     handleError(member->line, member->pos, msg, "", "Type Error");
     return_type = std::make_shared<SymbolType>("unknown");
     expr->asmType = new SymbolType("unknown");
     return;
   }
 
-  // check if the lhs is a struct
-  if (typeKind == "struct") {
-    processStructMember(member, name, lhsType);
-  } else if (typeKind == "enum") {
-    processEnumMember(member, name);
+  // process the member access
+  std::cout << "Type -> " << type << std::endl;
+  if (determineTypeKind(type) == "struct") {
+    processStructMember(member, rhs, type);
+  } else if (determineTypeKind(type) == "enum") {
+    processEnumMember(member, type);
   } else {
-    std::string msg = "Member access requires the left hand side to be a struct or enum but got '" + lhsType + "' for '" + name + "'";
+    std::string msg = "Member access requires the left hand side to be a struct or enum but got '" + type + "' for '" + rhs + "'";
     handleError(member->line, member->pos, msg, "", "Type Error");
     return_type = std::make_shared<SymbolType>("unknown");
     expr->asmType = new SymbolType("unknown");

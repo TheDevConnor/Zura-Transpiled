@@ -135,15 +135,14 @@ std::shared_ptr<Node::Type> TypeChecker::share(Node::Type *type) {
 
 std::string TypeChecker::determineTypeKind(const std::string &type) {
   std::string real = type;
-  if (type.find('*') == 0) {
-    real = type.substr(1);
-  }
-  if (context->structTable.find(real) != context->structTable.end()) {
-    return "struct";
-  }
-  if (context->enumTable.find(real) != context->enumTable.end()) {
-      return "enum";
-  }
+  if (type.find('*') == 0) real = type.substr(1);
+
+  if (type == "enum") return "enum";
+  if (type == "struct") return "struct";
+
+  if (context->structTable.contains(real)) return "struct";
+  if (context->enumTable.contains(real)) return "enum";
+
   return "unknown";
 }
 
@@ -152,6 +151,7 @@ void TypeChecker::processStructMember(MemberExpr *member, const std::string &nam
   if (lhsType.find('*') == 0) {
     realType = lhsType.substr(1); // We know the type directly under this is a struct (otherwise we wouldnt be here)
   }
+
   if (!context->structTable.contains(realType)) {
     // if we got this far, it probably exists, but its worth checking for anyway
     std::string msg = "Type '" + lhsType + "' does not have members";
@@ -159,6 +159,7 @@ void TypeChecker::processStructMember(MemberExpr *member, const std::string &nam
     return_type = std::make_shared<SymbolType>("unknown");
     return;
   }
+
   for (auto it : context->structTable.at(realType)) {
     if (it.first == name) {
       return_type = share(it.second.first);
@@ -169,18 +170,22 @@ void TypeChecker::processStructMember(MemberExpr *member, const std::string &nam
 }
 
 void TypeChecker::processEnumMember(MemberExpr *member, const std::string &lhsType) {
-    auto fields = context->enumTable.find(lhsType)->second;
-    auto res = fields.find(static_cast<IdentExpr *>(member->rhs)->name);
+    std::string name = static_cast<IdentExpr*>(member->lhs)->name;
+    std::string field = static_cast<IdentExpr*>(member->rhs)->name;
 
-    if (res == fields.end()) {
-        std::string msg = "Type '" + lhsType + "' does not have member '" + static_cast<IdentExpr *>(member->rhs)->name + "'";
+    member->debug();
+
+    long long value = context->enumTable.lookup(name, field);
+    if (value == -1) {
+        std::string msg = "Enum '" + lhsType + "' does not have member '" + field + "'";
         handleError(member->line, member->pos, msg, "", "Type Error");
         return_type = std::make_shared<SymbolType>("unknown");
         return;
     }
+    std::cout << "value -> " << value << std::endl;
 
-    return_type = std::make_shared<SymbolType>(lhsType);
-    member->asmType = createDuplicate(return_type.get());
+    return_type = std::make_shared<SymbolType>("int!");
+    member->asmType = new SymbolType("int!");
 }
 
 void TypeChecker::handleUnknownType(MemberExpr *member, const std::string &lhsType) {

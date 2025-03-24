@@ -172,8 +172,7 @@ public:
     Node::printIndent(indent + 1);
     std::cout << "Name: " << name << "\n";
     Node::printIndent(indent + 1);
-    std::cout << "Type: \n";
-    Node::printIndent(indent + 2);
+    Node::printIndent(indent + 1);
     type->debug(indent + 2);
     std::cout << "\n";
     if (expr) {
@@ -342,7 +341,7 @@ public:
     std::cout << "Fields: \n";
     for (std::pair<std::string, Node::Type *> f : fields) {
       Node::printIndent(indent + 2);
-      std::cout << "Name: " << f.first << ", Type: ";
+      std::cout << "Name: " << f.first << ", \n";
       f.second->debug(indent + 2);
       std::cout << "\n";
     }

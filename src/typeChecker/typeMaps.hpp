@@ -168,7 +168,7 @@ struct EnumTable : std::unordered_map<std::string, std::unordered_map<std::strin
         TypeChecker::handleError(line, pos, msg, "", "Type Error");
     }
 
-    size_t lookup(const std::string &enumName, const std::string &memberName) {
+    long long lookup(const std::string &enumName, const std::string &memberName) {
         if (contains(enumName)) {
             auto it = at(enumName).find(memberName);
             if (it != at(enumName).end()) {
