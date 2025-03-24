@@ -735,7 +735,30 @@ void codegen::arrayElem(Node::Expr *expr) {
              Section::Main);
         pushRegister("%rcx");
       } else {
-        pushRegister(std::to_string(offset + (index->value * getByteSizeOfType(underlying))) + "(%rbp)");
+        switch (getByteSizeOfType(underlying)) {
+          case 1:
+            push(Instr{.var = PushInstr{.what = std::to_string(offset + (index->value * getByteSizeOfType(underlying))) + "(%rbp)",
+                                        .whatSize = DataSize::Byte},
+                       .type = InstrType::Push},
+                 Section::Main);
+          break;
+          case 2:
+            push(Instr{.var = PushInstr{.what = std::to_string(offset + (index->value * getByteSizeOfType(underlying))) + "(%rbp)",
+                                        .whatSize = DataSize::Word},
+                       .type = InstrType::Push},
+                 Section::Main);
+            break;
+          case 4:
+            push(Instr{.var = PushInstr{.what = std::to_string(offset + (index->value * getByteSizeOfType(underlying))) + "(%rbp)",
+                                        .whatSize = DataSize::Dword},
+                       .type = InstrType::Push},
+                 Section::Main);
+            break;
+          case 8:
+          default:
+            pushRegister(std::to_string(offset + (index->value * getByteSizeOfType(underlying))) + "(%rbp)");
+            break;
+        }
       }
       return;
     } else {
@@ -750,11 +773,31 @@ void codegen::arrayElem(Node::Expr *expr) {
                  .type = InstrType::Lea},
            Section::Main);
       short byteSize = getByteSizeOfType(e->lhs->asmType);
-      long long offset = -index->value *byteSize;
-      if (offset == 0)
-        pushRegister("(%rcx)");
-      else
-        pushRegister(std::to_string(offset) + "(%rcx)");
+      long long offset = -index->value * byteSize;
+      switch (byteSize) {
+        case 1:
+          push(Instr{.var = PushInstr{.what = std::to_string(offset) + "(%rcx)",
+                                      .whatSize = DataSize::Byte},
+                     .type = InstrType::Push},
+               Section::Main);
+          break;
+        case 2:
+          push(Instr{.var = PushInstr{.what = std::to_string(offset) + "(%rcx)",
+                                      .whatSize = DataSize::Word},
+                     .type = InstrType::Push},
+               Section::Main);
+          break;
+        case 4:
+          push(Instr{.var = PushInstr{.what = std::to_string(offset) + "(%rcx)",
+                                      .whatSize = DataSize::Dword},
+                     .type = InstrType::Push},
+               Section::Main);
+          break;
+        case 8:
+        default:
+          pushRegister(std::to_string(offset) + "(%rcx)");
+          break;
+      }
     }
   } else {
     // This is a little more intricate.
