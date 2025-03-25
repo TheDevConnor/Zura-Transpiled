@@ -505,6 +505,7 @@ void codegen::enumDecl(Node::Stmt *stmt) {
                .type = InstrType::Label},
          Section::DIE);
     // die data
+    dwarf::useType(new SymbolType("long", SymbolType::Signedness::UNSIGNED));
     pushLinker(".uleb128 " + std::to_string((int)dwarf::DIEAbbrev::EnumType) +
                    "\n.long .L" + s->name +
                    "_string"
@@ -514,7 +515,7 @@ void codegen::enumDecl(Node::Stmt *stmt) {
                    "\n.byte " + std::to_string(s->pos) +  // Line column
                    "\n.byte 4" // each enum member is 4 bytes
                    "\n.byte 7" // encoding - DW_ATE_signed is 7
-                   "\n.long .Llong_debug_type\n" // And yes, for some reason,
+                   "\n.long .Llong_u_debug_type\n" // And yes, for some reason,
                                                  // this is still required.
                ,
                Section::DIE);
@@ -584,7 +585,6 @@ void codegen::structDecl(Node::Stmt *stmt) {
     dwarf::useAbbrev(dwarf::DIEAbbrev::StructType);
     dwarf::useAbbrev(dwarf::DIEAbbrev::StructMember);
     dwarf::useAbbrev(dwarf::DIEAbbrev::Type);
-    dwarf::useAbbrev(dwarf::DIEAbbrev::PointerType);
 
     // Push struct type first
     // push label

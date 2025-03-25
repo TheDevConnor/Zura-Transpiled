@@ -275,6 +275,7 @@ void handleStrDisplay(Node::Expr *fd, Node::Expr *arg);
 void handlePrimitiveDisplay(Node::Expr *fd, Node::Expr *arg);
 
 // Helper function to pop the value from the stack to a register
+std::string addBackslashes(std::string str);
 void moveRegister(const std::string &dest, const std::string &src, DataSize dest_size, DataSize src_size);
 void popToRegister(const std::string &reg);
 void pushRegister(const std::string &reg);

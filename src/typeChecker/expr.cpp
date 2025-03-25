@@ -344,7 +344,7 @@ void TypeChecker::visitMember(Node::Expr *expr) {
   }
 
   // if the lhs is not a struct or enum, return an error
-  if (context->structTable.find(type) == context->structTable.end() && context->enumTable.find(type) == context->enumTable.end()) {
+  if (determineTypeKind(type) != "struct" && determineTypeKind(type) != "enum") {
     std::string msg = "Member access requires the left hand side to be a struct or enum but got '" + type + "'";
     if (type.at(0) == '*') note = "Try dereferencing the pointer first";
     handleError(member->line, member->pos, msg, "", "Type Error");
@@ -354,7 +354,6 @@ void TypeChecker::visitMember(Node::Expr *expr) {
   }
 
   // process the member access
-  std::cout << "Type -> " << type << std::endl;
   if (determineTypeKind(type) == "struct") {
     processStructMember(member, rhs, type);
   } else if (determineTypeKind(type) == "enum") {

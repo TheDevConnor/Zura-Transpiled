@@ -1,4 +1,6 @@
 #include "gen.hpp"
+#include "../typeChecker/type.hpp"
+#include <limits>
 
 std::string codegen::dwarf::generateAbbreviations() {
   std::string abbreviations = "";
@@ -150,6 +152,8 @@ std::string codegen::dwarf::generateAbbreviations() {
                          "\n.byte 0 # No children"
                          "\n.uleb128 0xB # AT_byte_size"
                          "\n.uleb128 0xb # FORM_data1"
+                         "\n.uleb128 0x3 # AT_name"
+                         "\n.uleb128 0x8 # FORM_string"
                          "\n.uleb128 0x49 #  AT_type"
                          "\n.uleb128 0x13 #  FORM_ref4";
         break;
@@ -279,6 +283,8 @@ std::string codegen::dwarf::generateAbbreviations() {
         abbreviations += "\n.uleb128 " + std::to_string((int)a) +
                          "\n.uleb128 0x01 # TAG_array_type"
                          "\n.byte 1 # children"
+                         "\n.uleb128 0x3 # AT_name"
+                         "\n.uleb128 0xe # FORM_strp"
                          "\n.uleb128 0x49 # AT_type"
                          "\n.uleb128 0x13 # FORM_ref4"
                          "\n";
@@ -326,29 +332,44 @@ void codegen::dwarf::useType(Node::Type *type) {
     PointerType *p = static_cast<PointerType *>(type);
     useType(p->underlying);
     std::string underlyingName = type_to_diename(p->underlying);
+    // strp
+    push(Instr{.var = Label{.name = ".L" + dieName + "_string"}, .type = InstrType::Label}, Section::DIEString);
+    pushLinker(".string \"" + TypeChecker::type_to_string(type) + "\"\n", Section::DIEString);
     push(Instr{.var = Label{.name = ".L" + dieName + "_debug_type"}, .type = InstrType::Label}, Section::DIETypes);
     pushLinker(".uleb128 " + std::to_string((int)DIEAbbrev::PointerType) +
                "\n.byte 8 # AT_byte_size (all pointers are 8 bytes)"
+               "\n.long .L" + underlyingName + "_string # FORM_strp"
                "\n.long .L" + underlyingName + "_debug_type # FORM_ref4"
                , Section::DIETypes);
   } else if (type->kind == NodeKind::ND_ARRAY_TYPE) {
     // Create an ArrayType
     useAbbrev(DIEAbbrev::ArrayType);
     useAbbrev(DIEAbbrev::ArraySubrange);
+    useType(static_cast<ArrayType *>(type)->underlying);
+    useType(new SymbolType("int", SymbolType::Signedness::UNSIGNED));
     ArrayType *a = static_cast<ArrayType *>(type);
     push(Instr{.var = Label{.name = ".L" + dieName + "_debug_type"}, .type = InstrType::Label}, Section::DIETypes);
+    // string section
+    push(Instr{.var = Label{.name = ".L" + dieName + "_string"}, .type = InstrType::Label}, Section::DIEString);
+    pushLinker(".string \"" + TypeChecker::type_to_string(type) + "\"\n", Section::DIEString);
     pushLinker(".uleb128 " + std::to_string((int)DIEAbbrev::ArrayType) +
+               "\n.long .L" + dieName + "_string # FORM_strp"
                "\n.long .L" + type_to_diename(a->underlying) + "_debug_type\n"
                , Section::DIETypes);
     pushLinker(".uleb128 " + std::to_string((int)DIEAbbrev::ArraySubrange) +
-               "\n.long .Lint_debug_type" // This is gonna be the type of the index used in arrays - arr[1] - 1 is an int 
-               "\n.short " + (a->constSize <= 0 ? std::to_string(32767) : std::to_string(a->constSize - 1)) +
+               "\n.long .Lint_u_debug_type" // This is gonna be the type of the index used in arrays - arr[1] - 1 is an int 
+               "\n.short " + (a->constSize <= 0 ? std::to_string(std::numeric_limits<short signed int>::max()) : std::to_string(a->constSize - 1)) +
                "\n.byte 0\n" // end of the arrayType
                , Section::DIETypes);
   } else {
     // Nothing can be done if it is a basic type.
     // If it is a struct type, then that will already be handled by the structDecl function
     // This area here is useless!
+    if (type->kind == ND_SYMBOL_TYPE) {
+      if (static_cast<SymbolType *>(type)->name == "str") {
+        useType(new SymbolType("char", SymbolType::Signedness::UNSIGNED));
+      }
+    }
   }
 };
 
@@ -374,7 +395,7 @@ void codegen::dwarf::emitTypes(void) {
                 "\n.string \"int!\"\n"
     , Section::DIETypes);
   }
-  if (dieNamesUsed.find("int?") != dieNamesUsed.end()) { // signed 8 byte integer type
+  if (dieNamesUsed.find("int_s") != dieNamesUsed.end()) { // signed 8 byte integer type
     push(Instr{.var = Label{.name = ".Lint_s_debug_type"}, .type = InstrType::Label}, Section::DIETypes);
     pushLinker(".uleb128 " + std::to_string((int)DIEAbbrev::Type) +
                "\n.byte 8 # AT_byte_size"
@@ -383,7 +404,7 @@ void codegen::dwarf::emitTypes(void) {
     , Section::DIETypes);
   }
   // char
-  if (dieNamesUsed.find("char!") != dieNamesUsed.end()) {
+  if (dieNamesUsed.find("char_u") != dieNamesUsed.end()) {
     push(Instr{.var = Label{.name = ".Lchar_u_debug_type"}, .type = InstrType::Label}, Section::DIETypes);
     pushLinker(".uleb128 " + std::to_string((int)DIEAbbrev::Type) +
                "\n.byte 1 # AT_byte_size"
@@ -391,7 +412,7 @@ void codegen::dwarf::emitTypes(void) {
                "\n.string \"char!\"\n"
     , Section::DIETypes);
   }
-  if (dieNamesUsed.find("char?") != dieNamesUsed.end()) {
+  if (dieNamesUsed.find("char_s") != dieNamesUsed.end()) {
     push(Instr{.var = Label{.name = ".Lchar_s_debug_type"}, .type = InstrType::Label}, Section::DIETypes);
     pushLinker(".uleb128 " + std::to_string((int)DIEAbbrev::Type) +
                "\n.byte 1 # AT_byte_size"
@@ -408,7 +429,7 @@ void codegen::dwarf::emitTypes(void) {
                "\n.string \"short!\"\n"
     , Section::DIETypes);
   }
-  if (dieNamesUsed.find("short?") != dieNamesUsed.end()) {
+  if (dieNamesUsed.find("short_s") != dieNamesUsed.end()) {
     push(Instr{.var = Label{.name = ".Lshort_s_debug_type"}, .type = InstrType::Label}, Section::DIETypes);
     pushLinker(".uleb128 " + std::to_string((int)DIEAbbrev::Type) +
                "\n.byte 2 # AT_byte_size"
@@ -425,7 +446,7 @@ void codegen::dwarf::emitTypes(void) {
                "\n.string \"long!\"\n"
     , Section::DIETypes);
   }
-  if (dieNamesUsed.find("long?") != dieNamesUsed.end()) {
+  if (dieNamesUsed.find("long_s") != dieNamesUsed.end()) {
     push(Instr{.var = Label{.name = ".Llong_s_debug_type"}, .type = InstrType::Label}, Section::DIETypes);
     pushLinker(".uleb128 " + std::to_string((int)DIEAbbrev::Type) +
                "\n.byte 4 # AT_byte_size"
@@ -434,9 +455,24 @@ void codegen::dwarf::emitTypes(void) {
     , Section::DIETypes);
   }
   // non-int types
+  // str
+  if (dieNamesUsed.find("str_i") != dieNamesUsed.end()) {
+    // strp
+    push(Instr{.var = Label{.name = ".L_str_string"}, .type = InstrType::Label}, Section::DIEString);
+    pushLinker(".string \"str\"\n", Section::DIEString);
+    
+    // pointer type
+    useAbbrev(DIEAbbrev::PointerType);
+    push(Instr{.var = Label{.name = ".Lstr_i_debug_type"}, .type = InstrType::Label}, Section::DIETypes);
+    pushLinker(".uleb128 " + std::to_string((int)DIEAbbrev::PointerType) +
+               "\n.byte 8 # AT_byte_size"
+               "\n.long .L_str_string # FORM_strp"
+               "\n.long .Lchar_u_debug_type # FORM_ref4"
+               , Section::DIETypes);
+  }
   // bool (no signedness)
   if (dieNamesUsed.find("bool") != dieNamesUsed.end()) {
-    push(Instr{.var = Label{.name = ".Lbool_debug_type"}, .type = InstrType::Label}, Section::DIETypes);
+    push(Instr{.var = Label{.name = ".Lbool_i_debug_type"}, .type = InstrType::Label}, Section::DIETypes);
     pushLinker(".uleb128 " + std::to_string((int)DIEAbbrev::Type) +
                "\n.byte 1 # AT_byte_size"
                "\n.uleb128 0x2 # AT_encoding = ATE_boolean"

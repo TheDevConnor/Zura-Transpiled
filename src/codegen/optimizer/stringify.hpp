@@ -70,13 +70,15 @@ public:
           ss << "movz" << dsToChar(instr.srcSize) << dsToChar(instr.destSize) << " " << instr.src << ", " << instr.dest << "\n\t";
           return ss.str();
         }
-        if (instr.src.starts_with("$")) {
-          // it's a number! if its larger than 2^32, we must use movabsq
-          if (std::stoll(instr.src.substr(1)) > 4294967295) {
-            std::stringstream ss;
-            // in this case, i highly doubt that the destSize will be anything other than Qword
-            ss << "movabs" << dsToChar(instr.destSize) << ' ' << instr.src << ", " << instr.dest << "\n\t";
-            return ss.str();
+        if (instr.src.starts_with("$") && instr.src.size() > 1) {
+          if (std::isdigit(instr.src[1])) {
+            // it's a number! if its larger than 2^32, we must use movabsq
+            if (std::stoll(instr.src.substr(1)) > 4294967295) {
+              std::stringstream ss;
+              // in this case, i highly doubt that the destSize will be anything other than Qword
+              ss << "movabs" << dsToChar(instr.destSize) << ' ' << instr.src << ", " << instr.dest << "\n\t";
+              return ss.str();
+            }
           }
         }
         std::stringstream ss;

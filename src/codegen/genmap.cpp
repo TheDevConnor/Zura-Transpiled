@@ -53,7 +53,7 @@ void codegen::initMaps() {
            {"&&", "land"}};
   typeSizes = {
       {"int", 8},  {"float", 4}, {"enum", 8}, {"str", 8},
-      {"char", 1}, {"bool", 1},  {"void", 0}, {"int!", 8},
-      {"int?", 8}, {"double", 8}, {"long double", 10}
+      {"char", 1}, {"bool", 1},  {"void", 0}, {"double", 8},
+      {"long double", 10}, {"long", 4}
   };
 }

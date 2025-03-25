@@ -326,15 +326,15 @@ void codegen::handleLiteralDisplay(Node::Expr *fd, Node::Expr *arg) {
   push(Instr{.var=AscizInstr{.what='"' + stringValue + '"'},.type=InstrType::Asciz},Section::ReadonlyData);
   // perform the operation by moving the string into %rsi and the length into %rdx
   push(Instr{.var=LeaInstr{.size=DataSize::Qword, .dest="%rsi",.src=strLabel+"(%rip)"},.type=InstrType::Lea},Section::Main);
-  // Ensure that each time we see a backslash, we subtract 1 from the count
-  // Ex: \tHello, world!\n would be reduced 2 times.
-  size_t count = stringValue.size();
+  
+  // if any of the characters in the string are \ and then n,r,t, etc, or something like that, we must subtract
+  size_t realsize = stringValue.size();
   for (size_t i = 0; i < stringValue.size(); i++) {
-    char c = stringValue.at(i);
-    if (c == '\\') count--;
-    if (i > 0 && stringValue.at(i - 1) == '\\' && c == '\\') count++; // '\\' = just a backslash, which is still one character
+    if (stringValue[i] == '\\') {
+      realsize--;
+    }
   }
-  moveRegister("%rdx", "$" + std::to_string(count), DataSize::Qword, DataSize::Qword);
+  moveRegister("%rdx", "$" + std::to_string(realsize), DataSize::Qword, DataSize::Qword);
   visitExpr(fd);
   popToRegister("%rdi");
   prepareSyscallWrite(); // The end!

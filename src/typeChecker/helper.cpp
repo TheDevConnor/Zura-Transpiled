@@ -173,8 +173,6 @@ void TypeChecker::processEnumMember(MemberExpr *member, const std::string &lhsTy
     std::string name = static_cast<IdentExpr*>(member->lhs)->name;
     std::string field = static_cast<IdentExpr*>(member->rhs)->name;
 
-    member->debug();
-
     long long value = context->enumTable.lookup(name, field);
     if (value == -1) {
         std::string msg = "Enum '" + lhsType + "' does not have member '" + field + "'";
@@ -182,10 +180,9 @@ void TypeChecker::processEnumMember(MemberExpr *member, const std::string &lhsTy
         return_type = std::make_shared<SymbolType>("unknown");
         return;
     }
-    std::cout << "value -> " << value << std::endl;
 
-    return_type = std::make_shared<SymbolType>("int!");
-    member->asmType = new SymbolType("int!");
+    return_type = std::make_shared<SymbolType>(name);
+    member->asmType = new SymbolType("enum");
 }
 
 void TypeChecker::handleUnknownType(MemberExpr *member, const std::string &lhsType) {

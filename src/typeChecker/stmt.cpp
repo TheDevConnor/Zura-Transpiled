@@ -314,13 +314,13 @@ void TypeChecker::visitPrint(Node::Stmt *stmt) {
   OutputStmt *print_stmt = static_cast<OutputStmt *>(stmt);
   visitExpr(print_stmt->fd);
   if (!isIntBasedType(return_type.get())) {
-    std::string msg = "Print requires the file descriptor to be of type 'int?' "
+    std::string msg = "Print requires the file descriptor to be of type 'int!' "
                       "but got '" + type_to_string(return_type.get()) + "'";
     handleError(print_stmt->line, print_stmt->pos, msg, "", "Type Error");
   }
 
   // check if we are a println statement if so add a new line to the end
-  if (print_stmt->isPrintln) print_stmt->args.push_back(new StringExpr(0, 0, "'\n'", 0));
+  if (print_stmt->isPrintln) print_stmt->args.push_back(new StringExpr(0, 0, "\"\\n\"", 0));
 
   for (size_t i = 0; i < print_stmt->args.size(); i++) {
     visitExpr(print_stmt->args[i]);
