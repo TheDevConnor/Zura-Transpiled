@@ -774,6 +774,17 @@ void codegen::arrayElem(Node::Expr *expr) {
            Section::Main);
       short byteSize = getByteSizeOfType(e->lhs->asmType);
       long long offset = -index->value * byteSize;
+      // If it a struct, however, we must return rcx as we expect it to be an address
+      if (structByteSizes.find(getUnderlying(static_cast<ArrayType *>(e->lhs->asmType)->underlying)) != structByteSizes.end()) {
+        // lea instr
+        push(Instr{.var = LeaInstr{.size = DataSize::Qword, 
+                                   .dest = "%rcx",
+                                   .src = std::to_string(offset) + "(%rcx)"},
+                   .type = InstrType::Lea},
+             Section::Main);
+        pushRegister("%rcx");
+        return;
+      }
       switch (byteSize) {
         case 1:
           push(Instr{.var = PushInstr{.what = std::to_string(offset) + "(%rcx)",
