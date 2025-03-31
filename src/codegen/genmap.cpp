@@ -52,7 +52,7 @@ void codegen::initMaps() {
            {"<", "setl"},  {"<=", "setle"}, {"||", "lor"}, {"|", "bor"},
            {"&&", "land"}};
   typeSizes = {
-      {"int", 8},  {"float", 4}, {"enum", 8}, {"str", 8},
+      {"int", 8},  {"float", 4}, {"enum", 4}, {"str", 8},
       {"char", 1}, {"bool", 1},  {"void", 0}, {"double", 8},
       {"long double", 10}, {"long", 4}
   };

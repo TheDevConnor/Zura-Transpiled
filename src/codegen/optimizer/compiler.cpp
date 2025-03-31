@@ -44,8 +44,29 @@ Node::Expr *CompileOptimizer::optimizeExpr(Node::Expr *expr) {
     case NodeKind::ND_BINARY: return optimizeBinary(static_cast<BinaryExpr *>(expr));
     case NodeKind::ND_GROUP:  return optimizeExpr(static_cast<GroupExpr *>(expr)->expr);
     case NodeKind::ND_UNARY:  return optimizeUnary(static_cast<UnaryExpr *>(expr));
+    case NodeKind::ND_MEMBER: return optimizeMember(static_cast<MemberExpr *>(expr));
     default: return expr;
   }
+}
+
+Node::Expr *CompileOptimizer::optimizeMember(MemberExpr *expr) {
+  // Optimize the lhs and rhs
+  Node::Expr *lhs = CompileOptimizer::optimizeExpr(expr->lhs);
+  Node::Expr *rhs = CompileOptimizer::optimizeExpr(expr->rhs);
+  // If the lhs is a struct literal, we can optimize
+  if (lhs->kind == ND_STRUCT) {
+    // If the rhs is an ident, we can optimize
+    StructExpr *lhsStruct = static_cast<StructExpr *>(lhs);
+    if (rhs->kind == ND_IDENT) {
+      IdentExpr *rhsIdent = static_cast<IdentExpr *>(rhs);
+      // We can return the expression!!!!
+      if (lhsStruct->values.find(rhsIdent->name) != lhsStruct->values.end()) {
+        return lhsStruct->values[rhsIdent->name];
+      }
+    }
+  }
+
+  return expr;
 }
 
 Node::Expr *CompileOptimizer::optimizeUnary(UnaryExpr *expr) {

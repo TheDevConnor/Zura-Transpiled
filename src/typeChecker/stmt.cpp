@@ -353,7 +353,7 @@ void TypeChecker::visitTemplateStmt(Node::Stmt *stmt) {
   //           templateStmt->line, templateStmt->pos);
   // }
   std::cout << "TemplateStmt not implemented yet. Attempted on function named '" << templateStmt->typenames[0] << "'" << std::endl;
-  exit(1);
+  exit(-1);
 }
 
 void TypeChecker::visitFor(Node::Stmt *stmt) {

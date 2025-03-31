@@ -153,7 +153,7 @@ std::string codegen::dwarf::generateAbbreviations() {
                          "\n.uleb128 0xB # AT_byte_size"
                          "\n.uleb128 0xb # FORM_data1"
                          "\n.uleb128 0x3 # AT_name"
-                         "\n.uleb128 0x8 # FORM_string"
+                         "\n.uleb128 0xE # FORM_strp"
                          "\n.uleb128 0x49 #  AT_type"
                          "\n.uleb128 0x13 #  FORM_ref4";
         break;

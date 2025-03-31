@@ -113,7 +113,7 @@ void codegen::cast(Node::Expr *expr) {
   }
   if (toType->name == "enum") {
     // Enums are truly just ints under-the-hood
-    if (fromType->name != "int") {
+    if (fromType->name != "long") {
       std::cerr << "Cannot cast non-int to enum" << std::endl;
       exit(-1);
     }
@@ -136,7 +136,58 @@ void codegen::cast(Node::Expr *expr) {
       pushRegister("%rax");
     }
   } else if (toType->name == "int") {
-    if (fromType->name == "int" || fromType->name == "enum") {
+    if (TypeChecker::isIntBasedType(fromType)) {
+      std::string fromReg = "%rax";
+      DataSize fromSize = DataSize::Qword;
+      switch (getByteSizeOfType(fromType)) {
+        case 1:
+          fromReg = "%al";
+          fromSize = DataSize::Byte;
+          break;
+        case 2:
+          fromReg = "%ax";
+          fromSize = DataSize::Word;
+          break;
+        case 4:
+          fromReg = "%eax";
+          fromSize = DataSize::Dword;
+          break;
+        case 8:
+        default:
+          fromReg = "%rax";
+          fromSize = DataSize::Qword;
+          break;
+      }
+      push(Instr{.var = PopInstr{.where = fromReg, .whereSize = fromSize}, .type = InstrType::Pop}, Section::Main);
+      if (getByteSizeOfType(fromType) < getByteSizeOfType(toType)) {
+        if (toType->signedness == SymbolType::Signedness::SIGNED) {
+          // Do a sign extend
+          switch (getByteSizeOfType(fromType)) {
+            case 2:
+              pushLinker("movsbl " + fromReg + ", %ax\n\t", Section::Main);
+              break;  
+            case 4:
+              pushLinker("movslq " + fromReg + ", %rax\n\t", Section::Main);
+              break;
+            default:
+              break;
+          }
+          // Do a zero extend (basically do nothing actually)
+          switch (getByteSizeOfType(fromType)) {
+            case 1:
+              pushLinker("movzbl " + fromReg + ", %eax\n\t", Section::Main);
+              break;
+            case 2:
+              pushLinker("movzwl " + fromReg + ", %eax\n\t", Section::Main);
+              break;
+            case 4:
+              pushLinker("movl " + fromReg + ", %eax\n\t", Section::Main);
+              break;
+            default:
+              break;
+          }
+        }
+      }
       // Do nothing, it's already an int
       // Enums are explicitly ints under-the-hood as well
       return;

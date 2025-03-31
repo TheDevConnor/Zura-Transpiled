@@ -315,8 +315,8 @@ void codegen::varDecl(Node::Stmt *stmt) {
       // Basically ignore the part where we allocate memory for this thing.
       declareStructVariable(s->expr, getUnderlying(s->type), "%rbp", variableCount);
       int structSize = structByteSizes[getUnderlying(s->type)].first;
-      variableTable.insert({s->name, where});
       variableCount += structSize;
+      variableTable.insert({s->name, std::to_string(-(variableCount-8)) + "(%rbp)"});
     } else if (s->type->kind == ND_ARRAY_TYPE ||
                s->type->kind == ND_ARRAY_AUTO_FILL) {
       ArrayType *at = static_cast<ArrayType *>(s->type);
@@ -376,7 +376,7 @@ void codegen::varDecl(Node::Stmt *stmt) {
   dwarf::useType(s->type);
   dwarf::useAbbrev(dwarf::DIEAbbrev::Variable);
   dwarf::useAbbrev(dwarf::DIEAbbrev::Type);
-  size_t fbreg_loc = whereBytes - 16;
+  signed long long fbreg_loc = whereBytes - 16;
   // if struct, we must change this fbreg loc because of stinky reasons
   if (s->type->kind == ND_SYMBOL_TYPE &&
       structByteSizes.find(getUnderlying(s->type)) != structByteSizes.end()) {
@@ -522,6 +522,7 @@ void codegen::enumDecl(Node::Stmt *stmt) {
     dwarf::useStringP(s->name);
   }
   int fieldCount = 0;
+  enumTable.emplace(s->name);
   for (std::string &field : s->fields) {
     // Turn the enum field into an assembler constant
     push(Instr{.var = LinkerDirective{.value = ".set enum_" + s->name + "_" +
@@ -562,13 +563,21 @@ void codegen::structDecl(Node::Stmt *stmt) {
   StructStmt *s = static_cast<StructStmt *>(stmt);
   // As a declaration, this cannot have a loc directive
   //! pushDebug(s->line, stmt->file_id, s->pos);
-  short size = 0;
-  std::vector<StructMember> members;
-  // Calculate size by adding the size of members
+  long size = 0;
+  std::vector<StructMember> members = {};
   for (std::pair<std::string, Node::Type *> field : s->fields) {
     short fieldSize = getByteSizeOfType(field.second);
-    members.push_back({field.first, {field.second, size}}); // Place the "size" (offset) BEFORE we add to the total
     size += fieldSize; // Yes, even calculates the size of nested structs.
+  }
+  long subSize = size;
+  // Calculate size by adding the size of members
+  for (size_t i = 0; i < s->fields.size(); i++) {
+    // Turn into offsets
+    // For example: { short, int } -> { 2, 0 }
+    // For example: { int, short, int } -> { 6, 2, 0 }
+    long offset = subSize - getByteSizeOfType(s->fields.at(0).second);
+    members.push_back({s->fields.at(i).first, {s->fields.at(i).second, offset}});
+    subSize -= getByteSizeOfType(s->fields.at(i).second);
   }
   structByteSizes.insert({s->name, {size, members}});
 
@@ -604,23 +613,23 @@ void codegen::structDecl(Node::Stmt *stmt) {
     // Push name
     dwarf::useStringP(s->name);
 
-    int currentByte = 0;
+    long currentByte = size;
     for (std::pair<std::string, Node::Type *> field : s->fields) {
       // Push member DIE
+      currentByte -= getByteSizeOfType(field.second);
       dwarf::useType(field.second);
       pushLinker(".uleb128 " +
                      std::to_string((int)dwarf::DIEAbbrev::StructMember) +
                      "\n.long .L" + field.first + "_string"
                      "\n.long .L" + type_to_diename(field.second) + "_debug_type"
                     //  "\n.byte " + std::to_string(sizeOfLEB(-currentByte)) +
-                     "\n.sleb128 " + std::to_string(size - currentByte - getByteSizeOfType(s->fields[0].second)) + // Offset in struct
+                     "\n.sleb128 " + std::to_string(currentByte) + // Offset in struct
                      "\n",
                  Section::DIE);
       // push name in string
       dwarf::useStringP(field.first);
 
       // Add the byte size of this to the current byte
-      currentByte += getByteSizeOfType(field.second);
     }
 
     // Push end of children
@@ -650,7 +659,22 @@ void codegen::_return(Node::Stmt *stmt) {
   // Generate return value for the function
   codegen::visitExpr(returnStmt->expr);
   if (isEntryPoint) {
-    popToRegister("%rdi");
+    // Depending on the size of the return value, we have to use the right kind of pop size
+    switch (getByteSizeOfType(returnStmt->expr->asmType)) {
+      case 1:
+        push(Instr{.var=PopInstr{.where="%dl",.whereSize=DataSize::Byte},.type=InstrType::Pop},Section::Main);
+        break;
+      case 2:
+        push(Instr{.var=PopInstr{.where="%dx",.whereSize=DataSize::Word},.type=InstrType::Pop},Section::Main);
+        break;
+      case 4:
+        push(Instr{.var=PopInstr{.where="%edx",.whereSize=DataSize::Dword},.type=InstrType::Pop},Section::Main);
+        break;
+      case 8:
+      default:
+        push(Instr{.var=PopInstr{.where="%rdx",.whereSize=DataSize::Qword},.type=InstrType::Pop},Section::Main);
+        break;
+    }
     handleExitSyscall();
     return;
   }
@@ -959,16 +983,11 @@ void codegen::dereferenceStructPtr(Node::Expr *expr, std::string structName,
     visitExpr(deref->left);
     PushInstr prevPush =
         std::get<PushInstr>(text_section[text_section.size() - 1].var);
-    if (prevPush.what.find('(') == std::string::npos) popToRegister("%rsi");
-    else {
-      text_section.pop_back();
-      // leaq
-      push(Instr{.var=LeaInstr{.size=DataSize::Qword,.dest="%rsi",.src=prevPush.what},.type=InstrType::Lea},Section::Main);
-    }
+    popToRegister("%rsi");
     // the destination is just the offset register and the offset, lol
     push(Instr{.var=Comment{.comment="Optimized struct copy"},.type=InstrType::Comment},Section::Main);
     // lea the dest
-    push(Instr{.var=LeaInstr{.size=DataSize::Qword,.dest="%rdi",.src=std::to_string(-(startOffset+structSize))+"("+offsetRegister+")"},.type=InstrType::Lea},Section::Main);
+    push(Instr{.var=LeaInstr{.size=DataSize::Qword,.dest="%rdi",.src=std::to_string(-((signed)startOffset+structSize-8))+"("+offsetRegister+")"},.type=InstrType::Lea},Section::Main);
     // if divisible by 8, do qword, if 4, do dword, etc
     if (structSize % 8 == 0) {
       moveRegister("%rcx", "$" + std::to_string(structSize / 8), DataSize::Qword, DataSize::Qword);
@@ -994,19 +1013,19 @@ void codegen::dereferenceStructPtr(Node::Expr *expr, std::string structName,
       // move a qword from src to dst
       structSize -= 8;
       moveRegister("%rax", std::to_string(structSize) + "(%rsi)", DataSize::Qword, DataSize::Qword);
-      moveRegister(std::to_string(-(startOffset + structSize)) + "(" + offsetRegister + ")", "%rax", DataSize::Qword, DataSize::Qword);
+      moveRegister(std::to_string(-((signed)startOffset + structSize)) + "(" + offsetRegister + ")", "%rax", DataSize::Qword, DataSize::Qword);
     } else if (structSize >= 4) {
       structSize -= 4;
       moveRegister("%eax", std::to_string(structSize) + "(%rsi)", DataSize::Dword, DataSize::Dword);
-      moveRegister(std::to_string(-(startOffset + structSize)) + "(" + offsetRegister + ")", "%eax", DataSize::Dword, DataSize::Dword);
+      moveRegister(std::to_string(-((signed)startOffset + structSize)) + "(" + offsetRegister + ")", "%eax", DataSize::Dword, DataSize::Dword);
     } else if (structSize >= 2) {
       structSize -= 2;
       moveRegister("%ax", std::to_string(structSize) + "(%rsi)", DataSize::Word, DataSize::Word);
-      moveRegister(std::to_string(-(startOffset + structSize)) + "(" + offsetRegister + ")", "%ax", DataSize::Word, DataSize::Word);
+      moveRegister(std::to_string(-((signed)startOffset + structSize)) + "(" + offsetRegister + ")", "%ax", DataSize::Word, DataSize::Word);
     } else {
       structSize -= 1;
       moveRegister("%al", std::to_string(structSize) + "(%rsi)", DataSize::Byte, DataSize::Byte);
-      moveRegister(std::to_string(-(startOffset + structSize)) + "(" + offsetRegister + ")", "%al", DataSize::Byte, DataSize::Byte);
+      moveRegister(std::to_string(-((signed)startOffset + structSize)) + "(" + offsetRegister + ")", "%al", DataSize::Byte, DataSize::Byte);
     }
   }
 }
@@ -1035,7 +1054,10 @@ void codegen::declareStructVariable(Node::Expr *expr, std::string structName,
   // evaluate each field and store its result inside the (outer) struct
   for (size_t i = 0; i < fields.size(); i++) {
     Node::Expr *field = fields.at(i);
-    unsigned short offset = structByteSizes[structName].second.at(i).second.second;
+    signed long offset = structByteSizes[structName].second.at(i).second.second;
+    if (structByteSizes[structName].second.size() > 1) {
+      // offset -= getByteSizeOfType(structByteSizes[structName].second.at(0).second.first);
+    }
     if (field->asmType->kind == ND_SYMBOL_TYPE && structByteSizes.find(getUnderlying(field->asmType)) != structByteSizes.end()) {
       if (field->kind == ND_STRUCT) {
         // Evaluate THAT struct but place it in the outer struct at the offset
@@ -1048,6 +1070,9 @@ void codegen::declareStructVariable(Node::Expr *expr, std::string structName,
 
       // NEXT UPPP we must copy each byte
       short byteCount = getByteSizeOfType(field->asmType);
+      std::cout << "stmt:1052" << std::endl;
+      std::cout << "Field name: " << structByteSizes[structName].second.at(i).first << std::endl;
+      std::cout << "Field size: " << std::to_string(byteCount) << std::endl;
       while (byteCount > 0) {
         if (byteCount >= 8) {
           // Move a qword
@@ -1156,7 +1181,6 @@ void codegen::declareArrayVariable(Node::Expr *expr, long long arrayLength,
     variableCount = preVarCount;
     return;
   }
-
   ArrayExpr *s = static_cast<ArrayExpr *>(expr);
   ArrayType *at = static_cast<ArrayType *>(s->type);
   dwarf::useType(s->type);
@@ -1169,8 +1193,14 @@ void codegen::declareArrayVariable(Node::Expr *expr, long long arrayLength,
     if (element->kind == ND_STRUCT) {
       // Structs cannot be generated in the expr.
       // We must assign each value to its place in the array.
-      size_t startingPoint = arrayBase + ((i-1) * underlyingByteSize);
+      long long startingPoint = arrayBase + ((i - 1) * underlyingByteSize);
       declareStructVariable(element, getUnderlying(at), "%rbp", startingPoint);
+      continue;
+    } else if (structByteSizes.find(getUnderlying(element->asmType)) != structByteSizes.end()) {
+      // Although this is a struct, this is not a struct literal.
+      // This means we must move whatever is in the struct into the array by copying it
+
+      std::cout << "do this later" << std::endl;
       continue;
     }
     visitExpr(element);

@@ -374,8 +374,8 @@ void codegen::handlePrimitiveDisplay(Node::Expr *fd, Node::Expr *arg) {
       break;
     case 4:
       push(Instr{.var=PopInstr{.where="%eax",.whereSize=DataSize::Dword},.type=InstrType::Pop},Section::Main);
-      if (isSigned) pushLinker("movswq %eax, %rdi\n\t",Section::Main);
-      else pushLinker("movzwq %eax, %rdi\n\t",Section::Main);
+      if (isSigned) pushLinker("movslq %eax, %rdi\n\t",Section::Main);
+      else pushLinker("movzlq %eax, %rdi\n\t",Section::Main);
       break;
     case 8:
     default:
@@ -453,6 +453,9 @@ signed short int codegen::getByteSizeOfType(Node::Type *type) {
       }
       if (typeSizes.find(sym->name) != typeSizes.end()) {
         return typeSizes[sym->name];
+      }
+      if (enumTable.find(sym->name) != enumTable.end()) {
+        return 4;
       }
       if (sym->name.find("*") != std::string::npos) return 8;
       // Unknown type...

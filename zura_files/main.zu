@@ -1,25 +1,2 @@
-const kind := enum {
-  number, 
-  plus,
-  minus,
-  times,
-  divide,
-};
-
-const token := struct {
-  k: int!,
-  v: str,
-};
-
-const main := fn () int! {
-  have t: [1]token = [ 
-    { 
-      k: kind.number, # This does not work
-      v: "1"
-    }, 
-  ]; 
-
-  @outputln(1, t[0].v);
-
-  return 0;
-};
+const k:=enum{a,b,c,d,e};const t:=struct{z:k,v:str};const main:=fn()int!{have l:[1]t=[{z:k.a,v:"3.14159"}];@output(1,l[0].v);return @cast<int!>(l[0].z);};
+# This test is the only one that breaks. I need to change the offset of the struct in the variable table it seems

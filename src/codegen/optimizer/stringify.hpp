@@ -67,7 +67,7 @@ public:
           }
           // Everything else, we must assume a zero-extend
           std::stringstream ss;
-          ss << "movz" << dsToChar(instr.srcSize) << dsToChar(instr.destSize) << " " << instr.src << ", " << instr.dest << "\n\t";
+          ss << "movzx" << dsToChar(instr.srcSize) << " " << instr.src << ", " << instr.dest << "\n\t";
           return ss.str();
         }
         if (instr.src.starts_with("$") && instr.src.size() > 1) {

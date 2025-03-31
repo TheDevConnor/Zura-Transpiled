@@ -266,11 +266,13 @@ Node::Type *TypeChecker::createDuplicate(Node::Type *type) {
 
 bool TypeChecker::isIntBasedType(Node::Type *type) {
   const static std::unordered_set<std::string> intTypes = {
-    "int", "char", "short", "long", // add more, maybe even a superlong for 128-bit lmao
+    "int", "char", "short", "long", "enum", // add more, maybe even a superlong for 128-bit lmao
   };
 
   // Do not check for signedness ON PURPOSE
   if (type->kind != ND_SYMBOL_TYPE) return false;
   SymbolType *sym = static_cast<SymbolType *>(type);
+  // enum table
+  if (context->enumTable.contains(sym->name)) return true;
   return intTypes.find(sym->name) != intTypes.end();
 }

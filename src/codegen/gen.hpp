@@ -108,6 +108,7 @@ size_t round(size_t num, size_t multiple=8); // Round a number up to the nearest
 using StructMember = std::pair<std::string, std::pair<Node::Type *, unsigned short int>>;
 // <size, <StructMember>>
 using Struct = std::pair<unsigned short, std::vector<StructMember>>;
+inline std::set<std::string> enumTable = {};
 inline std::unordered_map<std::string, Struct> structByteSizes = {}; // Name of a struct and its size in bytes
 
 signed short int getByteSizeOfType(Node::Type *type); // Return the size of a type in bytes, ie pointers are a size_t (os specific macros baby!)

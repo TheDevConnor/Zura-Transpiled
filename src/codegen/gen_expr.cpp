@@ -722,15 +722,15 @@ void codegen::arrayElem(Node::Expr *expr) {
       Node::Type *underlying = static_cast<ArrayType *>(ident->type)->underlying;
       std::string whereBytes = variableTable[ident->name];
       long long offset = std::stoll(whereBytes.substr(
-          0, whereBytes.find("("))); // this is the base of the array - the
-                                     // first byte of the first element
-      // if struct type
-      if (structByteSizes.find(getUnderlying(underlying)) != structByteSizes.end()) {
-        // It's a struct. an LEA is expected, even if the struct is less than 16 bytes
-        // Arrays are declared backwards (relatively)
-        push(Instr{.var = LeaInstr{.size = DataSize::Qword, 
-                                   .dest = "%rcx",
-                                   .src = std::to_string(offset + ((index->value + 1) * structByteSizes[getUnderlying(underlying)].first)) + "(%rbp)"},
+        0, whereBytes.find("("))); // this is the base of the array - the
+        // first byte of the first element
+        // if struct type
+        if (structByteSizes.find(getUnderlying(underlying)) != structByteSizes.end()) {
+          // It's a struct. an LEA is expected, even if the struct is less than 16 bytes
+          // Arrays are declared backwards (relatively)
+          push(Instr{.var = LeaInstr{.size = DataSize::Qword, 
+            .dest = "%rcx",
+                                   .src = std::to_string(offset + (index->value * structByteSizes[getUnderlying(underlying)].first)) + "(%rbp)"},
                    .type = InstrType::Lea},
              Section::Main);
         pushRegister("%rcx");
@@ -902,9 +902,86 @@ void codegen::memberExpr(Node::Expr *expr) {
   if (lhsName == "enum") {
     IdentExpr *lhs = static_cast<IdentExpr *>(e->lhs);
     IdentExpr *rhs = static_cast<IdentExpr *>(e->rhs);
-    pushRegister("$enum_" + lhs->name + "_" + rhs->name);
+    push(Instr{.var = PushInstr{.what = "$enum_" + lhs->name + "_" + rhs->name,
+                                .whatSize = DataSize::Dword},
+               .type = InstrType::Push},
+         Section::Main);
     return;
   }
+
+  if (e->lhs->kind == ND_INDEX) {
+    visitExpr(e->lhs);
+    // Should push the value of the array element. If not, then I'm dumb and it
+    // pushed its addr Pop the value into a register
+    popToRegister("%rcx");
+    // Now we can access the member
+    IndexExpr *index = static_cast<IndexExpr *>(e->lhs);
+    // get the member
+    IdentExpr *member = static_cast<IdentExpr *>(e->rhs);
+    // get the type of whatever we are indexing
+    Node::Type *indexType = index->asmType;
+    // if type was a struct
+    if (indexType->kind == ND_SYMBOL_TYPE) {
+      SymbolType *sym = static_cast<SymbolType *>(e->asmType);
+      if (structByteSizes.find(sym->name) != structByteSizes.end()) {
+        int offset = 0; // im gonna do something about that later
+        std::string structName = sym->name;
+        std::vector<StructMember> fields = structByteSizes[structName].second;
+        for (size_t i = 0; i < fields.size(); i++) {
+          if (fields[i].first == member->name) {
+            offset = fields[i].second.second;
+            break;
+          }
+        }
+        // now we can access the member
+        push(Instr{.var = LeaInstr{.size = DataSize::Qword,
+                                   .dest = "%rcx",
+                                   .src = std::to_string(offset) + "(%rcx)"},
+                 .type = InstrType::Lea},
+             Section::Main);
+        pushRegister("%rcx");
+        return;
+      } else {
+        // if the type was a primitive or a pointer
+        long int where = 0;
+        visitExpr(index); // Will return a struct (with an lea)
+        // Pop the value into a register
+        popToRegister("%rcx");
+        for (size_t i = 0; i < structByteSizes[getUnderlying(indexType)].second.size(); i++) {
+          if (structByteSizes[getUnderlying(indexType)].second[i].first == member->name) {
+            where = structByteSizes[getUnderlying(indexType)].second[i].second.second;
+            break;
+          }
+        }
+        switch (getByteSizeOfType(e->asmType)) {
+          case 1:
+            push(Instr{.var = PushInstr{.what = std::to_string(where) + "(%rcx)",
+                                        .whatSize = DataSize::Byte},
+                       .type = InstrType::Push},
+                 Section::Main);
+            break;
+          case 2:
+            push(Instr{.var = PushInstr{.what = std::to_string(where) + "(%rcx)",
+                                        .whatSize = DataSize::Word},
+                       .type = InstrType::Push},
+                 Section::Main);
+            break;
+          case 4:
+            push(Instr{.var = PushInstr{.what = std::to_string(where) + "(%rcx)",
+                                        .whatSize = DataSize::Dword},
+                       .type = InstrType::Push},
+                 Section::Main);
+            break;
+          case 8:
+          default:
+            pushRegister(std::to_string(where) + "(%rcx)");
+            break;
+        }
+        return;
+      }
+      // if type was an array (not dealing with this today)
+    }
+  };
 
   if (structByteSizes.find(lhsName) != structByteSizes.end()) {
     // It's a struct
@@ -942,12 +1019,12 @@ void codegen::memberExpr(Node::Expr *expr) {
       // It was just a push. This means that it was a pointer and we have to actually just do the work here.
       whatWasPushed = std::get<PushInstr>(text_section.at(text_section.size() - 1)
                                              .var).what;
-      int offsetFromBase = 0;
-      for (size_t i = 0; i < fields.size(); i++) {
+      int offsetFromBase = fields.size() == 1 ? 0 :structByteSizes[structName].first;
+      if (fields.size() > 1) for (size_t i = 0; i < fields.size(); i++) {
         if (fields[i].first == static_cast<IdentExpr *>(e->rhs)->name) {
-          offsetFromBase = -(fields[i].second.second);
           break;
         }
+        offsetFromBase -= getByteSizeOfType(fields[i].second.first);
       }
       bool resultIsStruct = structByteSizes.find(getUnderlying(e->asmType)) !=
                             structByteSizes.end();
@@ -1005,17 +1082,16 @@ void codegen::memberExpr(Node::Expr *expr) {
     // Now, we have to do some crazy black magic shit like -8(%rcx) but we find
     // what to replace '8' with.
     std::string fieldName = static_cast<IdentExpr *>(e->rhs)->name;
-
     // Right now, %rcx points to the beginning of the struct, which contains the
     // last field. In order to get the field we need, we should just loop over
     // all the fields and add to an offset.
-    short offset = 0;
+    long offset = structByteSizes[structName].first;
     for (size_t i = 0; i < structByteSizes[structName].second.size(); i++) {
+      offset -= getByteSizeOfType(structByteSizes[structName].second.at(i).second.first);
       if (structByteSizes[structName].second.at(i).first == fieldName) {
-        offset = -(signed short)(structByteSizes[structName]
-                      .second.at(i)
-                      .second
-                      .second); // This is the offset, not the size of the type!
+        if (structByteSizes[structName].second.size() > 1) {
+          offset += getByteSizeOfType(structByteSizes[structName].second.at(0).second.first);
+        }
         break;
       }
     }
@@ -1027,7 +1103,7 @@ void codegen::memberExpr(Node::Expr *expr) {
       if (pushedHasOffset) {
         push(Instr{.var = LeaInstr{.size = DataSize::Qword,
                                    .dest = "%rcx",
-                                   .src = std::to_string(whatWasPushedOffset +
+                                   .src = std::to_string(-whatWasPushedOffset -
                                                          (offset)) +
                                           "(" + whatWasPushedReg + ")"},
                    .type = InstrType::Lea},
@@ -1060,37 +1136,6 @@ void codegen::memberExpr(Node::Expr *expr) {
     }
     return;
   }
-
-  if (e->lhs->kind == ND_INDEX) {
-    visitExpr(e->lhs);
-    // Should push the value of the array element. If not, then I'm dumb and it
-    // pushed its addr Pop the value into a register
-    popToRegister("%rcx");
-    // Now we can access the member
-    IndexExpr *index = static_cast<IndexExpr *>(e->lhs);
-    // get the member
-    IdentExpr *member = static_cast<IdentExpr *>(e->rhs);
-    // get the type of whatever we are indexing
-    Node::Type *indexType = index->asmType;
-    // if type was a struct
-    if (indexType->kind == ND_SYMBOL_TYPE) {
-      SymbolType *sym = static_cast<SymbolType *>(indexType);
-      if (structByteSizes.find(sym->name) != structByteSizes.end()) {
-        int offset = 0; // im gonna do something about that later
-        std::string structName = sym->name;
-        std::vector<StructMember> fields = structByteSizes[structName].second;
-        for (size_t i = 0; i < fields.size(); i++) {
-          if (fields[i].first == member->name)
-            break;
-          offset += fields[i].second.second;
-        }
-        // now we can access the member
-        pushRegister(std::to_string(offset) + "(%rcx)");
-      }
-      // if type was an array (not dealing with this today)
-    }
-    return;
-  };
 
   std::cerr
       << "No fancy error for this, beg Connor... (Soviet Pancakes speaking)"

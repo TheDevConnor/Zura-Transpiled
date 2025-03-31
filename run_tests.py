@@ -106,6 +106,9 @@ class TestZuraPrograms(unittest.TestCase):
     def test_signed_arrays(self):
         run_test("const main := fn () int! { have a: [5]int? = [-1, -2, -3, -4, -5]; return (a[2] * -1); };", expected_exit_code=3)
 
+    def test_array_of_struct_multiple_fields(self):
+        run_test("const k:=enum{a,b,c,d,e};const t:=struct{z:k,v:str};const main:=fn()int!{have l:[1]t=[{z:k.a,v:\"3.14159\"}];@output(1,l[0].v);return @cast<int!>(l[0].z);};", expected_output="3.14159", expected_exit_code=0)
+
     # no ! or ? symbol in the underlying type
     def test_inferred_signedness_arrays(self):
         run_test("const main := fn () int! { have a: [5]int = [1, 2, 3, 4, 5]; return a[2]; };", expected_exit_code=3)

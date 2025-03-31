@@ -13,6 +13,7 @@ public:
 
   ProgramStmt(std::vector<Node::Stmt *> stmt, std::string path) : stmt(stmt), inputPath(path) {
     kind = NodeKind::ND_PROGRAM;
+    file_id = -1; // This is the main file, no? It would make no sense
   }
 
   void debug(int indent = 0) const override {
