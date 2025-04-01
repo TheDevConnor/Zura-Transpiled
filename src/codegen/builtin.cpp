@@ -187,6 +187,8 @@ void codegen::cast(Node::Expr *expr) {
               break;
           }
         }
+        // No matter how its signed, we must still push in order to return
+        pushRegister("%rax");
       }
       // Do nothing, it's already an int
       // Enums are explicitly ints under-the-hood as well

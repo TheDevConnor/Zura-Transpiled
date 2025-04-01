@@ -90,13 +90,12 @@ void Optimizer::processOppositePair(std::vector<Instr> *output, Instr &prev, Ins
         tryPop(output);
         simplifyPushPopPair(output, prev, curr);
         prev = Instr {.var = {}, .type=InstrType::NONE}; // Reset prev after processing
-    } else if (curr.type == InstrType::Lea) {
+    } else if (curr.type == InstrType::Lea && prev.type == InstrType::Lea) {
         // Check if the previous lea had the same source and destination
         LeaInstr currAsLea = std::get<LeaInstr>(curr.var);
         LeaInstr prevAsLea = std::get<LeaInstr>(prev.var);
-        
+      
         if (currAsLea.dest == prevAsLea.dest &&
-            currAsLea.src == prevAsLea.src &&
             !(currAsLea.src.find(prevAsLea.dest) != std::string::npos)) {
             // leaq -8(%rbp), %rax
             // leaq -8(%rbp), %rax
@@ -105,10 +104,12 @@ void Optimizer::processOppositePair(std::vector<Instr> *output, Instr &prev, Ins
             // leaq -8(%rax), %rax
             // leaq -8(%rax), %rax
             // IS VERY NEEDED!!!!!!
-            
-            return; // Prev was already pushed, so we can keep that one
+            // Remove prev
+            prev = Instr {.var = {}, .type=InstrType::NONE};
+            // Try pop
+            tryPop(output);
+            output->push_back(curr);
         }
-        output->push_back(curr);
     } else {
         output->push_back(curr);
     }
@@ -131,7 +132,7 @@ void Optimizer::simplifyPushPopPair(std::vector<Instr> *output, Instr &prev, Ins
         // I hate that this is the solution, Intel go fix your stinky x86
         Instr newInstr = {
             .var = MovInstr{.dest="%r13",.src=prevAsPush.what,.destSize=DataSize::Qword,.srcSize=prevAsPush.whatSize},
-            .type = InstrType::Lea
+            .type = InstrType::Mov
         };
         prev = newInstr;
         output->push_back(newInstr);

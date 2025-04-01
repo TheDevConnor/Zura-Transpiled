@@ -4,6 +4,7 @@
 #include "optimizer/compiler.hpp"
 #include "optimizer/instr.hpp"
 
+#include <algorithm>
 #include <iostream>
 #include <string>
 #include <sys/cdefs.h>
@@ -316,7 +317,7 @@ void codegen::varDecl(Node::Stmt *stmt) {
       declareStructVariable(s->expr, getUnderlying(s->type), "%rbp", variableCount);
       int structSize = structByteSizes[getUnderlying(s->type)].first;
       variableCount += structSize;
-      variableTable.insert({s->name, std::to_string(-(variableCount-8)) + "(%rbp)"});
+      variableTable.insert({s->name, std::to_string(-variableCount) + "(%rbp)"});
     } else if (s->type->kind == ND_ARRAY_TYPE ||
                s->type->kind == ND_ARRAY_AUTO_FILL) {
       ArrayType *at = static_cast<ArrayType *>(s->type);
@@ -325,7 +326,7 @@ void codegen::varDecl(Node::Stmt *stmt) {
           s->expr, static_cast<ArrayType *>(s->type)->constSize,
           s->name); // s->name so it can be inserted to variableTable, s->type
                     // so we know the byte sizes.
-      variableCount += (getByteSizeOfType(at->underlying) * at->constSize) + 8;
+      variableCount += (getByteSizeOfType(at->underlying) * at->constSize);
     } else {
       visitExpr(s->expr);
       DataSize size = DataSize::Qword;
@@ -383,6 +384,13 @@ void codegen::varDecl(Node::Stmt *stmt) {
     // Fbreg = location of last member of struct - 16
     Struct &st = structByteSizes[getUnderlying(s->type)];
     fbreg_loc = whereBytes - st.second[st.second.size() - 1].second.second - 16;
+  }
+  if (s->type->kind == ND_ARRAY_TYPE) {
+    ArrayType *at = static_cast<ArrayType *>(s->type);
+    // If the underlying type was AGAIN a struct
+    if (structByteSizes.find(getUnderlying(at->underlying)) != structByteSizes.end()) {
+      fbreg_loc = -((variableCount - getByteSizeOfType(structByteSizes[getUnderlying(at->underlying)].second.back().second.first)) + 16);
+    }
   }
   pushLinker(
       ".uleb128 " + std::to_string((int)dwarf::DIEAbbrev::Variable) +
@@ -571,11 +579,13 @@ void codegen::structDecl(Node::Stmt *stmt) {
   }
   long subSize = size;
   // Calculate size by adding the size of members
-  for (size_t i = 0; i < s->fields.size(); i++) {
+  for (long i = 0; i < (signed)s->fields.size(); i++) {
     // Turn into offsets
     // For example: { short, int } -> { 2, 0 }
     // For example: { int, short, int } -> { 6, 2, 0 }
-    long offset = subSize - getByteSizeOfType(s->fields.at(0).second);
+
+    // In both cases, the last element is stored at 0
+    long offset = subSize - getByteSizeOfType(s->fields.back().second);
     members.push_back({s->fields.at(i).first, {s->fields.at(i).second, offset}});
     subSize -= getByteSizeOfType(s->fields.at(i).second);
   }
@@ -613,23 +623,23 @@ void codegen::structDecl(Node::Stmt *stmt) {
     // Push name
     dwarf::useStringP(s->name);
 
-    long currentByte = size;
+    long currentByte = 0;
     for (std::pair<std::string, Node::Type *> field : s->fields) {
       // Push member DIE
-      currentByte -= getByteSizeOfType(field.second);
       dwarf::useType(field.second);
       pushLinker(".uleb128 " +
-                     std::to_string((int)dwarf::DIEAbbrev::StructMember) +
-                     "\n.long .L" + field.first + "_string"
-                     "\n.long .L" + type_to_diename(field.second) + "_debug_type"
-                    //  "\n.byte " + std::to_string(sizeOfLEB(-currentByte)) +
-                     "\n.sleb128 " + std::to_string(currentByte) + // Offset in struct
-                     "\n",
-                 Section::DIE);
-      // push name in string
-      dwarf::useStringP(field.first);
-
-      // Add the byte size of this to the current byte
+        std::to_string((int)dwarf::DIEAbbrev::StructMember) +
+        "\n.long .L" + field.first + "_string"
+        "\n.long .L" + type_to_diename(field.second) + "_debug_type"
+        //  "\n.byte " + std::to_string(sizeOfLEB(-currentByte)) +
+        "\n.sleb128 " + std::to_string(currentByte) + // Offset in struct
+        "\n",
+        Section::DIE);
+        // push name in string
+        dwarf::useStringP(field.first);
+        
+        // Add the byte size of this to the current byte
+        currentByte += getByteSizeOfType(field.second);
     }
 
     // Push end of children
@@ -662,17 +672,17 @@ void codegen::_return(Node::Stmt *stmt) {
     // Depending on the size of the return value, we have to use the right kind of pop size
     switch (getByteSizeOfType(returnStmt->expr->asmType)) {
       case 1:
-        push(Instr{.var=PopInstr{.where="%dl",.whereSize=DataSize::Byte},.type=InstrType::Pop},Section::Main);
+        push(Instr{.var=PopInstr{.where="%dil",.whereSize=DataSize::Byte},.type=InstrType::Pop},Section::Main);
         break;
       case 2:
-        push(Instr{.var=PopInstr{.where="%dx",.whereSize=DataSize::Word},.type=InstrType::Pop},Section::Main);
+        push(Instr{.var=PopInstr{.where="%di",.whereSize=DataSize::Word},.type=InstrType::Pop},Section::Main);
         break;
       case 4:
-        push(Instr{.var=PopInstr{.where="%edx",.whereSize=DataSize::Dword},.type=InstrType::Pop},Section::Main);
+        push(Instr{.var=PopInstr{.where="%edi",.whereSize=DataSize::Dword},.type=InstrType::Pop},Section::Main);
         break;
       case 8:
       default:
-        push(Instr{.var=PopInstr{.where="%rdx",.whereSize=DataSize::Qword},.type=InstrType::Pop},Section::Main);
+        push(Instr{.var=PopInstr{.where="%rdi",.whereSize=DataSize::Qword},.type=InstrType::Pop},Section::Main);
         break;
     }
     handleExitSyscall();
@@ -704,8 +714,6 @@ void codegen::_return(Node::Stmt *stmt) {
           push(Instr{.var=PopInstr{.where="%eax",.whereSize=DataSize::Dword},.type=InstrType::Pop},Section::Main);
           break;
         case 8:
-          push(Instr{.var=PopInstr{.where="%rax",.whereSize=DataSize::Qword},.type=InstrType::Pop},Section::Main);
-          break;
         default:
           push(Instr{.var=PopInstr{.where="%rax",.whereSize=DataSize::Qword},.type=InstrType::Pop},Section::Main);
           break;
@@ -987,7 +995,7 @@ void codegen::dereferenceStructPtr(Node::Expr *expr, std::string structName,
     // the destination is just the offset register and the offset, lol
     push(Instr{.var=Comment{.comment="Optimized struct copy"},.type=InstrType::Comment},Section::Main);
     // lea the dest
-    push(Instr{.var=LeaInstr{.size=DataSize::Qword,.dest="%rdi",.src=std::to_string(-((signed)startOffset+structSize-8))+"("+offsetRegister+")"},.type=InstrType::Lea},Section::Main);
+    push(Instr{.var=LeaInstr{.size=DataSize::Qword,.dest="%rdi",.src=std::to_string(-((signed)startOffset+structSize))+"("+offsetRegister+")"},.type=InstrType::Lea},Section::Main);
     // if divisible by 8, do qword, if 4, do dword, etc
     if (structSize % 8 == 0) {
       moveRegister("%rcx", "$" + std::to_string(structSize / 8), DataSize::Qword, DataSize::Qword);
@@ -1070,9 +1078,6 @@ void codegen::declareStructVariable(Node::Expr *expr, std::string structName,
 
       // NEXT UPPP we must copy each byte
       short byteCount = getByteSizeOfType(field->asmType);
-      std::cout << "stmt:1052" << std::endl;
-      std::cout << "Field name: " << structByteSizes[structName].second.at(i).first << std::endl;
-      std::cout << "Field size: " << std::to_string(byteCount) << std::endl;
       while (byteCount > 0) {
         if (byteCount >= 8) {
           // Move a qword
@@ -1187,13 +1192,13 @@ void codegen::declareArrayVariable(Node::Expr *expr, long long arrayLength,
   long long underlyingByteSize = getByteSizeOfType(at->underlying);
   long long arrayBase = variableCount;
   // Evaluate the orderedFields and store them in the struct!!!!
-  for (long long i = (long long)s->elements.size(); i > 0; i--) {
-    Node::Expr *element = s->elements[s->elements.size() - i];
+  for (long long i = 0; i < (signed)s->elements.size(); i++) {
+    Node::Expr *element = s->elements[i];
     // Evaluate the expression
     if (element->kind == ND_STRUCT) {
       // Structs cannot be generated in the expr.
       // We must assign each value to its place in the array.
-      long long startingPoint = arrayBase + ((i - 1) * underlyingByteSize);
+      long long startingPoint = arrayBase + ((s->elements.size() - 1 - i) * underlyingByteSize);
       declareStructVariable(element, getUnderlying(at), "%rbp", startingPoint);
       continue;
     } else if (structByteSizes.find(getUnderlying(element->asmType)) != structByteSizes.end()) {
@@ -1205,13 +1210,18 @@ void codegen::declareArrayVariable(Node::Expr *expr, long long arrayLength,
     }
     visitExpr(element);
     // Pop the value into a register
-    popToRegister(std::to_string(-(arrayBase + ((i) * underlyingByteSize))) +
+    popToRegister(std::to_string(-(arrayBase + ((((signed)s->elements.size()) - 1 - i) * underlyingByteSize))) +
                   "(%rbp)");
   }
 
   // NOTE: The value of arrays, when referencing their variable name, is a pointer to element #1.
   // NOTE: So let's do the same calculation as earlier to find that very 1st byte.
-  long long firstByteOffset = -(arrayBase + ((s->elements.size()) * underlyingByteSize)); // can i see the assembly bro
+  long long firstByteOffset = -(arrayBase + ((s->elements.size()) * underlyingByteSize));
+  // if struct, we must calculate something else
+  if (structByteSizes.find(getUnderlying(at->underlying)) != structByteSizes.end()) {
+    // We must calculate the size of the struct and add that to the offset
+    firstByteOffset += getByteSizeOfType(structByteSizes[getUnderlying(at->underlying)].second.back().second.first);
+  }
   variableTable.insert({varName, std::to_string(firstByteOffset) + "(%rbp)"});
 }
 

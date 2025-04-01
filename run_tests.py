@@ -109,6 +109,12 @@ class TestZuraPrograms(unittest.TestCase):
     def test_array_of_struct_multiple_fields(self):
         run_test("const k:=enum{a,b,c,d,e};const t:=struct{z:k,v:str};const main:=fn()int!{have l:[1]t=[{z:k.a,v:\"3.14159\"}];@output(1,l[0].v);return @cast<int!>(l[0].z);};", expected_output="3.14159", expected_exit_code=0)
 
+    def test_array_of_really_big_structs(self):
+        run_test("const a := struct { x: int!, y: int!, z: int!, w: int!, }; const main := fn () int! { have b: [2]a = [{ x: 72, y: 12, z: 42, w: 99 }, { x: 1, y: 2, z: 3, w: 4 }]; return b[0].w; };", expected_exit_code=99)
+
+    def test_holy_shit(self):
+        run_test("const T:=enum{I,P,N};const K:=struct{k:T,v:str,l:int!,c:int!}; const main:=fn()int!{have t:[4]K=[{k:T.I,v:\"1\",l:1,c:1},{k:T.P,v:\"+\",l:1,c:2},{k:T.I,v:\"2\",l:1,c:3},{k:T.N,v:\"\",l:1,c:5}];have l:int! =t[0].l;have c:int! =t[1].c;return l+c;};", expected_exit_code=3)
+
     # no ! or ? symbol in the underlying type
     def test_inferred_signedness_arrays(self):
         run_test("const main := fn () int! { have a: [5]int = [1, 2, 3, 4, 5]; return a[2]; };", expected_exit_code=3)
