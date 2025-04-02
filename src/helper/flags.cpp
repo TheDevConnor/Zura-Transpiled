@@ -50,6 +50,10 @@ void Flags::runFile(const char *path, std::string outName, bool save,
                     bool debug, bool echoOn) {
   const char *source = readFile(path);
 
+  (void)outName;
+  (void)save;
+  (void)debug;
+
   if (echoOn)
     Flags::updateProgressBar(0.0);
   Node::Stmt *result = Parser::parse(source, path);
