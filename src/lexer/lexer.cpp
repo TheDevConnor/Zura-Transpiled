@@ -2,27 +2,26 @@
 #include <string>
 #include <unordered_map>
 
-#include "../ast/ast.hpp"
 #include "../helper/error/error.hpp"
 #include "lexer.hpp"
 
 void Lexer::reset() {
-  scanner.current = scanner.start;
-  scanner.column = 1;
-  scanner.line = 1;
+  current = start;
+  col = 0;
+  line = 1;
 }
 
 char Lexer::advance() {
-  scanner.current++;
-  scanner.column++;
-  return scanner.current[-1];
+  current++;
+  col++;
+  return current[-1];
 }
-char Lexer::peek() { return *scanner.current; }
+char Lexer::peek() { return *current; }
 
-bool Lexer::isAtEnd() { return *scanner.current == '\0'; }
+bool Lexer::isAtEnd() { return *current == '\0'; }
 
 const char *Lexer::lineStart(int line) {
-  const char *start = scanner.source;
+  const char *start = source;
   int cLine = 1;
 
   while (cLine != line) {
@@ -35,27 +34,26 @@ const char *Lexer::lineStart(int line) {
 }
 
 bool Lexer::match(char expected) {
-  if ((*scanner.current != expected) || isAtEnd())
+  if ((*current != expected) || isAtEnd())
     return false;
 
-  scanner.current++;
-  scanner.column++;
+  current++;
+  col++;
   return true;
 }
 
 Lexer::Token Lexer::errorToken(std::string message) {
   std::vector<Lexer::Token> tokens = {};
-  ErrorClass::error(token.line, token.column, message, "", "Lexer Error",
-                    scanner.file, *this, tokens, false, false, true, false,
-                    false, false);
+  ErrorClass::error(token.line, token.column, message, "", "Lexer Error", file,
+                    *this, tokens, false, false, true, false, false, false);
   return makeToken(TokenKind::ERROR_);
 }
 
 Lexer::Token Lexer::makeToken(TokenKind kind) {
-  token.value = std::string(scanner.start, scanner.current);
-  token.column = scanner.column;
-  token.start = scanner.start;
-  token.line = scanner.line;
+  token.value = std::string(start, current);
+  token.column = col;
+  token.start = start;
+  token.line = line;
   token.kind = kind;
   return token;
 }
@@ -102,11 +100,11 @@ Lexer::Token Lexer::Char() {
   // Ensure the closing quote is present.
   if (peek() != '\'')
     return errorToken("Unterminated character literal.");
-  
+
   advance(); // Consume the closing quote.
-  
+
   // Validate the length of the character.
-  if (scanner.current - scanner.start > 3) // 3: opening `'`, the char, and closing `'`
+  if (current - start > 3) // 3: opening `'`, the char, and closing `'`
     return errorToken("Character literal must contain exactly one character.");
 
   return makeToken(TokenKind::CHAR);
@@ -115,14 +113,15 @@ Lexer::Token Lexer::Char() {
 Lexer::Token Lexer::identifier() {
   while (isalpha(peek()) || isdigit(peek()) || peek() == '_')
     advance();
-  std::string identifier(scanner.start, scanner.current);
+  std::string identifier(start, current);
   return makeToken(checkIdentMap(identifier));
 }
 
 void Lexer::skipWhitespace() {
   for (;;) {
     char c = peek();
-    std::unordered_map<char, Lexer::WhiteSpaceFunction>::iterator it = whiteSpaceMap.find(c);
+    std::unordered_map<char, Lexer::WhiteSpaceFunction>::iterator it =
+        whiteSpaceMap.find(c);
     if (it != whiteSpaceMap.end()) {
       it->second(*this);
     } else
@@ -133,21 +132,27 @@ void Lexer::skipWhitespace() {
 Lexer::Token Lexer::scanToken() {
   skipWhitespace();
 
-  scanner.start = scanner.current;
+  start = current;
 
   if (isAtEnd())
     return makeToken(TokenKind::END_OF_FILE);
 
   char c = Lexer::advance();
 
-  if (isalpha(c)) return makeToken(identifier().kind);
-  if (c == '@')   return makeToken(at_keywords[identifier().value]);
-  if (isdigit(c)) return makeToken(number().kind);
-  if (c == '"')   return makeToken(String().kind);
-  if (c == '\'')  return makeToken(Char().kind);
+  if (isalpha(c))
+    return makeToken(identifier().kind);
+  if (c == '@')
+    return makeToken(at_keywords[identifier().value]);
+  if (isdigit(c))
+    return makeToken(number().kind);
+  if (c == '"')
+    return makeToken(String().kind);
+  if (c == '\'')
+    return makeToken(Char().kind);
 
   auto kind = sc_dc_lookup(c);
-  if (kind != TokenKind::UNKNOWN) return makeToken(kind);
+  if (kind != TokenKind::UNKNOWN)
+    return makeToken(kind);
 
   return errorToken("Unexpected character: " + std::string(1, c));
 }

@@ -73,7 +73,8 @@ enum TokenKind {
   _CONST,
   PKG,
   TYPE,
-  EXIT, // Create an exit syscall from anywhere within the program, whether that be the main function or some other crazy place.
+  EXIT, // Create an exit syscall from anywhere within the program, whether that
+        // be the main function or some other crazy place.
   IN,
   STRUCT,
   ENUM,
@@ -83,7 +84,7 @@ enum TokenKind {
   PRIV,
   TEMPLATE,
   TYPEALIAS,
-  BREAK, 
+  BREAK,
   CONTINUE,
   CAST,
   CALL, // Call extern'd functions.
@@ -121,16 +122,7 @@ public:
     int line;
   } token;
 
-  struct Scanner {
-    const char *current;
-    const char *source;
-    const char *start;
-    std::string file;
-    int column;
-    int line;
-  } scanner;
-
-  void initLexer(const char *source, std::string file);
+  void initLexer(const char *s, std::string f);
 
   Token scanToken(void);
   Token errorToken(std::string message);
@@ -155,6 +147,12 @@ public:
   void initMap(void);
 
 private:
+  const char *current;
+  const char *source;
+  const char *start;
+  std::string file;
+  int line, col;
+
   bool match(char expected);
 
   Token makeToken(TokenKind kind);

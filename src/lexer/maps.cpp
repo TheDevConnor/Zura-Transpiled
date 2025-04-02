@@ -1,4 +1,3 @@
-#include <functional>
 #include <string>
 #include <unordered_map>
 
@@ -10,13 +9,13 @@
  * @param source The source code to be lexed.
  * @param file The file path of the source code.
  */
-void Lexer::initLexer(const char *source, std::string file) {
-  scanner.current = source;
-  scanner.source = source;
-  scanner.start = source;
-  scanner.column = 0;
-  scanner.line = 1;
-  scanner.file = file;
+void Lexer::initLexer(const char *s, std::string f) {
+  current = s;
+  source = s;
+  start = s;
+  col = 0;
+  line = 1;
+  file = f;
 
   initMap(); // Create the maps when the lexer is initialized
 }
@@ -39,8 +38,8 @@ void Lexer::initMap() {
       {'\t', [](Lexer &lexer) { lexer.advance(); }},
       {'\n',
        [](Lexer &lexer) {
-         lexer.scanner.line++;
-         lexer.scanner.column = 0;
+         lexer.line++;
+         lexer.col = 0;
          lexer.advance();
        }},
       {'#',
@@ -51,33 +50,55 @@ void Lexer::initMap() {
   };
 
   at_keywords = {
-      {"@template", TokenKind::TEMPLATE}, {"@cast", TokenKind::CAST},
-      {"@import", TokenKind::IMPORT},     {"@link", TokenKind::LINK},
-      {"@extern", TokenKind::EXTERN},     {"@call", TokenKind::CALL},
-      {"@output", TokenKind::PRINT},      {"@read", TokenKind::READ},
-      {"@input", TokenKind::INPUT},       {"@write", TokenKind::WRITE},
-      {"@free", TokenKind::FREE},         {"@alloc", TokenKind::ALLOC},
-      {"@memcpy", TokenKind::MEMCPY},     {"@sizeof", TokenKind::SIZEOF},
+      {"@template", TokenKind::TEMPLATE},
+      {"@cast", TokenKind::CAST},
+      {"@import", TokenKind::IMPORT},
+      {"@link", TokenKind::LINK},
+      {"@extern", TokenKind::EXTERN},
+      {"@call", TokenKind::CALL},
+      {"@output", TokenKind::PRINT},
+      {"@read", TokenKind::READ},
+      {"@input", TokenKind::INPUT},
+      {"@write", TokenKind::WRITE},
+      {"@free", TokenKind::FREE},
+      {"@alloc", TokenKind::ALLOC},
+      {"@memcpy", TokenKind::MEMCPY},
+      {"@sizeof", TokenKind::SIZEOF},
       // file management
-      {"@open", TokenKind::OPEN},         {"@close", TokenKind::CLOSE},
+      {"@open", TokenKind::OPEN},
+      {"@close", TokenKind::CLOSE},
       {"@outputln", TokenKind::PRINTLN},
   };
 
   keywords = {
-      {"and", TokenKind::AND},            {"else", TokenKind::ELSE},
-      {"false", TokenKind::FAL},          {"fn", TokenKind::FUN},
-      {"loop", TokenKind::LOOP},          {"if", TokenKind::IF},
-      {"nil", TokenKind::NIL},            {"or", TokenKind::OR}, 
-      {"exit", TokenKind::EXIT},          {"super", TokenKind::SUPER},
-      {"true", TokenKind::TR},            {"have", TokenKind::VAR},
-      {"pkg", TokenKind::PKG},            {"in", TokenKind::IN},
-      {"type", TokenKind::TYPE},          {"struct", TokenKind::STRUCT},
-      {"enum", TokenKind::ENUM},          {"union", TokenKind::UNION},
-      {"const", TokenKind::_CONST},       {"import", TokenKind::IMPORT},
-      {"pub", TokenKind::PUB},            {"priv", TokenKind::PRIV},
-      {"break", TokenKind::BREAK},        {"continue", TokenKind::CONTINUE},
-      {"typename", TokenKind::TYPEALIAS}, {"match", TokenKind::MATCH},
-      {"default", TokenKind::DEFAULT},    {"case", TokenKind::CASE},
+      {"and", TokenKind::AND},
+      {"else", TokenKind::ELSE},
+      {"false", TokenKind::FAL},
+      {"fn", TokenKind::FUN},
+      {"loop", TokenKind::LOOP},
+      {"if", TokenKind::IF},
+      {"nil", TokenKind::NIL},
+      {"or", TokenKind::OR},
+      {"exit", TokenKind::EXIT},
+      {"super", TokenKind::SUPER},
+      {"true", TokenKind::TR},
+      {"have", TokenKind::VAR},
+      {"pkg", TokenKind::PKG},
+      {"in", TokenKind::IN},
+      {"type", TokenKind::TYPE},
+      {"struct", TokenKind::STRUCT},
+      {"enum", TokenKind::ENUM},
+      {"union", TokenKind::UNION},
+      {"const", TokenKind::_CONST},
+      {"import", TokenKind::IMPORT},
+      {"pub", TokenKind::PUB},
+      {"priv", TokenKind::PRIV},
+      {"break", TokenKind::BREAK},
+      {"continue", TokenKind::CONTINUE},
+      {"typename", TokenKind::TYPEALIAS},
+      {"match", TokenKind::MATCH},
+      {"default", TokenKind::DEFAULT},
+      {"case", TokenKind::CASE},
       {"return", TokenKind::RETURN},
   };
 
@@ -93,7 +114,7 @@ void Lexer::initMap() {
       {':', TokenKind::COLON},         {'=', TokenKind::EQUAL},
       {'!', TokenKind::BANG},          {'<', TokenKind::LESS},
       {'>', TokenKind::GREATER},       {'&', TokenKind::LAND},
-      {'|', TokenKind::LOR}, 
+      {'|', TokenKind::LOR},
   };
 
   dcMap = {
@@ -188,21 +209,24 @@ void Lexer::initMap() {
 }
 
 const char *Lexer::tokenToString(TokenKind kind) {
-  std::unordered_map<TokenKind, const char *>::iterator it = tokenToStringMap.find(kind);
+  std::unordered_map<TokenKind, const char *>::iterator it =
+      tokenToStringMap.find(kind);
   if (it != tokenToStringMap.end())
     return it->second;
   return "Unknown";
 }
 
 TokenKind Lexer::checkIdentMap(std::string identifier) {
-  std::unordered_map<std::string, TokenKind>::iterator it = keywords.find(identifier);
+  std::unordered_map<std::string, TokenKind>::iterator it =
+      keywords.find(identifier);
   if (it != keywords.end())
     return it->second;
   return TokenKind::IDENTIFIER;
 }
 
 TokenKind Lexer::sc_dc_lookup(char c) {
-  std::unordered_map<std::string, TokenKind>::iterator dc = dcMap.find(std::string(1, c) + std::string(1, peek()));
+  std::unordered_map<std::string, TokenKind>::iterator dc =
+      dcMap.find(std::string(1, c) + std::string(1, peek()));
   if (dc != dcMap.end()) {
     advance();
     return dc->second;

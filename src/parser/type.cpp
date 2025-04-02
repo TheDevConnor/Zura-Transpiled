@@ -1,8 +1,6 @@
-#include "../helper/error/error.hpp"
 #include "../ast/types.hpp"
+#include "../helper/error/error.hpp"
 #include "parser.hpp"
-
-#include <iostream>
 
 Node::Type *Parser::parseType(PStruct *psr) {
   Node::Type *left = type_nud(psr);
@@ -16,7 +14,9 @@ Node::Type *Parser::parseType(PStruct *psr) {
 }
 Node::Type *Parser::symbol_table(PStruct *psr) {
   // check if the next values are a ? or a ! for singed or unsigned
-  std::string name = psr->expect(psr, TokenKind::IDENTIFIER, "Expected an identifier for a symbol table!").value;
+  std::string name = psr->expect(psr, TokenKind::IDENTIFIER,
+                                 "Expected an identifier for a symbol table!")
+                         .value;
   if (psr->peek(psr).kind == TokenKind::BANG) {
     psr->advance(psr);
     return new SymbolType(name, SymbolType::Signedness::UNSIGNED);
@@ -36,7 +36,7 @@ Node::Type *Parser::array_type(PStruct *psr) {
     // There will be warnings and possible
     // overflow because stoi returns a 32-bit
     // while size is only 16-bit
-    size = std::stoi(psr->advance(psr).value);
+    size = (size_t)std::stoi(psr->advance(psr).value);
   }
   psr->expect(psr, TokenKind::RIGHT_BRACKET,
               "Expected a right bracket after an array type!");
@@ -45,14 +45,14 @@ Node::Type *Parser::array_type(PStruct *psr) {
   if (psr->current(psr).kind != TokenKind::IDENTIFIER) {
     std::string msg = "Expected a type for the array!";
     ErrorClass::error(psr->current(psr).line, psr->current(psr).column, msg, "",
-                        "Parser Error", node.current_file, lexer, psr->tks, true, false,
-                        false, false, false, false);
+                      "Parser Error", node.current_file, lexer, psr->tks, true,
+                      false, false, false, false, false);
     return nullptr;
   }
-   
+
   // Else you are good and can continue
   Node::Type *underlying = parseType(psr);
-  return new ArrayType(underlying, size);
+  return new ArrayType(underlying, (long long)size);
 }
 
 Node::Type *Parser::pointer_type(PStruct *psr) {
@@ -83,6 +83,6 @@ Node::Type *Parser::function_type(PStruct *psr) {
   }
   psr->advance(psr); // Skip the right parenthesis
   Node::Type *ret = parseType(psr);
-  
+
   return new FunctionType(args, ret);
 }

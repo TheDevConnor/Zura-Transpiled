@@ -1,3 +1,4 @@
+#include "../helper/error/error.hpp"
 #include "parser.hpp"
 
 bool Parser::PStruct::hadTokens(PStruct *psr) {
@@ -21,22 +22,22 @@ Lexer::Token Parser::PStruct::advance(PStruct *psr) {
 }
 
 Lexer::Token Parser::PStruct::peek(PStruct *psr, int offset) {
-  if (psr->pos + offset >= psr->tks.size()) {
+  if (psr->pos + (size_t)offset >= psr->tks.size()) {
     return psr->tks[psr->tks.size() -
                     1]; // Return the last EOF token. This might fall all the
                         // way down into an "expect" and create a NICE error
                         // instead of segfaulting.
   }
-  return psr->tks[psr->pos + offset];
+  return psr->tks[psr->pos + (size_t)offset];
 }
 
 Lexer::Token Parser::PStruct::expect(PStruct *psr, TokenKind tk,
                                      std::string msg) {
   if (peek(psr, 0).kind != tk) {
     Lexer lexer;
-    ErrorClass::error(current(psr).line, current(psr).column, msg,
-                      "", "Parser Error", psr->current_file.c_str(),
-                      lexer, psr->tks, true, false, false, false, false, false);
+    ErrorClass::error(current(psr).line, current(psr).column, msg, "",
+                      "Parser Error", psr->current_file.c_str(), lexer,
+                      psr->tks, true, false, false, false, false, false);
   }
 
   return advance(psr);

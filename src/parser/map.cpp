@@ -1,10 +1,10 @@
+#include <algorithm>
 #include <functional>
-#include <iostream>
 #include <string>
-#include <unordered_map>
 #include <vector>
 
 #include "../ast/ast.hpp"
+#include "../helper/error/error.hpp"
 #include "../lexer/lexer.hpp"
 #include "parser.hpp"
 
@@ -28,17 +28,19 @@ using namespace Parser;
  */
 template <typename T, typename U>
 T Parser::lookup(PStruct *psr, const std::vector<std::pair<U, T>> &lu, U key) {
-  typename std::vector<std::pair<U, T>>::const_iterator it = std::find_if(lu.begin(), lu.end(),
-                         [key](const std::pair<U, T> &p) { return p.first == key; });
+  typename std::vector<std::pair<U, T>>::const_iterator it =
+      std::find_if(lu.begin(), lu.end(),
+                   [key](const std::pair<U, T> &p) { return p.first == key; });
 
   if (isIgnoreToken(key)) {
     return nullptr;
   }
 
   if (it == lu.end()) {
-    ErrorClass::error(0, 0, "No value found for key (" + std::to_string(key) + ") Expr Maps!", "",
-                      "Parser Error", node.current_file, lexer, psr->tks, true,
-                      false, false, false, false, false);
+    ErrorClass::error(
+        0, 0, "No value found for key (" + std::to_string(key) + ") Expr Maps!",
+        "", "Parser Error", node.current_file, lexer, psr->tks, true, false,
+        false, false, false, false);
     return nullptr;
   }
 
@@ -72,12 +74,12 @@ void Parser::createMaps() {
       {TokenKind::LEFT_PAREN, group},      {TokenKind::MINUS, unary},
       {TokenKind::PLUS_PLUS, _prefix},     {TokenKind::BANG, unary},
       {TokenKind::MINUS_MINUS, _prefix},   {TokenKind::LEFT_BRACKET, array},
-      {TokenKind::TR, boolExpr},          {TokenKind::FAL, boolExpr},
-      {TokenKind::CAST, castExpr},        {TokenKind::CALL, externalCall},
+      {TokenKind::TR, boolExpr},           {TokenKind::FAL, boolExpr},
+      {TokenKind::CAST, castExpr},         {TokenKind::CALL, externalCall},
       {TokenKind::LEFT_BRACE, structExpr}, {TokenKind::LAND, address},
-      {TokenKind::NIL, nullType},         {TokenKind::CHAR, primary},
-      {TokenKind::ALLOC, allocExpr},      {TokenKind::FREE, freeExpr},
-      {TokenKind::SIZEOF, sizeofExpr},    {TokenKind::MEMCPY, memcpyExpr},
+      {TokenKind::NIL, nullType},          {TokenKind::CHAR, primary},
+      {TokenKind::ALLOC, allocExpr},       {TokenKind::FREE, freeExpr},
+      {TokenKind::SIZEOF, sizeofExpr},     {TokenKind::MEMCPY, memcpyExpr},
       {TokenKind::OPEN, openExpr},
   };
   led_lu = {

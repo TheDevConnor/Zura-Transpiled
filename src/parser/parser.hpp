@@ -1,14 +1,10 @@
 #pragma once
 
 #include <functional>
-#include <iostream>
 #include <string>
-#include <unordered_map>
 #include <vector>
-#include <algorithm>
 
 #include "../ast/ast.hpp"
-#include "../helper/error/error.hpp"
 #include "../lexer/lexer.hpp"
 
 namespace Parser {
@@ -98,7 +94,8 @@ Node::Type *type_application(PStruct *psr);
 Node::Type *function_type(PStruct *psr);
 
 // Pratt parser functions.
-PStruct *setupParser(PStruct *psr, Lexer *lex, Lexer::Token tk, std::string current_file);
+PStruct *setupParser(PStruct *psr, Lexer *lex, Lexer::Token tk,
+                     std::string current_file);
 Node::Expr *parseExpr(PStruct *psr, BindingPower bp);
 
 // Expr Functions

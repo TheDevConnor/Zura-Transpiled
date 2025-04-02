@@ -1,4 +1,6 @@
-#include "../ast/types.hpp"
+#include <algorithm>
+
+#include "../helper/error/error.hpp"
 #include "parser.hpp"
 
 /**
@@ -17,13 +19,14 @@
  */
 template <typename T, typename U>
 T Parser::lookup(PStruct *psr, const std::vector<std::pair<U, T>> &lu, U key) {
-  typename std::vector<std::pair<U, T>>::const_iterator it = std::find_if(lu.begin(), lu.end(),
-                         [key](const std::pair<U, T> &p) { return p.first == key; });
+  typename std::vector<std::pair<U, T>>::const_iterator it =
+      std::find_if(lu.begin(), lu.end(),
+                   [key](const std::pair<U, T> &p) { return p.first == key; });
 
   if (it == lu.end()) {
     ErrorClass::error(0, 0, "No value found for key in Type maps", "",
-                      "Parser Error", node.current_file, lexer, psr->tks,
-                      true, false, true, false, false, false);
+                      "Parser Error", node.current_file, lexer, psr->tks, true,
+                      false, true, false, false, false);
     // Note: IS FATAL! Do not dereference 'it' if its bad!
   }
 
@@ -44,7 +47,7 @@ void Parser::createTypeMaps() {
   type_nud_lu = {
       {TokenKind::IDENTIFIER, symbol_table},
       {TokenKind::LEFT_BRACKET, array_type},
-      {TokenKind::STAR, pointer_type}, // *
+      {TokenKind::STAR, pointer_type},     // *
       {TokenKind::LESS, type_application}, // <
 
       // Function types 'fn (args) type'

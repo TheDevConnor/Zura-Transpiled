@@ -28,6 +28,9 @@ set(ZURA_HEADER_FILES
     # Type Checker Files
     src/typeChecker/type.hpp
 
+    # Memory Files
+    src/memory/memory.hpp
+
     # LSP files
     src/server/lsp.hpp
     src/server/json.hpp
@@ -64,6 +67,9 @@ set(ZURA_SOURCE_FILES
     src/typeChecker/type.cpp
     src/typeChecker/map.cpp
     src/typeChecker/helper.cpp
+
+    # Memory Files
+    src/memory/memory.cpp
 
     # LSP files
     src/server/lsp.cpp
