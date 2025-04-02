@@ -1,1 +1,8 @@
-const main := fn () int! { have a: int! = 0; loop(a < 10) { a = a + 1; } return a; };
+const main := fn () int! {
+  have x: int! = @open("zura_files/main.zu", true, false, false); # Open the file with R--
+  have y: [10]char! = [0]; # Buffer (only 1 byte)
+  @input(x, y, 10);
+  @close(x); # FD
+  @output(1, y);
+  return 0;
+};

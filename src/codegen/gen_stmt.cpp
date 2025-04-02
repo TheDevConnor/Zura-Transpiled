@@ -1139,15 +1139,28 @@ void codegen::declareArrayVariable(Node::Expr *expr, long long arrayLength,
     if (totalSize <= 256) {
       // Small enough for manual labor hehe
       // Ensure that filling happens from the top
-      long long maxQwords = totalSize / 8;
-      // find remainder bytes later if any
-      for (long long i = 0; i < maxQwords; i++) {
-        push(Instr{.var=MovInstr{.dest=std::to_string(-((long long)variableCount + totalSize - (i * 8))) + "(%rbp)", .src="$0", .destSize=DataSize::Qword, .srcSize=DataSize::Qword}, .type=InstrType::Mov}, Section::Main);
-      }
-      if (long long remainderBytes = totalSize % 8) {
-        // Fill the remainder bytes
-        for (long long i = 0; i < remainderBytes; i++) {
-          push(Instr{.var=MovInstr{.dest=std::to_string(-((long long)variableCount + totalSize - remainderBytes + i)) + "(%rbp)", .src="$0", .destSize=DataSize::Byte, .srcSize=DataSize::Byte}, .type=InstrType::Mov}, Section::Main);
+      long long remainingBytes = totalSize;
+      while (remainingBytes > 0) {
+        if (remainingBytes >= 8) {
+          // Fill with a quad word
+          push(Instr{.var=MovInstr{.dest=std::to_string(-((long long)variableCount + remainingBytes)) + "(%rbp)", .src="$0", .destSize=DataSize::Qword, .srcSize=DataSize::Qword}, .type=InstrType::Mov}, Section::Main);
+          remainingBytes -= 8;
+          continue;
+        } else if (remainingBytes >= 4) {
+          // Fill with a long word
+          push(Instr{.var=MovInstr{.dest=std::to_string(-((long long)variableCount + remainingBytes)) + "(%rbp)", .src="$0", .destSize=DataSize::Dword, .srcSize=DataSize::Dword}, .type=InstrType::Mov}, Section::Main);
+          remainingBytes -= 4;
+          continue;
+        } else if (remainingBytes >= 2) {
+          // Fill with a word
+          push(Instr{.var=MovInstr{.dest=std::to_string(-((long long)variableCount + remainingBytes)) + "(%rbp)", .src="$0", .destSize=DataSize::Word, .srcSize=DataSize::Word}, .type=InstrType::Mov}, Section::Main);
+          remainingBytes -= 2;
+          continue;
+        } else {
+          // Fill with a single byte
+          push(Instr{.var=MovInstr{.dest=std::to_string(-((long long)variableCount + remainingBytes)) + "(%rbp)", .src="$0", .destSize=DataSize::Byte, .srcSize=DataSize::Byte}, .type=InstrType::Mov}, Section::Main);
+          remainingBytes -= 1;
+          continue;
         }
       }
       variableTable.insert({varName, std::to_string(-((long long)variableCount + totalSize)) + "(%rbp)"});

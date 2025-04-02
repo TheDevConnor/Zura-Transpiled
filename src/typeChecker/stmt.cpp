@@ -497,9 +497,10 @@ void TypeChecker::visitInput(Node::Stmt *stmt) {
   }
 
   visitExpr(input_stmt->bufferOut); // str, char*, char[]
-  if (type_to_string(return_type.get()) != "str" &&
-      type_to_string(return_type.get()) != "*char" &&
-      type_to_string(return_type.get()) != "[]char") {
+  bool isStrType = return_type.get()->kind == ND_SYMBOL_TYPE && type_to_string(return_type.get()) == "str";
+  bool isCharPtrType = return_type.get()->kind == ND_POINTER_TYPE && static_cast<SymbolType *>(static_cast<PointerType *>(return_type.get())->underlying)->name == "char";
+  bool isCharArrayType = return_type.get()->kind == ND_ARRAY_TYPE && static_cast<SymbolType *>(static_cast<ArrayType *>(return_type.get())->underlying)->name == "char";
+  if (!isStrType && !isCharPtrType && !isCharArrayType) {
     std::string msg = "Input variable name must be a 'string', 'char*' or 'char[]' but got '" + type_to_string(return_type.get()) + "'";
     handleError(input_stmt->line, input_stmt->pos, msg, "", "Type Error");
   }
