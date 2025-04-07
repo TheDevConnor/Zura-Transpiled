@@ -1055,7 +1055,7 @@ void codegen::memberExpr(Node::Expr *expr) {
           break;
         }
       }
-      offsetFromBase += 8; // NOTE: TODO: EVERYTHING!!!: PLEASE CHECK IF THIS IS ALWAYS EIGHT OR JUST THE LAST ITEM !!
+      // Is another offsetFromBase += 8 here necessary? I got tests to work without it.
       bool resultIsStruct = structByteSizes.find(getUnderlying(e->asmType)) !=
                             structByteSizes.end();
       

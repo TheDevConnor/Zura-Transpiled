@@ -995,7 +995,8 @@ void codegen::dereferenceStructPtr(Node::Expr *expr, std::string structName,
     // the destination is just the offset register and the offset, lol
     push(Instr{.var=Comment{.comment="Optimized struct copy"},.type=InstrType::Comment},Section::Main);
     // lea the dest
-    push(Instr{.var=LeaInstr{.size=DataSize::Qword,.dest="%rdi",.src=std::to_string(-((signed)startOffset+structSize))+"("+offsetRegister+")"},.type=InstrType::Lea},Section::Main);
+    short int sizeOfLastStructElement = getByteSizeOfType(structByteSizes[structName].second.back().second.first);
+    push(Instr{.var=LeaInstr{.size=DataSize::Qword,.dest="%rdi",.src=std::to_string(-((signed)startOffset+structSize-sizeOfLastStructElement))+"("+offsetRegister+")"},.type=InstrType::Lea},Section::Main);
     // if divisible by 8, do qword, if 4, do dword, etc
     if (structSize % 8 == 0) {
       moveRegister("%rcx", "$" + std::to_string(structSize / 8), DataSize::Qword, DataSize::Qword);

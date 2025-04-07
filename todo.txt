@@ -1,11 +1,9 @@
- - IMPORTANT - Update stmt::enumDecl IMMEDIATELY after adding longs
-
 - Implement constant flags and allow native functions to pass them (for example, O_RDONLY or O_CREAT in @open)
   - Kind of, but only for boolean literals. Nowhere else besides that though
 
  Add in proper support for arrays and index over strings, arrays, etc. - Add standard test for this.
 
- TODO: Fix the typeCheckers indexing for chars
+ Add struct returns
 
  add in the lsp fully
   Fix Hover requests to be put in the right place
