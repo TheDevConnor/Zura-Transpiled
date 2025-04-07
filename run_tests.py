@@ -128,6 +128,9 @@ class TestZuraPrograms(unittest.TestCase):
     def test_useless_malloc(self):
         run_test("const main := fn () int! { have x: *void = @alloc(8); @free(x, 8); return 0; };", expected_exit_code=0)
 
+    def test_bool_variable(self):
+        run_test("const main := fn () int! { have x: int! = 4; have y: bool = (x == 4); return @cast<int!>(y); };", expected_exit_code=1)
+
     def test_read_file_char_arr(self):
         # create filenames of random characters until we find one not in use
         filename = "".join(random.choices(string.ascii_letters, k=8))

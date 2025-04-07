@@ -59,11 +59,13 @@ struct FunctionTable : std::unordered_map<NameAndType, ParamAndType> {
     return find(nameAndType) != end();
   }
   void declare(const std::string &name, std::unordered_map<std::string, Node::Type *> params, Node::Type *returnType) {
-    if (name == "main" && params.size() == 0) {
-      if (returnType->kind == ND_SYMBOL_TYPE) {
-        SymbolType *sym = static_cast<SymbolType *>(returnType);
-        if (sym->signedness == SymbolType::Signedness::UNSIGNED) {
-          TypeChecker::foundMain = true;
+    if (!TypeChecker::foundMain) { // Dont bother checking again if, you know, you already found it
+      if (name == "main" && params.size() == 0) {
+        if (returnType->kind == ND_SYMBOL_TYPE) {
+          SymbolType *sym = static_cast<SymbolType *>(returnType);
+          if (sym->name == "int" && sym->signedness == SymbolType::Signedness::UNSIGNED) {
+            TypeChecker::foundMain = true;
+          }
         }
       }
     }

@@ -1,8 +1,9 @@
+#include <string>
+#include <algorithm>
 #include "gen.hpp"
 #include "optimizer/compiler.hpp"
 #include "optimizer/instr.hpp"
 #include "../typeChecker/type.hpp"
-#include <string>
 
 void codegen::visitExpr(Node::Expr *expr) {
   // Optimize the expression before we handle it!
@@ -25,7 +26,10 @@ void codegen::primary(Node::Expr *expr) {
   case NodeKind::ND_INT: {
     IntExpr *e = static_cast<IntExpr *>(expr);
     pushDebug(e->line, expr->file_id, e->pos);
-    pushRegister("$" + std::to_string(e->value));
+    push(Instr{.var = PushInstr{.what = "$" + std::to_string(e->value),
+                             .whatSize = DataSize::None}, // THe only time None is used, because this literal could be literally anything
+                   .type = InstrType::Push},
+         Section::Main);
     break;
   } // It happened here in the ident
   case NodeKind::ND_IDENT: {
@@ -351,8 +355,27 @@ void codegen::binary(Node::Expr *expr) {
     // We need to compare the two values
     // Check depth
     bool isFloating = e->lhs->asmType->kind == ND_SYMBOL_TYPE && (getUnderlying(e->lhs->asmType) == "float" || getUnderlying(e->lhs->asmType) == "double");
-    std::string lhsReg = "";
-    std::string rhsReg = "";
+    // Right now, the lhsReg and rhsReg are %al and %bl because the return type is 1 byte. although technically correct, thats not what we want
+    switch (std::max(getByteSizeOfType(e->rhs->asmType), getByteSizeOfType(e->lhs->asmType))) { // use max because we may be comparing an integer literal to something else
+      case 1:
+        break; // Its already like this, isn't it?
+      case 2:
+        lhsReg = "%ax";
+        rhsReg = "%bx";
+        size = DataSize::Word;
+        break;
+      case 4:
+        lhsReg = "%eax";
+        rhsReg = "%ebx";
+        size = DataSize::Dword;
+        break;
+      case 8:
+      default:
+        lhsReg = "%rax";
+        rhsReg = "%rbx";
+        size = DataSize::Qword;
+        break;
+    }
     if (isFloating) {
       lhsReg = "%xmm0";
       rhsReg = "%xmm1";
@@ -383,10 +406,12 @@ void codegen::binary(Node::Expr *expr) {
       std::string letter = size == DataSize::SS ? "s" : "d";
       pushLinker("ucomis" + letter + " %xmm1, %xmm0\n\t", Section::Main);
     } else {
-      push(Instr{.var = CmpInstr{.lhs = lhsReg, .rhs = rhsReg},
+      push(Instr{.var = CmpInstr{.lhs = lhsReg, .rhs = rhsReg, .size = size},
                  .type = InstrType::Cmp},
            Section::Main);
     }
+    // We must use a set instruction because %al doesnt have anything in it yet
+    pushLinker(op + " %al\n\t", Section::Main);
     // Move the bytes up to 64-bits
     push(Instr{.var=PushInstr{.what="%al", .whatSize = DataSize::Byte},.type = InstrType::Push}, Section::Main);
   }
@@ -654,10 +679,10 @@ void codegen::ternary(Node::Expr *expr) {
   int ternay = 0;
   std::string ternayCount = std::to_string(ternay);
 
-  visitExpr(e->condition);
+  visitExpr(e->condition); // Condition will be a bool. It will technically be 1 byte, but we can extend
   popToRegister("%rax");
 
-  push(Instr{.var = CmpInstr{.lhs = "%rax", .rhs = "$0"},
+  push(Instr{.var = CmpInstr{.lhs = "%rax", .rhs = "$0", .size = DataSize::Qword},
              .type = InstrType::Cmp},
        Section::Main);
   push(Instr{.var = JumpInstr{.op = JumpCondition::Equal,

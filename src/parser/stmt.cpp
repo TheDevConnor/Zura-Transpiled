@@ -415,7 +415,9 @@ Node::Stmt *Parser::loopStmt(PStruct *psr, std::string name) {
     }
 
     Node::Stmt *body = parseStmt(psr, name);
-
+    // Check if there is a semicolon after the block. If there is, we can consume it, no problem. Semicolon here is optional
+    if (psr->current(psr).kind == TokenKind::SEMICOLON)
+      psr->advance(psr);
     if (isOptional) {
       if (isForLoop)
         return new ForStmt(line, column, varName, forLoop, condition,

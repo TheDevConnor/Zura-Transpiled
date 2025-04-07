@@ -57,9 +57,9 @@ void TypeChecker::visitFn(Node::Stmt *stmt) {
   context->enterScope(); // Enter function scope
 
   // Declare function in local table
-  context->declareLocal(fn_stmt->name, fn_stmt->returnType);
+  context->declareLocal(fn_stmt->name, fn_stmt->returnType); // Declare this first, so that recursion and stuff is possible later
 
-  // Add function parameters
+  // Check function parameters
   std::unordered_map<std::string, Node::Type *> params;
   for (std::pair<std::string, Node::Type *> &param : fn_stmt->params) {
       if (!param.second) {

@@ -50,6 +50,18 @@ public:
       std::string operator()(MovInstr instr) const {
         if (instr.destSize != instr.srcSize) {
           // Operands are different sizes...
+          // However, if one of them is a None and the other isn't, we can assume the one that is not none
+          if (instr.srcSize == DataSize::None) {
+            // Assume the dest is the one that is not none
+            std::stringstream ss;
+            ss << "mov" << dsToChar(instr.destSize) << " " << instr.src << ", " << instr.dest << "\n\t";
+            return ss.str();
+          } else if (instr.destSize == DataSize::None) {
+            // Assume the src is the one that is not none
+            std::stringstream ss;
+            ss << "mov" << dsToChar(instr.srcSize) << " " << instr.src << ", " << instr.dest << "\n\t";
+            return ss.str();
+          }
           // movzx dest, src
           if (instr.destSize == DataSize::SD &&
               instr.srcSize == DataSize::Qword) {
@@ -125,7 +137,7 @@ public:
         cmpq $8, $16
         jg example # JUMPS IF 16 > 8 ???!?!?
         */
-        return "cmp " + instr.rhs + ", " + instr.lhs + "\n\t";
+        return "cmp" + dsToChar(instr.size) + " " + instr.rhs + ", " + instr.lhs + "\n\t";
       }
       std::string operator()(JumpInstr instr) const {
         std::string keyword = {};

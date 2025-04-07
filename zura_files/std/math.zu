@@ -1,5 +1,5 @@
 # Implemented from the now deleted power.cpp file
-const pow := fn(base: int, exponent: int) int {
+const pow := fn(base: int?, exponent: int?) int? {
   if (exponent == 0) {
     return 1;
   }
@@ -13,7 +13,7 @@ const pow := fn(base: int, exponent: int) int {
     return 1;
   }
   # Haha, that's all the optimizations we get.
-  if (n % 2 == 0) {
+  if (exponent % 2 == 0) {
     return pow(base * base, exponent / 2);
   } else {
     return base * pow(base, exponent - 1);

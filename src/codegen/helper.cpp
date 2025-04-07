@@ -131,10 +131,31 @@ JumpCondition codegen::processComparison(Node::Expr *cond) {
       // we can do a little bit of optimizing here
       int lhsDepth = getExpressionDepth(bin->lhs);
       int rhsDepth = getExpressionDepth(bin->rhs);
-      bool isFloat =  bin->asmType->kind == ND_SYMBOL_TYPE && getUnderlying(bin->asmType) == "float";
-      bool isDouble = bin->asmType->kind == ND_SYMBOL_TYPE && getUnderlying(bin->asmType) == "double";
-      std::string lhsReg = (isFloat || isDouble) ? "%xmm0" : "%rax";
-      std::string rhsReg = (isFloat || isDouble) ? "%xmm1" : "%rbx";
+      bool isFloat =  bin->lhs->asmType->kind == ND_SYMBOL_TYPE && getUnderlying(bin->lhs->asmType) == "float";
+      bool isDouble = bin->lhs->asmType->kind == ND_SYMBOL_TYPE && getUnderlying(bin->lhs->asmType) == "double";
+      DataSize size = DataSize::Qword;
+      std::string lhsReg = "%rax";
+      std::string rhsReg = "%rbx";
+      switch (std::max(getByteSizeOfType(bin->lhs->asmType), getByteSizeOfType(bin->rhs->asmType))) {
+        case 1:
+          lhsReg = "%al";
+          rhsReg = "%bl";
+          size = DataSize::Byte;
+          break;
+        case 2:
+          lhsReg = "%ax";
+          rhsReg = "%bx";
+          size = DataSize::Word;
+          break;
+        case 4:
+          lhsReg = "%eax";
+          rhsReg = "%ebx";
+          size = DataSize::Dword;
+          break;
+        case 8:
+        default:
+          break; // It's already OK
+      }
       if (lhsDepth > rhsDepth) {
         visitExpr(bin->lhs);
         visitExpr(bin->rhs);
@@ -150,7 +171,7 @@ JumpCondition codegen::processComparison(Node::Expr *cond) {
       if (isFloat || isDouble) {
         pushLinker("ucomiss %xmm1, %xmm0\n\t", Section::Main);  
       } else {
-        push(Instr{.var = CmpInstr{.lhs = lhsReg, .rhs = rhsReg}, .type = InstrType::Cmp}, Section::Main);
+        push(Instr{.var = CmpInstr{.lhs = lhsReg, .rhs = rhsReg, .size = size}, .type = InstrType::Cmp}, Section::Main);
       }
       return getJumpCondition(bin->op); 
     }

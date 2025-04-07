@@ -35,11 +35,11 @@ void TypeChecker::visitInt(Node::Expr *expr) {
   if (integer->value < 0) {
     // It is signed
     return_type = std::make_shared<SymbolType>("int", SymbolType::Signedness::SIGNED);
-    expr->asmType = new SymbolType("int", SymbolType::Signedness::SIGNED);
+    expr->asmType = new SymbolType("$", SymbolType::Signedness::SIGNED);
   } else {
     // It is an unsigned int
     return_type = std::make_shared<SymbolType>("int", SymbolType::Signedness::UNSIGNED);
-    expr->asmType = new SymbolType("int", SymbolType::Signedness::UNSIGNED);
+    expr->asmType = new SymbolType("$", SymbolType::Signedness::UNSIGNED);
   }
 }
 

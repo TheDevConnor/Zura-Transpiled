@@ -81,6 +81,7 @@ struct Label {
 struct CmpInstr {
   std::string lhs;
   std::string rhs;
+  DataSize size;
 };
 
 struct NegInstr {

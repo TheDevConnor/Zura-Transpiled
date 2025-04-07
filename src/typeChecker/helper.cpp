@@ -266,7 +266,7 @@ Node::Type *TypeChecker::createDuplicate(Node::Type *type) {
 
 bool TypeChecker::isIntBasedType(Node::Type *type) {
   const static std::unordered_set<std::string> intTypes = {
-    "int", "char", "short", "long", "enum", // add more, maybe even a superlong for 128-bit lmao
+    "int", "char", "short", "long", "enum", "$", // add more, maybe even a superlong for 128-bit lmao
   };
 
   // Do not check for signedness ON PURPOSE

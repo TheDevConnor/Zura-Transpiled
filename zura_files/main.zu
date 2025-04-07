@@ -1,8 +1,6 @@
 const main := fn () int! {
-  have x: int! = @open("zura_files/main.zu", true, false, false); # Open the file with R--
-  have y: [10]char! = [0]; # Buffer (only 1 byte)
-  @input(x, y, 10);
-  @close(x); # FD
-  @output(1, y);
-  return 0;
+  have y: int! = 4;
+  have x: bool! = 4 == y;
+
+  return @cast<int!>(x);
 };

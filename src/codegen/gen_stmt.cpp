@@ -923,7 +923,7 @@ void codegen::matchStmt(Node::Stmt *stmt) {
         std::get<PushInstr>(text_section[text_section.size() - 1].var);
     text_section.pop_back();
 
-    push(Instr{.var = CmpInstr{.lhs = "%rax", .rhs = prevPush.what},
+    push(Instr{.var = CmpInstr{.lhs = "%rax", .rhs = prevPush.what, .size = DataSize::Qword},
                .type = InstrType::Cmp},
          Section::Main);
     // Jump if equal to the case
