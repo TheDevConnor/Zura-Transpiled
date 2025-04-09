@@ -54,4 +54,3 @@ jobs:
           title: "Release ${{ env.VERSION }}"
           files: |
             ./linux-artifacts/zura
-            ./version/version.txt
