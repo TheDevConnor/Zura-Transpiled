@@ -1,20 +1,20 @@
 #pragma once
-#include "helper/flags.hpp"
 #include <stdlib.h>
-#include <unordered_map>
+
 #include <string>
 
-inline std::string ZuraVersion = "";
-inline std::string get_version(const char *path);
+inline std::string ZuraVersion = "v0.1.42";
+inline bool shouldPrintErrors = true;
 
 class FlagConfig {
-public:
+ public:
   static void print(int argc, char **argv);
   static void runBuild(int argc, char **argv);
 };
 
 enum ExitValue {
   BUILT = 0,
+  SUCCESS = 0,
   INVALID_FILE_EXTENSION = 1,
   INVALID_FILE = 2,
   LEXER_ERROR = 3,

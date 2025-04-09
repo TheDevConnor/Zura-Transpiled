@@ -1,7 +1,5 @@
 #include <functional>
-#include <iostream>
 #include <string>
-#include <unordered_map>
 #include <vector>
 
 #include "../ast/ast.hpp"
@@ -28,16 +26,12 @@ using namespace Parser;
  */
 template <typename T, typename U>
 T Parser::lookup(PStruct *psr, const std::vector<std::pair<U, T>> &lu, U key) {
-  auto it = std::find_if(lu.begin(), lu.end(),
-                         [key](auto &p) { return p.first == key; });
-
-  if (isIgnoreToken(key)) {
-    return nullptr;
-  }
+  typename std::vector<std::pair<U, T>>::const_iterator it = std::find_if(lu.begin(), lu.end(),
+                         [key](const std::pair<U, T> &p) { return p.first == key; });
 
   if (it == lu.end()) {
-    ErrorClass::error(0, 0, "No value found for key Expr Maps!", "",
-                      "Parser Error", psr->current_file, lexer, psr->tks, true,
+    ErrorClass::error(0, 0, "No value found for key (" + std::to_string(key) + ") Expr Maps!", "",
+                      "Parser Error", node.current_file, lexer, psr->tks, true,
                       false, false, false, false, false);
     return nullptr;
   }
@@ -62,15 +56,23 @@ void Parser::createMaps() {
       {TokenKind::LOOP, loopStmt},        {TokenKind::PRINT, printStmt},
       {TokenKind::IMPORT, importStmt},    {TokenKind::TEMPLATE, templateStmt},
       {TokenKind::BREAK, breakStmt},      {TokenKind::CONTINUE, continueStmt},
+      {TokenKind::LINK, linkStmt},        {TokenKind::EXTERN, externStmt},
+      {TokenKind::MATCH, matchStmt},      {TokenKind::INPUT, inputStmt},
+      {TokenKind::CLOSE, closeStmt},      {TokenKind::PRINTLN, printlnStmt},
   };
   nud_lu = {
-      {TokenKind::INT, primary},         {TokenKind::FLOAT, primary},
-      {TokenKind::IDENTIFIER, primary},  {TokenKind::STRING, primary},
-      {TokenKind::LEFT_PAREN, group},    {TokenKind::MINUS, unary},
-      {TokenKind::PLUS_PLUS, _prefix},   {TokenKind::BANG, unary},
-      {TokenKind::MINUS_MINUS, _prefix}, {TokenKind::LEFT_BRACKET, array},
-      {TokenKind::TR, bool_expr},        {TokenKind::FAL, bool_expr},
-      {TokenKind::CAST, cast_expr},
+      {TokenKind::INT, primary},           {TokenKind::FLOAT, primary},
+      {TokenKind::IDENTIFIER, primary},    {TokenKind::STRING, primary},
+      {TokenKind::LEFT_PAREN, group},      {TokenKind::MINUS, unary},
+      {TokenKind::PLUS_PLUS, _prefix},     {TokenKind::BANG, unary},
+      {TokenKind::MINUS_MINUS, _prefix},   {TokenKind::LEFT_BRACKET, array},
+      {TokenKind::TR, boolExpr},          {TokenKind::FAL, boolExpr},
+      {TokenKind::CAST, castExpr},        {TokenKind::CALL, externalCall},
+      {TokenKind::LEFT_BRACE, structExpr}, {TokenKind::LAND, address},
+      {TokenKind::NIL, nullType},         {TokenKind::CHAR, primary},
+      {TokenKind::ALLOC, allocExpr},      {TokenKind::FREE, freeExpr},
+      {TokenKind::SIZEOF, sizeofExpr},    {TokenKind::MEMCPY, memcpyExpr},
+      {TokenKind::OPEN, openExpr},
   };
   led_lu = {
       {TokenKind::PLUS, binary},
@@ -111,9 +113,10 @@ void Parser::createMaps() {
 
       {TokenKind::AND, binary},
       {TokenKind::OR, binary},
+
+      {TokenKind::LAND, dereference},
   };
   bp_lu = {
-      {TokenKind::COMMA, BindingPower::comma},
       {TokenKind::EQUAL, BindingPower::assignment},
 
       {TokenKind::OR, BindingPower::logicalOr},
@@ -154,31 +157,18 @@ void Parser::createMaps() {
       {TokenKind::INT, BindingPower::defaultValue},
       {TokenKind::FLOAT, BindingPower::defaultValue},
       {TokenKind::STRING, BindingPower::defaultValue},
+      {TokenKind::CHAR, BindingPower::defaultValue},
 
       {TokenKind::RANGE, BindingPower::range},
 
       {TokenKind::LEFT_BRACKET, BindingPower::member},
 
+      {TokenKind::LEFT_BRACE, BindingPower::member},
+
       {TokenKind::DOT, BindingPower::member},
       {TokenKind::RESOLUTION, BindingPower::member},
+      {TokenKind::LAND, BindingPower::member},
   };
-  ignore_tokens = {
-      TokenKind::SEMICOLON,
-      TokenKind::COMMA,
-      TokenKind::COLON,
-      TokenKind::WALRUS,
-  };
-}
-
-/**
- * Checks if a given token is an ignore token.
- *
- * @param tk The token kind to check.
- * @return True if the token is an ignore token, false otherwise.
- */
-bool Parser::isIgnoreToken(TokenKind tk) {
-  return std::find(ignore_tokens.begin(), ignore_tokens.end(), tk) !=
-         ignore_tokens.end();
 }
 
 /**
@@ -199,9 +189,9 @@ bool Parser::isIgnoreToken(TokenKind tk) {
  * @return A pointer to the parsed expression, or nullptr if parsing fails.
  */
 Node::Expr *Parser::nud(PStruct *psr) {
-  auto op = psr->current(psr);
+  Lexer::Token op = psr->current(psr);
   try {
-    auto result = lookup(psr, nud_lu, op.kind);
+    Parser::NudHandler result = lookup(psr, nud_lu, op.kind);
     if (result == nullptr) {
       psr->advance(psr);
       return nullptr;
@@ -210,7 +200,7 @@ Node::Expr *Parser::nud(PStruct *psr) {
   } catch (std::runtime_error &e) {
     ErrorClass::error(psr->current(psr).line, psr->current(psr).column,
                       "Could not parse expression in NUD!", "", "Parser Error",
-                      psr->current_file, lexer, psr->tks, true, false, false,
+                      node.current_file, lexer, psr->tks, true, false, false,
                       false, false, false);
     return nullptr;
   }
@@ -226,9 +216,9 @@ Node::Expr *Parser::nud(PStruct *psr) {
  * @return The parsed expression.
  */
 Node::Expr *Parser::led(PStruct *psr, Node::Expr *left, BindingPower bp) {
-  auto op = psr->current(psr);
+  Lexer::Token op = psr->current(psr);
   try {
-    auto result = lookup(psr, led_lu, op.kind);
+    Parser::LedHandler result = lookup(psr, led_lu, op.kind);
     if (result == nullptr) {
       psr->advance(psr);
       return left;
@@ -257,15 +247,20 @@ Node::Expr *Parser::led(PStruct *psr, Node::Expr *left, BindingPower bp) {
  * statement is found.
  */
 Node::Stmt *Parser::stmt(PStruct *psr, std::string name) {
-  auto stmt_it = std::find_if(stmt_lu.begin(), stmt_lu.end(), [psr](auto &p) {
-    return p.first == psr->current(psr).kind;
-  });
+  std::vector<std::pair<TokenKind, Parser::StmtHandler>>::iterator stmt_it =
+      std::find_if(stmt_lu.begin(), stmt_lu.end(),
+                   [psr](std::pair<TokenKind, Parser::StmtHandler> &p) {
+                     return p.first == psr->current(psr).kind;
+                   });
   return stmt_it != stmt_lu.end() ? stmt_it->second(psr, name) : nullptr;
 }
 
 BindingPower Parser::getBP(TokenKind tk) {
-  auto bp_it = std::find_if(bp_lu.begin(), bp_lu.end(),
-                            [tk](auto &p) { return p.first == tk; });
+  std::vector<std::pair<TokenKind, BindingPower>>::iterator bp_it =
+      std::find_if(bp_lu.begin(), bp_lu.end(),
+                   [tk](std::pair<TokenKind, BindingPower> &p) {
+                     return p.first == tk;
+                   });
 
   return bp_it != bp_lu.end() ? bp_it->second : BindingPower::defaultValue;
 }

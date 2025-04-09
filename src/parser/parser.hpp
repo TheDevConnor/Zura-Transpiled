@@ -39,40 +39,14 @@ inline Lexer lexer;
 struct Parser::PStruct {
   std::vector<Lexer::Token> tks;
   std::string current_file;
-  int pos = 0;
+  size_t pos = 0;
 
-  Lexer::Token current(PStruct *psr) { return psr->tks[psr->pos]; }
+  Lexer::Token current(PStruct *psr);
+  Lexer::Token advance(PStruct *psr);
+  Lexer::Token peek(PStruct *psr, int offset = 0);
+  Lexer::Token expect(PStruct *psr, TokenKind tk, std::string msg);
 
-  Lexer::Token advance(PStruct *psr) {
-    auto tk = current(psr);
-    psr->pos++;
-    return tk;
-  }
-
-  Lexer::Token peek(PStruct *psr, int offset = 0) {
-    return psr->tks[psr->pos + offset];
-  }
-
-  bool hadTokens(PStruct *psr) { return psr->pos < psr->tks.size(); }
-
-  Lexer::Token expect(PStruct *psr, TokenKind tk, std::string msg) {
-    Lexer lexer;
-    if (peek(psr).kind == TokenKind::END_OF_FILE) {
-      ErrorClass::error(current(psr).line, current(psr).column, msg, "",
-                        "Parser Error", psr->current_file, lexer, psr->tks, true, false,
-                        false, false, false, false);
-      ErrorClass::printError();
-      exit(1);
-    }
-    if (current(psr).kind != tk) {
-      ErrorClass::error(current(psr).line, current(psr).column, msg, "",
-                        "Parser Error", psr->current_file, lexer, psr->tks, true, false,
-                        false, false, false, false);
-      return current(psr);
-    }
-
-    return advance(psr);
-  }
+  bool hadTokens(PStruct *psr);
 };
 
 namespace Parser {
@@ -92,14 +66,12 @@ static std::vector<std::pair<TokenKind, StmtHandler>> stmt_lu;
 static std::vector<std::pair<TokenKind, NudHandler>> nud_lu;
 static std::vector<std::pair<TokenKind, LedHandler>> led_lu;
 static std::vector<std::pair<TokenKind, BindingPower>> bp_lu;
-static std::vector<TokenKind> ignore_tokens;
-void createMaps();
+void createMaps(void);
 
 Node::Expr *led(PStruct *psr, Node::Expr *left, BindingPower bp);
 BindingPower getBP(TokenKind tk);
 Node::Stmt *stmt(PStruct *psr, std::string name);
-Node::Expr *nud(PStruct *psr);
-bool isIgnoreToken(TokenKind tk);
+Node::Expr *nud(PStruct *psr);;
 
 // Maps for the Pratt Parser for types.
 using TypeNudHandler = std::function<Node::Type *(PStruct *)>;
@@ -109,7 +81,7 @@ using TypeLedHandler =
 static std::vector<std::pair<TokenKind, TypeNudHandler>> type_nud_lu;
 static std::vector<std::pair<TokenKind, TypeLedHandler>> type_led_lu;
 static std::vector<std::pair<TokenKind, BindingPower>> type_bp_lu;
-void createTypeMaps();
+void createTypeMaps(void);
 
 Node::Type *type_led(PStruct *psr, Node::Type *left, BindingPower bp);
 BindingPower type_getBP(PStruct *psr, TokenKind tk);
@@ -117,8 +89,11 @@ Node::Type *type_nud(PStruct *psr);
 
 Node::Type *symbol_table(PStruct *psr);
 Node::Type *array_type(PStruct *psr);
-Node::Type *parseType(PStruct *psr, BindingPower bp);
+Node::Type *parseType(PStruct *psr);
 Node::Type *pointer_type(PStruct *psr);
+Node::Expr *nullType(PStruct *psr);
+Node::Type *type_application(PStruct *psr);
+Node::Type *function_type(PStruct *psr);
 
 // Pratt parser functions.
 PStruct *setupParser(PStruct *psr, Lexer *lex, Lexer::Token tk, std::string current_file);
@@ -130,8 +105,17 @@ Node::Expr *unary(PStruct *psr);
 Node::Expr *_prefix(PStruct *psr);
 Node::Expr *group(PStruct *psr);
 Node::Expr *array(PStruct *psr);
-Node::Expr *bool_expr(PStruct *psr);
-Node::Expr *cast_expr(PStruct *psr);
+Node::Expr *boolExpr(PStruct *psr);
+Node::Expr *castExpr(PStruct *psr);
+Node::Expr *externalCall(PStruct *psr);
+Node::Expr *structExpr(PStruct *psr);
+Node::Expr *address(PStruct *psr);
+Node::Expr *allocExpr(PStruct *psr);
+Node::Expr *freeExpr(PStruct *psr);
+Node::Expr *sizeofExpr(PStruct *psr);
+Node::Expr *memcpyExpr(PStruct *psr);
+Node::Expr *openExpr(PStruct *psr);
+// Binary Functions
 Node::Expr *_postfix(PStruct *psr, Node::Expr *left, BindingPower bp);
 Node::Expr *binary(PStruct *psr, Node::Expr *left, BindingPower bp);
 Node::Expr *assign(PStruct *psr, Node::Expr *left, BindingPower bp);
@@ -140,8 +124,9 @@ Node::Expr *_ternary(PStruct *psr, Node::Expr *left, BindingPower bp);
 Node::Expr *_member(PStruct *psr, Node::Expr *left, BindingPower bp);
 Node::Expr *index(PStruct *psr, Node::Expr *left, BindingPower bp);
 Node::Expr *resolution(PStruct *psr, Node::Expr *left, BindingPower bp);
-
+Node::Expr *dereference(PStruct *psr, Node::Expr *left, BindingPower bp);
 // Stmt Functions
+Node::Stmt *matchStmt(PStruct *psr, std::string name);
 Node::Stmt *returnStmt(PStruct *psr, std::string name);
 Node::Stmt *structStmt(PStruct *psr, std::string name);
 Node::Stmt *importStmt(PStruct *psr, std::string name);
@@ -151,11 +136,17 @@ Node::Stmt *constStmt(PStruct *psr, std::string name);
 Node::Stmt *enumStmt(PStruct *psr, std::string name);
 Node::Stmt *loopStmt(PStruct *psr, std::string name);
 Node::Stmt *printStmt(PStruct *psr, std::string name);
+Node::Stmt *printlnStmt(PStruct *psr, std::string name);
 Node::Stmt *varStmt(PStruct *psr, std::string name);
 Node::Stmt *funStmt(PStruct *psr, std::string name);
 Node::Stmt *ifStmt(PStruct *psr, std::string name);
 Node::Stmt *templateStmt(PStruct *psr, std::string name);
 Node::Stmt *breakStmt(PStruct *psr, std::string name);
 Node::Stmt *continueStmt(PStruct *psr, std::string name);
+Node::Stmt *linkStmt(PStruct *psr, std::string name);
+Node::Stmt *externStmt(PStruct *psr, std::string name);
+Node::Stmt *inputStmt(PStruct *psr, std::string name);
+Node::Stmt *closeStmt(PStruct *psr, std::string name);
+
 Node::Stmt *exprStmt(PStruct *psr);
 } // namespace Parser

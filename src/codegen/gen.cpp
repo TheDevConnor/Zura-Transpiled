@@ -8,6 +8,7 @@
 #include <fstream>
 #include <iostream>
 #include <string>
+#include <filesystem>
 
 void codegen::gen(Node::Stmt *stmt, bool isSaved, std::string output_filename,
                   const char *filename, bool isDebug) {
@@ -21,90 +22,167 @@ void codegen::gen(Node::Stmt *stmt, bool isSaved, std::string output_filename,
   rodt_section.clear();
   // output_code.clear();
 
+  // Get full realpath of the input file
+  std::filesystem::path input_path = std::filesystem::absolute(filename);
+  // absolute path of directory
+  std::string input_dir = input_path.parent_path().string();
+  std::string input_file = input_path.filename().string();
   // stmt->debug();
-
   visitStmt(stmt);
 
-  // Make 2 passes of optimization
+  // Make 3 passes of optimization
+  text_section = Optimizer::optimizeInstrs(text_section);
   text_section = Optimizer::optimizeInstrs(text_section);
   text_section = Optimizer::optimizeInstrs(text_section);
   
-  head_section = Optimizer::optimizeInstrs(head_section);
-  head_section = Optimizer::optimizeInstrs(head_section);
   // data section cannot be optimized
   // rodata section cant be optimized either
 
   std::ofstream file(output_filename + ".s");
-  if (!file.is_open()) handlerError(0, 0,
+  if (!file.is_open()) handleError(0, 0,
               "Unable to open output file for finalized assembly '" +
                   output_filename +
                   ".s' - ensure Zura has permissions to write/create files", "Codegen Error");
   
-  file << "# ┌-------------------------------┐\n"
-          "# |   Zura lang by TheDevConnor   |\n"
-          "# |  assembly by Soviet Pancakes  |\n"
-          "# └-------------------------------┘\n"
+  file << "# ╔═════════════════════════════════╗\n"
+          "# ║   Zura Syntax by TheDevConnor   ║\n"
+          "# ║   assembly by Soviet Pancakes   ║\n"
+          "# ╚═════════════════════════════════╝\n"
           "# "
         << ZuraVersion
         << "\n"
-          "# What's New: Debug symbols (Open GDB and try it!)\n";
+          "# What's New: Dereferencing structs\n"
+        << "\n# Everything beyond this point was generated automatically by the Zura compiler.\n" 
+           ".att_syntax\n";
+  
+
   // This one defines the file the whole assembly is related to
   if (debug)
-    file << ".file   \"" << static_cast<ProgramStmt *>(stmt)->inputPath << "\"\n";
+    // Get name of filename - do not include its directory
+    file << ".file \"" << input_file << "\"\n";
   file << ".text\n";
-  if (debug)
-    file << ".Ltext0:\n.file 0 \"" << static_cast<ProgramStmt *>(stmt)->inputPath << "\"\n";
-
-  file << ".globl main\n";
+  file << ".globl _start\n";
+  if (debug) {
+    for (size_t i = 0; i < fileIDs.size(); i++) {
+      // Get the absolute path of the fileID path, which is relative to the path of the input file
+      std::filesystem::path fileID_path = std::filesystem::absolute(std::filesystem::path(fileIDs.at(i)));
+      std::string fileID_path_dir = fileID_path.parent_path().string();
+      std::string fileID_path_file = fileID_path.filename().string();
+      file << ".file " << i << " \"" + fileID_path_dir + "\" \"" + fileID_path_file + "\"\n";
+    }
+    file << ".Ltext0:\n.weak .Ltext0\n";
+  }
+  file << "_start:\n"
+          "  .cfi_startproc\n"
+          "  call main\n"
+          "  xorq %rdi, %rdi\n"
+          "  movq $60, %rax\n"
+          "  syscall\n"
+          "  .cfi_endproc\n"
+          ".size _start, .-_start\n";
   file << Stringifier::stringifyInstrs(text_section);
   if (nativeFunctionsUsed.size() > 0) file << "\n# zura functions\n";
   if (nativeFunctionsUsed[NativeASMFunc::strlen] == true) {
-    file << ".type native_strlen, @function\n"
-            "native_strlen:\n"
-            "  pushq %rbp              # save base pointer\n"
-            "  movq %rsp, %rbp         # set base pointer\n"
-            "  movq %rdi, %rcx         # move string to rcx\n"
-            "  xorq %rax, %rax         # clear rax\n"
-            "  strlen_loop:\n"
-            "    cmpb $0, (%rcx, %rax) # compare byte at rcx + rax to 0\n"
-            "    je strlen_end         # if byte is 0, end\n"
-            "    incq %rax             # increment rax\n"
-            "    jmp strlen_loop # loop\n"
-            "  strlen_end:\n"
-            "  popq %rbp               # restore base pointer\n"
-            "  ret # return\n"
-            ".size native_strlen, .-native_strlen\n";
+    file << ".type native_strlen, @function"
+            "\nnative_strlen:"
+            "\n  #input in rdi"
+            "\n  movb $0, %al"
+            "\n  movq $0xFFFFFFF, %rcx"
+            "\n  repne scasb # repeat while (%rdi) not zero, decrease %rcx"
+            "\n  movq $0xFFFFFFF, %rbx"
+            "\n  subq %rcx, %rbx # subtract to get total length"
+            "\n  movq %rbx, %rax"
+            "\n  decq %rax # the rep instruction also includes the NUL, so we must remove it here"
+            "\n  ret"
+            "\n.size native_strlen, .-native_strlen\n";
+  }
+  if (nativeFunctionsUsed[NativeASMFunc::uitoa] == true) {
+    file << ".type native_uitoa, @function\n"
+          "native_uitoa:"
+          "\n    # Allocate space for the string on the stack"
+          "\n    subq $32, %rsp          # Allocate 32 bytes for the buffer"
+          "\n    movq %rsp, %rcx         # Save buffer address in %rcx"
+          "\n    addq $31, %rcx          # Point to the end of the buffer (minus null terminator)"
+          "\n    movb $0, (%rcx)         # Null-terminate the string"
+          "\n    # Check if the input is zero"
+          "\n    movq %rdi, %rax         # Copy input number to %rax"
+          "\n    testq %rax, %rax        # Check if %rax == 0"
+          "\n    jnz .uitoa_loop    # If not zero, process the digits"
+          "\n    # Special case for zero"
+          "\n    movb $'0', -1(%rcx)     # Store '0' before the null terminator"
+          "\n    leaq -1(%rcx), %rax     # Return pointer to the string in %rax"
+          "\n    addq $32, %rsp          # Restore the stack"
+          "\n    ret"
+          "\n.uitoa_loop:"
+          "\n    # Process each digit"
+          "\n    movq $10, %rbx          # Divide by 10"
+          "\n.uitoa_div:"
+          "\n    xorq %rdx, %rdx         # Clear %rdx for division"
+          "\n    divq %rbx               # Divide %rax by 10"
+          "\n    addb $'0', %dl          # Convert remainder to ASCII"
+          "\n    decq %rcx               # Move buffer pointer"
+          "\n    movb %dl, (%rcx)        # Store ASCII digit"
+          "\n    testq %rax, %rax        # Check if quotient is zero"
+          "\n    jnz .uitoa_div          # Repeat if quotient != 0"
+          "\n    # Prepare return value"
+          "\n    leaq (%rcx), %rax       # Return pointer to the start of the string in %rax"
+          "\n    addq $32, %rsp          # Restore the stack"
+          "\n    ret"
+          "\n"
+          ".size native_uitoa, .-native_uitoa\n";
   }
   if (nativeFunctionsUsed[NativeASMFunc::itoa] == true) {
     file << ".type native_itoa, @function\n"
-          "native_itoa:\n"
-          "  pushq %rbp              # save base pointer\n"
-          "  movq %rsp, %rbp         # set base pointer\n"
-          "  movq $-1, %rdi          # buffer\n"
-          "  leaq (%rsp, %rdi, 1), %rbx\n"
-          "  movq %rsi, %rax         # number\n"
-          "  movq $0, %rdi           # counter\n"
-          "  pushq $0x0\n"
-          "  jmp itoa_loop\n"
-          "itoa_loop:\n"
-          "  movq $0, %rdx\n"
-          "  movq $10, %rcx\n"
-          "  div %rcx\n"
-          "  addq $48, %rdx\n"
-          "  pushq %rdx\n"
-          "  movb (%rsp), %cl\n"
-          "  movb %cl, (%rbx, %rdi, 1)\n"
-          "  test %rax, %rax\n"
-          "  je itoa_end\n"
-          "  dec %rdi\n"
-          "  jmp itoa_loop\n"
-          "itoa_end:\n"
-          "  leaq (%rbx, %rdi, 1), %rax\n"
-          "  movq %rbp, %rsp\n"
-          "  popq %rbp\n"
-          "  ret\n"
-          ".size native_itoa, .-native_itoa\n";
+            "native_itoa:"
+            "\n    # Allocate space for the string on the stack"
+            "\n    subq $32, %rsp          # Allocate 32 bytes (characters) for the buffer"
+            "\n    movb $0, %r8b           # used to store the - sign if necessary"
+            "\n    movq %rsp, %rcx         # Save buffer address in %rcx"
+            "\n    addq $31, %rcx          # Point to the end of the buffer (minus null terminator)"
+            "\n    movb $0, (%rcx)         # Null-terminate the string"
+            "\n    movq %rdi, %rax         # Copy input number to %rax"
+            "\n    testq %rax, %rax           # Test if input is already zero (we cannot do the loop if so)"
+            "\n    jns .itoa_zero_check"
+            "\n    movb $'-', %r8b"
+            "\n    negq %rax"
+            "\n.itoa_zero_check:"
+            "\n    jnz .itoa_loop          # If not zero, process the digits"
+            "\n    # Special case for zero"
+            "\n    movb $'0', -1(%rcx)     # Store '0' before the null terminator"
+            "\n    leaq -1(%rcx), %rax     # Return pointer to the string in %rax"
+            "\n    addq $32, %rsp          # Restore the stack"
+            "\n    ret"
+            "\n.itoa_loop:"
+            "\n    # Process each digit"
+            "\n    movq $10, %rbx          # Divisor = 10"
+            "\n.itoa_div:"
+            "\n    xorq %rdx, %rdx         # Clear %rdx for division"
+            "\n    divq %rbx               # Divide %rax by 10, remainder in %rdx, quotient in %rax"
+            "\n    addb $'0', %dl          # Convert remainder to ASCII"
+            "\n    decq %rcx               # Move buffer pointer backward BEFORE storing character"
+            "\n    movb %dl, (%rcx)        # Store ASCII character at the current buffer position"
+            "\n    testq %rax, %rax        # Check if quotient is zero"
+            "\n    jnz .itoa_div           # Repeat if quotient != 0"
+            "\n    # Prepare return value"
+            "\n    decq %rcx"
+            "\n    movb %r8b, (%rcx)"
+            "\n    leaq (%rcx), %rax       # Return pointer to the start of the string in %rax"
+            "\n    addq $32, %rsp          # Restore the stack"
+            "\n    ret"
+            "\n"
+            ".size native_itoa, .-native_itoa\n";
   }
+  if (nativeFunctionsUsed[NativeASMFunc::memcpy] == true) {
+    file << ".type native_memcpy, @function\n"
+          "native_memcpy:"
+          "\n    # rdi = dest, rsi = src, rdx = bytes"
+          "\n    movq %rdx, %rcx"
+          "\n    rep movsb"
+          "\n    ret"
+          "\n.size native_memcpy, .-native_memcpy\n";
+  }
+  if (debug) 
+    file << ".Ldebug_text0:\n";
   if (head_section.size() > 0) {
     file << "\n# non-main user functions" << std::endl;
     file << Stringifier::stringifyInstrs(head_section);
@@ -123,161 +201,39 @@ void codegen::gen(Node::Stmt *stmt, bool isSaved, std::string output_filename,
   // DWARF debug yayy
   if (debug) {
     // Debug symbols should be included
-    file << ".Ldebug_text0:\n";
 	  file << ".section	.debug_info,\"\",@progbits\n\t";
     file << "\n.long .Ldebug_end - .Ldebug_info" // Length of the debug info header 
             "\n.Ldebug_info:" // NOTE: ^^^^ This long tag right here requires the EXCLUSION of those 4 bytes there
+            "\n.weak .Ldebug_info"
             "\n.word 0x5" // DWARF version 5
             "\n.byte 0x1" // Unit-type DW_UT_compile
             "\n.byte 0x8" // 8-bytes registers (64-bit os)
             "\n.long .Ldebug_abbrev"
             "\n"
-            "\n.uleb128 0x1" // Compilation unit name
-            "\n.long .Ldebug_producer_string"
-            "\n.byte 0x1d" // Language (C)
-            "\n.long .Ldebug_file_string"
-            "\n.long .Ldebug_file_dir"
+            "\n.uleb128 " + std::to_string((int)dwarf::DIEAbbrev::CompileUnit) + // Compilation unit name
+            "\n.long .Ldebug_producer_string - .Ldebug_str_start" // Producer - command or program that created this stinky assembly code
+            "\n.short 0x8042" // Custom Language (ZU) - not standardized in DWARF so we're allowed ot use it for "custom" purposes
+            "\n.long .Ldebug_file_string - .Ldebug_line_str_start" // Filename
+            "\n.long .Ldebug_file_dir - .Ldebug_line_str_start" // Filepath
             "\n.quad .Ltext0" // Low PC (beginning of .text)
-            "\n.quad .Ldebug_text0-.Ltext0" // High PC (end of .text)
+            "\n.quad .Ldebug_text0 - .Ltext0" // High PC (end of .text)
             "\n.long .Ldebug_line0"
             "\n";
     // Attributes or whatever that follow
     file << Stringifier::stringifyInstrs(die_section) << "\n";
-    file << ".Lint_debug_type:\n"
-            ".uleb128 0x3\n"
-            ".long .Lint_debug_string\n"
-            ".byte 0x05\n"
-            ".byte 0x08\n";
-    file << ".Lfloat_debug_type:\n"
-            ".uleb128 0x3\n"
-            ".long .Lfloat_debug_string\n"
-            ".byte 0x04\n"
-            ".byte 0x04\n";
+    dwarf::emitTypes();
+    file << Stringifier::stringifyInstrs(diet_section) << "\n"; // types, both builtin and user-defined
+    // If they are INSIDE the compile unit (before the byte 0 above here),
+    // then they are not visible to other CU's (other files)
+    file << ".byte 0\n"; // End of compile unit's children -- THIS ACTUALLY NEEDS TO GO HERE!
     file << ".Ldebug_end:\n";
     file << ".section .debug_abbrev,\"\",@progbits\n";
     file << ".Ldebug_abbrev:\n";
-        // Define compilation unit (DW_TAG_compile_unit)
-    file << ".uleb128 0x1\n" // Opcode 1
-            ".uleb128 0x11\n" // DW_TAG_compile_unit
-            ".byte	0x1\n" // Yes children
-            ".uleb128 0x25\n" // producer
-            ".uleb128 0x0E\n" // strp
-
-            ".uleb128 0x13\n" // language
-            ".uleb128 0x0B\n" // byte
-
-            ".uleb128 0x03\n" // at_name (filename)
-            ".uleb128 0x1F\n" // lines_str //
-
-            ".uleb128 0x1B\n" // comp_dir (file dir)
-            ".uleb128 0x1F\n" // lines_str
-
-            ".uleb128 0x11\n" // low pc
-            ".uleb128 0x01\n" // addr
-
-            ".uleb128 0x12\n" // high pc
-            ".uleb128 0x07\n" // data 8 (quad)
-
-            ".uleb128 0x10\n" // stmt_list
-            ".uleb128 0x17\n" // sec_offset
-            ".byte 0x0\n"
-            ".byte 0x0\n";
-    // Define Variable Declaration (DW_TAG_variable)
-    file << ".uleb128 0x2\n" // Use opcode 2
-            ".uleb128 0x34\n" // DW_TAG_variable
-            ".byte 0\n" // No children
-
-            ".uleb128 0x3\n" // DW_AT_name
-            ".uleb128 0x0E\n" // DW_FORM_string
-
-            ".uleb128 0x3A\n" // DW_AT_decl_file
-            ".uleb128 0x0B\n" // DW_FORM_data1
-
-            ".uleb128 0x3B\n" // DW_AT_decl_line
-            ".uleb128 0x0B\n" // DW_FORM_data1
-
-            ".uleb128 0x49\n" // DW_AT_type
-            ".uleb128 0x13\n" // DW_FORM_ref4 - 4-byte pointer to the .debug_info type
-
-            ".uleb128 0x02\n" // DW_AT_location
-            ".uleb128 0x18\n" // DW_FORM_exprloc
-
-            ".byte 0x0\n"
-            ".byte 0x0\n";
-    // Define Type Declaration (DW_TAG_base_type)
-    file << ".Ldata_type:\n"
-            ".uleb128 0x03\n" // Opcode of this abbreviation - 3
-            ".uleb128 0x24\n" // DW_TAG_base_type (basic type like int, float- perfect for ASMType)
-            ".byte 0x0\n" // No children
-
-            ".uleb128 0x03\n" // DW_AT_name
-            ".uleb128 0x0E\n" // DW_FORM_strp
-
-            ".uleb128 0x3E\n" // DW_AT_encoding
-            ".uleb128 0x0B\n" // DW_FORM_data1
-
-            ".uleb128 0x0B\n" // DW_AT_byte_size
-            ".uleb128 0x0B\n" // 1-byte constant that follows
-            ".byte 0x0\n"
-            ".byte 0x0\n"; // It's done!
-    // Define Subprogram (function) Declaration (DW_TAG_subprogram)
-    file << ".uleb128 0x04\n" // Use opcode 4
-            ".uleb128 0x2E\n" // DW_TAG_subprogram
-            ".byte 0x1\n" // Yes children :(
-            
-            ".uleb128 0x3F\n" // DW_AT_external
-            ".uleb128 0x0C\n" // DW_FORM_flag
-
-            ".uleb128 0x03\n" // DW_AT_name
-            ".uleb128 0x0E\n" // DW_FORM_strp
-
-            ".uleb128 0x3A\n" // DW_AT_decl_file
-            ".uleb128 0x0B\n" // DW_FORM_data1
-
-            ".uleb128 0x3B\n" // DW_AT_decl_line
-            ".uleb128 0x0B\n" // DW_FORM_data1
-
-            ".uleb128 0x49\n" // DW_AT_type
-            ".uleb128 0x13\n" // DW_FORM_ref4 - 4-byte pointer to the .debug_info type
-
-            ".uleb128 0x11\n" // DW_AT_low_pc
-            ".uleb128 0x01\n" // DW_FORM_addr
-
-            ".uleb128 0x12\n" // DW_AT_high_pc
-            ".uleb128 0x07\n" // DW_FORM_data8 (?)
-
-            ".uleb128 0x40\n" // DW_AT_frame_base
-            ".uleb128 0x18\n" // DW_FORM_exprloc
-
-            ".uleb128 0x7A\n" // DW_AT_call_all_calls
-            ".uleb128 0x19\n" // DW_FORM_flag_present
-
-            // Should I use siblings? I don't know
-            // ".uleb128 0x01\n" // DW_AT_sibling
-            // ".uleb128 0x13\n" // DW_FORM_ref4
-
-            ".byte 0x0\n"
-            ".byte 0x0\n";
+    dwarf::useAbbrev(dwarf::DIEAbbrev::CompileUnit); // required
+    file << dwarf::generateAbbreviations();
     
-    file << Stringifier::stringifyInstrs(diea_section);
-    file << "\n.byte 00\n"; // End of abbreviations
-    
-    // Still not done
-    // Aranges
-    file << ".section .debug_aranges,\"\",@progbits\n";
-    file << ".Ldebug_aranges:\n"
-            ".long .Ldebug_aranges_end - 4 - .Ldebug_aranges\n" // length of the aranges
-            ".value 0x5\n" // DWARF ver (5)
-            ".long .Ldebug_text0\n"
-            ".byte 0x8\n" // 8-byte addresses
-            ".byte 0x0\n" // x86-64 typically has "flat" (0x0) memory model
-            ".value 0\n"
-            ".value 0\n"
-            ".quad .Ltext0\n"
-            ".quad .Ldebug_text0-.Ltext0\n"
-            ".quad 0\n"
-            ".quad 0\n" // End of aranges
-            ".Ldebug_aranges_end:\n";
+    // I dont think the debug_aranges section is totally required
+    // so im not wasting brainpower on it
 
     // debug_line
     file << ".section .debug_line,\"\",@progbits\n";
@@ -285,16 +241,15 @@ void codegen::gen(Node::Stmt *stmt, bool isSaved, std::string output_filename,
     // TODO
     // debug_str
     file << ".section .debug_str,\"MS\",@progbits,1\n"
-            ".Ldebug_producer_string: .string \"Zura compiler version " + ZuraVersion + ", debug on\"\n"
-            // TOOD: Convert to path
-            ".Lint_debug_string: .string \"int\"\n"
-            ".Lfloat_debug_string: .string \"float\"\n";
+            ".Ldebug_str_start:\n"
+            ".Ldebug_producer_string: .string \"Zura compiler " + ZuraVersion + "\"\n";
     file << Stringifier::stringifyInstrs(dies_section) << "\n";
     // debug_line_str
     std::string fileRelPath = static_cast<ProgramStmt *>(stmt)->inputPath;
     std::string fileName = fileRelPath.substr(fileRelPath.find_last_of("/") + 1);
     std::string fileDir = fileRelPath.substr(0, fileRelPath.find_last_of("/"));
     file << ".section .debug_line_str,\"MS\",@progbits,1\n"
+            ".Ldebug_line_str_start:\n"
             ".Ldebug_file_string: .string \"" << fileName << "\"\n"
             ".Ldebug_file_dir: .string \"" << fileDir << "\"\n";
   }
@@ -303,14 +258,19 @@ void codegen::gen(Node::Stmt *stmt, bool isSaved, std::string output_filename,
   output_filename =
       output_filename.substr(0, output_filename.find_last_of("."));
 
-  ErrorClass::printError(); // Print any errors that may have occurred
+  bool isError = ErrorClass::printError();
+  if (isError) { return; }
 
   // Compile, but do not link main.o
   std::string assembler = // "Dont include standard libraries"
       (isDebug)
-        ? "gcc -g -no-pie " + output_filename + ".s -o " + output_filename
-        : "gcc -no-pie " + output_filename + ".s -o " + output_filename;
+        ? "gcc -g -e _start -nostdlib -nostartfiles " + output_filename + ".s -o " + output_filename
+        : "gcc -e _start -nostdlib -nostartfiles " + output_filename + ".s -o " + output_filename;
   std::string assembler_log = output_filename + "_assembler.log";
+  // loop over linkedFiles set and link them with gcc
+  for (std::string linkedFile : linkedFiles) {
+    assembler += " -l" + linkedFile;
+  }
   if (!execute_command(assembler, assembler_log))
     return;
   
@@ -319,6 +279,10 @@ void codegen::gen(Node::Stmt *stmt, bool isSaved, std::string output_filename,
     std::string remove =
         "rm " + output_filename + ".s";
     exitCode = system(remove.c_str());
+    if (exitCode) {
+      // If its not zero, then it errored!
+      // But I don't care. This command specifically does not matter.
+    }
   }
 
   // delete the log files

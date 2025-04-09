@@ -19,9 +19,10 @@ private:
     static void appendAndResetPrev(std::vector<Instr> *output, Instr &curr, Instr &prev);
     static void processMov(std::vector<Instr> *output, Instr &prev, Instr &curr);
     static void simplifyPushPopPair(std::vector<Instr> *output, Instr &prev, Instr &curr);
+    static void processLeaMovPair(std::vector<Instr> *output, Instr &prev, Instr &curr);
     static void processOppositePair(std::vector<Instr> *output, Instr &prev, Instr &curr);
     static void optimizeSpacedPairs(std::vector<Instr> &firstPass);
-    static void simplifyDebug(std::vector<Instr> *output, Instr &curr);
+    // static void simplifyDebug(std::vector<Instr> *output, Instr &prev, Instr &curr);
     static bool isSameMov(const MovInstr &prev, const MovInstr &curr);
     static bool isOppositeMov(const MovInstr &prev, const MovInstr &curr);
     static bool shouldIgnorePushPop(const std::string &reg);

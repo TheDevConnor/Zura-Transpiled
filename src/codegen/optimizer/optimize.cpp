@@ -1,24 +1,21 @@
 #include "optimize.hpp"
-
+#include "../gen.hpp"
 void Optimizer::optimizePair(std::vector<Instr> *output, Instr &prev, Instr &curr) {
-    if (!prev.optimize || !curr.optimize) {
-        appendAndResetPrev(output, curr, prev);
-        return;
-    }
+  if (!prev.optimize || !curr.optimize) {
+    appendAndResetPrev(output, curr, prev);
+    return;
+  }
 
-    // A temporary change - might add future compiler options to re-enable this later
-    if (curr.type == InstrType::Comment)
-        return;
-
-    if (curr.type == InstrType::Mov) {
-        processMov(output, prev, curr);
-    } else if (curr.type == InstrType::Linker) {
-        simplifyDebug(output, curr);
-    } else if (prev.type == opposites.at(curr.type)) {
-        processOppositePair(output, prev, curr);
-    } else {
-        output->push_back(curr);
-    }
+  if (curr.type == InstrType::Mov) {
+      processMov(output, prev, curr);
+  } else if (curr.type == InstrType::Linker && prev.type == InstrType::Linker) {
+      // simplifyDebug(output, prev, curr);
+      output->push_back(curr);
+  } else if (prev.type == opposites.at(curr.type)) {
+      processOppositePair(output, prev, curr);
+  } else {
+      output->push_back(curr);
+  }
 }
 
 // Will run more instruction-specific optimizations depending on the type of the pair.
@@ -27,7 +24,7 @@ std::vector<Instr> Optimizer::optimizeInstrs(std::vector<Instr> &input) {
         return {};
 
     std::vector<Instr> firstPass;
-    Instr prev = {.type = InstrType::NONE};
+    Instr prev = {.var = {}, .type = InstrType::NONE};
 
     // Optimizes touching pairs
     /* asm
@@ -53,23 +50,26 @@ std::vector<Instr> Optimizer::optimizeInstrs(std::vector<Instr> &input) {
 // As the name says.
 void Optimizer::appendAndResetPrev(std::vector<Instr> *output, Instr &curr, Instr &prev) {
     output->push_back(curr);
-    prev = Instr {.type=InstrType::NONE};
+    prev = Instr {.var = {}, .type=InstrType::NONE};
 }
 
 // Checks if mov instructions are redundant
 void Optimizer::processMov(std::vector<Instr> *output, Instr &prev, Instr &curr) {
     MovInstr currAsMov = std::get<MovInstr>(curr.var);
 
-    if (currAsMov.dest == currAsMov.src) return;
+    if (currAsMov.dest == currAsMov.src) return tryPop(output);
 
     if (prev.type == InstrType::Mov) {
         MovInstr prevAsMov = std::get<MovInstr>(prev.var);
 
         if (isSameMov(prevAsMov, currAsMov) || isOppositeMov(prevAsMov, currAsMov)) {
             tryPop(output);
-            prev = Instr {.type=InstrType::NONE};
+            prev = Instr {.var = {}, .type=InstrType::NONE};
             return;
         }
+    } else if (prev.type == InstrType::Lea) {
+      processLeaMovPair(output, prev, curr);
+      return;
     }
 
     output->push_back(curr);
@@ -89,18 +89,30 @@ void Optimizer::processOppositePair(std::vector<Instr> *output, Instr &prev, Ins
     if (curr.type == InstrType::Pop) {
         tryPop(output);
         simplifyPushPopPair(output, prev, curr);
+        prev = Instr {.var = {}, .type=InstrType::NONE}; // Reset prev after processing
+    } else if (curr.type == InstrType::Lea && prev.type == InstrType::Lea) {
+        // Check if the previous lea had the same source and destination
+        LeaInstr currAsLea = std::get<LeaInstr>(curr.var);
+        LeaInstr prevAsLea = std::get<LeaInstr>(prev.var);
+      
+        if (currAsLea.dest == prevAsLea.dest &&
+            !(currAsLea.src.find(prevAsLea.dest) != std::string::npos)) {
+            // leaq -8(%rbp), %rax
+            // leaq -8(%rbp), %rax
+            // will be replaced, BUT
+
+            // leaq -8(%rax), %rax
+            // leaq -8(%rax), %rax
+            // IS VERY NEEDED!!!!!!
+            // Remove prev
+            prev = Instr {.var = {}, .type=InstrType::NONE};
+            // Try pop
+            tryPop(output);
+            output->push_back(curr);
+        }
     } else {
         output->push_back(curr);
     }
-}
-
-void Optimizer::simplifyDebug(std::vector<Instr> *output, Instr &curr) {
-    LinkerDirective currAsLinker = std::get<LinkerDirective>(curr.var);
-    if (currAsLinker.value.find(".loc") == std::string::npos) return output->push_back(curr);
-    int currDebugLine = std::stoi(currAsLinker.value.substr(7));
-    if (currDebugLine == previousDebugLine) return;
-    previousDebugLine = currDebugLine;
-    output->push_back(curr);
 }
 
 // Turn push/pops into mov's or xor's
@@ -109,7 +121,7 @@ void Optimizer::simplifyPushPopPair(std::vector<Instr> *output, Instr &prev, Ins
     PopInstr currAsPop = std::get<PopInstr>(curr.var);
 
     if (prevAsPush.what == currAsPop.where && prevAsPush.whatSize == currAsPop.whereSize) {
-        prev = Instr {.type=InstrType::NONE};
+        prev = Instr {.var = {}, .type=InstrType::NONE};
         return;
     }
 
@@ -119,7 +131,7 @@ void Optimizer::simplifyPushPopPair(std::vector<Instr> *output, Instr &prev, Ins
         // movq %rdx, (%rbx)
         // I hate that this is the solution, Intel go fix your stinky x86
         Instr newInstr = {
-            .var = MovInstr{.dest = "%r13", .src = prevAsPush.what, .destSize = DataSize::Qword, .srcSize = prevAsPush.whatSize},
+            .var = MovInstr{.dest="%r13",.src=prevAsPush.what,.destSize=DataSize::Qword,.srcSize=prevAsPush.whatSize},
             .type = InstrType::Mov
         };
         prev = newInstr;
@@ -181,6 +193,7 @@ void Optimizer::simplifyPushPopPair(std::vector<Instr> *output, Instr &prev, Ins
         prev = cvtInstr;
         return;
     }
+    
     Instr newInstr = {
         .var = MovInstr{.dest = currAsPop.where, .src = prevAsPush.what, .destSize = currAsPop.whereSize, .srcSize = prevAsPush.whatSize},
         .type = InstrType::Mov
@@ -190,12 +203,45 @@ void Optimizer::simplifyPushPopPair(std::vector<Instr> *output, Instr &prev, Ins
     return;
 }
 
-// Optimize pairs with a useless instruction in between
-void Optimizer::optimizeSpacedPairs(std::vector<Instr> &firstPass) {
-    Instr prev = {.type = InstrType::NONE};
-    int prevIndex = 0;
 
-    for (int i = 0; i < firstPass.size(); ++i) {
+void Optimizer::processLeaMovPair(std::vector<Instr> *output, Instr &prev, Instr &curr) {
+    MovInstr currAsMov = std::get<MovInstr>(curr.var);
+    LeaInstr prevAsLea = std::get<LeaInstr>(prev.var);
+
+    /*
+     * leaq -8(%rbp), %rax
+     * movq %rax, %rdi
+     is the same as
+     * leaq -8(%rbp), %rdi
+     */
+    if (currAsMov.src == prevAsLea.dest) {
+        // check if the dest was an effective address
+        if (currAsMov.dest.find('(') != std::string::npos) {
+          output->push_back(curr);
+          return;
+        }
+        // Get rid of the mov and the leaq
+        tryPop(output);
+        // Create a new lea instruction with the mov's src
+        Instr newInstr = {
+          .var = LeaInstr{.size = prevAsLea.size, .dest = currAsMov.dest, .src = prevAsLea.src},
+          .type = InstrType::Lea
+        };
+        output->push_back(newInstr);
+        prev = Instr {.var = {}, .type=InstrType::NONE};
+        return;
+    } else {
+        output->push_back(curr);
+    }
+}
+
+// Optimize pairs with a useless instruction in between
+// Ok look, I fed the previous code into chatgpt until it gave me something good. Don't judge me!
+void Optimizer::optimizeSpacedPairs(std::vector<Instr> &firstPass) {
+    Instr prev = {.var = {}, .type = InstrType::NONE};
+    size_t prevIndex = 0;
+
+    for (size_t i = 0; i < firstPass.size(); ++i) {
         Instr &instr = firstPass[i];
 
         if (instr.type == InstrType::Push) {
@@ -206,22 +252,47 @@ void Optimizer::optimizeSpacedPairs(std::vector<Instr> &firstPass) {
         } else if (prev.type == InstrType::Push && instr.type == InstrType::Pop) {
             PopInstr pop = std::get<PopInstr>(instr.var);
             PushInstr push = std::get<PushInstr>(prev.var);
-            if (shouldIgnorePushPop(pop.where)) continue;
 
-            firstPass.erase(firstPass.begin() + prevIndex);
-            firstPass.erase(firstPass.begin() + i - 1);
-            
-            Instr newInstr = {
-                .var = MovInstr{.dest = pop.where, .src = push.what, .destSize = pop.whereSize, .srcSize = push.whatSize},
-                .type = InstrType::Mov
-            };
-            firstPass.insert(firstPass.begin() + prevIndex, newInstr);
+            // Only replace push/pop with mov if no intermediate instructions
+            // are modifying the registers involved.
+            bool canOptimize = true;
 
-            i = prevIndex;
-            prev = Instr {.type = InstrType::NONE};
+            // Check if the registers involved are used in any subsequent calculations
+            for (size_t j = prevIndex + 1; j < i; ++j) {
+                Instr &midInstr = firstPass[j];
+                // If any register is used in a calculation, we shouldn't optimize
+                if (midInstr.type == InstrType::Mov) {
+                    MovInstr mov = std::get<MovInstr>(midInstr.var);
+                    if (mov.dest == push.what || mov.src == push.what || 
+                        mov.dest == pop.where || mov.src == pop.where) {
+                        canOptimize = false;
+                        break;
+                    }
+                }
+            }
+
+            if (canOptimize) {
+                firstPass.erase(firstPass.begin() + prevIndex);
+                firstPass.erase(firstPass.begin() + i - 1);
+
+                Instr newInstr = {
+                    .var = MovInstr{.dest = pop.where, .src = push.what, .destSize = pop.whereSize, .srcSize = push.whatSize},
+                    .type = InstrType::Mov
+                };
+                firstPass.insert(firstPass.begin() + prevIndex, newInstr);
+
+                // Skip over the new mov instruction and reset prev
+                i = prevIndex;
+                prev = Instr {.var = {}, .type = InstrType::NONE};
+            } else {
+                // If optimization isn't possible, just continue
+                prev = instr;
+            }
         }
     }
 }
+
+
 
 // Normal code compiled from user's zura will never affect the stack registers
 // They will be affected when it is ABSOLUTELY necessary (for exanple, function scopes)

@@ -1,0 +1,86 @@
+[
+  {
+    "label": "call",
+    "detail": "Call a linked function",
+    "kind": 3,
+    "documentation": "This native function pairs with the @link and @extern directives to call a native function from an externally linked library.\nThe parameters will be appended in accordance with the ABI."
+  },
+  {
+    "label": "link",
+    "detail": "Link an external library",
+    "kind": 3,
+    "documentation": "This directive pairs with the @call and @extern directives to link a library to the outputted assembly if the project is built into an executable.\nIt is also useful for humans reading your code to understand what external libraries you are using. This function assumes that the library(s) in question are already installed on your system and located in /usr/include."
+  },
+  {
+    "label": "extern",
+    "detail": "Declare an external function: linked from an external library",
+    "kind": 3,
+    "documentation": "This directive pairs with the @call and @link directives to declare the use of a function that is implemented in an external library.\nThis directive tells the linker that this symbol will be resolved by link-time for each @call that happens to use it.\nThis directive is useful for interacting with external libraries written in another ABI-compliant language, for binding purposes."
+  },
+  {
+    "label": "template",
+    "detail": "Declare a function as template for use with generic types.",
+    "kind": 4,
+    "documentation": "This directive tells the compiler that the function that follows is a template and will be resolved to whatever types are using it at compile time.\nYou can use template functions as a replacement to overloading if the functionality of your code overlaps greatly.\nThis is based heavily off of C++'s template functions, which you can read more about at https://en.cppreference.com/w/cpp/language/function_template."
+  },
+  {
+    "label": "cast",
+    "detail": "Statically cast a value to another type",
+    "kind": 3,
+    "documentation": "This function is used to cast a value to another type. This follows the same general footprint as casting in C-like languages: like `(int)4.0f`.\nCoercion can be done with unions, and structs must be casted manually."
+  },
+  {
+    "label": "import",
+    "detail": "Import the global functions from another source file",
+    "kind": 3,
+    "documentation": "By declaring functions as public, they will be globally accessible to any other source file that imports them.\nThe global namespace (scope) of the two files will be joined together in the outputted assembly."
+  },
+  {
+    "label": "output",
+    "detail": "Print a list of characters to the console (stdout)",
+    "kind": 3,
+    "documentation": "This function prints each of its inputs to the file descriptor by converting to a string and writing to stdout.\nThis function is helpful when writing to files, debugging, or asking for user input.\nIf you want to print to the console, the file descriptor of stdout is 1.\nAccepted types include:\n\n- int\n- char\n- *char\n- []char\n- str\n- bool"
+  },
+  {
+    "label": "input",
+    "detail": "Take in a list of characters from the console (stdin)",
+    "kind": 3,
+    "documentation": "This function reads from a specified file descriptor until the maximum buffer size is reached. If reading from stdin (file descriptor 0), it will stop reading upon a linebreak.\nThis function takes in three arguments: an int file descriptor (returned by @open or 0 for stdin), a []char or *char to place the input, and an int which specifies the maximum number of bytes to read."
+  },
+  {
+    "label": "alloc",
+    "detail": "Allocates a certain number of bytes in memory",
+    "kind": 3,
+    "documentation": "This function will request that the system allocate a page of memory that is the inputted size in bytes.\nThis function takes in one argument: an int that specifies the number of bytes to allocate."
+  },
+  {
+    "label": "free",
+    "detail": "Frees memory allocated by @alloc",
+    "kind": 3,
+    "documentation":"This function frees memory that was previously allocated using @alloc. Ensure that all memory is freed before you exit to ensure your program does not have a memory leak.\nThis function takes in two arguments: the pointer of the freed memory (returned by @alloc) and the number of bytes that you'd like to free."
+  }, 
+  {
+    "label": "sizeof",
+    "detail": "Get the size of a type in bytes",
+    "kind": 3,
+    "documentation": "This function returns the size of a type in bytes. This can be useful when using @alloc, for example, if you want to allocate X number of struct Y..\nThis function takes in one argument: the type that you'd like to get the size of."
+  },
+  {
+    "label": "memcpy",
+    "detail": "Copy a block of memory from one location to another",
+    "kind": 3,
+    "documentation": "This function copies a block of memory from one location to another. This is useful for copying arrays or structs.\nThis function takes in three arguments: the destination pointer, the source pointer, and the number of bytes to copy."
+  },
+  {
+    "label": "open",
+    "detail": "Open a file at a certain path",
+    "kind": 3,
+    "documentation": "This function will open a file located at the inputted path. It returns the file descriptor of the opened file, or a negative number on failure. The path can be both relative (to cwd of console) or absolute.\nThis function takes in up 4 arguments: the path to the file (required), read permission (optional), write permission (optional), and create permission (optional)."
+  },
+  {
+    "label": "close",
+    "detail": "Close a file descriptor",
+    "kind": 3,
+    "documentation": "This function will close a file descriptor that was previously opened by @open. This function takes in one argument: the file descriptor to close. Ensure that all files that are opened are closed before you exit to ensure that you don't have any file descriptor leaks."
+  }
+]

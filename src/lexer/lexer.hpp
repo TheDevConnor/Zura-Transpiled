@@ -51,6 +51,7 @@ enum TokenKind {
   // Literals.
   IDENTIFIER,
   STRING,
+  CHAR,
   INT,
   FLOAT,
 
@@ -64,6 +65,7 @@ enum TokenKind {
   NIL,
   OR,
   PRINT,
+  PRINTLN,
   RETURN,
   SUPER,
   TR,
@@ -71,7 +73,7 @@ enum TokenKind {
   _CONST,
   PKG,
   TYPE,
-  EXIT,
+  EXIT, // Create an exit syscall from anywhere within the program, whether that be the main function or some other crazy place.
   IN,
   STRUCT,
   ENUM,
@@ -84,6 +86,21 @@ enum TokenKind {
   BREAK, 
   CONTINUE,
   CAST,
+  CALL, // Call extern'd functions.
+  LINK,
+  EXTERN,
+  MATCH, // a C-like switch statement
+  DEFAULT,
+  CASE,
+  INPUT,
+  READ,
+  WRITE,
+  ALLOC,
+  FREE,
+  MEMCPY,
+  SIZEOF,
+  OPEN,  // open a file and return a fd from its path
+  CLOSE, // close a fd
 
   // Error
   ERROR_,
@@ -102,8 +119,7 @@ public:
     int current;
     int column;
     int line;
-  };
-  Token token;
+  } token;
 
   struct Scanner {
     const char *current;
@@ -112,22 +128,21 @@ public:
     std::string file;
     int column;
     int line;
-  };
-  Scanner scanner;
+  } scanner;
 
   void initLexer(const char *source, std::string file);
 
-  Token scanToken();
+  Token scanToken(void);
   Token errorToken(std::string message);
 
   const char *tokenToString(TokenKind kind);
 
   const char *lineStart(int line);
 
-  void reset();
-  char advance();
-  bool isAtEnd();
-  char peek();
+  void reset(void);
+  char advance(void);
+  bool isAtEnd(void);
+  char peek(void);
 
   using WhiteSpaceFunction = std::function<void(Lexer &)>;
   std::unordered_map<TokenKind, const char *> tokenToStringMap;
@@ -137,18 +152,19 @@ public:
   std::unordered_map<std::string, TokenKind> dcMap;
   std::unordered_map<char, TokenKind> scMap;
 
-  void initMap();
+  void initMap(void);
 
 private:
   bool match(char expected);
 
   Token makeToken(TokenKind kind);
-  Token identifier();
-  Token number();
-  Token String();
+  Token identifier(void);
+  Token number(void);
+  Token String(void);
+  Token Char(void);
 
   TokenKind checkIdentMap(std::string identifier);
   TokenKind sc_dc_lookup(char c);
 
-  void skipWhitespace();
+  void skipWhitespace(void);
 };

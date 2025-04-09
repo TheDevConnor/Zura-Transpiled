@@ -8,22 +8,22 @@
 #include <vector>
 
 namespace ErrorClass {
-inline static std::unordered_map<int, std::string> errors;
-inline static std::vector<std::string> typeErros;
+inline static std::vector<std::string> errors = {};
+inline size_t ErrorPos = 0;
 
 std::string formatLineWithTokens(int line, int pos,
                                  const std::vector<Lexer::Token> &tokens,
-                                 bool highlightPos);
+                                 bool highlightPos, bool getLastToken = false);
 std::string currentLine(int line, int pos, Lexer &lexer, bool isParser,
                         bool isTypeError,
-                        const std::vector<Lexer::Token> &tokens);
+                        const std::vector<Lexer::Token> &tokens, bool getLastToken = false);
 std::string error(int line, int pos, const std::string &msg,
                   const std::string &note, const std::string &errorType,
                   const std::string &filename, Lexer &lexer,
                   const std::vector<Lexer::Token> &tokens, bool isParser,
                   bool isWarning, bool isFatal, bool isMain, bool isTypeError, bool isGeneration);
 
-void printError();
+bool printError(void);
 
 std::string lineNumber(int line);
 std::string printLine(int line, const char *start);

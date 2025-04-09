@@ -5,7 +5,7 @@
 
 class Color {
 public:
-  enum C { RED, GREEN, BLUE, CYAN, MAGENTA, YELLOW, WHITE, BLACK };
+  enum C { RED, GREEN, BLUE, CYAN, MAGENTA, YELLOW, WHITE, BLACK, GRAY };
 
   std::string color(std::string text, C color, bool isUnderline = false,
                     bool isBold = false) {
@@ -22,7 +22,7 @@ private:
   std::unordered_map<C, std::string> colorMap = {
       {RED, "\033[31m"},   {GREEN, "\033[32m"},   {BLUE, "\033[34m"},
       {CYAN, "\033[36m"},  {MAGENTA, "\033[35m"}, {YELLOW, "\033[33m"},
-      {WHITE, "\033[37m"}, {BLACK, "\033[30m"},
+      {WHITE, "\033[37m"}, {BLACK, "\033[30m"},  {GRAY, "\033[90m"},
   };
 
   std::string colorCode(C color) {

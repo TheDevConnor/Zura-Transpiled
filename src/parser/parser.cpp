@@ -8,8 +8,9 @@
 
 Lexer lexer;
 
-Parser::PStruct *Parser::setupParser(PStruct *psr, Lexer *lex, Lexer::Token tk,
-                                     std::string current_file) {
+Parser::PStruct *Parser::setupParser(PStruct *psr, Lexer *lex, Lexer::Token tk, std::string current_file) {
+  std::unordered_map<std::string, std::string> errors = {};
+
   while (true) {
     psr->tks.push_back(tk);
     tk = lex->scanToken();
@@ -19,8 +20,8 @@ Parser::PStruct *Parser::setupParser(PStruct *psr, Lexer *lex, Lexer::Token tk,
     };
   }
 
-  std::unordered_map<std::string, std::string> errors = {};
   psr->current_file = current_file;
+  node.current_file = current_file;
   return new PStruct{psr->tks, psr->current_file, psr->pos};
 }
 
@@ -29,13 +30,12 @@ Node::Stmt *Parser::parse(const char *source, std::string file) {
 
   // Initialize the lexer and store the tokens
   lexer.initLexer(source, file);
-  auto vect_tk = setupParser(&psr, &lexer, lexer.scanToken(), file);
-
+  Parser::PStruct *vect_tk = setupParser(&psr, &lexer, lexer.scanToken(), file);
   ErrorClass::printError();
 
   createMaps();
   createTypeMaps();
-  auto stmts = std::vector<Node::Stmt *>();
+  std::vector<Node::Stmt *> stmts = {};
 
   while (vect_tk->hadTokens(vect_tk)) {
     stmts.push_back(parseStmt(vect_tk, ""));

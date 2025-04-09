@@ -1,0 +1,32 @@
+@import "helper.zu";
+
+const TokenKind := enum {
+    IDENTIFIER,
+    VARIABLE,
+    EQUALS,
+    SEMICOLON,
+
+    EOF,
+};
+
+const Token := struct {
+    kind: TokenKind;
+    value: []str;
+
+    is_eof := fn (self: *Token) bool {
+        if (self.kind == TokenKind.EOF) return true;
+        return false;
+    };
+
+    is := fn (self: *Token, kind: TokenKind) bool {
+        if (self.kind == kind) return true;
+        return false;
+    };
+};
+
+const main := fn () int {
+    have num: []int = [1, 2, 3, 4, 5, 0]; # 0 is the terminator
+    have l: int = len(num);
+    dis(l, "\n");
+    return 0;
+};

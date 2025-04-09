@@ -1,23 +1,43 @@
-Just get back what we once had
+- Implement constant flags and allow native functions to pass them (for example, O_RDONLY or O_CREAT in @open)
+  - Kind of, but only for boolean literals. Nowhere else besides that though
 
-DONE!!! Variables added to `-8(%rbp)` rather than arbitrarily on the stack
+ Add in proper support for arrays and index over strings, arrays, etc. - Add standard test for this.
 
-Add in control flow to the codegen (done => if, for) (strill need => switch, while)
-Fix Functions so that they can return a usable value !!! - working on it (done)
-Add in struct, enums, and unions, member expr !!!
-Print integers using a native function
+ Add struct returns
 
-Fix the issue where we can only lex up to a 32-bit value
+ add in the lsp fully
+  Fix Hover requests to be put in the right place
+  Fix Completion requests to not just hang and eventually crash (Infinite loop?)
+ NOTE: Read into the calling convention for the lsp to comminicat with vscode and nvim respectfully
+ NOTE: Good source for lsp integration 
+        https://code.visualstudio.com/api/language-extensions/language-server-extension-guide
+        https://microsoft.github.io/language-server-protocol/specifications/lsp/3.17/specification/
 
-Maybe do pointers? (Yes, do pointers)
+Allow integer literals to be inferred into whatever size they need; kind of like the signedness except for char, longs, shorts, etc.
+
+A test for if adding TCP/HTTP requests
+Change @input/@output to be @read/@write and make file descriptor manually declared (0 for stdin; 1 for stdout)
+Pointers implemented now. Still backwards from C declarations tho but shh
    - Implement sockets (HTTP requests ??)
    - Note for HTTP:
       - $ man 2 socket
-      - Socket Syscall #: SYS_socket 41
-      - Socket Domain:    AF_INET (ip v4) 2
-      - Socket type:      SOCK_STREAM 1
-      - Bind Syscall #:   SYS_bind 49
-      - Listen Syscall #: SYS_listen 50
-      - Accept Syscall #: SYS_accept 43
-      - Read Syscall #:   SYS_read 0
-      
+          @socket(DOMAIN, TYPE, PROTOCOL) ->
+          - the protocol of communication- IPv4 sized addresses
+          - the, well, type of connection- SOCK_STREAM = 'sequenced, reliable, two-way, connection-based byte streams'
+          - 0 lol
+          - on return : file descriptor
+          
+          @bind(FD, *ADDR, ADDRLEN) ->
+          - file descriptor returned by @socket
+          - an address to a struct (the members don't really matter as it will just be type punned)
+          - sizeof previous struct
+          - on return : status code (success/error)
+
+          @accept(FD, *ADDR, *ADDRLEN) ->
+          - file descriptor returned by @socket
+          - these could technically be null if we wanted lol but its basically the same as @bind
+
+          Congratulations! Just read from the socket file descriptor and that is that.
+          Make sure to close it before reading another!
+
+TRHEN WE AT VERSION 1 BABY!

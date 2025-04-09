@@ -1,6 +1,7 @@
 #pragma once
 
 #include <iostream>
+#include <unordered_map>
 #include <vector>
 
 #include "ast.hpp"
@@ -9,16 +10,18 @@
 class IntExpr : public Node::Expr {
 public:
   int line, pos;
-  int value;
+  long long value;
+  bool isUnsigned = true; // this HAS to be true, because the only time an intExpr would be negative would be unaryexpr's -
 
-  IntExpr(int line, int pos, int value) : line(line), pos(pos), value(value) {
+  IntExpr(int line, int pos, long long value, size_t file) : line(line), pos(pos), value(value) {
     kind =  NodeKind::ND_INT;
+    file_id = file;
     // make a new type of "int"
     this->asmType = new SymbolType("int");
   }
 
-  void debug(int ident = 0) const override {
-    Node::printIndent(ident);
+  void debug(int indent = 0) const override {
+    Node::printIndent(indent);
     std::cout << "IntExpr: " << value << "\n";
   }
 };
@@ -26,18 +29,58 @@ public:
 class FloatExpr : public Node::Expr {
 public:
   int line, pos;
-  float value;
+  std::string value; // The reason we are using the string and not the float converston
+                     // is because the user may want more precision that could be cut off later
+                     // in the stof function. "Long double" literals exist, and we cannot risk
+                     // the loss of precision (otherwise, why use a long double at all?)
 
-  FloatExpr(int line, int pos, float value)
+  FloatExpr(int line, int pos, std::string value, size_t file)
       : line(line), pos(pos), value(value) {
+    file_id = file;
     kind = NodeKind::ND_FLOAT;
     this->asmType = new SymbolType("float");
   }
 
-  void debug(int ident = 0) const override {
-    Node::printIndent(ident);
+  void debug(int indent = 0) const override {
+    Node::printIndent(indent);
     std::cout << "FloatExpr: " << value << "\n";
   }
+};
+
+class ExternalCall : public Node::Expr {
+public:
+  int line, pos;
+  std::string name;
+  std::vector<Node::Expr *> args;
+
+  // Technically, these can return things. However, we can't know them
+  // because they are, of course, external.
+  // Their return types should be defined in public documentation
+  // and it is the user's responsibility to know what they are.
+
+  // EX: printf returns an int, but since that's part of the Cstdlib,
+  // we don't know that.
+
+  ExternalCall(int line, int pos, std::string name, std::vector<Node::Expr *> args, 
+                size_t file)
+      : line(line), pos(pos), name(name),  args(args) {
+    kind = NodeKind::ND_EXTERNAL_CALL;
+    file_id = file;
+    asmType = new SymbolType("unknown");
+  }
+
+  void debug(int indent = 0) const override {
+    Node::printIndent(indent);
+    std::cout << "ExternalCall: " << name << "\n";
+    Node::printIndent(indent + 1);
+    std::cout << "Arguments: \n";
+    for (Node::Expr *arg : args) {
+      arg->debug(indent + 2);
+    }
+  }
+
+  ~ExternalCall() = default;
+    // rule of threes bro
 };
 
 class IdentExpr : public Node::Expr {
@@ -46,19 +89,21 @@ public:
   std::string name;
   Node::Type *type;
 
-  IdentExpr(int line, int pos, std::string name, Node::Type *type)
+  IdentExpr(int line, int pos, std::string name, Node::Type *type, size_t file)
       : line(line), pos(pos), name(name), type(type) {
     kind = NodeKind::ND_IDENT;
+    file_id = file;
     // Let type be redefined in typecheck (shhh)
   }
 
-  void debug(int ident = 0) const override {
-    Node::printIndent(ident);
+  void debug(int indent = 0) const override {
+    Node::printIndent(indent);
     std::cout << "IdentExpr: " << name << "\n";
     if (type != nullptr) {
-      Node::printIndent(ident + 1);
-      std::cout << "Type: ";
-      type->debug(ident + 1);
+      Node::printIndent(indent + 1);
+      std::cout << "Type: \n";
+      Node::printIndent(indent + 2);
+      type->debug(indent + 2);
     }
   }
 };
@@ -68,15 +113,34 @@ public:
   int line, pos;
   std::string value;
 
-  StringExpr(int line, int pos, std::string value)
+  StringExpr(int line, int pos, std::string value, size_t file)
       : line(line), pos(pos), value(value) {
+    file_id = file;
     kind = NodeKind::ND_STRING;
     this->asmType = new SymbolType("str");
   }
 
-  void debug(int ident = 0) const override {
-    Node::printIndent(ident);
+  void debug(int indent = 0) const override {
+    Node::printIndent(indent);
     std::cout << "StringExpr: " << value << "\n";
+  }
+};
+
+class CharExpr : public Node::Expr {
+public:
+  int line, pos;
+  char value;
+
+  CharExpr(int line, int pos, char value, size_t file)
+      : line(line), pos(pos), value(value) {
+    file_id = file;
+    kind = NodeKind::ND_CHAR;
+    this->asmType = new SymbolType("char");
+  }
+
+  void debug(int indent = 0) const override {
+    Node::printIndent(indent);
+    std::cout << "CharExpr: " << value << "\n";
   }
 };
 
@@ -86,8 +150,9 @@ public:
   Node::Expr *castee;
   Node::Type *castee_type;
 
-  CastExpr(int line, int pos, Node::Expr *castee, Node::Type *castee_type)
+  CastExpr(int line, int pos, Node::Expr *castee, Node::Type *castee_type, size_t file)
       : line(line), pos(pos), castee(castee), castee_type(castee_type) {
+    file_id = file;
     kind = NodeKind::ND_CAST;
     this->asmType = castee_type;
   }
@@ -95,17 +160,16 @@ public:
   void debug(int indent = 0) const override {
     Node::printIndent(indent);
     std::cout << "CastExpr: \n";
-    castee->debug(indent + 1);
     Node::printIndent(indent + 1);
-    std::cout << "Type: ";
-    castee_type->debug(indent + 1);
-    std::cout << std::endl;
+    std::cout << "From: \n";
+    castee->debug(indent + 2);
+    Node::printIndent(indent + 1);
+    std::cout << "To: \n";
+    Node::printIndent(indent + 2); // for some reason this does not happen from within the type
+    castee_type->debug(indent + 2);
   }
 
-  ~CastExpr() {
-    delete castee;
-    delete castee_type;
-  }
+  ~CastExpr() = default; // rule of threes
 };
 
 class BinaryExpr : public Node::Expr {
@@ -116,25 +180,23 @@ public:
   std::string op;
 
   BinaryExpr(int line, int pos, Node::Expr *lhs, Node::Expr *rhs,
-             std::string op)
+             std::string op, size_t file)
       : line(line), pos(pos), lhs(lhs), rhs(rhs), op(op) {
     kind = NodeKind::ND_BINARY;
+    file_id = file;
     // Assigning ASMType should be typechecker's problem, where it is supposed to be
   }
 
-  void debug(int ident = 0) const override {
-    Node::printIndent(ident);
+  void debug(int indent = 0) const override {
+    Node::printIndent(indent);
     std::cout << "BinaryExpr: \n";
-    lhs->debug(ident + 1);
-    Node::printIndent(ident + 1);
+    lhs->debug(indent + 1);
+    Node::printIndent(indent + 1);
     std::cout << op << "\n";
-    rhs->debug(ident + 1);
+    rhs->debug(indent + 1);
   }
 
-  ~BinaryExpr() {
-    delete lhs;
-    delete rhs;
-  }
+  ~BinaryExpr() = default; // rule of threes
 };
 
 class UnaryExpr : public Node::Expr {
@@ -143,8 +205,9 @@ public:
   Node::Expr *expr;
   std::string op;
 
-  UnaryExpr(int line, int pos, Node::Expr *expr, std::string op)
+  UnaryExpr(int line, int pos, Node::Expr *expr, std::string op, size_t file)
       : line(line), pos(pos), expr(expr), op(op) {
+    file_id = file;
     kind = NodeKind::ND_UNARY;
     SymbolType *exprType = static_cast<SymbolType *>(expr->asmType);
     if (op == "-" && exprType->name != "int" && exprType->name != "float") {
@@ -153,15 +216,15 @@ public:
     asmType = exprType;
   }
 
-  void debug(int ident = 0) const override {
-    Node::printIndent(ident);
+  void debug(int indent = 0) const override {
+    Node::printIndent(indent);
     std::cout << "UnaryExpr: \n";
-    Node::printIndent(ident + 1);
+    Node::printIndent(indent + 1);
     std::cout << op << "\n";
-    expr->debug(ident + 1);
+    expr->debug(indent + 1);
   }
 
-  ~UnaryExpr() { delete expr; }
+  ~UnaryExpr() = default; // rule of threes
 };
 class PrefixExpr : public Node::Expr {
 public:
@@ -169,21 +232,22 @@ public:
   Node::Expr *expr;
   std::string op;
 
-  PrefixExpr(int line, int pos, Node::Expr *expr, std::string op)
+  PrefixExpr(int line, int pos, Node::Expr *expr, std::string op, size_t file)
       : line(line), pos(pos), expr(expr), op(op) {
+    file_id = file;
     kind = NodeKind::ND_PREFIX;
     asmType = expr->asmType;
   }
 
-  void debug(int ident = 0) const override {
-    Node::printIndent(ident);
+  void debug(int indent = 0) const override {
+    Node::printIndent(indent);
     std::cout << "PrefixExpr: \n";
-    Node::printIndent(ident + 1);
+    Node::printIndent(indent + 1);
     std::cout << op << "\n";
-    expr->debug(ident + 1);
+    expr->debug(indent + 1);
   }
 
-  ~PrefixExpr() { delete expr; }
+  ~PrefixExpr() = default; // rule of threes
 };
 class PostfixExpr : public Node::Expr {
 public:
@@ -191,21 +255,22 @@ public:
   Node::Expr *expr;
   std::string op;
 
-  PostfixExpr(int line, int pos, Node::Expr *expr, std::string op)
+  PostfixExpr(int line, int pos, Node::Expr *expr, std::string op, size_t file)
       : line(line), pos(pos), expr(expr), op(op) {
+    file_id = file;
     kind = NodeKind::ND_POSTFIX;
     asmType = expr->asmType;
   }
 
-  void debug(int ident = 0) const override {
-    Node::printIndent(ident);
+  void debug(int indent = 0) const override {
+    Node::printIndent(indent);
     std::cout << "PostfixExpr: \n";
-    expr->debug(ident + 1);
-    Node::printIndent(ident + 1);
+    expr->debug(indent + 1);
+    Node::printIndent(indent + 1);
     std::cout << op << "\n";
   }
 
-  ~PostfixExpr() { delete expr; }
+  ~PostfixExpr() = default; // rule of threes
 };
 
 class GroupExpr : public Node::Expr {
@@ -213,19 +278,78 @@ public:
   int line, pos;
   Node::Expr *expr;
 
-  GroupExpr(int line, int pos, Node::Expr *expr)
+  GroupExpr(int line, int pos, Node::Expr *expr, size_t file)
       : line(line), pos(pos), expr(expr) {
+    file_id = file;
     kind = NodeKind::ND_GROUP;
     asmType = expr->asmType;
   }
 
-  void debug(int ident = 0) const override {
-    Node::printIndent(ident);
+  void debug(int indent = 0) const override {
+    Node::printIndent(indent);
     std::cout << "GroupExpr: \n";
-    expr->debug(ident + 1);
+    expr->debug(indent + 1);
   }
 
-  ~GroupExpr() { delete expr; }
+  ~GroupExpr() = default; // rule of threes
+};
+
+class NullExpr : public Node::Expr {
+public:
+  int line, pos;
+
+  NullExpr(int line, int pos, size_t file) : line(line), pos(pos) {
+    file_id = file;
+    kind = NodeKind::ND_NULL;
+    asmType = new PointerType(new SymbolType("void"));
+  }
+
+  void debug(int indent = 0) const override {
+    Node::printIndent(indent);
+    std::cout << "NullExpr\n";
+  }
+
+  ~NullExpr() = default; // rule of threes
+};
+
+class AddressExpr : public Node::Expr {
+public:
+  int line, pos;
+  Node::Expr *right;
+
+  AddressExpr(int line, int pos, Node::Expr *right, size_t file)
+      : line(line), pos(pos), right(right) {
+    file_id = file;
+    kind = NodeKind::ND_ADDRESS;
+  }
+
+  void debug(int indent = 0) const override {
+    Node::printIndent(indent);
+    std::cout << "AddressExpr: \n";
+    right->debug(indent + 1);
+  }
+
+  ~AddressExpr() = default; // rule of threes
+};
+
+class DereferenceExpr : public Node::Expr {
+public:
+  int line, pos;
+  Node::Expr *left;
+
+  DereferenceExpr(int line, int pos, Node::Expr *left, size_t file)
+      : line(line), pos(pos), left(left) {
+    file_id = file;
+    kind = NodeKind::ND_DEREFERENCE;
+  }
+
+  void debug(int indent = 0) const override {
+    Node::printIndent(indent);
+    std::cout << "DereferenceExpr: \n";
+    left->debug(indent + 1);
+  }
+
+  ~DereferenceExpr() = default; // rule of threes
 };
 
 class ArrayExpr : public Node::Expr {
@@ -235,25 +359,22 @@ public:
   std::vector<Node::Expr *> elements;
 
   ArrayExpr(int line, int pos, Node::Type *type,
-            std::vector<Node::Expr *> elements)
-      : line(line), pos(pos), type(type), elements(elements) {
+            std::vector<Node::Expr *> elements, size_t file)
+      : line(line), pos(pos), type(type), elements(std::move(elements)) {
+    file_id = file;
     kind = NodeKind::ND_ARRAY;
     asmType = type;
   }
 
-  void debug(int ident = 0) const override {
-    Node::printIndent(ident);
+  void debug(int indent = 0) const override {
+    Node::printIndent(indent);
     std::cout << "ArrayExpr: \n";
-    for (auto elem : elements) {
-      elem->debug(ident + 1);
+    for (Node::Expr *elem : elements) {
+      elem->debug(indent + 1);
     }
   }
 
-  ~ArrayExpr() {
-    for (auto elem : elements) {
-      delete elem;
-    }
-  }
+  ~ArrayExpr() = default; // rule of threes
 };
 
 class IndexExpr : public Node::Expr {
@@ -262,27 +383,48 @@ public:
   Node::Expr *lhs;
   Node::Expr *rhs;
 
-  IndexExpr(int line, int pos, Node::Expr *lhs, Node::Expr *rhs)
+  IndexExpr(int line, int pos, Node::Expr *lhs, Node::Expr *rhs, size_t file)
       : line(line), pos(pos), lhs(lhs), rhs(rhs) {
+    file_id = file;
     kind = NodeKind::ND_INDEX;
     asmType = lhs->asmType;
   }
 
-  void debug(int ident = 0) const override {
-    Node::printIndent(ident);
+  void debug(int indent = 0) const override {
+    Node::printIndent(indent);
     std::cout << "IndexExpr: \n";
-    Node::printIndent(ident + 1);
+    Node::printIndent(indent + 1);
     std::cout << "LHS: \n";
-    lhs->debug(ident + 2);
-    Node::printIndent(ident + 1);
+    lhs->debug(indent + 2);
+    Node::printIndent(indent + 1);
     std::cout << "RHS: \n";
-    rhs->debug(ident + 2);
+    rhs->debug(indent + 2);
   }
 
-  ~IndexExpr() {
-    delete lhs;
-    delete rhs;
+  ~IndexExpr() = default; // rule of threes
+};
+
+// have x: [4]int = [0]; # Auto fills the array with bytes of 0.
+class ArrayAutoFill : public Node::Expr {
+public:
+  int line, pos;
+  size_t fillCount;
+  Node::Type *fillType;
+
+  ArrayAutoFill(int line, int pos, size_t file)
+      : line(line), pos(pos) {
+    file_id = file;
+    kind = NodeKind::ND_ARRAY_AUTO_FILL;
   }
+
+  void debug(int indent = 0) const override {
+    Node::printIndent(indent);
+    std::cout << "ArrayAutoFill: \n";
+    Node::printIndent(indent + 1);
+    fillType->debug(indent + 2);
+  }
+
+  ~ArrayAutoFill() = default; // rule of threes
 };
 
 class PopExpr : public Node::Expr {
@@ -291,31 +433,29 @@ public:
   Node::Expr *lhs;
   Node::Expr *rhs;
 
-  PopExpr(int line, int pos, Node::Expr *lhs, Node::Expr *rhs)
+  PopExpr(int line, int pos, Node::Expr *lhs, Node::Expr *rhs, size_t file)
       : line(line), pos(pos), lhs(lhs), rhs(rhs) {
+    file_id = file;
     kind = NodeKind::ND_POP;
     asmType = lhs->asmType;
   }
 
-  void debug(int ident = 0) const override {
-    Node::printIndent(ident);
+  void debug(int indent = 0) const override {
+    Node::printIndent(indent);
     std::cout << "PopExpr: \n";
-    Node::printIndent(ident + 1);
+    Node::printIndent(indent + 1);
     std::cout << "LHS: \n";
-    lhs->debug(ident + 2);
-    Node::printIndent(ident + 1);
+    lhs->debug(indent + 2);
+    Node::printIndent(indent + 1);
     if (rhs == nullptr) {
       std::cout << "Pop the last element\n";
       return;
     }
     std::cout << "RHS: \n";
-    rhs->debug(ident + 2);
+    rhs->debug(indent + 2);
   }
 
-  ~PopExpr() {
-    delete lhs;
-    delete rhs;
-  }
+  ~PopExpr() = default; // rule of threes
 };
 
 class PushExpr : public Node::Expr {
@@ -326,32 +466,30 @@ public:
   Node::Expr *index;
 
   PushExpr(int line, int pos, Node::Expr *lhs, Node::Expr *rhs,
-           Node::Expr *index)
+           Node::Expr *index, size_t file)
       : line(line), pos(pos), lhs(lhs), rhs(rhs), index(index) {
     kind = NodeKind::ND_PUSH;
     asmType = lhs->asmType;
+    file_id = file;
   }
 
-  void debug(int ident = 0) const override {
-    Node::printIndent(ident);
+  void debug(int indent = 0) const override {
+    Node::printIndent(indent);
     std::cout << "PushExpr: \n";
-    Node::printIndent(ident + 1);
+    Node::printIndent(indent + 1);
     std::cout << "LHS: \n";
-    lhs->debug(ident + 2);
-    Node::printIndent(ident + 1);
+    lhs->debug(indent + 2);
+    Node::printIndent(indent + 1);
     std::cout << "RHS: \n";
-    rhs->debug(ident + 2);
+    rhs->debug(indent + 2);
     if (index != nullptr) {
-      Node::printIndent(ident + 1);
+      Node::printIndent(indent + 1);
       std::cout << "Index: \n";
-      index->debug(ident + 2);
+      index->debug(indent + 2);
     }
   }
 
-  ~PushExpr() {
-    delete lhs;
-    delete rhs;
-  }
+  ~PushExpr() = default; // rule of threes
 };
 
 class AssignmentExpr : public Node::Expr {
@@ -361,29 +499,27 @@ public:
   std::string op;
   Expr *rhs;
 
-  AssignmentExpr(int line, int pos, Expr *assignee, std::string op, Expr *rhs)
+  AssignmentExpr(int line, int pos, Expr *assignee, std::string op, Expr *rhs, size_t file)
       : line(line), pos(pos), assignee(assignee), op(op), rhs(rhs) {
+    file_id = file;
     kind = NodeKind::ND_ASSIGN;
     asmType = rhs->asmType;
   }
 
-  void debug(int ident = 0) const override {
-    Node::printIndent(ident);
+  void debug(int indent = 0) const override {
+    Node::printIndent(indent);
     std::cout << "AssignmentExpr: \n";
-    Node::printIndent(ident + 1);
+    Node::printIndent(indent + 1);
     std::cout << "Assignee: \n";
-    assignee->debug(ident + 2);
-    Node::printIndent(ident + 1);
+    assignee->debug(indent + 2);
+    Node::printIndent(indent + 1);
     std::cout << "Operator: " << op << "\n";
-    Node::printIndent(ident + 1);
+    Node::printIndent(indent + 1);
     std::cout << "RHS: \n";
-    rhs->debug(ident + 2);
+    rhs->debug(indent + 2);
   }
 
-  ~AssignmentExpr() {
-    delete assignee;
-    delete rhs;
-  }
+  ~AssignmentExpr() = default; // rule of threes
 };
 
 class CallExpr : public Node::Expr {
@@ -393,31 +529,27 @@ public:
   std::vector<Node::Expr *> args;
 
   CallExpr(int line, int pos, Node::Expr *callee,
-           std::vector<Node::Expr *> args)
-      : line(line), pos(pos), callee(callee), args(args) {
+           std::vector<Node::Expr *> args, size_t file)
+      : line(line), pos(pos), callee(callee), args(std::move(args)) {
+    file_id = file;
     kind = NodeKind::ND_CALL;
     // Let typecheck fill out the function return
   }
 
-  void debug(int ident = 0) const override {
-    Node::printIndent(ident);
+  void debug(int indent = 0) const override {
+    Node::printIndent(indent);
     std::cout << "CallExpr: \n";
-    Node::printIndent(ident + 1);
+    Node::printIndent(indent + 1);
     std::cout << "Callee: \n";
-    callee->debug(ident + 2);
-    Node::printIndent(ident + 1);
+    callee->debug(indent + 2);
+    Node::printIndent(indent + 1);
     std::cout << "Arguments: \n";
-    for (auto arg : args) {
-      arg->debug(ident + 2);
+    for (Node::Expr *arg : args) {
+      arg->debug(indent + 2);
     }
   }
 
-  ~CallExpr() {
-    delete callee;
-    for (auto arg : args) {
-      delete arg;
-    }
-  }
+  ~CallExpr() = default; // rule of threes
 };
 
 class TemplateCallExpr : public Node::Expr {
@@ -428,32 +560,29 @@ public:
   Node::Expr *args;
 
   TemplateCallExpr(int line, int pos, Node::Expr *callee, Node::Type *template_type,
-                   Node::Expr *args)
+                   Node::Expr *args, size_t file)
       : line(line), pos(pos), callee(callee), template_type(template_type), args(args) {
+    file_id = file;
     kind = NodeKind::ND_TEMPLATE_CALL;
     // what the fuck
   }
 
-  void debug(int ident = 0) const override {
-    Node::printIndent(ident);
+  void debug(int indent = 0) const override {
+    Node::printIndent(indent);
     std::cout << "TemplateCallExpr: \n";
-    Node::printIndent(ident + 1);
+    Node::printIndent(indent + 1);
     std::cout << "Callee: \n";
-    callee->debug(ident + 2);
-    Node::printIndent(ident + 1);
+    callee->debug(indent + 2);
+    Node::printIndent(indent + 1);
     std::cout << "Template Type: ";
-    template_type->debug(ident + 2);
+    template_type->debug(indent + 2);
     std::cout << std::endl;
-    Node::printIndent(ident + 1);
+    Node::printIndent(indent + 1);
     std::cout << "Arguments: \n";
-    args->debug(ident + 2);
+    args->debug(indent + 2);
   }
 
-  ~TemplateCallExpr() {
-    delete callee;
-    delete template_type;
-    delete args;
-  }
+  ~TemplateCallExpr() = default; // rule of threes
 };
 
 class TernaryExpr : public Node::Expr {
@@ -464,36 +593,27 @@ public:
   Node::Expr *rhs;
 
   TernaryExpr(int line, int pos, Node::Expr *condition, Node::Expr *lhs,
-              Node::Expr *rhs)
+              Node::Expr *rhs, size_t file)
       : line(line), pos(pos), condition(condition), lhs(lhs), rhs(rhs) {
+    file_id = file;
     kind = NodeKind::ND_TERNARY;
-    
-    if (lhs->asmType != rhs->asmType) {
-      std::cerr << "how do i check this ternary lmao" << std::endl;
-    } else {
-      asmType = lhs->asmType;
-    }
   }
 
-  void debug(int ident = 0) const override {
-    Node::printIndent(ident);
+  void debug(int indent = 0) const override {
+    Node::printIndent(indent);
     std::cout << "TernaryExpr: \n";
-    Node::printIndent(ident + 1);
+    Node::printIndent(indent + 1);
     std::cout << "Condition: \n";
-    condition->debug(ident + 2);
-    Node::printIndent(ident + 1);
+    condition->debug(indent + 2);
+    Node::printIndent(indent + 1);
     std::cout << "LHS: \n";
-    lhs->debug(ident + 2);
-    Node::printIndent(ident + 1);
+    lhs->debug(indent + 2);
+    Node::printIndent(indent + 1);
     std::cout << "RHS: \n";
-    rhs->debug(ident + 2);
+    rhs->debug(indent + 2);
   }
 
-  ~TernaryExpr() {
-    delete condition;
-    delete lhs;
-    delete rhs;
-  }
+  ~TernaryExpr() = default; // rule of threes
 };
 
 class MemberExpr : public Node::Expr {
@@ -502,27 +622,25 @@ public:
   Node::Expr *lhs;
   Node::Expr *rhs;
 
-  MemberExpr(int line, int pos, Node::Expr *lhs, Node::Expr *rhs)
+  MemberExpr(int line, int pos, Node::Expr *lhs, Node::Expr *rhs, size_t file)
       : line(line), pos(pos), lhs(lhs), rhs(rhs) {
+    file_id = file;
     kind = NodeKind::ND_MEMBER;
     // type check whatever the rhs is supposed to be
   }
 
-  void debug(int ident = 0) const override {
-    Node::printIndent(ident);
+  void debug(int indent = 0) const override {
+    Node::printIndent(indent);
     std::cout << "MemberExpr: \n";
-    Node::printIndent(ident + 1);
+    Node::printIndent(indent + 1);
     std::cout << "LHS: \n";
-    lhs->debug(ident + 2);
-    Node::printIndent(ident + 1);
+    lhs->debug(indent + 2);
+    Node::printIndent(indent + 1);
     std::cout << "RHS: \n";
-    rhs->debug(ident + 2);
+    rhs->debug(indent + 2);
   }
 
-  ~MemberExpr() {
-    delete lhs;
-    delete rhs;
-  }
+  ~MemberExpr() = default; // rule of threes
 };
 
 class ResolutionExpr : public Node::Expr {
@@ -531,27 +649,25 @@ public:
   Node::Expr *lhs;
   Node::Expr *rhs;
 
-  ResolutionExpr(int line, int pos, Node::Expr *lhs, Node::Expr *rhs)
+  ResolutionExpr(int line, int pos, Node::Expr *lhs, Node::Expr *rhs, size_t file)
       : line(line), pos(pos), lhs(lhs), rhs(rhs) {
+    file_id = file;
     kind = NodeKind::ND_RESOLUTION;
     std::cerr << "excuse me lets like not do the .. thing ok?" << std::endl;
   }
 
-  void debug(int ident = 0) const override {
-    Node::printIndent(ident);
+  void debug(int indent = 0) const override {
+    Node::printIndent(indent);
     std::cout << "ResolutionExpr: \n";
-    Node::printIndent(ident + 1);
+    Node::printIndent(indent + 1);
     std::cout << "LHS: \n";
-    lhs->debug(ident + 2);
-    Node::printIndent(ident + 1);
+    lhs->debug(indent + 2);
+    Node::printIndent(indent + 1);
     std::cout << "RHS: \n";
-    rhs->debug(ident + 2);
+    rhs->debug(indent + 2);
   }
 
-  ~ResolutionExpr() {
-    delete lhs;
-    delete rhs;
-  }
+  ~ResolutionExpr() = default; // rule of threes
 };
 
 class BoolExpr : public Node::Expr {
@@ -559,15 +675,177 @@ public:
   int line, pos;
   bool value;
 
-  BoolExpr(int line, int pos, bool value) : line(line), pos(pos), value(value) {
+  BoolExpr(int line, int pos, bool value, size_t file) : line(line), pos(pos), value(value) {
+    file_id = file;
     kind = NodeKind::ND_BOOL;
     asmType = new SymbolType("bool");
   }
 
+  void debug(int indent = 0) const override {
+    Node::printIndent(indent);
+    std::cout << "BoolStmt: \n";
+    Node::printIndent(indent + 1);
+    std::cout << "Value: " << value << "\n";
+  }
+};
+
+// { name: value, name: value, ... }
+class StructExpr : public Node::Expr {
+public:
+  int line, pos;
+  std::unordered_map<std::string, Node::Expr *> values;
+
+  StructExpr(int line, int pos, std::unordered_map<std::string, Node::Expr *> values, size_t file)
+      : line(line), pos(pos), values(std::move(values)) {
+    file_id = file;
+    kind = NodeKind::ND_STRUCT;
+    // type check whatever the rhs is supposed to be
+  }
+
+  void debug(int indent = 0) const override {
+    Node::printIndent(indent);
+    std::cout << "StructExpr: \n";
+    for (size_t i = 0; i < values.size(); i++) {
+      std::pair<std::string, Node::Expr *> pair = *std::next(values.begin(), i); // :sob:
+      Node::printIndent(indent + 1);
+      std::cout << "Field #" + std::to_string(i) + ": \n";
+      Node::printIndent(indent + 2);
+      std::cout << "Name: \n";
+      Node::printIndent(indent + 3);
+      std::cout << pair.first << "\n";
+      Node::printIndent(indent + 2);
+      std::cout << "Value: \n";
+      pair.second->debug(indent + 3);
+    }
+  }
+
+  ~StructExpr() = default; // rule of threes
+};
+
+class AllocMemoryExpr: public Node::Expr {
+public:
+  int line, pos;
+  Node::Expr *bytesToAlloc;
+
+  AllocMemoryExpr(int line, int pos, Node::Expr *bytes, size_t file)
+      : line(line), pos(pos), bytesToAlloc(bytes) {
+    file_id = file;
+    kind = NodeKind::ND_ALLOC_MEMORY;
+    asmType = new PointerType(new SymbolType("void"));
+  };
+
+  void debug(int indent = 0) const override {
+    Node::printIndent(indent);
+    std::cout << "AllocExpr: \n";
+    Node::printIndent(indent + 1);
+    std::cout << "Bytes: \n";
+    bytesToAlloc->debug(indent + 2);
+  }
+
+};
+
+class FreeMemoryExpr : public Node::Expr {
+public:
+  int line, pos;
+  Node::Expr *whatToFree;
+  Node::Expr *bytesToFree;
+
+  FreeMemoryExpr(int line, int pos, Node::Expr *whatToFree, Node::Expr *bytesToFree, size_t file)
+      : line(line), pos(pos), whatToFree(whatToFree), bytesToFree(bytesToFree) {
+    file_id = file;
+    kind = NodeKind::ND_FREE_MEMORY;
+    asmType = new SymbolType("int");
+  }
+
+  void debug (int ident = 0) const override {
+    Node::printIndent(ident);
+    std::cout << "FreeMemoryExpr: \n";
+    Node::printIndent(ident + 1);
+    std::cout << "What to free: \n";
+    whatToFree->debug(ident + 2);
+    Node::printIndent(ident + 1);
+    std::cout << "Bytes to free: \n";
+    bytesToFree->debug(ident + 2);
+  }
+};
+
+class SizeOfExpr : public Node::Expr {
+public:
+  int line, pos;
+  Node::Expr *whatToSizeOf;
+
+  SizeOfExpr(int line, int pos, Node::Expr *whatToSizeOf, size_t file)
+      : line(line), pos(pos), whatToSizeOf(whatToSizeOf) {
+    file_id = file;
+    kind = NodeKind::ND_SIZEOF;
+    asmType = new SymbolType("int");
+  }
+
   void debug(int ident = 0) const override {
     Node::printIndent(ident);
-    std::cout << "BoolStmt: \n";
+    std::cout << "SizeOfExpr: \n";
     Node::printIndent(ident + 1);
-    std::cout << "Value: " << value << "\n";
+    std::cout << "What to size of: \n";
+    whatToSizeOf->debug(ident + 2);
+  }
+};
+
+class MemcpyExpr : public Node::Expr {
+public:
+  int line, pos;
+  Node::Expr *dest;
+  Node::Expr *src;
+  Node::Expr *bytes;
+
+  MemcpyExpr(int line, int pos, Node::Expr *dest, Node::Expr *src, Node::Expr *bytes, size_t file)
+      : line(line), pos(pos), dest(dest), src(src), bytes(bytes) {
+    file_id = file;
+    kind = NodeKind::ND_MEMCPY_MEMORY;
+    asmType = new SymbolType("int");
+  }
+
+  void debug(int ident = 0) const override {
+    Node::printIndent(ident);
+    std::cout << "Memcpy: \n";
+    Node::printIndent(ident + 1);
+    std::cout << "Destination: \n";
+    dest->debug(ident + 2);
+    Node::printIndent(ident + 1);
+    std::cout << "Source: \n";
+    src->debug(ident + 2);
+    Node::printIndent(ident + 1);
+    std::cout << "Bytes: \n";
+    bytes->debug(ident + 2);
+  }
+};
+
+class OpenExpr : public Node::Expr {
+public:
+  int line, pos;
+  Node::Expr *filename;
+  Node::Expr *flags;
+  // flags
+  // TODO: Create global constants for these and allow for them to be OR'd together manually
+  // TODO: Most imporant flags: O_CREAT
+  Node::Expr *canRead;
+  Node::Expr *canWrite;
+  Node::Expr *canCreate;
+
+  OpenExpr(int line, int pos, Node::Expr *filename, Node::Expr *canRead, Node::Expr *canWrite, Node::Expr *canCreate, size_t file)
+      :  line(line), pos(pos),  filename(filename),   canRead(canRead),    canWrite(canWrite),  canCreate(canCreate) {
+    file_id = file;
+    kind = NodeKind::ND_OPEN;
+    asmType = new SymbolType("int");
+  }
+
+  void debug(int ident = 0) const override {
+    Node::printIndent(ident);
+    std::cout << "OpenExpr: \n";
+    Node::printIndent(ident + 1);
+    std::cout << "Filename: \n";
+    filename->debug(ident + 2);
+    Node::printIndent(ident + 1);
+    std::cout << "Flags: \n";
+    flags->debug(ident + 2);
   }
 };
