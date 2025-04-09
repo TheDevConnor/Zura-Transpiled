@@ -2,7 +2,7 @@
 
 # Define variables
 REPO_URL="https://github.com/TheDevConnor/Zura-Transpiled.git"
-INSTALL_DIR="/usr/local/bin"
+INSTALL_DIR="/bin"
 BUILD_DIR="$HOME/zura_build"
 EXECUTABLE="release/zura"
 LOCAL_VERSION=$(zura --version | sed -E 's/.*(v[0-9]+\.[0-9]+\.[0-9]+).*/\1/')
@@ -19,7 +19,7 @@ done
 # Clone the repo if it doesn't exist
 if [ ! -d "$BUILD_DIR" ]; then
     echo "Cloning repository..."
-    git clone --branch experimental "$REPO_URL" "$BUILD_DIR"
+    git clone --branch main "$REPO_URL" "$BUILD_DIR"
 else
     echo "Repository already exists."
 fi
@@ -39,7 +39,7 @@ echo "Online version: $ONLINE_VERSION"
 
 if [ "$LOCAL_VERSION" != "$ONLINE_VERSION" ]; then
     echo "New version available! Pulling latest changes..."
-    git pull origin experimental
+    git pull origin main
 else
     echo "Zura is up to date. Proceeding with build..."
 fi
@@ -57,6 +57,5 @@ fi
 # Move executable
 echo "Installing Zura..."
 sudo mv "$EXECUTABLE" "$INSTALL_DIR"
-sudo mv "version.txt" "$INSTALL_DIR/zura/"
 
 echo "Zura installation/update completed successfully (version $ONLINE_VERSION)."
