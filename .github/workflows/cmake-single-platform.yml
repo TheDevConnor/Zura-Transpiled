@@ -41,15 +41,21 @@ jobs:
           name: linux-artifacts
           path: ./linux-artifacts
 
+      - name: "Make zura executable"
+        run: chmod +x ./linux-artifacts/zura
+
       - name: "Set Version Variable"
         id: set_version
-        run: echo "VERSION=$(./linux-artifacts/zura --version | sed -E 's/.*(v[0-9]+\.[0-9]+\.[0-9]+).*/\1/')" >> $GITHUB_ENV
+        run: |
+          VERSION=$(./linux-artifacts/zura --version | sed -E 's/.*(v[0-9]+\.[0-9]+\.[0-9]+).*/\1/')
+          echo "VERSION=$VERSION" >> $GITHUB_ENV
+          echo "Version set to: $VERSION"
 
       - name: "Create GitHub Release (Upload Artifacts)"
         uses: marvinpinto/action-automatic-releases@latest
         with:
           repo_token: ${{ secrets.GITHUB_TOKEN }}
-          automatic_release_tag: ${{ env.VERSION }}-${{ github.run_number }}
+          automatic_release_tag: "${{ env.VERSION }}-${{ github.run_number }}"
           prerelease: false
           title: "Release ${{ env.VERSION }}"
           files: |
