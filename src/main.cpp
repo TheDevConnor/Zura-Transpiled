@@ -38,6 +38,11 @@ void FlagConfig::print(int argc, char **argv) {
           "\n Zura Lsp Flags:"
           "\n  -lsp          Create an LSP connection via stdio."};
 
+  if (argc <= 1) {
+    std::cout << messages[2].c_str() << std::endl;
+    return;
+  }
+
   for (int i = 0; i < 4; i++) {
     if (conditions[i](argv[1])) {
       if (i == 3) {
