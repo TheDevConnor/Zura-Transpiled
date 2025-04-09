@@ -5,10 +5,7 @@ REPO_URL="https://github.com/TheDevConnor/Zura-Transpiled.git"
 INSTALL_DIR="/usr/local/bin"
 BUILD_DIR="$HOME/zura_build"
 EXECUTABLE="release/zura"
-VERSION_FILE="version.txt"
-VERSION_FILE_DIR="/usr/local/share/zura"
-LOCAL_VERSION_FILE="$VERSION_FILE_DIR/version.txt"
-
+LOCAL_VERSION=$(zura --version | sed -E 's/.*(v[0-9]+\.[0-9]+\.[0-9]+).*/\1/')
 # Check for dependencies
 DEPENDENCIES=("cmake" "ninja" "gcc" "make" "curl")
 
@@ -31,11 +28,9 @@ fi
 cd "$BUILD_DIR" || { echo "Error: Failed to enter project directory"; exit 1; }
 
 # Get the latest version from the repo
-ONLINE_VERSION=$(curl -s "https://raw.githubusercontent.com/TheDevConnor/Zura-Transpiled/experimental/$VERSION_FILE")
+ONLINE_VERSION=$(curl -s "https://api.github.com/repos/TheDevConnor/Zura-Transpiled/releases/latest" \ | jq -r '.tag_name' | sed -E 's/^((v[0-9]+\.[0-9]+\.[0-9]+)).*/\1/')
 
-if [ -f "$LOCAL_VERSION_FILE" ]; then
-    LOCAL_VERSION=$(cat "$LOCAL_VERSION_FILE")
-else
+if [ -z "$LOCAL_VERSION" ]; then
     LOCAL_VERSION="none"
 fi
 
@@ -63,10 +58,5 @@ fi
 echo "Installing Zura..."
 sudo mv "$EXECUTABLE" "$INSTALL_DIR"
 sudo mv "version.txt" "$INSTALL_DIR/zura/"
-
-# Store the new version
-echo "Updating version file..."
-sudo mkdir -p "$VERSION_FILE_DIR"
-echo "$ONLINE_VERSION" | sudo tee "$LOCAL_VERSION_FILE" > /dev/null
 
 echo "Zura installation/update completed successfully (version $ONLINE_VERSION)."

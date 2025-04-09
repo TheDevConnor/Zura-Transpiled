@@ -55,7 +55,7 @@ jobs:
 
       - name: "Set Version Variable"
         id: set_version
-        run: echo "VERSION=$(cat ./version/version.txt)" >> $GITHUB_ENV
+        run: echo "VERSION=$(./linux-artifacts/zura --version | sed -E 's/.*(v[0-9]+\.[0-9]+\.[0-9]+).*/\1/')" >> $GITHUB_ENV
 
       - name: "Create GitHub Release (Upload Artifacts)"
         uses: marvinpinto/action-automatic-releases@latest
