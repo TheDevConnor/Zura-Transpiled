@@ -28,12 +28,6 @@ jobs:
         with:
           name: linux-artifacts
           path: ./release/zura
-        
-      - name: "Upload Artifacts (Version File)"
-        uses: actions/upload-artifact@v4
-        with:
-          name: version
-          path: version.txt
 
   finalize:
     name: "Combine Artifacts"
@@ -46,12 +40,6 @@ jobs:
         with:
           name: linux-artifacts
           path: ./linux-artifacts
-
-      - name: "Download Artifact (Version File)"
-        uses: actions/download-artifact@v4
-        with:
-          name: version
-          path: ./version
 
       - name: "Set Version Variable"
         id: set_version
