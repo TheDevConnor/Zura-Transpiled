@@ -1,6 +1,1 @@
-const main := fn () int! {
-  have y: int! = 4;
-  have x: bool! = 4 == y;
-
-  return @cast<int!>(x);
-};
+const main := fn () int! { have a: int! = 0; loop(a < 10) { a = a + 1; } return a; };

@@ -66,14 +66,12 @@ static std::vector<std::pair<TokenKind, StmtHandler>> stmt_lu;
 static std::vector<std::pair<TokenKind, NudHandler>> nud_lu;
 static std::vector<std::pair<TokenKind, LedHandler>> led_lu;
 static std::vector<std::pair<TokenKind, BindingPower>> bp_lu;
-static std::vector<TokenKind> ignore_tokens;
 void createMaps(void);
 
 Node::Expr *led(PStruct *psr, Node::Expr *left, BindingPower bp);
 BindingPower getBP(TokenKind tk);
 Node::Stmt *stmt(PStruct *psr, std::string name);
-Node::Expr *nud(PStruct *psr);
-bool isIgnoreToken(TokenKind tk);
+Node::Expr *nud(PStruct *psr);;
 
 // Maps for the Pratt Parser for types.
 using TypeNudHandler = std::function<Node::Type *(PStruct *)>;

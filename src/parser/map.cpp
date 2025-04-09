@@ -1,7 +1,5 @@
 #include <functional>
-#include <iostream>
 #include <string>
-#include <unordered_map>
 #include <vector>
 
 #include "../ast/ast.hpp"
@@ -30,10 +28,6 @@ template <typename T, typename U>
 T Parser::lookup(PStruct *psr, const std::vector<std::pair<U, T>> &lu, U key) {
   typename std::vector<std::pair<U, T>>::const_iterator it = std::find_if(lu.begin(), lu.end(),
                          [key](const std::pair<U, T> &p) { return p.first == key; });
-
-  if (isIgnoreToken(key)) {
-    return nullptr;
-  }
 
   if (it == lu.end()) {
     ErrorClass::error(0, 0, "No value found for key (" + std::to_string(key) + ") Expr Maps!", "",
@@ -123,7 +117,6 @@ void Parser::createMaps() {
       {TokenKind::LAND, dereference},
   };
   bp_lu = {
-      {TokenKind::COMMA, BindingPower::comma},
       {TokenKind::EQUAL, BindingPower::assignment},
 
       {TokenKind::OR, BindingPower::logicalOr},
@@ -176,23 +169,6 @@ void Parser::createMaps() {
       {TokenKind::RESOLUTION, BindingPower::member},
       {TokenKind::LAND, BindingPower::member},
   };
-  ignore_tokens = {
-      TokenKind::SEMICOLON,
-      TokenKind::COMMA,
-      TokenKind::COLON,
-      TokenKind::WALRUS,
-  };
-}
-
-/**
- * Checks if a given token is an ignore token.
- *
- * @param tk The token kind to check.
- * @return True if the token is an ignore token, false otherwise.
- */
-bool Parser::isIgnoreToken(TokenKind tk) {
-  return std::find(ignore_tokens.begin(), ignore_tokens.end(), tk) !=
-         ignore_tokens.end();
 }
 
 /**

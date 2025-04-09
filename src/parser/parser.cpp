@@ -8,8 +8,7 @@
 
 Lexer lexer;
 
-Parser::PStruct *Parser::setupParser(PStruct *psr, Lexer *lex, Lexer::Token tk,
-                                     std::string current_file) {
+Parser::PStruct *Parser::setupParser(PStruct *psr, Lexer *lex, Lexer::Token tk, std::string current_file) {
   std::unordered_map<std::string, std::string> errors = {};
 
   while (true) {
