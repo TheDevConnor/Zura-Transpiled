@@ -24,13 +24,13 @@ jobs:
           ./build.sh release
 
       - name: "Upload Artifacts (Build Executable)"
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v4
         with:
           name: linux-artifacts
           path: ./release/zura
         
       - name: "Upload Artifacts (Version File)"
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v4
         with:
           name: version
           path: version.txt
@@ -42,13 +42,13 @@ jobs:
 
     steps:
       - name: "Download Linux Artifacts (Executable)"
-        uses: actions/download-artifact@v2
+        uses: actions/download-artifact@v4
         with:
           name: linux-artifacts
           path: ./linux-artifacts
 
       - name: "Download Artifact (Version File)"
-        uses: actions/download-artifact@v2
+        uses: actions/download-artifact@v4
         with:
           name: version
           path: ./version
