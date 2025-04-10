@@ -33,7 +33,8 @@ const main := fn () int {
 
 Zura supports the following data types:
 
-- `int`: 32-bit signed integer
+- `int?`: 32-bit signed integer
+- `int!`: 32-bit unsigned integer
 - `float`: 32-bit floating-point number
 - `bool`: 8-bit boolean value (Technically 1-bit types cannot exist.)
 - `string`: 64-bit char* (pointer to the first character of the string.)
@@ -88,13 +89,13 @@ Zura supports the `if`, `else`, `while`, and `for` control structures that you m
 # C for loop
 #    iterator  cond    postfix
 loop (i := 0; i < 10) : (i++) {
-   @output(i, "\n");
+   @output(1, i, "\n");
 }
 
 # C while loop
 #    iterator  cond     (no post-loop operator)
 loop (i := 0; i < 10) {
-   @output(i, "\n");
+   @output(1, i, "\n");
 }
 ```
 
@@ -103,7 +104,7 @@ You are allowed to have a post-loop operator in the loop syntax without the inli
 ```cpp
 have x: int = 0;
 loop (x < 10) : (x++) {
-   @output(x, "\n");
+   @output(1, x, "\n");
 }
 ```
 
@@ -112,9 +113,9 @@ The `if` and `else` statements are similar to other languages.
 ```cpp
 have x: int = 10;
 if (x > 10) {
-   @output("x > 10\n");
+   @output(1, "x > 10\n");
 } else {
-   @output("x <= 10\n");
+   @output(1, "x <= 10\n");
 }
 ```
 
@@ -155,7 +156,7 @@ have p: Point;
 p.x = 10;
 p.y = 20;
 
-@output("Point: (", p.x, ", ", p.y, ")\n");
+@output(1, "Point: (", p.x, ", ", p.y, ")\n");
 ```
 
 Structs can also be defined in one big expression, rather than defining each member individually like the example above.
@@ -181,7 +182,7 @@ const Color := enum {
 };
 
 have c: Color = Color.Red;
-@output("Color: ", c, "\n");
+@output(1, "Color: ", c, "\n");
 ```
 
 Each member of the enum is treated as the C-like equivalent of a `unsigned long`.
@@ -227,10 +228,10 @@ const main := fn () int {
    have fx: float = @cast<float>(x);
    have fy: float = @cast<float>(y);
 
-   @output("Float values: 'fx=", fx, "' and 'fy=", fy, "'\n");
+   @output(1, "Float values: 'fx=", fx, "' and 'fy=", fy, "'\n");
 
    have avg: float = calculate_average(fx, fy);
-   @output("Average of float values: 'avg=", avg, "'\n");
+   @output(1, "Average of float values: 'avg=", avg, "'\n");
 
    return 0;
 };
@@ -239,24 +240,23 @@ const main := fn () int {
 ## Built-in Functions
 
 Zura provides a set of built-in functions that do not require the importing of standard libraries, like the most common ones that handle I/O.
+```cpp
+# Outputing text to a terminal
+have x: int! = 10;
+@output(1, "Value of x: ", x, "\n");
+# Where ouput takes in the file descriptor (1 || 0) then the args that you want to pass in
+# Where 0 is for read in and 1 is for read out.
+# You also have the option of having zura handle the '\0\n' when outputing.
+@outputln(1, "Value of x: ", x);
+```
 
 ```cpp
-have x: int = 10;
-@output("Value of x: ", x, "\n");
+# Add in docs for user input
+```
 
-have s: string = "Hello, World!";
-@output("String value: ", s, "\n");
-
-have y: int = @input<int>("Enter a number: ");
-@output("You entered: ", y, "\n");
-
-have x: int = @cast<int>(10.5);
-@output("Casting float to int: ", x, "\n");
-
-have z: []char;
-@output("Enter a string: ");
-@input(z, 10); # z is the value that the input will be stored in; 10 is the maximum number of bytes to write into the buffer
-@output("You entered: ", z, "\n");
+```cpp
+# Importing a file is pretty straight forward
+@import "path_to_file";
 ```
 
 ## Pointers
