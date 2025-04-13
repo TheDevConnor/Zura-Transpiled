@@ -487,8 +487,7 @@ Node::Stmt *Parser::importStmt(PStruct *psr, std::string name) {
   // ie: if the file that called it is in /home/user/file1
   // and the imported file is in /home/user/std/file2
   // the absolute path will be /home/user/std/file2
-  std::filesystem::path absolutePath = std::filesystem::absolute(
-    std::filesystem::path(current_file).parent_path() / path);
+  std::filesystem::path absolutePath = std::filesystem::absolute(std::filesystem::path(current_file).parent_path() / path);
   char *fileContent = Flags::readFile(absolutePath.string().c_str());
   Node::Stmt *result = parse(fileContent, absolutePath.string().c_str());
   if (result == nullptr) {
@@ -498,10 +497,9 @@ Node::Stmt *Parser::importStmt(PStruct *psr, std::string name) {
     return nullptr;
   }
   // Typecheck the imported file
-  TypeChecker::performCheck(result, false);
+  // TypeChecker::performCheck(result, false);
 
-  psr->expect(psr, TokenKind::SEMICOLON,
-              "Expected a SEMICOLON at the end of an import stmt");
+  psr->expect(psr, TokenKind::SEMICOLON, "Expected a SEMICOLON at the end of an import stmt");
 
   node.current_file = current_file;
 

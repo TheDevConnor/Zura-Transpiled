@@ -1,21 +1,23 @@
-# Implemented from the now deleted power.cpp file
-const pow := fn(base: int?, exponent: int?) int? {
-  if (exponent == 0) {
-    return 1;
+const add := fn(lhs: int!, rhs: int!) int! {
+  return lhs + rhs;
+};
+
+const sub := fn(lhs: int!, rhs: int!) int! {
+  return lhs - rhs;
+};
+
+const mul := fn(lhs: int!, rhs: int!) int! {
+  return lhs * rhs;
+};
+
+const div := fn(lhs: int!, rhs: int!) int! {
+  return lhs / rhs;
+};
+
+const pow := fn(base: int!, exponent: int!) int! {
+  have res: int! = base;
+  loop (i = 1; i < exponent) : (i++) {
+    res = res * base;
   }
-  if (exponent == 1) {
-    return base;
-  }
-  if (base == 0) {
-    return 0;
-  }
-  if (base == 1) {
-    return 1;
-  }
-  # Haha, that's all the optimizations we get.
-  if (exponent % 2 == 0) {
-    return pow(base * base, exponent / 2);
-  } else {
-    return base * pow(base, exponent - 1);
-  }
+  return res;
 };

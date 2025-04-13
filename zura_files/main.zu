@@ -1,5 +1,6 @@
+@import "std/math.zu";
+
 const main := fn () int! {
-  have x: str = @cast<str>(10.5);
-  @outputln(1, x);
+  @outputln(1, add(1, 3), " ", pow(400, 5)); # 5
   return 0;
 };

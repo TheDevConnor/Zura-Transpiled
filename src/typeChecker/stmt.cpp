@@ -1,14 +1,14 @@
 #include "../ast/stmt.hpp"
-#include "../ast/types.hpp"
-#include "../helper/error/error.hpp"
-#include "type.hpp"
-#include "typeMaps.hpp"
 
 #include <iostream>
 #include <memory>
 #include <string>
 #include <unordered_map>
 #include <vector>
+
+#include "../ast/types.hpp"
+#include "type.hpp"
+#include "typeMaps.hpp"
 
 void TypeChecker::visitStmt(Node::Stmt *stmt) {
   StmtAstLookup(stmt);
@@ -24,25 +24,26 @@ void TypeChecker::visitProgram(Node::Stmt *stmt) {
   ProgramStmt *program_stmt = static_cast<ProgramStmt *>(stmt);
   for (Node::Stmt *stmt : program_stmt->stmt) {
     switch (stmt->kind) {
-    case NodeKind::ND_VAR_STMT: {
-      VarStmt *var = static_cast<VarStmt *>(stmt);
-      if (var->expr == nullptr) {
-        std::string msg = "Global variables must be initialized";
-        handleError(var->line, var->pos, msg, "", "Type Error");
+      case NodeKind::ND_VAR_STMT: {
+        VarStmt *var = static_cast<VarStmt *>(stmt);
+        if (var->expr == nullptr) {
+          std::string msg = "Global variables must be initialized";
+          handleError(var->line, var->pos, msg, "", "Type Error");
+        }
+        break;
       }
-      break;
-    }
-    case NodeKind::ND_FOR_STMT:
-    case NodeKind::ND_WHILE_STMT:
-    case NodeKind::ND_IF_STMT: {
-      std::string msg = "Loops and if statements are not allowed in the global "
-                        "scope";
-      handleError(0, 0, msg, "", "Type Error");
-      break;
-    }
-    default:
-      visitStmt(stmt);
-      break;
+      case NodeKind::ND_FOR_STMT:
+      case NodeKind::ND_WHILE_STMT:
+      case NodeKind::ND_IF_STMT: {
+        std::string msg =
+            "Loops and if statements are not allowed in the global "
+            "scope";
+        handleError(0, 0, msg, "", "Type Error");
+        break;
+      }
+      default:
+        visitStmt(stmt);
+        break;
     }
   }
 }
@@ -54,20 +55,20 @@ void TypeChecker::visitConst(Node::Stmt *stmt) {
 
 void TypeChecker::visitFn(Node::Stmt *stmt) {
   FnStmt *fn_stmt = static_cast<FnStmt *>(stmt);
-  context->enterScope(); // Enter function scope
+  context->enterScope();  // Enter function scope
 
   // Declare function in local table
-  context->declareLocal(fn_stmt->name, fn_stmt->returnType); // Declare this first, so that recursion and stuff is possible later
+  context->declareLocal(fn_stmt->name, fn_stmt->returnType);  // Declare this first, so that recursion and stuff is possible later
 
   // Check function parameters
   std::unordered_map<std::string, Node::Type *> params;
   for (std::pair<std::string, Node::Type *> &param : fn_stmt->params) {
-      if (!param.second) {
-          std::cerr << "Error: Parameter " << param.first << " has nullptr type!" << std::endl;
-          continue;
-      }
-      params[param.first] = param.second;
-      context->declareLocal(param.first, param.second);
+    if (!param.second) {
+      std::cerr << "Error: Parameter " << param.first << " has nullptr type!" << std::endl;
+      continue;
+    }
+    params[param.first] = param.second;
+    context->declareLocal(param.first, param.second);
   }
 
   // Add function to functionTable
@@ -77,13 +78,13 @@ void TypeChecker::visitFn(Node::Stmt *stmt) {
 
   // Ensure return type is properly checked
   if (return_type == nullptr) {
-      handleError(fn_stmt->line, fn_stmt->pos, "Return type is not defined", "", "Type Error");
+    handleError(fn_stmt->line, fn_stmt->pos, "Return type is not defined", "", "Type Error");
   }
 
   // Check return statement requirements
   if (!needsReturn && type_to_string(fn_stmt->returnType) != "void") {
-      handleError(fn_stmt->line, fn_stmt->pos, "Function requires a return statement", "", "Type Error");
-      return;
+    handleError(fn_stmt->line, fn_stmt->pos, "Function requires a return statement", "", "Type Error");
+    return;
   }
 
   // Ensure function return type matches expected type
@@ -121,7 +122,7 @@ void TypeChecker::visitStruct(Node::Stmt *stmt) {
   context->declareLocal(struct_stmt->name, static_cast<Node::Type *>(type));
   context->declareGlobal(struct_stmt->name, static_cast<Node::Type *>(type));
 
-  context->structTable.insert({struct_stmt->name, {}}); // Declare blank and insert later
+  context->structTable.insert({struct_stmt->name, {}});  // Declare blank and insert later
 
   // visit the fields Aka the variables
   for (std::pair<std::string, Node::Type *> &field : struct_stmt->fields) {
@@ -148,7 +149,7 @@ void TypeChecker::visitStruct(Node::Stmt *stmt) {
 
     if (type_to_string(fn_stmt->returnType) == "void") {
       return_type = nullptr;
-      context->exitScope(); // clear the local table for the next function
+      context->exitScope();  // clear the local table for the next function
       continue;
     }
 
@@ -171,7 +172,7 @@ void TypeChecker::visitStruct(Node::Stmt *stmt) {
                       "' requires a return type of '" +
                       type_to_string(fn_stmt->returnType) + "' but got '" +
                       type_to_string(return_type.get()) + "' instead.";
-    bool check = checkTypeMatch(fn_stmt->returnType, return_type.get()); 
+    bool check = checkTypeMatch(fn_stmt->returnType, return_type.get());
     if (!check) {
       handleError(fn_stmt->line, fn_stmt->pos, msg, "", "Type Error");
       return_type = std::make_shared<SymbolType>("unknown");
@@ -182,7 +183,7 @@ void TypeChecker::visitStruct(Node::Stmt *stmt) {
     context->declareGlobal(fn_stmt->name, fn_stmt->returnType);
 
     return_type = nullptr;
-    context->exitScope(); // clear the local table for the next function
+    context->exitScope();  // clear the local table for the next function
   }
 
   return_type = std::make_shared<SymbolType>(struct_stmt->name);
@@ -196,7 +197,7 @@ void TypeChecker::visitEnum(Node::Stmt *stmt) {
   context->declareLocal(enum_stmt->name, static_cast<Node::Type *>(type));
   context->declareGlobal(enum_stmt->name, static_cast<Node::Type *>(type));
 
-  // delcare the enum in the enum table 
+  // delcare the enum in the enum table
   context->enumTable.declare(enum_stmt->name);
 
   if (enum_stmt->fields.empty()) {
@@ -261,7 +262,7 @@ void TypeChecker::visitVar(Node::Stmt *stmt) {
     // Now we can set the type of the variable to the underlying type
     var_stmt->type = temp->underlying;
   } else if (var_stmt->expr ==
-             nullptr) { // check if the variable is initialized
+             nullptr) {  // check if the variable is initialized
     return;
   } else if (var_stmt->type->kind == ND_ARRAY_TYPE) {
     // Set the expr.type to the type of the variable so it can be used
@@ -272,7 +273,7 @@ void TypeChecker::visitVar(Node::Stmt *stmt) {
       // If the array was declared but its type was []
       // we assume the constSize is the size of the array expr
       var_stmt->type = new ArrayType(array_type->underlying, (long long)array_expr->elements.size());
-    } else if(var_stmt->expr->kind == NodeKind::ND_ARRAY) { // auto filled arrays will always have 1 element (the one to autofill) so do not error in that case
+    } else if (var_stmt->expr->kind == NodeKind::ND_ARRAY) {  // auto filled arrays will always have 1 element (the one to autofill) so do not error in that case
       // If the array was declared with a size we need to check if the size
       // of the array expr is the same as the size of the array type
       if ((size_t)array_type->constSize != array_expr->elements.size()) {
@@ -285,7 +286,7 @@ void TypeChecker::visitVar(Node::Stmt *stmt) {
     }
     array_expr->type = new ArrayType(array_type->underlying, (long long)array_expr->elements.size());
     return_type = share(array_type);
-    visitExpr(var_stmt->expr); // Visit the array, and by extension, its elements
+    visitExpr(var_stmt->expr);  // Visit the array, and by extension, its elements
     return_type = share(array_type);
   } else if (var_stmt->type->kind == ND_POINTER_TYPE) {
     PointerType *ptr = static_cast<PointerType *>(var_stmt->type);
@@ -314,8 +315,10 @@ void TypeChecker::visitPrint(Node::Stmt *stmt) {
   OutputStmt *print_stmt = static_cast<OutputStmt *>(stmt);
   visitExpr(print_stmt->fd);
   if (!isIntBasedType(return_type.get())) {
-    std::string msg = "Print requires the file descriptor to be of type 'int!' "
-                      "but got '" + type_to_string(return_type.get()) + "'";
+    std::string msg =
+        "Print requires the file descriptor to be of type 'int!' "
+        "but got '" +
+        type_to_string(return_type.get()) + "'";
     handleError(print_stmt->line, print_stmt->pos, msg, "", "Type Error");
   }
 
@@ -391,7 +394,7 @@ void TypeChecker::visitFor(Node::Stmt *stmt) {
   visitStmt(for_stmt->block);
 
   // clear the for loop var name from the local table
-  context->exitScope(); // clear the local table for the next function
+  context->exitScope();  // clear the local table for the next function
 
   return_type = nullptr;
 }
@@ -409,7 +412,7 @@ void TypeChecker::visitWhile(Node::Stmt *stmt) {
       handleError(while_stmt->line, while_stmt->pos, msg, "", "Type Error");
     }
   }
-  
+
   if (while_stmt->optional != nullptr) {
     visitExpr(while_stmt->optional);
   }
@@ -425,31 +428,21 @@ void TypeChecker::visitImport(Node::Stmt *stmt) {
 
   // store the current file name
   std::string file_name = node.current_file;
-  node.current_file =
-      import_stmt->name; // set the current file name to the import name
+  node.current_file = import_stmt->name;  // set the current file name to the import name
 
-  // check if the import is already in the global table
-  // std::unordered_map<std::string, Node::Type *>::iterator res = map->global_symbol_table.find(import_stmt->name);
-  // if (res != map->global_symbol_table.end()) {
-  //   std::string msg = "'" + import_stmt->name + "' has already been imported.";
-  //   handleError(import_stmt->line, import_stmt->pos, msg, "", "Type Error");
-  // }
   std::unordered_map<std::string, Node::Type *>::iterator res = context->globalSymbols.find(import_stmt->name);
   if (res != context->globalSymbols.end()) {
     std::string msg = "'" + import_stmt->name + "' has already been imported.";
     handleError(import_stmt->line, import_stmt->pos, msg, "", "Type Error");
   }
 
-  // add the import to the global table
-  // declare(map->global_symbol_table, import_stmt->name, return_type.get(),
-  //         import_stmt->line, import_stmt->pos);
   context->declareGlobal(import_stmt->name, return_type.get());
 
   // type check the import
   visitStmt(import_stmt->stmt);
 
   return_type = nullptr;
-  node.current_file = file_name; // reset the current file name
+  node.current_file = file_name;  // reset the current file name
 }
 
 void TypeChecker::visitMatch(Node::Stmt *stmt) {
@@ -457,7 +450,7 @@ void TypeChecker::visitMatch(Node::Stmt *stmt) {
   visitExpr(match_stmt->coverExpr);
 
   for (std::pair<Node::Expr *, Node::Stmt *> &pair : match_stmt->cases) {
-    visitExpr(pair.first); // Implement actual jump tables and math later. For now, all return_types for case expressions are allowed.
+    visitExpr(pair.first);  // Implement actual jump tables and math later. For now, all return_types for case expressions are allowed.
     visitStmt(pair.second);
   }
 
@@ -465,22 +458,22 @@ void TypeChecker::visitMatch(Node::Stmt *stmt) {
 }
 
 void TypeChecker::visitLink(Node::Stmt *stmt) {
-  (void)stmt; // Mark it as unused
+  (void)stmt;  // Mark it as unused
   // nothing to do here
 }
 
 void TypeChecker::visitExtern(Node::Stmt *stmt) {
-  (void)stmt; // mark it as unused
+  (void)stmt;  // mark it as unused
   // nothing to do here
 }
 
 void TypeChecker::visitBreak(Node::Stmt *stmt) {
-  (void)stmt; // mark it as unused
+  (void)stmt;  // mark it as unused
   // nothing to do here
 }
 
 void TypeChecker::visitContinue(Node::Stmt *stmt) {
-  (void)stmt; // mark it as unused
+  (void)stmt;  // mark it as unused
   // nothing to do here
 }
 
@@ -496,7 +489,7 @@ void TypeChecker::visitInput(Node::Stmt *stmt) {
     handleError(input_stmt->line, input_stmt->pos, msg, "", "Type Error");
   }
 
-  visitExpr(input_stmt->bufferOut); // str, char*, char[]
+  visitExpr(input_stmt->bufferOut);  // str, char*, char[]
   bool isStrType = return_type.get()->kind == ND_SYMBOL_TYPE && type_to_string(return_type.get()) == "str";
   bool isCharPtrType = return_type.get()->kind == ND_POINTER_TYPE && static_cast<SymbolType *>(static_cast<PointerType *>(return_type.get())->underlying)->name == "char";
   bool isCharArrayType = return_type.get()->kind == ND_ARRAY_TYPE && static_cast<SymbolType *>(static_cast<ArrayType *>(return_type.get())->underlying)->name == "char";
