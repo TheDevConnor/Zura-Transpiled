@@ -1,13 +1,12 @@
+#include "error.hpp"
+
 #include <iostream>
 #include <string>
 #include <vector>
 
-#include "../../ast/ast.hpp"
 #include "../../common.hpp"
 #include "../../lexer/lexer.hpp"
-#include "../../parser/parser.hpp"
 #include "../term_color/color.hpp"
-#include "error.hpp"
 
 Color col;
 
@@ -40,7 +39,7 @@ ErrorClass::formatLineWithTokens(int line, int pos,
         errorPos += errorPos + lastToken->value.size() + 1;
       } else {
         formattedLine += col.color("_", Color::RED, false, true) + col.color(tk.value, Color::RED, false, true) + " ";
-        ErrorPos = errorPos; 
+        ErrorPos = errorPos;
       }
     } else {
       formattedLine += tk.value + " ";
@@ -72,7 +71,6 @@ std::string ErrorClass::error(int line, int pos, const std::string &msg,
                               const std::vector<Lexer::Token> &tokens,
                               bool isParser, bool isWarning, bool isFatal,
                               bool isMain, bool isTypeError, bool isGeneration) {
-
   std::string line_error = "[" + std::to_string(line) + "::" + std::to_string(pos) + "] (";
 
   if (isWarning) {
@@ -85,7 +83,8 @@ std::string ErrorClass::error(int line, int pos, const std::string &msg,
 
   line_error += ") (" + filename + ")\n ↳ ";
   line_error += (errorType.empty() ? col.color("Error", Color::RED, false, true)
-                                   : col.color(errorType, Color::MAGENTA, true, true)) + ": ";
+                                   : col.color(errorType, Color::MAGENTA, true, true)) +
+                ": ";
   // check if the msg begins with 'No value found for key'
   if (msg.find("No value found for key") != std::string::npos) {
     // check if fatal and error
@@ -93,7 +92,7 @@ std::string ErrorClass::error(int line, int pos, const std::string &msg,
       printError();
       Exit(ExitValue::_ERROR);
     }
-    return line_error; // no need to print the message
+    return line_error;  // no need to print the message
   } else {
     line_error += msg + "\n";
   }
@@ -106,16 +105,16 @@ std::string ErrorClass::error(int line, int pos, const std::string &msg,
 
   if (isParser) {
     if (msg.find("Expected a SEMICOLON") == 0) {
-        line_error += currentLine(line - 1, pos, lexer, isParser, isTypeError, tokens, true);
-        line_error += " ↳ " + col.color("NOTE", Color::BLUE) + ": If the line above is empty, it's possible that the error is on the line above.\n";
-        if (!note.empty()) line_error += " ↳ " + col.color("NOTE", Color::BLUE) + ": " + note + "\n";
+      line_error += currentLine(line - 1, pos, lexer, isParser, isTypeError, tokens, true);
+      line_error += " ↳ " + col.color("NOTE", Color::BLUE) + ": If the line above is empty, it's possible that the error is on the line above.\n";
+      if (!note.empty()) line_error += " ↳ " + col.color("NOTE", Color::BLUE) + ": " + note + "\n";
     } else {
-        line_error += currentLine(line, pos, lexer, isParser, isTypeError, tokens);
-        line_error += std::string(ErrorPos, ' ') + col.color("^", Color::RED, false, true) + "\n";
-        if (!note.empty()) line_error += " ↳ " + col.color("NOTE", Color::BLUE) + ": " + note + "\n";
+      line_error += currentLine(line, pos, lexer, isParser, isTypeError, tokens);
+      line_error += std::string(ErrorPos, ' ') + col.color("^", Color::RED, false, true) + "\n";
+      if (!note.empty()) line_error += " ↳ " + col.color("NOTE", Color::BLUE) + ": " + note + "\n";
     }
 
-    errors.push_back(line_error); // Add error if not already present
+    errors.push_back(line_error);  // Add error if not already present
     return line_error;
   }
 
@@ -134,9 +133,8 @@ std::string ErrorClass::error(int line, int pos, const std::string &msg,
   }
 
   if (isGeneration) {
-    if (!note.empty()) {
-      line_error += " ↳ " + col.color("NOTE", Color::BLUE) + ": " + note + "\n";
-    }
+    errors.push_back(line_error);
+    return line_error;
   }
 
   if (!(isParser || isTypeError || isGeneration)) {
@@ -149,21 +147,21 @@ std::string ErrorClass::error(int line, int pos, const std::string &msg,
     printError();
     if (isGeneration) Exit(ExitValue::GENERATOR_ERROR);
     if (isTypeError) Exit(ExitValue::TYPE_ERROR);
-    if (isParser) Exit(ExitValue::PARSER_ERROR); 
-    Exit(ExitValue::LEXER_ERROR); // Process of elimination
+    if (isParser) Exit(ExitValue::PARSER_ERROR);
+    Exit(ExitValue::LEXER_ERROR);  // Process of elimination
   }
   return line_error;
 }
 
 bool ErrorClass::printError() {
-  if (!shouldPrintErrors) return false; // Dont print something to console, it might mess up Literally everything...
+  // if (!shouldPrintErrors) return false; // Dont print something to console, it might mess up Literally everything...
   if (!errors.empty() && errors.size() > 0) {
-    std::cout << "\r\033[2K"; // Clear the line and move to start -- overwrite previous garbage
+    std::cout << "\r\033[2K";  // Clear the line and move to start -- overwrite previous garbage
     std::cout << "Total number of Errors: "
               << col.color(std::to_string(errors.size()), Color::RED, true,
-                            false)
+                           false)
               << std::endl;
-    
+
     for (const std::string &error : errors) {
       std::cout << error << std::endl;
     }

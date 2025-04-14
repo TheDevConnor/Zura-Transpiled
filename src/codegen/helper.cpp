@@ -10,8 +10,7 @@
 #include <unordered_map>
 
 
-void codegen::handleError(int line, int pos, std::string msg,
-                           std::string typeOfError, bool isFatal) {
+void codegen::handleError(int line, int pos, std::string msg, std::string typeOfError, bool isFatal) {
   Lexer lexer; // dummy lexer
   ErrorClass::error(line, pos, msg, "", typeOfError, node.current_file, lexer,
                     node.tks, false, false, isFatal,
@@ -231,11 +230,14 @@ bool codegen::execute_command(const std::string &command,
   log.close();
 
   if (result != 0) {
-    handleError(0, 0,
-                 "Error executing command: " + command + "\n\t" + log_contents,
-                 "Codegen Error", true);
+    std::string error_message = "Error executing command: " + command + "\n";
+    if (log_contents.size() > 0) {
+      error_message += "\t" + log_contents;
+    }
+    handleError(0, 0, error_message, "Codegen Error", true);
     return false;
   }
+  
   return true;
 }
 
@@ -584,3 +586,27 @@ size_t codegen::sizeOfLEB(int64_t value) {
 
     return size;
 }
+
+DataSize codegen::intDataToSize(signed short int data) {
+  switch (data) {
+    case 1:
+      return DataSize::Byte;
+    case 2:
+      return DataSize::Word;
+    case 4:
+      return DataSize::Dword;
+    case 8:
+    default:
+      return DataSize::Qword;
+  }
+};
+
+DataSize codegen::intDataToSizeFloat(signed short int data) {
+  switch (data) {
+    case 4:
+    default:
+      return DataSize::SS;
+    case 8:
+      return DataSize::SD;
+  }
+};

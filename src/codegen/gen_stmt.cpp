@@ -329,29 +329,8 @@ void codegen::varDecl(Node::Stmt *stmt) {
       variableCount += (getByteSizeOfType(at->underlying) * at->constSize);
     } else {
       visitExpr(s->expr);
-      DataSize size = DataSize::Qword;
-      switch (getByteSizeOfType(s->type)) {
-        case 1:
-          size = DataSize::Byte;
-          break;
-        case 2:
-          size = DataSize::Word;
-          break;
-        case 4:
-          size = DataSize::Dword;
-          break;
-        case 8:
-        default:
-          size = DataSize::Qword;
-          break;
-      }
-      if (s->type->kind == ND_SYMBOL_TYPE) {
-        if (getUnderlying(s->type) == "float") {
-          size = DataSize::SS;
-        } else if (getUnderlying(s->type) == "double") {
-          size = DataSize::SD;
-        }
-      }
+      bool isFloatingType = s->type->kind == ND_SYMBOL_TYPE && (getUnderlying(s->type) == "float" || getUnderlying(s->type) == "double");
+      DataSize size = isFloatingType ? intDataToSizeFloat(getByteSizeOfType(s->type)) : intDataToSize(getByteSizeOfType(s->type));
       push(Instr{.var=PopInstr{.where = where, .whereSize = size}, .type = InstrType::Pop}, Section::Main); // For values small enough to fit in a register.
       variableTable.insert({s->name, where});
       variableCount += getByteSizeOfType(s->type);
@@ -1112,21 +1091,7 @@ void codegen::declareStructVariable(Node::Expr *expr, std::string structName,
 
     // Evaluate the field and store it in the struct
     visitExpr(field);
-    switch (getByteSizeOfType(field->asmType)) {
-      case 1:
-        push(Instr{.var=PopInstr{.where=std::to_string(-((long long)startOffset + offset)) + "(" + offsetRegister + ")",.whereSize=DataSize::Byte},.type=InstrType::Pop},Section::Main);
-        break;
-      case 2:
-        push(Instr{.var=PopInstr{.where=std::to_string(-((long long)startOffset + offset)) + "(" + offsetRegister + ")",.whereSize=DataSize::Word},.type=InstrType::Pop},Section::Main);
-        break;
-      case 4:
-        push(Instr{.var=PopInstr{.where=std::to_string(-((long long)startOffset + offset)) + "(" + offsetRegister + ")",.whereSize=DataSize::Dword},.type=InstrType::Pop},Section::Main);
-        break;
-      case 8:
-      default:
-        push(Instr{.var=PopInstr{.where=std::to_string(-((long long)startOffset + offset)) + "(" + offsetRegister + ")",.whereSize=DataSize::Qword},.type=InstrType::Pop},Section::Main);
-        break;
-    }
+    push(Instr{.var=PopInstr{.where=std::to_string(-((long long)startOffset + offset)) + "(" + offsetRegister + ")",.whereSize=intDataToSize(getByteSizeOfType(field->asmType))},.type=InstrType::Pop},Section::Main);
     continue;
   }
 }

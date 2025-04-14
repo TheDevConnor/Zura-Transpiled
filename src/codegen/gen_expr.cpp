@@ -66,29 +66,10 @@ void codegen::primary(Node::Expr *expr) {
       break;
     }
     // Get the byte size of the ident (this will determine the type of the push)
-    switch (getByteSizeOfType(e->asmType)) {
-    case 1:
-      push(Instr{.var = PushInstr{.what = res, .whatSize = DataSize::Byte},
-                 .type = InstrType::Push},
-           Section::Main);
-      break;
-    case 2:
-      push(Instr{.var = PushInstr{.what = res, .whatSize = DataSize::Word},
-                 .type = InstrType::Push},
-           Section::Main);
-      break;
-    case 4:
-      push(Instr{.var = PushInstr{.what = res, .whatSize = DataSize::Dword},
-                 .type = InstrType::Push},
-           Section::Main);
-      break;
-    case 8:
-    default:
-      push(Instr{.var = PushInstr{.what = res, .whatSize = DataSize::Qword},
-                 .type = InstrType::Push},
-           Section::Main);
-      break;
-    }
+    DataSize finalSize = intDataToSize(getByteSizeOfType(e->asmType));
+    push(Instr{.var = PushInstr{.what = res, .whatSize = finalSize},
+                .type = InstrType::Push},
+          Section::Main);
     break;
   }
   case ND_STRING: {
@@ -242,23 +223,8 @@ void codegen::binary(Node::Expr *expr) {
         push(Instr{.var = DivInstr{.from = rhsReg, .isSigned = true, .size = size}, .type = InstrType::Div}, Section::Main);
       } else {
         // it was unsigned so we have way less shit to worry about
-        DataSize size = DataSize::Qword;
+        DataSize size = intDataToSize(getByteSizeOfType(returnType));
         push(Instr{.var=XorInstr{.lhs="%rdi", .rhs="%rdi"},.type=InstrType::Xor},Section::Main);
-        switch (getByteSizeOfType(returnType)) {
-          case 1:
-            size = DataSize::Byte;
-            break;
-          case 2:
-            size = DataSize::Word;
-            break;
-          case 4:
-            size = DataSize::Dword;
-            break;
-          case 8:
-          default:
-            size = DataSize::Qword;
-            break;
-        }
         push(Instr{.var=DivInstr{.from=rhsReg, .isSigned = false, .size = size}, .type = InstrType::Div}, Section::Main);
       }
 
@@ -761,32 +727,12 @@ void codegen::arrayElem(Node::Expr *expr) {
             Section::Main);
         pushRegister("%rcx");
       } else {
-        switch (getByteSizeOfType(underlying)) {
-          case 1:
-            push(Instr{.var = PushInstr{.what = std::to_string(offset + ((index->value + 1) * getByteSizeOfType(underlying))) + "(%rbp)",
-                                        .whatSize = DataSize::Byte},
-                       .type = InstrType::Push},
-                 Section::Main);
-          break;
-          case 2:
-            push(Instr{.var = PushInstr{.what = std::to_string(offset + ((index->value + 1) * getByteSizeOfType(underlying))) + "(%rbp)",
-                                        .whatSize = DataSize::Word},
-                       .type = InstrType::Push},
-                 Section::Main);
-            break;
-          case 4:
-            push(Instr{.var = PushInstr{.what = std::to_string(offset + ((index->value + 1) * getByteSizeOfType(underlying))) + "(%rbp)",
-                                        .whatSize = DataSize::Dword},
-                       .type = InstrType::Push},
-                 Section::Main);
-            break;
-          case 8:
-          default:
-            pushRegister(std::to_string(offset + ((index->value + 1) * getByteSizeOfType(underlying))) + "(%rbp)");
-            break;
-        }
-      }
+        push(Instr{.var = PushInstr{.what = std::to_string(offset + ((index->value + 1) * getByteSizeOfType(underlying))) + "(%rbp)",
+                                    .whatSize = intDataToSize(getByteSizeOfType(underlying))},
+                    .type = InstrType::Push},
+              Section::Main);
       return;
+      }
     } else {
       visitExpr(e->lhs);
       // it is an array type so we must actually lea this!
@@ -983,29 +929,10 @@ void codegen::memberExpr(Node::Expr *expr) {
             break;
           }
         }
-        switch (getByteSizeOfType(e->asmType)) {
-          case 1:
-            push(Instr{.var = PushInstr{.what = std::to_string(where) + "(%rcx)",
-                                        .whatSize = DataSize::Byte},
-                       .type = InstrType::Push},
-                 Section::Main);
-            break;
-            push(Instr{.var = PushInstr{.what = std::to_string(where) + "(%rcx)",
-                                        .whatSize = DataSize::Word},
-                       .type = InstrType::Push},
-                 Section::Main);
-            break;
-          case 4:
-            push(Instr{.var = PushInstr{.what = std::to_string(where) + "(%rcx)",
-                                        .whatSize = DataSize::Dword},
-                       .type = InstrType::Push},
-                 Section::Main);
-            break;
-          case 8:
-          default:
-            pushRegister(std::to_string(where) + "(%rcx)");
-            break;
-        }
+        push(Instr{.var = PushInstr{.what = std::to_string(where) + "(%rcx)",
+                                    .whatSize = intDataToSize(getByteSizeOfType(e->asmType))},
+                   .type = InstrType::Push},
+             Section::Main);
         return;
       }
       // if type was an array (not dealing with this today)
@@ -1068,22 +995,7 @@ void codegen::memberExpr(Node::Expr *expr) {
               Section::Main);
         pushRegister("%rcx");
       } else {
-        DataSize size = DataSize::Qword;
-        switch (getByteSizeOfType(e->asmType)) {
-        case 1:
-          size = DataSize::Byte;
-          break;
-        case 2:
-          size = DataSize::Word;
-          break;
-        case 4:
-          size = DataSize::Dword;
-          break;
-        case 8:
-        default:
-          size = DataSize::Qword;
-          break;
-        }
+        DataSize size = intDataToSize(getByteSizeOfType(e->asmType));
         push(Instr{.var=PushInstr{.what = std::to_string(offsetFromBase) + "(%rcx)",
                                   .whatSize = size},
                   .type = InstrType::Push},
@@ -1465,41 +1377,12 @@ void codegen::assignStructMember(Node::Expr *expr) {
                            // do not need
   visitExpr(e->rhs);
   // Pop the value into a register
-  switch (getByteSizeOfType(e->rhs->asmType)) {
-  case 1:
-    push(Instr{.var = PopInstr{.where = std::to_string(getByteSizeOfType(
-                                            e->rhs->asmType)) +
-                                        "(%rcx)",
-                               .whereSize = DataSize::Byte},
-               .type = InstrType::Pop},
-         Section::Main);
-    break;
-  case 2:
-    push(Instr{.var = PopInstr{.where = std::to_string(getByteSizeOfType(
-                                            e->rhs->asmType)) +
-                                        "(%rcx)",
-                               .whereSize = DataSize::Word},
-               .type = InstrType::Pop},
-         Section::Main);
-    break;
-  case 4:
-    push(Instr{.var = PopInstr{.where = std::to_string(getByteSizeOfType(
-                                            e->rhs->asmType)) +
-                                        "(%rcx)",
-                               .whereSize = DataSize::Dword},
-               .type = InstrType::Pop},
-         Section::Main);
-    break;
-  case 8:
-  default:
-    push(Instr{.var = PopInstr{.where = std::to_string(getByteSizeOfType(
-                                            e->rhs->asmType)) +
-                                        "(%rcx)",
-                               .whereSize = DataSize::Qword},
-               .type = InstrType::Pop},
-         Section::Main);
-    break;
-  }
+  push(Instr{.var = PopInstr{.where = std::to_string(getByteSizeOfType(
+                                          e->rhs->asmType)) +
+                                      "(%rcx)",
+                             .whereSize = intDataToSize(getByteSizeOfType(e->rhs->asmType))},
+             .type = InstrType::Pop},
+       Section::Main);
   // Assign expressions must return something
   pushRegister("%rcx");
 };

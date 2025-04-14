@@ -1,14 +1,10 @@
 #pragma once
 
 #include <functional>
-#include <iostream>
 #include <string>
-#include <unordered_map>
 #include <vector>
-#include <algorithm>
 
 #include "../ast/ast.hpp"
-#include "../helper/error/error.hpp"
 #include "../lexer/lexer.hpp"
 
 namespace Parser {
@@ -34,19 +30,19 @@ enum BindingPower {
 };
 struct PStruct;
 inline Lexer lexer;
-} // namespace Parser
+}  // namespace Parser
 
 struct Parser::PStruct {
   std::vector<Lexer::Token> tks;
   std::string current_file;
   size_t pos = 0;
 
-  Lexer::Token current(PStruct *psr);
-  Lexer::Token advance(PStruct *psr);
-  Lexer::Token peek(PStruct *psr, int offset = 0);
-  Lexer::Token expect(PStruct *psr, TokenKind tk, std::string msg);
+  Lexer::Token current();
+  Lexer::Token advance();
+  Lexer::Token peek(int offset = 0);
+  Lexer::Token expect(TokenKind tk, std::string msg);
 
-  bool hadTokens(PStruct *psr);
+  bool hadTokens();
 };
 
 namespace Parser {
@@ -71,7 +67,8 @@ void createMaps(void);
 Node::Expr *led(PStruct *psr, Node::Expr *left, BindingPower bp);
 BindingPower getBP(TokenKind tk);
 Node::Stmt *stmt(PStruct *psr, std::string name);
-Node::Expr *nud(PStruct *psr);;
+Node::Expr *nud(PStruct *psr);
+;
 
 // Maps for the Pratt Parser for types.
 using TypeNudHandler = std::function<Node::Type *(PStruct *)>;
@@ -96,7 +93,6 @@ Node::Type *type_application(PStruct *psr);
 Node::Type *function_type(PStruct *psr);
 
 // Pratt parser functions.
-PStruct *setupParser(PStruct *psr, Lexer *lex, Lexer::Token tk, std::string current_file);
 Node::Expr *parseExpr(PStruct *psr, BindingPower bp);
 
 // Expr Functions
@@ -149,4 +145,4 @@ Node::Stmt *inputStmt(PStruct *psr, std::string name);
 Node::Stmt *closeStmt(PStruct *psr, std::string name);
 
 Node::Stmt *exprStmt(PStruct *psr);
-} // namespace Parser
+}  // namespace Parser

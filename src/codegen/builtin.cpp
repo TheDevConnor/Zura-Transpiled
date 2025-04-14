@@ -1,8 +1,9 @@
-#include "gen.hpp"
-#include "optimizer/instr.hpp"
-#include "optimizer/compiler.hpp"
-#include "../typeChecker/type.hpp"
 #include <unordered_map>
+
+#include "../typeChecker/type.hpp"
+#include "gen.hpp"
+#include "optimizer/compiler.hpp"
+#include "optimizer/instr.hpp"
 
 void codegen::print(Node::Stmt *stmt) {
   OutputStmt *print = static_cast<OutputStmt *>(stmt);
@@ -23,7 +24,7 @@ void codegen::print(Node::Stmt *stmt) {
       handlePrimitiveDisplay(print->fd, optimizedArg);
     else if (argType == "float" || argType == "double")
       handleFloatDisplay(print->fd, optimizedArg, print->line, print->pos);
-    else if (optimizedArg->asmType->kind == ND_ARRAY_TYPE) // must always be a char array, no other type of arr is allowed (char[] are also literally just char* anyway so lol)
+    else if (optimizedArg->asmType->kind == ND_ARRAY_TYPE)  // must always be a char array, no other type of arr is allowed (char[] are also literally just char* anyway so lol)
       handleArrayDisplay(print->fd, optimizedArg, print->line, print->pos);
     else
       handleError(print->line, print->pos,
@@ -34,7 +35,7 @@ void codegen::print(Node::Stmt *stmt) {
 void codegen::importDecl(Node::Stmt *stmt) {
   // Lex, parse, and generate code for the imported file
   // Keep track of its imports to ensure there are no circular dependencies.
-  
+
   ImportStmt *s = static_cast<ImportStmt *>(stmt);
   push(Instr{.var = Comment{.comment = "Import file '" + s->name + "'."}, .type = InstrType::Comment}, Section::Main);
   codegen::program(s->stmt);
@@ -54,10 +55,10 @@ void codegen::externName(Node::Stmt *stmt) {
   ExternStmt *s = static_cast<ExternStmt *>(stmt);
   push(Instr{.var = Comment{.comment = "Extern name '" + s->name + "'."}, .type = InstrType::Comment}, Section::Main);
   // Push the extern directive to the front of the section
-  if (externalNames.find(s->name) != externalNames.end()) { 
+  if (externalNames.find(s->name) != externalNames.end()) {
     std::cout << "Error: Name '" << s->name << "' already @extern'd." << std::endl;
     return;
-  } 
+  }
   // i did, it works we don't touch now lmao
   if (s->externs.size() > 0) {
     for (std::string &ext : s->externs) {
@@ -68,13 +69,13 @@ void codegen::externName(Node::Stmt *stmt) {
     text_section.emplace(text_section.begin(), Instr{.var = LinkerDirective{.value = ".extern " + s->name + "\n"}, .type = InstrType::Linker});
     externalNames.insert(s->name);
   }
-  if (debug) text_section.emplace(text_section.begin(), Instr{.var = LinkerDirective{ // NOTE: I'm not sure if this .loc will be registered properly.
-    .value = 
-      ".loc " + std::to_string(s->file_id) + 
-      " " + std::to_string(s->line) + 
-      " " + std::to_string(s->pos) + 
-      "\n\t"},
-    .type = InstrType::Linker});
+  if (debug) text_section.emplace(text_section.begin(), Instr{.var = LinkerDirective{// NOTE: I'm not sure if this .loc will be registered properly.
+                                                                                     .value =
+                                                                                         ".loc " + std::to_string(s->file_id) +
+                                                                                         " " + std::to_string(s->line) +
+                                                                                         " " + std::to_string(s->pos) +
+                                                                                         "\n\t"},
+                                                              .type = InstrType::Linker});
   text_section.emplace(text_section.begin(), Instr{.var = Comment{.comment = "Include external function name '" + s->name + "'."}, .type = InstrType::Comment});
   externalNames.insert(s->name);
 }
@@ -91,11 +92,11 @@ void codegen::cast(Node::Expr *expr) {
       handleError(e->line, e->pos, "Pointer casts on non-base types (e.g. int, float, bool...) are not allowed.", "Codegen Error");
       return;
     }
-    if (getUnderlying(toPtr->underlying) == "unknown" || getUnderlying(fromPtr->underlying) == "unknown"
-     || getUnderlying(toPtr->underlying) == "void" || getUnderlying(fromPtr->underlying) == "void") {
+    if (getUnderlying(toPtr->underlying) == "unknown" || getUnderlying(fromPtr->underlying) == "unknown" ||
+        getUnderlying(toPtr->underlying) == "void" || getUnderlying(fromPtr->underlying) == "void") {
       // Execute the code but do not type cast anything
       visitExpr(e->castee);
-      return; // Assume the dev knew what they were doing and push the original value
+      return;  // Assume the dev knew what they were doing and push the original value
     }
     if (getUnderlying(toPtr->underlying) != getUnderlying(fromPtr->underlying)) {
       handleError(e->line, e->pos, "Cannot cast pointers from different types. (unimplemented)", "Codegen Error");
@@ -106,10 +107,11 @@ void codegen::cast(Node::Expr *expr) {
   SymbolType *toType = static_cast<SymbolType *>(to);
   SymbolType *fromType = static_cast<SymbolType *>(from);
 
+
   pushDebug(e->line, expr->file_id, e->pos);
   visitExpr(e->castee);
   if (fromType->name == "unknown") {
-    return; // Assume the dev knew what they were doing and push the original value
+    return;  // Assume the dev knew what they were doing and push the original value
   }
   if (toType->name == "enum") {
     // Enums are truly just ints under-the-hood
@@ -117,25 +119,27 @@ void codegen::cast(Node::Expr *expr) {
       std::cerr << "Cannot cast non-int to enum" << std::endl;
       exit(-1);
     }
-    return; // Do nothing (essentially just a void cast)
+    return;  // Do nothing (essentially just a void cast)
   }
   if (toType->name == "float") {
     // We are casting into a float.
-    popToRegister("%rax"); // This actually doesnt matter but rax is fast and also our garbage disposal
+    popToRegister("%rax");  // This actually doesnt matter but rax is fast and also our garbage disposal
     // Perform the conversion
-    if (fromType->name == "int") {
-      push(Instr{.var = ConvertInstr{.convType = ConvertType::SI2SS, .from = "%rax", .to = "%xmm1"},
-                .type = InstrType::Convert},
-          Section::Main);
+    if (TypeChecker::isIntBasedType(fromType)) {
+      push(Instr{.var = ConvertInstr{.toSize = DataSize::SS, .convType = ConvertType::SI2SS, .from = "%rax", .to = "%xmm0"},
+                 .type = InstrType::Convert},
+           Section::Main);
       // push xmm0
-      push(Instr{.var=PushInstr{.what="%xmm0",.whatSize=DataSize::SS},.type=InstrType::Push},Section::Main);
+      push(Instr{.var = PushInstr{.what = "%xmm0", .whatSize = DataSize::SS}, .type = InstrType::Push}, Section::Main);
+      return;
     }
     if (fromType->name == "float") {
       // Do nothing, it's already a float
       // Optimizer will know that this redundant push/pop is, of course, redundant
       pushRegister("%rax");
+      return;
     }
-  } else if (toType->name == "int") {
+  } else if (TypeChecker::isIntBasedType(toType)) {
     if (TypeChecker::isIntBasedType(fromType)) {
       std::string fromReg = "%rax";
       DataSize fromSize = DataSize::Qword;
@@ -165,7 +169,7 @@ void codegen::cast(Node::Expr *expr) {
           switch (getByteSizeOfType(fromType)) {
             case 2:
               pushLinker("movsbl " + fromReg + ", %ax\n\t", Section::Main);
-              break;  
+              break;
             case 4:
               pushLinker("movslq " + fromReg + ", %rax\n\t", Section::Main);
               break;
@@ -195,15 +199,39 @@ void codegen::cast(Node::Expr *expr) {
       return;
     }
 
-    if (fromType->name == "float") {
-      popToRegister("%xmm0");
-      // Perform the conversion (always truncate for now)
-      push(Instr{.var = ConvertInstr{.convType = ConvertType::TSS2SI, .from = "%xmm0", .to = "%rax"},
-                .type = InstrType::Convert},
-          Section::Main);
-      // push rax - its ok becasue rax holds an int now! it fits on our int-based stack! woohoo!!!!
-      pushRegister("%rax");
+    if (fromType->name == "float" || fromType->name == "double") {
+      // Pop to the register
+      push(Instr{.var=PopInstr{.where="%xmm0", .whereSize = intDataToSizeFloat(getByteSizeOfType(fromType))}, .type=InstrType::Pop}, Section::Main);
+      // Now its in xmm0, we must CONVERT!!
+      ConvertType type = ConvertType::SS2SI; // Most common
+      switch (getByteSizeOfType(fromType)) {
+        case 4:
+        default:
+          type = ConvertType::SS2SI;
+          break;
+        case 8:
+          type = ConvertType::SD2SI;
+          break;
+      }
+      push(Instr{.var=ConvertInstr{.toSize = intDataToSize(getByteSizeOfType(toType)), .convType = type, .from = "%xmm0", .to = "%rax"}, .type=InstrType::Convert}, Section::Main);
+      switch (getByteSizeOfType(toType)) {
+        // the final push instr
+        case 1:
+          push(Instr{.var=PushInstr{.what="%al", .whatSize = DataSize::Byte}, .type=InstrType::Push}, Section::Main);
+          break;
+        case 2:
+          push(Instr{.var=PushInstr{.what="%ax", .whatSize = DataSize::Word}, .type=InstrType::Push}, Section::Main);
+          break;
+        case 4:
+          push(Instr{.var=PushInstr{.what="%eax", .whatSize = DataSize::Dword}, .type=InstrType::Push}, Section::Main);
+          break;
+        case 8:
+        default:
+          push(Instr{.var=PushInstr{.what="%rax", .whatSize = DataSize::Qword}, .type=InstrType::Push}, Section::Main);
+          break;
+      }
     }
+    return;
   }
 }
 
@@ -225,8 +253,8 @@ void codegen::externalCall(Node::Expr *expr) {
     }
   }
   // Call the function
-  push(Instr{.var = CallInstr{.name = e->name + "@PLT"}, // the @PLT is for dynamic linking where the function is
-                                                         // not in defined in this current asm file and is imported elsewhere
+  push(Instr{.var = CallInstr{.name = e->name + "@PLT"},  // the @PLT is for dynamic linking where the function is
+                                                          // not in defined in this current asm file and is imported elsewhere
              .type = InstrType::Call},
        Section::Main);
   pushRegister("%rax");
@@ -245,13 +273,13 @@ void codegen::allocExpr(Node::Expr *expr) {
   movq $0, %r9 #
   */
   popToRegister("%rsi");
-  moveRegister("%rax", "$9", DataSize::Qword, DataSize::Qword); // Syscall no
-  moveRegister("%rdi", "$0", DataSize::Qword, DataSize::Qword); // We don't care where you put the memory, just alloc anywhere
-  moveRegister("%rdx", "$3", DataSize::Qword, DataSize::Qword); // Protection flags: PROT_READ | PROT_WRITE (constant for now)
-  moveRegister("%r10", "$34", DataSize::Qword, DataSize::Qword); // Memory flags: MAP_PRIVATE | MAP_ANONYMOUS
-  moveRegister("%r8", "$-1", DataSize::Qword, DataSize::Qword); // There is no file descriptor associated here- the memory is anonymous
-  moveRegister("%r9", "$0", DataSize::Qword, DataSize::Qword); // Offset- Once again, the memory is anonymous, so we do not care
-  push(Instr{.var=Syscall{.name="SYS_MMAP"},.type=InstrType::Syscall},Section::Main);
+  moveRegister("%rax", "$9", DataSize::Qword, DataSize::Qword);   // Syscall no
+  moveRegister("%rdi", "$0", DataSize::Qword, DataSize::Qword);   // We don't care where you put the memory, just alloc anywhere
+  moveRegister("%rdx", "$3", DataSize::Qword, DataSize::Qword);   // Protection flags: PROT_READ | PROT_WRITE (constant for now)
+  moveRegister("%r10", "$34", DataSize::Qword, DataSize::Qword);  // Memory flags: MAP_PRIVATE | MAP_ANONYMOUS
+  moveRegister("%r8", "$-1", DataSize::Qword, DataSize::Qword);   // There is no file descriptor associated here- the memory is anonymous
+  moveRegister("%r9", "$0", DataSize::Qword, DataSize::Qword);    // Offset- Once again, the memory is anonymous, so we do not care
+  push(Instr{.var = Syscall{.name = "SYS_MMAP"}, .type = InstrType::Syscall}, Section::Main);
   pushRegister("%rax");
 };
 
@@ -259,13 +287,13 @@ void codegen::freeExpr(Node::Expr *expr) {
   FreeMemoryExpr *free = static_cast<FreeMemoryExpr *>(expr);
 
   // Very simple, this one!
-  visitExpr(free->whatToFree);  // rdi
-  visitExpr(free->bytesToFree); // rsi
+  visitExpr(free->whatToFree);   // rdi
+  visitExpr(free->bytesToFree);  // rsi
   popToRegister("%rsi");
   popToRegister("%rdi");
   // rax is constant- the syscall number
-  moveRegister("%rax", "$11", DataSize::Qword, DataSize::Qword); // Syscall number
-  push(Instr{.var=Syscall{.name="SYS_MUNMAP"},.type=InstrType::Syscall},Section::Main);
+  moveRegister("%rax", "$11", DataSize::Qword, DataSize::Qword);  // Syscall number
+  push(Instr{.var = Syscall{.name = "SYS_MUNMAP"}, .type = InstrType::Syscall}, Section::Main);
   pushRegister("%rax");
 };
 
@@ -276,10 +304,10 @@ void codegen::sizeofExpr(Node::Expr *expr) {
   size_t size = getByteSizeOfType(s->whatToSizeOf->asmType);
 
   // Push the size to the stack
-  push(Instr{.var=PushInstr{.what="$"+std::to_string(size),.whatSize=DataSize::Qword},.type=InstrType::Push},Section::Main);
+  push(Instr{.var = PushInstr{.what = "$" + std::to_string(size), .whatSize = DataSize::Qword}, .type = InstrType::Push}, Section::Main);
 
   // Push the size to the stack
-  push(Instr{.var=Comment{.comment="Sizeof " + static_cast<IdentExpr *>(s->whatToSizeOf)->name + " is " + std::to_string(size) + " bytes."},.type=InstrType::Comment},Section::Main);
+  push(Instr{.var = Comment{.comment = "Sizeof " + static_cast<IdentExpr *>(s->whatToSizeOf)->name + " is " + std::to_string(size) + " bytes."}, .type = InstrType::Comment}, Section::Main);
 }
 
 void codegen::memcpyExpr(Node::Expr *expr) {

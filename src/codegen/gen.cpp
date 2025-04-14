@@ -255,8 +255,7 @@ void codegen::gen(Node::Stmt *stmt, bool isSaved, std::string output_filename,
   }
   file.close();
 
-  output_filename =
-      output_filename.substr(0, output_filename.find_last_of("."));
+  output_filename = output_filename.substr(0, output_filename.find_last_of("."));
 
   bool isError = ErrorClass::printError();
   if (isError) { return; }
@@ -267,21 +266,21 @@ void codegen::gen(Node::Stmt *stmt, bool isSaved, std::string output_filename,
         ? "gcc -g -e _start -nostdlib -nostartfiles " + output_filename + ".s -o " + output_filename
         : "gcc -e _start -nostdlib -nostartfiles " + output_filename + ".s -o " + output_filename;
   std::string assembler_log = output_filename + "_assembler.log";
+
   // loop over linkedFiles set and link them with gcc
-  for (std::string linkedFile : linkedFiles) {
-    assembler += " -l" + linkedFile;
-  }
-  if (!execute_command(assembler, assembler_log))
-    return;
+  for (std::string linkedFile : linkedFiles) assembler += " -l" + linkedFile;
+
+  bool success = execute_command(assembler, assembler_log);
+  if (!success) return;
   
   int exitCode; // NOTE: This is to remove warnings. It is not practical lmao
   if (!isSaved) {
-    std::string remove =
-        "rm " + output_filename + ".s";
+    std::string remove = "rm " + output_filename + ".s";
     exitCode = system(remove.c_str());
     if (exitCode) {
-      // If its not zero, then it errored!
-      // But I don't care. This command specifically does not matter.
+      std::string msg = "Error removing file '" + output_filename + ".s'";
+      handleError(0, 0, msg, "Codegen Error");
+      return;
     }
   }
 

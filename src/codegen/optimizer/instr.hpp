@@ -144,6 +144,7 @@ enum class ConvertType {
 };
 
 struct ConvertInstr {
+  DataSize toSize;
   ConvertType convType;
   std::string from;
   std::string to;

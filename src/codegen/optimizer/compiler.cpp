@@ -2,6 +2,7 @@
 #include <cmath>
 #include "compiler.hpp"
 #include "../gen.hpp"
+#include "../../typeChecker/type.hpp"
 
 Node::Stmt *CompileOptimizer::optimizeStmt(Node::Stmt *stmt) {
   // May be one day used for optimizations such as...
@@ -45,9 +46,53 @@ Node::Expr *CompileOptimizer::optimizeExpr(Node::Expr *expr) {
     case NodeKind::ND_GROUP:  return optimizeExpr(static_cast<GroupExpr *>(expr)->expr);
     case NodeKind::ND_UNARY:  return optimizeUnary(static_cast<UnaryExpr *>(expr));
     case NodeKind::ND_MEMBER: return optimizeMember(static_cast<MemberExpr *>(expr));
+    case NodeKind::ND_CAST:   return optimizeCast(static_cast<CastExpr *>(expr));
     default: return expr;
   }
 }
+
+Node::Expr *CompileOptimizer::optimizeCast(CastExpr *expr) {
+  Node::Expr *realCastFrom = optimizeExpr(expr->castee);
+  // Check if the input was a literal
+  if (realCastFrom->kind == ND_INT) {
+    // What are we outputting to?
+    if (TypeChecker::isIntBasedType(expr->castee_type)) {
+      return realCastFrom;
+    }
+    if (expr->castee_type->kind == ND_SYMBOL_TYPE
+        && (TypeChecker::type_to_string(expr->castee_type) == "float"
+        || TypeChecker::type_to_string(expr->castee_type) == "double")) {
+      IntExpr *temp = static_cast<IntExpr *>(realCastFrom);
+      return new FloatExpr(temp->line, temp->pos, std::to_string(temp->value), temp->file_id);
+    }
+    if (expr->castee_type->kind == ND_SYMBOL_TYPE
+        && (TypeChecker::type_to_string(expr->castee_type) == "str")) {
+      IntExpr *temp = static_cast<IntExpr *>(realCastFrom);
+      return new StringExpr(temp->line, temp->pos, std::to_string(temp->value), temp->file_id);
+    }
+    return expr;
+  }
+  if (realCastFrom->kind == ND_FLOAT) {
+    if (expr->castee_type->kind == ND_SYMBOL_TYPE
+        && (TypeChecker::type_to_string(expr->castee_type) == "float"
+        || TypeChecker::type_to_string(expr->castee_type) == "double")) {
+          return realCastFrom;
+    }
+    if (expr->castee_type->kind == ND_SYMBOL_TYPE
+        && TypeChecker::type_to_string(expr->castee_type) == "str") {
+      FloatExpr *temp = static_cast<FloatExpr *>(realCastFrom);
+      return new StringExpr(temp->line, temp->pos, temp->value, temp->file_id);  
+    }
+
+    if (TypeChecker::isIntBasedType(expr->castee_type)) {
+      FloatExpr *temp = static_cast<FloatExpr *>(realCastFrom);
+      std::string magicTrickery = temp->value.substr(0, temp->value.find('.'));
+      return new IntExpr(temp->line, temp->pos, std::stoll(magicTrickery), temp->file_id);
+    }
+    return expr;
+  }
+  return expr;
+};
 
 Node::Expr *CompileOptimizer::optimizeMember(MemberExpr *expr) {
   // Optimize the lhs and rhs

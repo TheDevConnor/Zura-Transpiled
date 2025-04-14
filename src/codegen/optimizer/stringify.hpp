@@ -1,15 +1,15 @@
 #pragma once
 
-#include "instr.hpp"
-#include "../gen.hpp"
-
 #include <iostream>
+#include <sstream>
 #include <string>
 #include <vector>
-#include <sstream>
 
-class Stringifier { // converts Instr structures into AT&T Syntax strings
-public:
+#include "../gen.hpp"
+#include "instr.hpp"
+
+class Stringifier {  // converts Instr structures into AT&T Syntax strings
+ public:
   inline static std::string stringifyInstrs(std::vector<Instr> &input) {
     std::string output{};
     for (Instr &instr : input) {
@@ -25,7 +25,7 @@ public:
     BYTE,  1
     WORD,  2
     DWORD, 3
-    QWORD, 4 
+    QWORD, 4
     SS,    5
     */
     switch (in) {
@@ -34,14 +34,14 @@ public:
       case DataSize::Word:
         return "w";
       case DataSize::Dword:
-        return "l"; // 'long' - aka 'dword'
+        return "l";  // 'long' - aka 'dword'
       case DataSize::Qword:
         return "q";
       case DataSize::SS:
         return "ss";
       case DataSize::None:
       default:
-        return ""; // "I dont know", but usually the assembler can assume types
+        return "";  // "I dont know", but usually the assembler can assume types
     }
   }
 
@@ -65,17 +65,17 @@ public:
           // movzx dest, src
           if (instr.destSize == DataSize::SD &&
               instr.srcSize == DataSize::Qword) {
-              // Just go ahead with it
-              std::stringstream ss;
-              ss << "mov" << dsToChar(instr.destSize) << " " << instr.src << ", " << instr.dest << "\n\t";
-              return ss.str();
+            // Just go ahead with it
+            std::stringstream ss;
+            ss << "mov" << dsToChar(instr.destSize) << " " << instr.src << ", " << instr.dest << "\n\t";
+            return ss.str();
           }
           if (instr.destSize == DataSize::SS &&
               instr.srcSize == DataSize::Dword) {
-              // Just go ahead with it
-              std::stringstream ss;
-              ss << "mov" << dsToChar(instr.destSize) << " " << instr.src << ", " << instr.dest << "\n\t";
-              return ss.str();
+            // Just go ahead with it
+            std::stringstream ss;
+            ss << "mov" << dsToChar(instr.destSize) << " " << instr.src << ", " << instr.dest << "\n\t";
+            return ss.str();
           }
           // Everything else, we must assume a zero-extend
           std::stringstream ss;
@@ -172,10 +172,10 @@ public:
           case JumpCondition::NotEqual:
             keyword = "jne";
             break;
-          
+
           case JumpCondition::Unconditioned:
             keyword = "jmp";
-            break;  
+            break;
           default:
             keyword = "UNIMPLEMENTED";
             break;
@@ -201,7 +201,7 @@ public:
       std::string operator()(NotInstr instr) const {
         return "not " + instr.what + "\n\t";
       }
-      // define bytes 
+      // define bytes
       std::string operator()(DataSectionInstr instr) const {
         std::string op = "";
         switch (instr.bytesToDefine) {
@@ -215,9 +215,9 @@ public:
           case DataSize::SS:
             op = ".long";
             break;
-          case DataSize::None: // assume qword (i mean, this is x86-64 architecture after all)
+          case DataSize::None:  // assume qword (i mean, this is x86-64 architecture after all)
           case DataSize::Qword:
-          // case DataSize::DS:
+            // case DataSize::DS:
             op = ".qword";
             break;
           default:
@@ -250,29 +250,29 @@ public:
       std::string operator()(ConvertInstr instr) const {
         std::string inst = "cvt";
         switch (instr.convType) {
-          case ConvertType::SI2SS: // single int to scalar single-precision
+          case ConvertType::SI2SS:  // single int to scalar single-precision
             inst += "si2ss";
             break;
-          case ConvertType::SS2SI: // scalar single-precision to single int
-            inst += "ss2si";
+          case ConvertType::SS2SI:  // scalar single-precision to single int
+            inst += "ss2si" + dsToChar(instr.toSize);
             break;
-          case ConvertType::SD2SI: // scalar double-precision to single int
-            inst += "sd2si";
+          case ConvertType::SD2SI:  // scalar double-precision to single int
+            inst += "sd2si" + dsToChar(instr.toSize);
             break;
-          case ConvertType::SI2SD: // single int to scalar double-precision
+          case ConvertType::SI2SD:  // single int to scalar double-precision
             inst += "si2sd";
             break;
-          case ConvertType::SS2SD: // scalar single-precision to scalar double-precision
+          case ConvertType::SS2SD:  // scalar single-precision to scalar double-precision
             inst += "ss2sd";
             break;
-          case ConvertType::SD2SS: // scalar double-precision to scalar single-precision
+          case ConvertType::SD2SS:  // scalar double-precision to scalar single-precision
             inst += "sd2ss";
             break;
-          case ConvertType::TSD2SI: // truncate scalar double-precision to single int
-            inst += "tsd2si";
+          case ConvertType::TSD2SI:  // truncate scalar double-precision to single int
+            inst += "tsd2si" + dsToChar(instr.toSize);
             break;
-          case ConvertType::TSS2SI: // truncate scalar single-precision to single int
-            inst += "tss2si";
+          case ConvertType::TSS2SI:  // truncate scalar single-precision to single int
+            inst += "tss2si" + dsToChar(instr.toSize);
             break;
           default:
             std::cerr << "Unimplemnted ConvertType [" << (int)instr.convType << "]" << std::endl;
@@ -280,11 +280,11 @@ public:
         }
         return inst + " " + instr.from + ", " + instr.to + "\n\t";
       }
-      
+
       // String literal (eg .cfi_startproc in functions)
       // It is the responsibility of the input to have its own formatting (\n\t)
       std::string operator()(LinkerDirective instr) const { return instr.value; }
     };
-    return std::visit(InstrVisitor {}, instr.var);
+    return std::visit(InstrVisitor{}, instr.var);
   }
 };

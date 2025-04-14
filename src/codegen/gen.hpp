@@ -114,6 +114,8 @@ inline std::unordered_map<std::string, Struct> structByteSizes = {}; // Name of 
 signed short int getByteSizeOfType(Node::Type *type); // Return the size of a type in bytes, ie pointers are a size_t (os specific macros baby!)
 std::string getUnderlying(Node::Type *type); // Get the underlying type name of a type (ie, int* -> int, []int -> int, int -> int)
 std::string type_to_diename(Node::Type *type);
+DataSize intDataToSizeFloat(signed short int data);
+DataSize intDataToSize(signed short int data);
 
 inline std::set<std::string> linkedFiles = {};
 inline std::set<std::string> externalNames = {}; // Make sure that when external functions are called, we run "call 'ExternalName'" rather than "call 'usr_FuncName'"/
@@ -293,5 +295,5 @@ JumpCondition getJumpCondition(const std::string &op);
 
 bool execute_command(const std::string &command, const std::string &log_file);
 void gen(Node::Stmt *stmt, bool isSaved, std::string output, const char* filename, bool isDebug);
-void handleError(int line, int pos, std::string msg, std::string typeOfError, bool isFatal = false);
+void handleError(int line, int pos, std::string msg, std::string typeOfError = "", bool isFatal = false);
 } // namespace codegen

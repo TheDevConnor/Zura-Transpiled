@@ -1,11 +1,9 @@
 #pragma once
 
-#include "../../ast/ast.hpp"
-#include "../../lexer/lexer.hpp"
-
 #include <string>
-#include <unordered_map>
 #include <vector>
+
+#include "../../lexer/lexer.hpp"
 
 namespace ErrorClass {
 inline static std::vector<std::string> errors = {};
@@ -27,4 +25,4 @@ bool printError(void);
 
 std::string lineNumber(int line);
 std::string printLine(int line, const char *start);
-}; // namespace ErrorClass
+};  // namespace ErrorClass

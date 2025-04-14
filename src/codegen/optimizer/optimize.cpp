@@ -127,23 +127,57 @@ void Optimizer::simplifyPushPopPair(std::vector<Instr> *output, Instr &prev, Ins
 
     // Check if both have same size and both have effective address ('(') 
     if (prevAsPush.whatSize == currAsPop.whereSize && prevAsPush.what.find('(') != std::string::npos && currAsPop.where.find('(') != std::string::npos) {
-        // movq (%rax), %rdx
-        // movq %rdx, (%rbx)
-        // I hate that this is the solution, Intel go fix your stinky x86
+        std::string r13From = "%r13";
+        std::string r13To = "%r13";
+        switch (prevAsPush.whatSize) {
+            case DataSize::Byte:
+                r13From = "%r13b";
+                break;
+            case DataSize::Word:
+                r13From = "%r13w";
+                break;
+            case DataSize::Dword:
+            case DataSize::SS:
+                r13From = "%r13d";
+                break;
+            case DataSize::Qword:
+            case DataSize::SD:
+            default:
+                r13From = "%r13";
+                break;
+        }
+        switch (currAsPop.whereSize) {
+            case DataSize::Byte:
+                r13To = "%r13b";
+                break;
+            case DataSize::Word:
+                r13To = "%r13w";
+                break;
+            case DataSize::Dword:
+            case DataSize::SS:
+                r13To = "%r13d";
+                break;
+            case DataSize::Qword:
+            case DataSize::SD:
+            default:
+                r13To = "%r13";
+                break;
+        }
         Instr newInstr = {
-            .var = MovInstr{.dest="%r13",.src=prevAsPush.what,.destSize=DataSize::Qword,.srcSize=prevAsPush.whatSize},
-            .type = InstrType::Mov
+            .var = MovInstr{.dest=r13From,.src=prevAsPush.what,.destSize=prevAsPush.whatSize,.srcSize=prevAsPush.whatSize},
+            .type = InstrType::Mov,
+            .optimize = false // NO!!! DONT OPTIMIZE THIS!!!
         };
         prev = newInstr;
         output->push_back(newInstr);
 
         Instr anotherNewInstr = {
-            .var = MovInstr{.dest = currAsPop.where, .src = "%r13", .destSize = currAsPop.whereSize, .srcSize = DataSize::Qword},
-            .type = InstrType::Mov
+            .var = MovInstr{.dest = currAsPop.where, .src = r13To, .destSize = currAsPop.whereSize, .srcSize = currAsPop.whereSize},
+            .type = InstrType::Mov,
+            .optimize = false // NO!!! DONT OPTIMIZE THIS!!!
         };
-        prev = newInstr;
         output->push_back(anotherNewInstr);
-        prev = {}; // twitch makes me twitch bro its so annoying sometimes
+        prev = anotherNewInstr;
         return;
     }
 
@@ -185,13 +219,13 @@ void Optimizer::simplifyPushPopPair(std::vector<Instr> *output, Instr &prev, Ins
 
     // check if one is float register and one is int register
     if (currAsPop.whereSize == DataSize::SS && prevAsPush.whatSize != DataSize::SS) {
-        Instr cvtInstr = {
-            .var = ConvertInstr{ .convType = ConvertType::SS2SI, .from = currAsPop.where, .to = currAsPop.where },
-            .type = InstrType::Convert
-        };
-        output->push_back(cvtInstr);
-        prev = cvtInstr;
-        return;
+        // Instr cvtInstr = {
+        //     .var = ConvertInstr{.toSize = currAsPop.whereSize, .convType = ConvertType::SS2SI, .from = currAsPop.where, .to = currAsPop.where },
+        //     .type = InstrType::Convert
+        // };
+        // output->push_back(cvtInstr);
+        // prev = cvtInstr;
+        // return;
     }
     
     Instr newInstr = {
