@@ -212,13 +212,18 @@ class Stringifier {  // converts Instr structures into AT&T Syntax strings
             op = ".word";
             break;
           case DataSize::Dword:
-          case DataSize::SS:
             op = ".long";
             break;
           case DataSize::None:  // assume qword (i mean, this is x86-64 architecture after all)
           case DataSize::Qword:
             // case DataSize::DS:
             op = ".qword";
+            break;
+          case DataSize::SD:
+            op = ".double";
+            break;
+          case DataSize::SS:
+            op = ".float";
             break;
           default:
             op = "UNIMPLEMENTED";

@@ -72,7 +72,7 @@ void codegen::primary(Node::Expr *expr) {
           Section::Main);
     break;
   }
-  case ND_STRING: {
+  case NodeKind::ND_STRING: {
     StringExpr *string = static_cast<StringExpr *>(expr);
     std::string label = "string" + std::to_string(stringCount++);
 
@@ -95,13 +95,13 @@ void codegen::primary(Node::Expr *expr) {
          Section::ReadonlyData);
     break;
   }
-  case ND_CHAR: {
+  case NodeKind::ND_CHAR: {
     CharExpr *charExpr = static_cast<CharExpr *>(expr);
     pushDebug(charExpr->line, expr->file_id, charExpr->pos);
     pushRegister("$" + std::to_string((int)charExpr->value));
     break;
   }
-  case ND_FLOAT: {
+  case NodeKind::ND_FLOAT: {
     FloatExpr *floating = static_cast<FloatExpr *>(expr);
     std::string label = "float" + std::to_string(floatCount++);
     pushDebug(floating->line, expr->file_id, floating->pos);
@@ -122,14 +122,13 @@ void codegen::primary(Node::Expr *expr) {
          Section::ReadonlyData);
     push(Instr{.var =
                    DataSectionInstr{
-                       .bytesToDefine = DataSize::Dword /* long, aka 32-bits */,
-                       .what =
-                           std::to_string(convertFloatToInt(floating->value))},
+                       .bytesToDefine = DataSize::SS /* long, aka 32-bits */,
+                       .what = floating->value},
                .type = InstrType::DB},
          Section::ReadonlyData);
     break;
   }
-  case ND_BOOL: {
+  case NodeKind::ND_BOOL: {
     BoolExpr *boolExpr = static_cast<BoolExpr *>(expr);
     // Technically just an int but SHHHHHHHH.............................
     push(Instr{.var = PushInstr{.what = "$" + std::to_string(boolExpr->value),

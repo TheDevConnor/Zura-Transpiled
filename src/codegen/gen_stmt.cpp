@@ -728,21 +728,21 @@ void codegen::forLoop(Node::Stmt *stmt) {
   // Push a variable declaration for the loop variable
   if (debug) {
     dwarf::useAbbrev(dwarf::DIEAbbrev::Variable);
-    dwarf::useAbbrev(dwarf::DIEAbbrev::Type);
+    dwarf::useType(assignee->asmType);
     // we know the type is always int
     pushLinker(".uleb128 " + std::to_string((int)dwarf::DIEAbbrev::Variable) +
                    "\n.long .L" + assignee->name +
                    "_string\n"
                    "\n.byte " +
-                   std::to_string(s->file_id) +           // File ID
-                   "\n.byte " + std::to_string(s->line) + // Line number
-                   "\n.byte " + std::to_string(s->pos) +  // Line column
-                   "\n.long .Lint_debug_type\n" // Type - point to the DIE of
-                                                // the DW_TAG_base_type
+                   std::to_string(s->file_id) +                                        // File ID
+                   "\n.byte " + std::to_string(s->line) +                              // Line number
+                   "\n.byte " + std::to_string(s->pos) +                               // Line column
+                   "\n.long .L" + type_to_diename(assignee->asmType) + "_debug_type\n" // Type - point to the DIE of
+                                                                                       // the DW_TAG_base_type
                    "\n.uleb128 " +
                    std::to_string(1 + sizeOfLEB(-variableCount -
-                                                16)) + // 1 byte is gonna follow
-                   "\n.byte 0x91\n" // DW_OP_fbreg (first byte)
+                                                16)) +                                 // 1 byte is gonna follow
+                   "\n.byte 0x91\n"                                                    // DW_OP_fbreg (first byte)
                    "\n.sleb128 " +
                    std::to_string(-variableCount - 16) + "\n",
                Section::DIE);

@@ -2,7 +2,7 @@
 
 const main := fn () int! {
   have y: float = 1.3;
-  have x: int? = @cast<int?>(y); # 1 # Adding this to compiler optimizer, i could not care less
+  have x: int! = @cast<int!>(y); # 1 # Adding this to compiler optimizer, i could not care less
   @outputln(1, x); # 1
   return 0;
 };

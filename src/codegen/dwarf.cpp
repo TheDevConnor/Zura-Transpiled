@@ -395,8 +395,9 @@ void codegen::dwarf::emitTypes(void) {
                 "\n.string \"int!\"\n"
     , Section::DIETypes);
   }
-  if (dieNamesUsed.find("int_s") != dieNamesUsed.end()) { // signed 8 byte integer type
+  if (dieNamesUsed.find("int_s") != dieNamesUsed.end() || dieNamesUsed.find("int_i") != dieNamesUsed.end()) { // signed 8 byte integer type
     push(Instr{.var = Label{.name = ".Lint_s_debug_type"}, .type = InstrType::Label}, Section::DIETypes);
+    push(Instr{.var = Label{.name = ".Lint_i_debug_type"}, .type = InstrType::Label}, Section::DIETypes);
     pushLinker(".uleb128 " + std::to_string((int)DIEAbbrev::Type) +
                "\n.byte 8 # AT_byte_size"
                 "\n.uleb128 0x5 # AT_encoding = ATE_signed"
@@ -412,8 +413,9 @@ void codegen::dwarf::emitTypes(void) {
                "\n.string \"char!\"\n"
     , Section::DIETypes);
   }
-  if (dieNamesUsed.find("char_s") != dieNamesUsed.end()) {
+  if (dieNamesUsed.find("char_s") != dieNamesUsed.end() || dieNamesUsed.find("char_i") != dieNamesUsed.end()) {
     push(Instr{.var = Label{.name = ".Lchar_s_debug_type"}, .type = InstrType::Label}, Section::DIETypes);
+    push(Instr{.var = Label{.name = ".Lchar_i_debug_type"}, .type = InstrType::Label}, Section::DIETypes);
     pushLinker(".uleb128 " + std::to_string((int)DIEAbbrev::Type) +
                "\n.byte 1 # AT_byte_size"
                "\n.uleb128 0x6 # AT_encoding = ATE_signed_char"
@@ -429,8 +431,9 @@ void codegen::dwarf::emitTypes(void) {
                "\n.string \"short!\"\n"
     , Section::DIETypes);
   }
-  if (dieNamesUsed.find("short_s") != dieNamesUsed.end()) {
+  if (dieNamesUsed.find("short_s") != dieNamesUsed.end() || dieNamesUsed.find("short_i") != dieNamesUsed.end()) {
     push(Instr{.var = Label{.name = ".Lshort_s_debug_type"}, .type = InstrType::Label}, Section::DIETypes);
+    push(Instr{.var = Label{.name = ".Lshort_i_debug_type"}, .type = InstrType::Label}, Section::DIETypes);
     pushLinker(".uleb128 " + std::to_string((int)DIEAbbrev::Type) +
                "\n.byte 2 # AT_byte_size"
                "\n.uleb128 0x5 # AT_encoding = ATE_signed"
@@ -446,8 +449,9 @@ void codegen::dwarf::emitTypes(void) {
                "\n.string \"long!\"\n"
     , Section::DIETypes);
   }
-  if (dieNamesUsed.find("long_s") != dieNamesUsed.end()) {
+  if (dieNamesUsed.find("long_s") != dieNamesUsed.end() || dieNamesUsed.find("long_i") != dieNamesUsed.end()) {
     push(Instr{.var = Label{.name = ".Llong_s_debug_type"}, .type = InstrType::Label}, Section::DIETypes);
+    push(Instr{.var = Label{.name = ".Llong_i_debug_type"}, .type = InstrType::Label}, Section::DIETypes);
     pushLinker(".uleb128 " + std::to_string((int)DIEAbbrev::Type) +
                "\n.byte 4 # AT_byte_size"
                "\n.uleb128 0x5 # AT_encoding = ATE_signed"
@@ -471,7 +475,7 @@ void codegen::dwarf::emitTypes(void) {
                , Section::DIETypes);
   }
   // bool (no signedness)
-  if (dieNamesUsed.find("bool") != dieNamesUsed.end()) {
+  if (dieNamesUsed.find("bool_i") != dieNamesUsed.end()) {
     push(Instr{.var = Label{.name = ".Lbool_i_debug_type"}, .type = InstrType::Label}, Section::DIETypes);
     pushLinker(".uleb128 " + std::to_string((int)DIEAbbrev::Type) +
                "\n.byte 1 # AT_byte_size"
@@ -480,8 +484,8 @@ void codegen::dwarf::emitTypes(void) {
     , Section::DIETypes);
   }
   // float
-  if (dieNamesUsed.find("float") != dieNamesUsed.end()) {
-    push(Instr{.var = Label{.name = ".Lfloat_debug_type"}, .type = InstrType::Label}, Section::DIETypes);
+  if (dieNamesUsed.find("float_i") != dieNamesUsed.end()) {
+    push(Instr{.var = Label{.name = ".Lfloat_i_debug_type"}, .type = InstrType::Label}, Section::DIETypes);
     pushLinker(".uleb128 " + std::to_string((int)DIEAbbrev::Type) +
                "\n.byte 4 # AT_byte_size"
                "\n.uleb128 0x4 # AT_encoding = ATE_float"
@@ -489,8 +493,8 @@ void codegen::dwarf::emitTypes(void) {
     , Section::DIETypes);
   }
   // double (float with 8 bytes)
-  if (dieNamesUsed.find("double") != dieNamesUsed.end()) {
-    push(Instr{.var = Label{.name = ".Ldouble_debug_type"}, .type = InstrType::Label}, Section::DIETypes);
+  if (dieNamesUsed.find("double_i") != dieNamesUsed.end()) {
+    push(Instr{.var = Label{.name = ".Ldouble_i_debug_type"}, .type = InstrType::Label}, Section::DIETypes);
     pushLinker(".uleb128 " + std::to_string((int)DIEAbbrev::Type) +
                "\n.byte 8 # AT_byte_size"
                "\n.uleb128 0x4 # AT_encoding = ATE_float"
