@@ -1,3 +1,5 @@
+#include <algorithm>
+
 #include "../helper/error/error.hpp"
 #include "parser.hpp"
 

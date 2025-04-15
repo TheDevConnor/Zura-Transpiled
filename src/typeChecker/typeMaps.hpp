@@ -60,13 +60,15 @@ struct FunctionTable : std::unordered_map<NameAndType, ParamAndType> {
   }
   void declare(const std::string &name, std::unordered_map<std::string, Node::Type *> params, Node::Type *returnType) {
     if (!TypeChecker::foundMain) { // Dont bother checking again if, you know, you already found it
-      if (name == "main" && params.size() == 0) {
-        if (returnType->kind == ND_SYMBOL_TYPE) {
+      if ((name == "main" && params.size() == 0) && (returnType->kind == ND_SYMBOL_TYPE)) {
           SymbolType *sym = static_cast<SymbolType *>(returnType);
           if (sym->name == "int" && sym->signedness == SymbolType::Signedness::UNSIGNED) {
             TypeChecker::foundMain = true;
+          } else {
+            std::string msg = "Main must return an unsigned int -> 'int!'";
+            std::string note = "Check to make sure that the return type is 'int!' and that there are no parameters";
+            TypeChecker::handleError(line, pos, msg, note, "Type Error");
           }
-        }
       }
     }
     if (!contains({name, returnType})) {
