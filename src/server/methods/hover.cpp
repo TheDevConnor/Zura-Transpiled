@@ -1,6 +1,7 @@
 #include "../../helper/math/math.hpp"
 #include "../../parser/parser.hpp"
 #include "../lsp.hpp"
+#include "../../codegen/gen.hpp"
 #include "../logging.hpp"
 
 #include <fstream>
@@ -15,15 +16,15 @@ nlohmann::ordered_json lsp::methods::hover(nlohmann::json& request) {
 
   // get the text file at the uri
   Word text = lsp::document::wordUnderPos(uri, pos);
-
-  if (text.word.rfind("@", 0) == 0) { // TODO: Check if inside a string or a comment (not real code)
+  if (text.word.find("@") == 0) { // TODO: Check if inside a string or a comment (not real code)
     // check the integrity of the word (check to see if it's a real @ function)
     const static std::unordered_map<std::string, std::string> atFunctions = {
-      {"output", "It can be used to display something to a file descriptor or stdout (fd of 1).\n\nExample:\n```zura\n@output(1, \"Hello, World!\"); # \"Hello, World!\" expected\n```"},
+      {"output", "It can be used to display something to a file descriptor or stdout (fd of 1).\n\nExample:\n```zura\n@output(1, \"Hello, World!\\n\"); # \"Hello, World!\\n\" expected\n```"},
+      {"outputln", "It can be used to display something to a file descriptor or stdout (fd of 1). A newline character is automatically appended to the output.\n\nExample:\n```zura\n@outputln(1, \"Hello, World!\"); # \"Hello, World!\\n\" expected"},
       {"input", "It can be used to take input from a file descriptor or stdin (fd of 0). It will read up to the inputted amount of bytes or until there is a line break.\n\nExample:\n```zura\nhave age: [256]char = [0];\n@output(1, \"What is your age? \");\n@input(0, age, 256);\n```"},
       {"template", "It can be used to define the function or struct that follows as generic (applies to many types).\n\nExample:\n```zura\n@template <typename T>;\nconst genericFunction := fn (arg1: T) {\n\t# ...\n};\n```"},
       {"cast", "It can be used to interpret between the builtin types. Possible conversions include:\n- str <=> *char\n- int <=> float\n- int <=> str\n\nExample:\n```zura\nhave x: int = 42;\nhave y: [24]char = [0];\ny = @cast<[]char>(x);\n```"},
-      {"import", "It can be used to import the global symbols from another Zura file.\n\nExample:\n`foo.zu` ```zura\nconst globalFunc := fn () void { ... };\n```\n`bar.zu` ```zura\n@import \"foo.zu\";\nglobalFunc();\n```"},
+      {"import", "It can be used to import the global symbols from another Zura file.\n\nExample:\n`foo.zu`\n```zura\nconst globalFunc := fn () void { ... };\n```\n`bar.zu`\n```zura\n@import \"foo.zu\";\nglobalFunc();\n```"},
       {"extern", "It can be used when handling external libraries that must be added to the linker. It defines a symbol or symbols that will resolved by the linker.\n\nExample:\n```zura\n@link \"libc\"; # Passed to linker\n@extern \"printf\"; # Look up this symbol\n\nconst main := fn () int {\n\t@call<printf>(\"Hello, World!\"); # Call previously revealed function\n};\n```"},
       {"link", "It can be used when handling external libraries that must be added to the linker. It is used to define external libraries to link to the executable.\nThis function assumes they are already installed on your system.\n\nExample:\n```zura\n@link \"libc\"; # Passed to linker\n@extern \"printf\"; # Look up this symbol\n\nconst main := fn () int {\n\t@call<printf>(\"Hello, World!\"); # Call previously revealed function\n};\n```"},
       {"call", "It can be used to call an external function that is linked externally. The function being called must be linked and extern'd before using it.\n\nExample:\n```zura\n@link \"libc\"; # Passed to linker\n@extern \"printf\"; # Look up this symbol\n\nconst main := fn () int {\n\t@call<printf>(\"Hello, World!\"); # Call previously revealed function\n};\n```"},
@@ -91,7 +92,7 @@ nlohmann::ordered_json lsp::methods::hover(nlohmann::json& request) {
     // Get the type of the word
     using namespace TypeChecker;
     // make the TC do something!!!
-    LSPIdentifier ident = getIdentifierUnderPos(pos);
+    LSPIdentifier ident = getIdentifierUnderPos(pos, uri);
     if (ident.ident == "*") { // illegal character ensures you cannot trick us hahahah
       return nullptr; // Means nothing. You hovered over a space or something stupid
     }
@@ -118,7 +119,7 @@ nlohmann::ordered_json lsp::methods::hover(nlohmann::json& request) {
       {"range", {
         {"start", {
           {"line", pos.line},
-          {"character", text.range.start.character + 1} // It was always before for some reason. I dont know why
+          {"character", text.range.start.character} // It was always before for some reason. I dont know why
         }},
         {"end", {
           {"line", pos.line},
@@ -137,15 +138,24 @@ nlohmann::ordered_json lsp::methods::hover(nlohmann::json& request) {
   return nullptr;
 }
 
-TypeChecker::LSPIdentifier lsp::getIdentifierUnderPos(lsp::Position pos) {
+TypeChecker::LSPIdentifier lsp::getIdentifierUnderPos(lsp::Position pos, std::string uri) {
   using namespace TypeChecker;
-  if (lsp_idents.empty()) return LSPIdentifier { .underlying = nullptr, .type = LSPIdentifierType::Unknown, .ident = "*", .line = pos.line, .pos = pos.character };
+  if (lsp_idents.empty()) return LSPIdentifier { .underlying = nullptr, .type = LSPIdentifierType::Unknown, .ident = "*", .line = pos.line, .pos = pos.character, .fileID = 999 };
+  std::string lspURI = uri;
+  if (lspURI.starts_with("file://")) {
+    lspURI = lspURI.substr(7);
+  }
   for (LSPIdentifier &ident : lsp_idents) {
-    if ((ident.line - 1) == pos.line
-        && pos.character >= ident.pos
-        && pos.character < (ident.pos + ident.ident.size())) {
+    if (ident.underlying == nullptr) continue; // Skip null identifiers
+    if (ident.type == LSPIdentifierType::Unknown) continue; // Skip unknown identifiers
+    if (ident.ident == "*") continue; // Skip illegal identifiers
+    size_t ident_left = ident.pos - 1 - ident.ident.size();
+    if (   pos.line == ident.line
+        && codegen::getFileID(lspURI) == ident.fileID
+        && pos.character >= ident_left
+        && pos.character < (ident_left + ident.ident.size())) {
       return ident;
     }
   }
-  return LSPIdentifier { .underlying = nullptr, .type = LSPIdentifierType::Unknown, .ident = "*", .line = pos.line, .pos = pos.character };
+  return LSPIdentifier { .underlying = nullptr, .type = LSPIdentifierType::Unknown, .ident = "*", .line = pos.line, .pos = pos.character, .fileID = 999 };
 }

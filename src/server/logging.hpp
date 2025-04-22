@@ -5,7 +5,7 @@ namespace logging {
   inline std::ofstream file;
   inline void init() {
     if (!file.is_open())
-      file.open("lsp.log");
+      file.open("/tmp/lsp.log");
   }
 
   inline void log(std::string message) {

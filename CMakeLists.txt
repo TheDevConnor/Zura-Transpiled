@@ -31,6 +31,7 @@ set(ZURA_HEADER_FILES
     # LSP files
     src/server/lsp.hpp
     src/server/json.hpp
+    src/server/methods/atFunctions.hpp
 
     # Code Gen Files
     src/codegen/optimizer/optimize.hpp

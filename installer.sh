@@ -3,7 +3,8 @@
 # Define variables
 REPO_URL="https://github.com/TheDevConnor/Zura-Transpiled.git"
 INSTALL_DIR="/bin"
-BUILD_DIR="$HOME/zura_build"
+# No need for these temporary build files to linger, right?
+BUILD_DIR="/tmp/zura_build"
 EXECUTABLE="release/zura"
 LOCAL_VERSION=$(zura --version | sed -E 's/.*(v[0-9]+\.[0-9]+\.[0-9]+).*/\1/')
 # Check for dependencies
@@ -42,6 +43,9 @@ if [ "$LOCAL_VERSION" != "$ONLINE_VERSION" ]; then
     git pull origin main
 else
     echo "Zura is up to date. Proceeding with build..."
+    # No need to do anything. You are already up to date!
+    # Additionally, since no build files would be produces, you would actually be DELETING the /usr/local/bin/zura file..!
+    exit 0
 fi
 
 # Build the project

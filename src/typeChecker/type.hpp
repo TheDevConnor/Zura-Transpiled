@@ -42,6 +42,7 @@ struct LSPIdentifier {
   std::string ident;
   size_t line;
   size_t pos;
+  size_t fileID;
 };
 
 inline std::vector<LSPIdentifier> lsp_idents = {};

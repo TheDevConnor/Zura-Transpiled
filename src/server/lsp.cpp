@@ -28,6 +28,9 @@ void lsp::main() {
   std::string buffer = "";
   char ch;
   logging::init();
+  logging::log("\n-===-= LSP Server started =-===-\n");
+  logging::log("Waiting for input...\n");
+  logging::log("-===-= CLIENT REQUEST(s) =-===-\n");;
   shouldPrintErrors = false; // DO NOT MESS UP THE CONSOLE...!!!
   while (std::cin.get(ch)) {
     // See if there is any new input from stdin
@@ -52,7 +55,6 @@ void lsp::main() {
     nlohmann::json request = nlohmann::json::parse(message);
     // Only use std out for replying to the client
     if (request.contains("method")) {
-      logging::log("Method: " + std::string(request["method"]) + "\n");
       if (methodMap.contains(request.at("method"))) {
         nlohmann::ordered_json response = methodMap.at(request.at("method"))(request);
         nlohmann::ordered_json finalResult = {
@@ -63,8 +65,10 @@ void lsp::main() {
           finalResult["id"] = request["id"];
         }
         std::string responseStr = finalResult.dump();
+        logging::log("-===-= SERVER RESPONSE =-===-\n ");
         std::string header = "Content-Length: " + std::to_string(responseStr.size()) + "\r\n\r\n";
         logging::log (header + responseStr + "\n"); // newlines should NOT be in the stdout
+        logging::log("-===-= CLIENT REQUEST(s) =-===-\n");
         std::cout << (header + responseStr) << std::flush;
       } else if (eventMap.contains(request.at("method"))) {
         // These do not return results and are OK to invoke just like this

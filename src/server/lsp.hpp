@@ -81,7 +81,7 @@ namespace lsp {
     std::string getText(std::string uri);
   };
 
-  TypeChecker::LSPIdentifier getIdentifierUnderPos(Position pos);
+  TypeChecker::LSPIdentifier getIdentifierUnderPos(Position pos, std::string uri);
 
   std::vector<std::string> split(std::string in, std::string delim);
 };

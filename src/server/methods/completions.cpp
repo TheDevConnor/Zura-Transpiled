@@ -1,6 +1,7 @@
 #include <fstream>
 #include "../logging.hpp"
 #include "../lsp.hpp"
+#include "atFunctions.hpp"
 
 nlohmann::ordered_json lsp::methods::completion(nlohmann::json& request) {
   using namespace nlohmann;
@@ -11,7 +12,7 @@ nlohmann::ordered_json lsp::methods::completion(nlohmann::json& request) {
     lsp::document::charAtPos(request["params"]["textDocument"]["uri"], Position {.line = position["line"], .character = size_t(position["character"]) - 1}) == '@') {
       return ordered_json {
         {"isIncomplete", false},
-        {"items", ordered_json::parse(std::ifstream("src/server/atFunctions.json"))}
+        {"items", atFunctions}
       };
   } else if (request["params"]["context"]["triggerCharacter"] == "." ||
     lsp::document::charAtPos(request["params"]["textDocument"]["uri"], Position {.line = position["line"], .character = size_t(position["character"]) - 1}) == '.') {
@@ -20,7 +21,7 @@ nlohmann::ordered_json lsp::methods::completion(nlohmann::json& request) {
     std::string documentContent = lsp::document::getText(request["params"]["textDocument"]["uri"]);
     // Ask typechecker for the type of this identifier
     // by getting the identifier under this position
-    TypeChecker::LSPIdentifier ident = getIdentifierUnderPos(Position {.line = position["line"], .character = (size_t)position["character"] - 1});
+    TypeChecker::LSPIdentifier ident = getIdentifierUnderPos(Position {.line = position["line"], .character = (size_t)position["character"] - 1}, request["params"]["textDocument"]["uri"]);
     logging::log("Ident: " + ident.ident + "," + TypeChecker::type_to_string(ident.underlying) + "\n");
     // If the identifier is a struct, enum, or function, we can provide completions
     // if (ident.type == TypeChecker::LSPIdentifierType::Struct) {

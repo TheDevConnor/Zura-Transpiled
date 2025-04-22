@@ -135,27 +135,27 @@ void TypeChecker::visitIdent(Node::Expr *expr) {
   ident->asmType = res;
   return_type = share(res);
   // TODO: Update this to the new tc system
-  // if (isLspMode) {
-  //   // Check if enum type
-  //   if (map->enum_table.find(ident->name) != map->enum_table.end()) {
-  //     lsp_idents.push_back(LSPIdentifier{res, LSPIdentifierType::Enum, ident->name, ident->line, ident->pos});
-  //     return;
-  //   }
-  //   // check if struct type
-  //   if (map->struct_table.find(ident->name) != map->struct_table.end()) {
-  //     lsp_idents.push_back(LSPIdentifier{res, LSPIdentifierType::Struct, ident->name, ident->line, ident->pos});
-  //     return;
-  //   }
-  //   // check if function
-  //   // loop over functions
-  //   for (auto fn : map->function_table) {
-  //     if (fn.first.first == ident->name) {
-  //       lsp_idents.push_back(LSPIdentifier{res, LSPIdentifierType::Function, ident->name, ident->line, ident->pos});
-  //       return;
-  //     } // my pc is about to explode of battery lol fun lol
-  //   }
-  //   lsp_idents.push_back(LSPIdentifier{res, LSPIdentifierType::Variable, ident->name, ident->line, ident->pos});
-  // }
+  if (isLspMode) {
+    // Check if enum type
+    if (context->enumTable.contains(ident->name)) {
+      lsp_idents.push_back(LSPIdentifier{res, LSPIdentifierType::Enum, ident->name, (size_t)ident->line - 1, (size_t)ident->pos, ident->file_id});
+      return;
+    }
+    // check if struct type
+    if (context->structTable.contains(ident->name)) {
+      lsp_idents.push_back(LSPIdentifier{res, LSPIdentifierType::Struct, ident->name, (size_t)ident->line - 1, (size_t)ident->pos, ident->file_id});
+      return;
+    }
+    // check if function
+    // loop over functions
+    for (auto fn : context->functionTable) {
+      if (fn.first.name == ident->name) {
+        lsp_idents.push_back(LSPIdentifier{res, LSPIdentifierType::Function, ident->name, (size_t)ident->line - 1, (size_t)ident->pos, ident->file_id});
+        return;
+      } // my pc is about to explode of battery lol fun lol
+    }
+    lsp_idents.push_back(LSPIdentifier{res, LSPIdentifierType::Variable, ident->name, (size_t)ident->line - 1, (size_t)ident->pos, ident->file_id});
+  }
 }
 
 void TypeChecker::visitBinary(Node::Expr *expr) {
@@ -326,7 +326,14 @@ void TypeChecker::visitCall(Node::Expr *expr) {
 
   // add an ident for the lsp
   if (isLspMode) {
-    lsp_idents.push_back(LSPIdentifier{fnName.second, LSPIdentifierType::Function, fnName.first, (size_t)static_cast<IdentExpr *>(call->callee)->line, (size_t)static_cast<IdentExpr *>(call->callee)->pos});
+    lsp_idents.push_back(LSPIdentifier{
+      fnName.second,
+      LSPIdentifierType::Function,
+      fnName.first,
+      (size_t)static_cast<IdentExpr *>(call->callee)->line,
+      (size_t)static_cast<IdentExpr *>(call->callee)->pos,
+      call->file_id
+    });
   }
 }
 

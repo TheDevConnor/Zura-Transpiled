@@ -7,6 +7,7 @@
 #include <cstdint>
 #include <fstream>
 #include <cmath>
+#include <filesystem>
 #include <unordered_map>
 
 
@@ -437,11 +438,16 @@ void codegen::handleFloatDisplay(Node::Expr *fd, Node::Expr *arg, int line, int 
 // Add 1
 size_t codegen::getFileID(const std::string &file) {
   // check if fileIDs has the file using an iterator
-  auto it = std::find(fileIDs.begin(), fileIDs.end(), file); // Im assuming the standard library function would be efficient here
+  // Check if the flie path is absolute
+  std::string absoluteFilePath = file;
+  if (std::filesystem::path(file).is_relative()) {
+    absoluteFilePath = std::filesystem::absolute(file).string();
+  }
+  auto it = std::find(fileIDs.begin(), fileIDs.end(), absoluteFilePath); // Im assuming the standard library function would be efficient here
   if (it != fileIDs.end()) {
     return std::distance(fileIDs.begin(), it);
   }
-  fileIDs.push_back(file);
+  fileIDs.push_back(absoluteFilePath);
   return fileIDs.size() - 1;
 }
 

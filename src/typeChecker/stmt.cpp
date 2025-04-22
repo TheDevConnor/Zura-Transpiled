@@ -5,6 +5,7 @@
 #include <string>
 #include <unordered_map>
 #include <vector>
+#include <filesystem>
 
 #include "../ast/types.hpp"
 #include "type.hpp"
@@ -428,7 +429,12 @@ void TypeChecker::visitImport(Node::Stmt *stmt) {
 
   // store the current file name
   std::string file_name = node.current_file;
-  node.current_file = import_stmt->name;  // set the current file name to the import name
+  // If the path of the import is absolute, we must set the node.current_file to be the import path relative to the pwd
+  if (std::filesystem::path(import_stmt->name).is_absolute()) {
+    node.current_file = std::filesystem::path(import_stmt->name).relative_path().string();
+  } else {
+    node.current_file = import_stmt->name;
+  }
 
   std::unordered_map<std::string, Node::Type *>::iterator res = context->globalSymbols.find(import_stmt->name);
   if (res != context->globalSymbols.end()) {

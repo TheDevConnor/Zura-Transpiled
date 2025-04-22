@@ -4,10 +4,18 @@
 #include "type.hpp"
 
 #include <memory>
+#include <filesystem>
 
 void TypeChecker::performCheck(Node::Stmt *stmt, bool isMain, bool isLspServer) {
   isLspMode = isLspServer;
-  lsp_idents.clear();
+  // Clear lsp idents that are in the current file
+  for (auto it = lsp_idents.begin(); it != lsp_idents.end();) {
+    if (std::filesystem::path(static_cast<ProgramStmt *>(stmt)->inputPath).relative_path().string() == node.current_file) {
+      it = lsp_idents.erase(it);
+    } else {
+      ++it;
+    }
+  }
 
   initMaps(); // Initialize the maps
 

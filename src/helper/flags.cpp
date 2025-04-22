@@ -29,7 +29,7 @@ void Flags::updateProgressBar(double progress) {
 }
 
 char *Flags::readFile(const char *path) {
-  ifstream file(path, ios::binary);
+  ifstream file(path);
   if (!file) {
     cerr << "Error: Could not open file '" << path << "'" << endl;
     Exit(ExitValue::INVALID_FILE);
