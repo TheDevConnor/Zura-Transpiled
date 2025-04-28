@@ -119,7 +119,7 @@ class TestZuraPrograms(unittest.TestCase):
     def test_address(self):
         run_test("const main := fn () int! { have i: int! = 43; have j: *int! = &i; return j&;};", expected_exit_code=43);
     
-    def tes_dereference(self):
+    def test_dereference(self):
         run_test("const main := fn () int! { have i: int! = 43; have j: *int! = &i; j& = 3 return j&;};", expected_exit_code=3);
 
     # no ! or ? symbol in the underlying type

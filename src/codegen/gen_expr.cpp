@@ -133,7 +133,7 @@ void codegen::primary(Node::Expr *expr) {
       BoolExpr *boolExpr = static_cast<BoolExpr *>(expr);
       // Technically just an int but SHHHHHHHH.............................
       push(Instr{.var = PushInstr{.what = "$" + std::to_string(boolExpr->value),
-                                  .whatSize = DataSize::Byte},
+                                  .whatSize = DataSize::Byte}, // A byte is so much more different than an int...
                  .type = InstrType::Push},
            Section::Main);
       break;

@@ -149,7 +149,7 @@ void TypeChecker::visitIdent(Node::Expr *expr) {
     // check if function
     // loop over functions
     for (auto fn : context->functionTable) {
-      if (fn.first.name == ident->name) {
+      if (fn.first == ident->name) {
         lsp_idents.push_back(LSPIdentifier{res, LSPIdentifierType::Function, ident->name, (size_t)ident->line - 1, (size_t)ident->pos, ident->file_id});
         return;
       } // my pc is about to explode of battery lol fun lol
@@ -288,6 +288,7 @@ void TypeChecker::visitAssign(Node::Expr *expr) {
 void TypeChecker::visitCall(Node::Expr *expr) {
   CallExpr *call = static_cast<CallExpr *>(expr);
   Node::Expr *name = call->callee;
+  std::string fnName = (name->kind == ND_IDENT) ? static_cast<IdentExpr *>(name)->name : static_cast<IdentExpr *>(static_cast<MemberExpr *>(name)->rhs)->name;
 
   // check if the callee is an identifier
   if (name->kind != ND_IDENT && name->kind != ND_MEMBER) {
@@ -298,38 +299,80 @@ void TypeChecker::visitCall(Node::Expr *expr) {
     return;
   }
 
-  // check if the callee is a function
-  std::pair<std::string, Node::Type *> fnName;
-
-  // check if the function is in the function table
-  if (context->functionTable.find({fnName.first, fnName.second}) != context->functionTable.end()) {
-    std::string msg = "Function '" + fnName.first + "' not declared";
-    handleError(call->line, call->pos, msg, "", "Type Error");
-    return_type = std::make_shared<SymbolType>("unknown");
-    expr->asmType = new SymbolType("unknown");
-    return;
+  // loop through each function in the function table and check if the function
+  // exists
+  ParamsAndTypes fnParams;
+  if (name->kind == ND_IDENT) {
+    fnParams = context->functionTable.getParams(fnName);
+  } else {
+    MemberExpr *member = static_cast<MemberExpr *>(name);
+    visitExpr(member->lhs);
+    std::string type = type_to_string(return_type.get());
+    if (!context->structTable.contains(type)) {
+      std::string msg = "Member access requires the left hand side to be a struct but got '" + type + "'";
+      handleError(member->line, member->pos, msg, "", "Type Error");
+      return_type = std::make_shared<SymbolType>("unknown");
+      expr->asmType = new SymbolType("unknown");
+      return;
+    }
+    // Now, we have to look through each of the members of the struct to see if
+    // there are any functions with that name
+    std::string memberName = static_cast<IdentExpr *>(member->rhs)->name;
+    if (!context->structTable.contains(type)) {
+      std::string msg = "No member function '" + memberName + "' found in container '" + type + "'";
+      handleError(member->line, member->pos, msg, "", "Type Error");
+      return_type = std::make_shared<SymbolType>("unknown");
+      expr->asmType = new SymbolType("unknown");
+      return;
+    }
+    // check if the member is a function
+    fnParams = context->structTable.at(type).at(memberName).second;
   }
 
-  // // get the function parameters
-  // std::unordered_map<std::string, Node::Type *> fnParams;
-  // if (context->functionTable.find({fnName.first, fnName.second}) != context->functionTable.end()) {
-  //   fnParams = context->functionTable.at({fnName.first, fnName.second}).params;
-  // }
+  std::vector<Node::Type *> paramTypes;
+  for (auto it : fnParams) {
+    paramTypes.push_back(it.second);
+  }
 
-  // if (!validateArgumentCount(call, name, fnParams)) return;
-
-  // if (!validateArgumentTypes(call, name, fnParams)) return;
+  // go through each argument and check if the types match
+  for (size_t i = 0; i < call->args.size(); i++) {
+    size_t realIndex = (i == 0 ? (call->args.size() - 1) : i - 1);
+    visitExpr(call->args[i]);
+    Node::Type *argType = createDuplicate(return_type.get());
+    if (argType == nullptr) {
+      return_type = std::make_shared<SymbolType>("unknown");
+      expr->asmType = new SymbolType("unknown");
+      return;
+    }
+    // check if the argument type matches the function parameter type
+    // get element by index from map
+    if (!checkTypeMatch(paramTypes[realIndex], argType)) {
+      std::string msg = "Function '" + fnName + "' requires argument " +
+                        std::to_string(i) + " to be of type '" +
+                        type_to_string(paramTypes[realIndex]) + "' but got '" +
+                        type_to_string(argType) + "'";
+      handleError(call->line, call->pos, msg, "", "Type Error");
+      return_type = std::make_shared<SymbolType>("unknown");
+      expr->asmType = new SymbolType("unknown");
+      return;
+    }
+  }
 
   // set the return type of the call to the return type of the function
-  for (auto it : context->functionTable) return_type = share(it.first.type);
+  for (auto it : context->functionTable) {
+    if (it.first == fnName) {
+      return_type = share(it.second.first);
+      break;
+    }
+  }
   expr->asmType = createDuplicate(return_type.get());
 
   // add an ident for the lsp
   if (isLspMode) {
     lsp_idents.push_back(LSPIdentifier{
-      fnName.second,
+      return_type.get(),
       LSPIdentifierType::Function,
-      fnName.first,
+      fnName,
       (size_t)static_cast<IdentExpr *>(call->callee)->line,
       (size_t)static_cast<IdentExpr *>(call->callee)->pos,
       call->file_id

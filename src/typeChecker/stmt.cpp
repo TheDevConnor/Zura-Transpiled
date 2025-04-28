@@ -62,7 +62,7 @@ void TypeChecker::visitFn(Node::Stmt *stmt) {
   context->declareLocal(fn_stmt->name, fn_stmt->returnType);  // Declare this first, so that recursion and stuff is possible later
 
   // Check function parameters
-  std::unordered_map<std::string, Node::Type *> params;
+  ParamsAndTypes params;
   for (std::pair<std::string, Node::Type *> &param : fn_stmt->params) {
     if (!param.second) {
       std::cerr << "Error: Parameter " << param.first << " has nullptr type!" << std::endl;
@@ -133,7 +133,7 @@ void TypeChecker::visitStruct(Node::Stmt *stmt) {
   }
 
   // handle fn stmts in the struct
-  std::unordered_map<std::string, Node::Type *> params;
+  ParamsAndTypes params;
   for (Node::Stmt *stmt : struct_stmt->stmts) {
     FnStmt *fn_stmt = static_cast<FnStmt *>(stmt);
 
