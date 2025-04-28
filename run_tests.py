@@ -120,7 +120,7 @@ class TestZuraPrograms(unittest.TestCase):
         run_test("const main := fn () int! { have i: int! = 43; have j: *int! = &i; return j&;};", expected_exit_code=43);
     
     def test_dereference(self):
-        run_test("const main := fn () int! { have i: int! = 43; have j: *int! = &i; j& = 3 return j&;};", expected_exit_code=3);
+        run_test("const main := fn () int! { have i: int! = 43; have j: *int! = &i; j& = 3; return j&;};", expected_exit_code=3);
 
     # no ! or ? symbol in the underlying type
     def test_inferred_signedness_arrays(self):
