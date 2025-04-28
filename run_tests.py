@@ -114,6 +114,13 @@ class TestZuraPrograms(unittest.TestCase):
 
     def test_holy_shit(self):
         run_test("const T:=enum{I,P,N};const K:=struct{k:T,v:str,l:int!,c:int!}; const main:=fn()int!{have t:[4]K=[{k:T.I,v:\"1\",l:1,c:1},{k:T.P,v:\"+\",l:1,c:2},{k:T.I,v:\"2\",l:1,c:3},{k:T.N,v:\"\",l:1,c:5}];have l:int! =t[0].l;have c:int! =t[1].c;return l+c;};", expected_exit_code=3)
+    
+    # testing derefernce and address
+    def test_address(self):
+        run_test("const main := fn () int! { have i: int! = 43; have j: *int! = &i; return j&;};", expected_exit_code=43);
+    
+    def tes_dereference(self):
+        run_test("const main := fn () int! { have i: int! = 43; have j: *int! = &i; j& = 3 return j&;};", expected_exit_code=3);
 
     # no ! or ? symbol in the underlying type
     def test_inferred_signedness_arrays(self):

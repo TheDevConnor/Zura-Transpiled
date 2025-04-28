@@ -1,17 +1,18 @@
-#include <string>
 #include <algorithm>
+#include <string>
+
+#include "../typeChecker/type.hpp"
 #include "gen.hpp"
 #include "optimizer/compiler.hpp"
 #include "optimizer/instr.hpp"
-#include "../typeChecker/type.hpp"
 
 void codegen::visitExpr(Node::Expr *expr) {
   // Optimize the expression before we handle it!
   Node::Expr *realExpr = CompileOptimizer::optimizeExpr(expr);
-  if (int(realExpr->kind) > (int)NodeKind::ND_NULL) { // im dumb ignore me i put
-                                                      // the wrong sign :sob: ya
+  if (int(realExpr->kind) > (int)NodeKind::ND_NULL) {  // im dumb ignore me i put
+                                                       // the wrong sign :sob: ya
     std::cout << "stinky node D:"
-              << std::endl; // bp here if the nodekind is something weird
+              << std::endl;  // bp here if the nodekind is something weird
   }
   ExprHandler handler = lookup(exprHandlers, realExpr->kind);
   if (handler) {
@@ -23,31 +24,40 @@ void codegen::visitExpr(Node::Expr *expr) {
 void codegen::primary(Node::Expr *expr) {
   // TODO: Implement the primary expression
   switch (expr->kind) {
-  case NodeKind::ND_INT: {
-    IntExpr *e = static_cast<IntExpr *>(expr);
-    pushDebug(e->line, expr->file_id, e->pos);
-    push(Instr{.var = PushInstr{.what = "$" + std::to_string(e->value),
-                             .whatSize = DataSize::None}, // THe only time None is used, because this literal could be literally anything
-                   .type = InstrType::Push},
-         Section::Main);
-    break;
-  } // It happened here in the ident
-  case NodeKind::ND_IDENT: {
-    IdentExpr *e = static_cast<IdentExpr *>(expr);
-    std::string res = variableTable[e->name];
+    case NodeKind::ND_INT: {
+      IntExpr *e = static_cast<IntExpr *>(expr);
+      pushDebug(e->line, expr->file_id, e->pos);
+      push(Instr{.var = PushInstr{.what = "$" + std::to_string(e->value),
+                                  .whatSize = DataSize::None},  // THe only time None is used, because this literal could be literally anything
+                 .type = InstrType::Push},
+           Section::Main);
+      break;
+    }  // It happened here in the ident
+    case NodeKind::ND_IDENT: {
+      IdentExpr *e = static_cast<IdentExpr *>(expr);
+      std::string res = variableTable[e->name];
 
-    push(Instr{.var = Comment{.comment = "Retrieve identifier: '" + e->name +
-                                         "' located at " + res},
-               .type = InstrType::Comment},
-         Section::Main);
+      push(Instr{.var = Comment{.comment = "Retrieve identifier: '" + e->name +
+                                           "' located at " + res},
+                 .type = InstrType::Comment},
+           Section::Main);
 
-    pushDebug(e->line, expr->file_id, e->pos);
+      pushDebug(e->line, expr->file_id, e->pos);
 
-    // Push the result
-    // Check for struct
-    if (e->type->kind == ND_SYMBOL_TYPE) {
-      if (structByteSizes.find(static_cast<SymbolType *>(e->asmType)->name) !=
-          structByteSizes.end()) {
+      // Push the result
+      // Check for struct
+      if (e->type->kind == ND_SYMBOL_TYPE) {
+        if (structByteSizes.find(static_cast<SymbolType *>(e->asmType)->name) !=
+            structByteSizes.end()) {
+          push(Instr{.var = LeaInstr{.size = DataSize::Qword,
+                                     .dest = "%rcx",
+                                     .src = res},
+                     .type = InstrType::Lea},
+               Section::Main);
+          pushRegister("%rcx");
+          break;
+        }
+      } else if (e->type->kind == ND_ARRAY_TYPE) {
         push(Instr{.var = LeaInstr{.size = DataSize::Qword,
                                    .dest = "%rcx",
                                    .src = res},
@@ -56,95 +66,86 @@ void codegen::primary(Node::Expr *expr) {
         pushRegister("%rcx");
         break;
       }
-    } else if (e->type->kind == ND_ARRAY_TYPE) {
-      push(Instr{.var = LeaInstr{.size = DataSize::Qword,
-                                 .dest = "%rcx",
-                                 .src = res},
-                 .type = InstrType::Lea},
+      // Get the byte size of the ident (this will determine the type of the push)
+      DataSize finalSize = intDataToSize(getByteSizeOfType(e->asmType));
+      push(Instr{.var = PushInstr{.what = res, .whatSize = finalSize},
+                 .type = InstrType::Push},
            Section::Main);
-      pushRegister("%rcx");
       break;
     }
-    // Get the byte size of the ident (this will determine the type of the push)
-    DataSize finalSize = intDataToSize(getByteSizeOfType(e->asmType));
-    push(Instr{.var = PushInstr{.what = res, .whatSize = finalSize},
-                .type = InstrType::Push},
-          Section::Main);
-    break;
-  }
-  case NodeKind::ND_STRING: {
-    StringExpr *string = static_cast<StringExpr *>(expr);
-    std::string label = "string" + std::to_string(stringCount++);
+    case NodeKind::ND_STRING: {
+      StringExpr *string = static_cast<StringExpr *>(expr);
+      std::string label = "string" + std::to_string(stringCount++);
 
-    pushDebug(string->line, expr->file_id, string->pos);
-    // Push the label onto the stack
-    push(Instr{.var = LeaInstr{.size = DataSize::Qword,
-                               .dest = "%r13",
-                               .src = label + "(%rip)"},
-               .type = InstrType::Lea},
-         Section::Main);
-    pushRegister("%r13");
+      pushDebug(string->line, expr->file_id, string->pos);
+      // Push the label onto the stack
+      push(Instr{.var = LeaInstr{.size = DataSize::Qword,
+                                 .dest = "%r13",
+                                 .src = label + "(%rip)"},
+                 .type = InstrType::Lea},
+           Section::Main);
+      pushRegister("%r13");
 
-    // define the string in the data section
-    push(Instr{.var = Label{.name = label}, .type = InstrType::Label},
-         Section::ReadonlyData);
+      // define the string in the data section
+      push(Instr{.var = Label{.name = label}, .type = InstrType::Label},
+           Section::ReadonlyData);
 
-    // Push the string onto the data section
-    push(Instr{.var = AscizInstr{.what = string->value},
-               .type = InstrType::Asciz},
-         Section::ReadonlyData);
-    break;
-  }
-  case NodeKind::ND_CHAR: {
-    CharExpr *charExpr = static_cast<CharExpr *>(expr);
-    pushDebug(charExpr->line, expr->file_id, charExpr->pos);
-    pushRegister("$" + std::to_string((int)charExpr->value));
-    break;
-  }
-  case NodeKind::ND_FLOAT: {
-    FloatExpr *floating = static_cast<FloatExpr *>(expr);
-    std::string label = "float" + std::to_string(floatCount++);
-    pushDebug(floating->line, expr->file_id, floating->pos);
+      // Push the string onto the data section
+      push(Instr{.var = AscizInstr{.what = string->value},
+                 .type = InstrType::Asciz},
+           Section::ReadonlyData);
+      break;
+    }
+    case NodeKind::ND_CHAR: {
+      CharExpr *charExpr = static_cast<CharExpr *>(expr);
+      pushDebug(charExpr->line, expr->file_id, charExpr->pos);
+      pushRegister("$" + std::to_string((int)charExpr->value));
+      break;
+    }
+    case NodeKind::ND_FLOAT: {
+      FloatExpr *floating = static_cast<FloatExpr *>(expr);
+      std::string label = "float" + std::to_string(floatCount++);
+      pushDebug(floating->line, expr->file_id, floating->pos);
 
-    // Push the label onto the stack
-    moveRegister("%xmm0", label + "(%rip)", DataSize::SS, DataSize::SS);
-    push(Instr{.var = PushInstr{.what = "%xmm0", .whatSize = DataSize::SS},
-               .type = InstrType::Push},
-         Section::Main);
+      // Push the label onto the stack
+      moveRegister("%xmm0", label + "(%rip)", DataSize::SS, DataSize::SS);
+      push(Instr{.var = PushInstr{.what = "%xmm0", .whatSize = DataSize::SS},
+                 .type = InstrType::Push},
+           Section::Main);
 
-    // define the string in the data section
-    push(Instr{.var = Label{.name = label}, .type = InstrType::Label},
-         Section::ReadonlyData);
+      // define the string in the data section
+      push(Instr{.var = Label{.name = label}, .type = InstrType::Label},
+           Section::ReadonlyData);
 
-    // Push the string onto the data section
-    push(Instr{.var = Comment{.comment = floating->value},
-               .type = InstrType::Comment},
-         Section::ReadonlyData);
-    push(Instr{.var =
-                   DataSectionInstr{
-                       .bytesToDefine = DataSize::SS /* long, aka 32-bits */,
-                       .what = floating->value},
-               .type = InstrType::DB},
-         Section::ReadonlyData);
-    break;
-  }
-  case NodeKind::ND_BOOL: {
-    BoolExpr *boolExpr = static_cast<BoolExpr *>(expr);
-    // Technically just an int but SHHHHHHHH.............................
-    push(Instr{.var = PushInstr{.what = "$" + std::to_string(boolExpr->value),
-                                .whatSize = DataSize::Byte},
-               .type = InstrType::Push},
-         Section::Main);
-    break;
-  }
-  default: {
-    std::cerr
-        << "No fancy error for this, beg Connor... (Soviet Pancakes speaking)"
-        << std::endl;
-    std::cerr << "Primary expression type not implemented! (Type: NodeKind["
-              << (int)expr->kind << "])" << std::endl;
-    exit(-1);
-  }
+      // Push the string onto the data section
+      push(Instr{.var = Comment{.comment = floating->value},
+                 .type = InstrType::Comment},
+           Section::ReadonlyData);
+      push(Instr{.var =
+                     DataSectionInstr{
+                         .bytesToDefine = DataSize::SS /* long, aka 32-bits */,
+                         .what = floating->value},
+                 .type = InstrType::DB},
+           Section::ReadonlyData);
+      break;
+    }
+    case NodeKind::ND_BOOL: {
+      BoolExpr *boolExpr = static_cast<BoolExpr *>(expr);
+      // Technically just an int but SHHHHHHHH.............................
+      push(Instr{.var = PushInstr{.what = "$" + std::to_string(boolExpr->value),
+                                  .whatSize = DataSize::Byte},
+                 .type = InstrType::Push},
+           Section::Main);
+      break;
+    }
+    default: {
+      std::cerr
+          << "No fancy error for this, beg Connor... (Soviet Pancakes speaking)"
+          << std::endl;
+      std::cerr << "Primary expression type not implemented! (Type: NodeKind["
+                << (int)expr->kind << "])" << std::endl;
+      exit(-1);
+    }
   }
 }
 
@@ -164,7 +165,7 @@ void codegen::binary(Node::Expr *expr) {
     case 2:
       size = DataSize::Word;
       lhsReg = "%ax";
-      rhsReg = "%bx"; 
+      rhsReg = "%bx";
       break;
     case 4:
       size = DataSize::Dword;
@@ -172,7 +173,7 @@ void codegen::binary(Node::Expr *expr) {
       rhsReg = "%ebx";
       break;
     case 8:
-    default: // Not like i'll be dealing with 3-byte integers anyways
+    default:  // Not like i'll be dealing with 3-byte integers anyways
       size = DataSize::Qword;
       lhsReg = "%rax";
       rhsReg = "%rbx";
@@ -186,13 +187,13 @@ void codegen::binary(Node::Expr *expr) {
     if (lhsDepth > rhsDepth) {
       visitExpr(e->lhs);
       visitExpr(e->rhs);
-      push(Instr{.var=PopInstr{.where = rhsReg, .whereSize = size}, .type=InstrType::Pop}, Section::Main);
-      push(Instr{.var=PopInstr{.where = lhsReg, .whereSize = size}, .type=InstrType::Pop}, Section::Main);
+      push(Instr{.var = PopInstr{.where = rhsReg, .whereSize = size}, .type = InstrType::Pop}, Section::Main);
+      push(Instr{.var = PopInstr{.where = lhsReg, .whereSize = size}, .type = InstrType::Pop}, Section::Main);
     } else {
       visitExpr(e->rhs);
       visitExpr(e->lhs);
-      push(Instr{.var=PopInstr{.where = lhsReg, .whereSize = size}, .type=InstrType::Pop}, Section::Main);
-      push(Instr{.var=PopInstr{.where = rhsReg, .whereSize = size}, .type=InstrType::Pop}, Section::Main);
+      push(Instr{.var = PopInstr{.where = lhsReg, .whereSize = size}, .type = InstrType::Pop}, Section::Main);
+      push(Instr{.var = PopInstr{.where = rhsReg, .whereSize = size}, .type = InstrType::Pop}, Section::Main);
     }
 
     // Perform the operation
@@ -200,8 +201,8 @@ void codegen::binary(Node::Expr *expr) {
     if (op == "idiv" || op == "div" || op == "mod") {
       // Division requires special handling because of RDX:RAX input (more precision or something)
       // We cannot check the result of the division, as a (neg / neg = pos) and that would ruin this
-      bool isSignedOp = (static_cast<SymbolType *>(e->lhs->asmType))->signedness == SymbolType::Signedness::SIGNED || 
-                        (static_cast<SymbolType *>(e->rhs->asmType))->signedness == SymbolType::Signedness::SIGNED; 
+      bool isSignedOp = (static_cast<SymbolType *>(e->lhs->asmType))->signedness == SymbolType::Signedness::SIGNED ||
+                        (static_cast<SymbolType *>(e->rhs->asmType))->signedness == SymbolType::Signedness::SIGNED;
       if (isSignedOp) {
         // Although C likes making really stupid optimizations, technically, it works without them.
         switch (size) {
@@ -216,36 +217,36 @@ void codegen::binary(Node::Expr *expr) {
             pushLinker("movswl " + lhsReg + ", %eax", Section::Main);
             break;
           case DataSize::Byte:
-            pushLinker("movsbw " + lhsReg + ", %ax" , Section::Main);
+            pushLinker("movsbw " + lhsReg + ", %ax", Section::Main);
             break;
         }
         push(Instr{.var = DivInstr{.from = rhsReg, .isSigned = true, .size = size}, .type = InstrType::Div}, Section::Main);
       } else {
         // it was unsigned so we have way less shit to worry about
         DataSize size = intDataToSize(getByteSizeOfType(returnType));
-        push(Instr{.var=XorInstr{.lhs="%rdi", .rhs="%rdi"},.type=InstrType::Xor},Section::Main);
-        push(Instr{.var=DivInstr{.from=rhsReg, .isSigned = false, .size = size}, .type = InstrType::Div}, Section::Main);
+        push(Instr{.var = XorInstr{.lhs = "%rdi", .rhs = "%rdi"}, .type = InstrType::Xor}, Section::Main);
+        push(Instr{.var = DivInstr{.from = rhsReg, .isSigned = false, .size = size}, .type = InstrType::Div}, Section::Main);
       }
 
       if (op == "mod") {
         switch (getByteSizeOfType(returnType)) {
           case 1:
-            push(Instr{.var=PushInstr{.what="%dl", .whatSize = DataSize::Byte},.type = InstrType::Push}, Section::Main);
+            push(Instr{.var = PushInstr{.what = "%dl", .whatSize = DataSize::Byte}, .type = InstrType::Push}, Section::Main);
             break;
           case 2:
-            push(Instr{.var=PushInstr{.what="%dx", .whatSize = DataSize::Word},.type = InstrType::Push}, Section::Main);
+            push(Instr{.var = PushInstr{.what = "%dx", .whatSize = DataSize::Word}, .type = InstrType::Push}, Section::Main);
             break;
           case 4:
-            push(Instr{.var=PushInstr{.what="%ebx", .whatSize = DataSize::Dword},.type = InstrType::Push}, Section::Main);
-             break;
+            push(Instr{.var = PushInstr{.what = "%ebx", .whatSize = DataSize::Dword}, .type = InstrType::Push}, Section::Main);
+            break;
           case 8:
           default:
-            push(Instr{.var=PushInstr{.what="%rbx", .whatSize = DataSize::Qword},.type = InstrType::Push}, Section::Main);
+            push(Instr{.var = PushInstr{.what = "%rbx", .whatSize = DataSize::Qword}, .type = InstrType::Push}, Section::Main);
             break;
         }
       } else {
         // It doesnt matter, push the real thing and get out of here
-        push(Instr{.var=PushInstr{.what=lhsReg, .whatSize = size},.type = InstrType::Push}, Section::Main);
+        push(Instr{.var = PushInstr{.what = lhsReg, .whatSize = size}, .type = InstrType::Push}, Section::Main);
       }
     } else if (op == "shl" || op == "shr" || op == "sar" || op == "sal") {
       // Shift operations require either the CL register or an immediate
@@ -255,33 +256,33 @@ void codegen::binary(Node::Expr *expr) {
         if (shiftAmount == 1) {
           // This requires NO number 1
           pushLinker(op + " " + lhsReg + "\n\t", Section::Main);
-          push(Instr{.var=PushInstr{.what=lhsReg, .whatSize = size},.type = InstrType::Push}, Section::Main);
+          push(Instr{.var = PushInstr{.what = lhsReg, .whatSize = size}, .type = InstrType::Push}, Section::Main);
           return;
         }
-        push(Instr{.var=BinaryInstr{.op=op, .src="$" + std::to_string(shiftAmount), .dst=rhsReg},
-                   .type=InstrType::Binary},
+        push(Instr{.var = BinaryInstr{.op = op, .src = "$" + std::to_string(shiftAmount), .dst = rhsReg},
+                   .type = InstrType::Binary},
              Section::Main);
         // push the result
-        push(Instr{.var=PushInstr{.what=rhsReg, .whatSize = size},.type = InstrType::Push}, Section::Main);
+        push(Instr{.var = PushInstr{.what = rhsReg, .whatSize = size}, .type = InstrType::Push}, Section::Main);
       } else {
         // If there is no immediate, we need to pop the value into CL
         push(Instr{.var = MovInstr{.dest = "%cl", .src = rhsReg, .destSize = DataSize::Byte, .srcSize = size},
                    .type = InstrType::Mov},
              Section::Main);
-        push(Instr{.var=BinaryInstr{.op=op, .src="%cl", .dst=lhsReg},
-                   .type=InstrType::Binary},
+        push(Instr{.var = BinaryInstr{.op = op, .src = "%cl", .dst = lhsReg},
+                   .type = InstrType::Binary},
              Section::Main);
         // push the result
-        push(Instr{.var=PushInstr{.what=lhsReg, .whatSize = size},.type = InstrType::Push}, Section::Main);
+        push(Instr{.var = PushInstr{.what = lhsReg, .whatSize = size}, .type = InstrType::Push}, Section::Main);
       }
     } else {
       // Every other operation ...
       push(Instr{.var = BinaryInstr{.op = op, .src = rhsReg, .dst = lhsReg},
                  .type = InstrType::Binary},
            Section::Main);
-      push(Instr{.var=PushInstr{.what=lhsReg, .whatSize = size},.type = InstrType::Push}, Section::Main);
+      push(Instr{.var = PushInstr{.what = lhsReg, .whatSize = size}, .type = InstrType::Push}, Section::Main);
     }
-    return; // Done
+    return;  // Done
   } else if (returnType->name == "float" || returnType->name == "double") {
     // Similar logic for floats
     size = returnType->name == "float" ? DataSize::SS : DataSize::SD;
@@ -291,13 +292,13 @@ void codegen::binary(Node::Expr *expr) {
     if (lhsDepth > rhsDepth) {
       visitExpr(e->lhs);
       visitExpr(e->rhs);
-      popToRegister("%xmm1"); // Pop RHS into XMM1
-      popToRegister("%xmm0"); // Pop LHS into XMM0
+      popToRegister("%xmm1");  // Pop RHS into XMM1
+      popToRegister("%xmm0");  // Pop LHS into XMM0
     } else {
       visitExpr(e->rhs);
       visitExpr(e->lhs);
-      popToRegister("%xmm0"); // Pop LHS into XMM0
-      popToRegister("%xmm1"); // Pop RHS into XMM1
+      popToRegister("%xmm0");  // Pop LHS into XMM0
+      popToRegister("%xmm1");  // Pop RHS into XMM1
     }
 
     std::string op;
@@ -315,15 +316,15 @@ void codegen::binary(Node::Expr *expr) {
     push(Instr{.var = BinaryInstr{.op = op, .src = "%xmm1", .dst = "%xmm0"},
                .type = InstrType::Binary},
          Section::Main);
-    push(Instr{.var=PushInstr{.what="%xmm0", .whatSize = size},.type = InstrType::Push}, Section::Main);
+    push(Instr{.var = PushInstr{.what = "%xmm0", .whatSize = size}, .type = InstrType::Push}, Section::Main);
   } else if (returnType->name == "bool") {
     // We need to compare the two values
     // Check depth
     bool isFloating = e->lhs->asmType->kind == ND_SYMBOL_TYPE && (getUnderlying(e->lhs->asmType) == "float" || getUnderlying(e->lhs->asmType) == "double");
     // Right now, the lhsReg and rhsReg are %al and %bl because the return type is 1 byte. although technically correct, thats not what we want
-    switch (std::max(getByteSizeOfType(e->rhs->asmType), getByteSizeOfType(e->lhs->asmType))) { // use max because we may be comparing an integer literal to something else
+    switch (std::max(getByteSizeOfType(e->rhs->asmType), getByteSizeOfType(e->lhs->asmType))) {  // use max because we may be comparing an integer literal to something else
       case 1:
-        break; // Its already like this, isn't it?
+        break;  // Its already like this, isn't it?
       case 2:
         lhsReg = "%ax";
         rhsReg = "%bx";
@@ -355,13 +356,13 @@ void codegen::binary(Node::Expr *expr) {
     if (lhsDepth > rhsDepth) {
       visitExpr(e->lhs);
       visitExpr(e->rhs);
-      push(Instr{.var=PopInstr{.where = rhsReg, .whereSize = size}, .type=InstrType::Pop}, Section::Main);
-      push(Instr{.var=PopInstr{.where = lhsReg, .whereSize = size}, .type=InstrType::Pop}, Section::Main);
+      push(Instr{.var = PopInstr{.where = rhsReg, .whereSize = size}, .type = InstrType::Pop}, Section::Main);
+      push(Instr{.var = PopInstr{.where = lhsReg, .whereSize = size}, .type = InstrType::Pop}, Section::Main);
     } else {
       visitExpr(e->rhs);
       visitExpr(e->lhs);
-      push(Instr{.var=PopInstr{.where = lhsReg, .whereSize = size}, .type=InstrType::Pop}, Section::Main);
-      push(Instr{.var=PopInstr{.where = rhsReg, .whereSize = size}, .type=InstrType::Pop}, Section::Main);
+      push(Instr{.var = PopInstr{.where = lhsReg, .whereSize = size}, .type = InstrType::Pop}, Section::Main);
+      push(Instr{.var = PopInstr{.where = rhsReg, .whereSize = size}, .type = InstrType::Pop}, Section::Main);
     }
     // Get the operation
     std::string op = lookup(opMap, e->op);
@@ -378,7 +379,7 @@ void codegen::binary(Node::Expr *expr) {
     // We must use a set instruction because %al doesnt have anything in it yet
     pushLinker(op + " %al\n\t", Section::Main);
     // Move the bytes up to 64-bits
-    push(Instr{.var=PushInstr{.what="%al", .whatSize = DataSize::Byte},.type = InstrType::Push}, Section::Main);
+    push(Instr{.var = PushInstr{.what = "%al", .whatSize = DataSize::Byte}, .type = InstrType::Push}, Section::Main);
   }
 }
 
@@ -391,7 +392,7 @@ void codegen::unary(Node::Expr *expr) {
   std::string whatWasPushed = instr.what;
 
   text_section.pop_back();
-  
+
   if (e->op == "-") {
     // Perform the operation
     push(Instr{.var = NegInstr{.what = whatWasPushed}, .type = InstrType::Neg}, Section::Main);
@@ -399,7 +400,7 @@ void codegen::unary(Node::Expr *expr) {
     // Perform the operation
     std::string res = (e->op == "++") ? "inc" : "dec";
     // Dear code reader, i apologize
-    push(Instr{.var = LinkerDirective{.value = res + "q " + whatWasPushed + "\n\t"}, .type = InstrType::Linker }, Section::Main);
+    push(Instr{.var = LinkerDirective{.value = res + "q " + whatWasPushed + "\n\t"}, .type = InstrType::Linker}, Section::Main);
   }
   // Push the result
   pushRegister(whatWasPushed);
@@ -428,7 +429,7 @@ void codegen::call(Node::Expr *expr) {
     if (offsetAmount)
       push(Instr{.var = SubInstr{.lhs = "%rsp",
                                  .rhs = "$" + std::to_string(offsetAmount),
-                                .size = DataSize::Qword},
+                                 .size = DataSize::Qword},
                  .type = InstrType::Sub},
            Section::Main);
     int intArgCount = 0;
@@ -449,7 +450,7 @@ void codegen::call(Node::Expr *expr) {
         if (structByteSizes.find(sym->name) != structByteSizes.end()) {
           // FIRST we check the size of the struct type
           if (structByteSizes[sym->name].first > 16) {
-            isLea = true; // It was in there!
+            isLea = true;  // It was in there!
           }
         }
       }
@@ -501,40 +502,40 @@ void codegen::call(Node::Expr *expr) {
         push(
             Instr{.var = PushInstr{.what = "%xmm0", .whatSize = DataSize::SS},
                   .type = InstrType::Push},
-            Section::Main); // abi standard (can hold many bytes of data, so its
-                            // fine for both floats AND doubles to fit in here)
+            Section::Main);  // abi standard (can hold many bytes of data, so its
+                             // fine for both floats AND doubles to fit in here)
       } else if (structByteSizes.find(st->name) != structByteSizes.end()) {
         // TODO: No! This is really wrong!!!!
-        pushRegister("%rax"); // When tossing this thing around, its handled
-                              // basically as a pointer
+        pushRegister("%rax");  // When tossing this thing around, its handled
+                               // basically as a pointer
       } else {
         // switch over the byte size of return type
         switch (getByteSizeOfType(e->asmType)) {
-        case 1:
-          push(
-              Instr{.var = PushInstr{.what = "%al", .whatSize = DataSize::Byte},
-                    .type = InstrType::Push},
-              Section::Main);
-          break;
-        case 2:
-          push(
-              Instr{.var = PushInstr{.what = "%ax", .whatSize = DataSize::Word},
-                    .type = InstrType::Push},
-              Section::Main);
-          break;
-        case 4:
-          push(Instr{.var =
-                         PushInstr{.what = "%eax", .whatSize = DataSize::Dword},
-                     .type = InstrType::Push},
-               Section::Main);
-          break;
-        case 8:
-        default:
-          push(Instr{.var =
-                         PushInstr{.what = "%rax", .whatSize = DataSize::Qword},
-                     .type = InstrType::Push},
-               Section::Main);
-          break;
+          case 1:
+            push(
+                Instr{.var = PushInstr{.what = "%al", .whatSize = DataSize::Byte},
+                      .type = InstrType::Push},
+                Section::Main);
+            break;
+          case 2:
+            push(
+                Instr{.var = PushInstr{.what = "%ax", .whatSize = DataSize::Word},
+                      .type = InstrType::Push},
+                Section::Main);
+            break;
+          case 4:
+            push(Instr{.var =
+                           PushInstr{.what = "%eax", .whatSize = DataSize::Dword},
+                       .type = InstrType::Push},
+                 Section::Main);
+            break;
+          case 8:
+          default:
+            push(Instr{.var =
+                           PushInstr{.what = "%rax", .whatSize = DataSize::Qword},
+                       .type = InstrType::Push},
+                 Section::Main);
+            break;
         }
       }
     }
@@ -555,7 +556,7 @@ void codegen::call(Node::Expr *expr) {
     // Note: Removed LEA Because when visiting a struct, we push %rcx, which alr
     // contains the address :P
     popToRegister(intArgOrder[0]);
-    int intArgCount = 1; // 1st is preserved for struct ptr above
+    int intArgCount = 1;  // 1st is preserved for struct ptr above
     int floatArgCount = 0;
     long long offsetAmount = round(variableCount - 8, 8);
     if (offsetAmount)
@@ -597,40 +598,40 @@ void codegen::call(Node::Expr *expr) {
         push(
             Instr{.var = PushInstr{.what = "%xmm0", .whatSize = DataSize::SS},
                   .type = InstrType::Push},
-            Section::Main); // abi standard (can hold many bytes of data, so its
-                            // fine for both floats AND doubles to fit in here)
+            Section::Main);  // abi standard (can hold many bytes of data, so its
+                             // fine for both floats AND doubles to fit in here)
       } else if (structByteSizes.find(st->name) != structByteSizes.end()) {
         // TODO: No! This is really wrong!!!!
-        pushRegister("%rax"); // When tossing this thing around, its handled
-                              // basically as a pointer
+        pushRegister("%rax");  // When tossing this thing around, its handled
+                               // basically as a pointer
       } else {
         // switch over the byte size of return type
         switch (getByteSizeOfType(e->asmType)) {
-        case 1:
-          push(
-              Instr{.var = PushInstr{.what = "%al", .whatSize = DataSize::Byte},
-                    .type = InstrType::Push},
-              Section::Main);
-          break;
-        case 2:
-          push(
-              Instr{.var = PushInstr{.what = "%ax", .whatSize = DataSize::Word},
-                    .type = InstrType::Push},
-              Section::Main);
-          break;
-        case 4:
-          push(Instr{.var =
-                         PushInstr{.what = "%eax", .whatSize = DataSize::Dword},
-                     .type = InstrType::Push},
-               Section::Main);
-          break;
-        case 8:
-        default:
-          push(Instr{.var =
-                         PushInstr{.what = "%rax", .whatSize = DataSize::Qword},
-                     .type = InstrType::Push},
-               Section::Main);
-          break;
+          case 1:
+            push(
+                Instr{.var = PushInstr{.what = "%al", .whatSize = DataSize::Byte},
+                      .type = InstrType::Push},
+                Section::Main);
+            break;
+          case 2:
+            push(
+                Instr{.var = PushInstr{.what = "%ax", .whatSize = DataSize::Word},
+                      .type = InstrType::Push},
+                Section::Main);
+            break;
+          case 4:
+            push(Instr{.var =
+                           PushInstr{.what = "%eax", .whatSize = DataSize::Dword},
+                       .type = InstrType::Push},
+                 Section::Main);
+            break;
+          case 8:
+          default:
+            push(Instr{.var =
+                           PushInstr{.what = "%rax", .whatSize = DataSize::Qword},
+                       .type = InstrType::Push},
+                 Section::Main);
+            break;
         }
       }
     }
@@ -644,7 +645,7 @@ void codegen::ternary(Node::Expr *expr) {
   int ternay = 0;
   std::string ternayCount = std::to_string(ternay);
 
-  visitExpr(e->condition); // Condition will be a bool. It will technically be 1 byte, but we can extend
+  visitExpr(e->condition);  // Condition will be a bool. It will technically be 1 byte, but we can extend
   popToRegister("%rax");
 
   push(Instr{.var = CmpInstr{.lhs = "%rax", .rhs = "$0", .size = DataSize::Qword},
@@ -678,24 +679,24 @@ void codegen::assign(Node::Expr *expr) {
   pushDebug(e->line, expr->file_id, e->pos);
 
   switch (e->assignee->kind) {
-  case ND_MEMBER:
-  case ND_STRUCT:
-    assignStructMember(e);
-    break;
-  case ND_INDEX:
-  case ND_ARRAY:
-    assignArray(e);
-    break;
-  case ND_DEREFERENCE:
-    assignDereference(e);
-    break;
-  default: {
-    IdentExpr *lhs = static_cast<IdentExpr *>(e->assignee);
-    visitExpr(e->rhs);
-    std::string res = variableTable[lhs->name];
-    popToRegister(res);
-    pushRegister(res); // Expressions return values!
-  }
+    case ND_MEMBER:
+    case ND_STRUCT:
+      assignStructMember(e);
+      break;
+    case ND_INDEX:
+    case ND_ARRAY:
+      assignArray(e);
+      break;
+    case ND_DEREFERENCE:
+      assignDereference(e);
+      break;
+    default: {
+      IdentExpr *lhs = static_cast<IdentExpr *>(e->assignee);
+      visitExpr(e->rhs);
+      std::string res = variableTable[lhs->name];
+      popToRegister(res);
+      pushRegister(res);  // Expressions return values!
+    }
   }
 }
 
@@ -712,25 +713,25 @@ void codegen::arrayElem(Node::Expr *expr) {
       Node::Type *underlying = static_cast<ArrayType *>(ident->type)->underlying;
       std::string whereBytes = variableTable[ident->name];
       long long offset = std::stoll(whereBytes.substr(
-        0, whereBytes.find("(")));
+          0, whereBytes.find("(")));
       // this is the base of the array - the
       // first byte of the first element
       // if struct type
       if (structByteSizes.find(getUnderlying(underlying)) != structByteSizes.end()) {
         // It's a struct. an LEA is expected, even if the struct is less than 16 bytes
         // Arrays are declared backwards (relatively)
-        push(Instr{.var = LeaInstr{.size = DataSize::Qword, 
-                    .dest = "%rcx",
-                    .src = std::to_string(offset + (index->value * structByteSizes[getUnderlying(underlying)].first)) + "(%rbp)"},
-                  .type = InstrType::Lea},
-            Section::Main);
+        push(Instr{.var = LeaInstr{.size = DataSize::Qword,
+                                   .dest = "%rcx",
+                                   .src = std::to_string(offset + (index->value * structByteSizes[getUnderlying(underlying)].first)) + "(%rbp)"},
+                   .type = InstrType::Lea},
+             Section::Main);
         pushRegister("%rcx");
       } else {
         push(Instr{.var = PushInstr{.what = std::to_string(offset + ((index->value + 1) * getByteSizeOfType(underlying))) + "(%rbp)",
                                     .whatSize = intDataToSize(getByteSizeOfType(underlying))},
-                    .type = InstrType::Push},
-              Section::Main);
-      return;
+                   .type = InstrType::Push},
+             Section::Main);
+        return;
       }
     } else {
       visitExpr(e->lhs);
@@ -748,7 +749,7 @@ void codegen::arrayElem(Node::Expr *expr) {
       // If it a struct, however, we must return rcx as we expect it to be an address
       if (structByteSizes.find(getUnderlying(static_cast<ArrayType *>(e->lhs->asmType)->underlying)) != structByteSizes.end()) {
         // lea instr
-        push(Instr{.var = LeaInstr{.size = DataSize::Qword, 
+        push(Instr{.var = LeaInstr{.size = DataSize::Qword,
                                    .dest = "%rcx",
                                    .src = std::to_string(offset) + "(%rcx)"},
                    .type = InstrType::Lea},
@@ -811,45 +812,45 @@ void codegen::arrayElem(Node::Expr *expr) {
     int underlyingByteSize = getByteSizeOfType(
         static_cast<ArrayType *>(e->lhs->asmType)->underlying);
     switch (underlyingByteSize) {
-    case 1: {
-      // No need to multiply
-      // Ex: []char or []bool
-      push(Instr{.var = PushInstr{.what = "(%rcx, %rax)",
-                                  .whatSize = DataSize::Byte},
-                 .type = InstrType::Push},
-           Section::Main);
-      break;
-    }
-    case 2:
-      push(Instr{.var = PushInstr{.what = "(%rcx, %rax, 2)",
-                                  .whatSize = DataSize::Word},
-                 .type = InstrType::Push},
-           Section::Main);
-      break;
-    case 4:
-      push(Instr{.var = PushInstr{.what = "(%rcx, %rax, 4)",
-                                  .whatSize = DataSize::Dword},
-                 .type = InstrType::Push},
-           Section::Main);
-      break;
-    case 8:
-      push(Instr{.var = PushInstr{.what = "(%rcx, %rax, 8)",
-                                  .whatSize = DataSize::Qword},
-                 .type = InstrType::Push},
-           Section::Main);
-      break;
-    default: {
-      // Sad, we can't rely on little syntactical sugar of the assembler to
-      // cheat our way out :(
-      push(Instr{.var = BinaryInstr{.op = "imul",
-                                    .src = "$" +
-                                           std::to_string(underlyingByteSize),
-                                    .dst = "%rax"},
-                 .type = InstrType::Binary},
-           Section::Main);
-      pushRegister("(%rcx, %rax)");
-      break;
-    }
+      case 1: {
+        // No need to multiply
+        // Ex: []char or []bool
+        push(Instr{.var = PushInstr{.what = "(%rcx, %rax)",
+                                    .whatSize = DataSize::Byte},
+                   .type = InstrType::Push},
+             Section::Main);
+        break;
+      }
+      case 2:
+        push(Instr{.var = PushInstr{.what = "(%rcx, %rax, 2)",
+                                    .whatSize = DataSize::Word},
+                   .type = InstrType::Push},
+             Section::Main);
+        break;
+      case 4:
+        push(Instr{.var = PushInstr{.what = "(%rcx, %rax, 4)",
+                                    .whatSize = DataSize::Dword},
+                   .type = InstrType::Push},
+             Section::Main);
+        break;
+      case 8:
+        push(Instr{.var = PushInstr{.what = "(%rcx, %rax, 8)",
+                                    .whatSize = DataSize::Qword},
+                   .type = InstrType::Push},
+             Section::Main);
+        break;
+      default: {
+        // Sad, we can't rely on little syntactical sugar of the assembler to
+        // cheat our way out :(
+        push(Instr{.var = BinaryInstr{.op = "imul",
+                                      .src = "$" +
+                                             std::to_string(underlyingByteSize),
+                                      .dst = "%rax"},
+                   .type = InstrType::Binary},
+             Section::Main);
+        pushRegister("(%rcx, %rax)");
+        break;
+      }
     }
   }
   // the end!
@@ -898,7 +899,7 @@ void codegen::memberExpr(Node::Expr *expr) {
       SymbolType *sym = static_cast<SymbolType *>(e->asmType);
       // Check if the member itself was a struct (arr[0].property == struct)
       if (structByteSizes.find(sym->name) != structByteSizes.end()) {
-        int offset = 0; // im gonna do something about that later
+        int offset = 0;  // im gonna do something about that later
         std::string structName = sym->name;
         std::vector<StructMember> fields = structByteSizes[structName].second;
         for (size_t i = 0; i < fields.size(); i++) {
@@ -911,14 +912,14 @@ void codegen::memberExpr(Node::Expr *expr) {
         push(Instr{.var = LeaInstr{.size = DataSize::Qword,
                                    .dest = "%rcx",
                                    .src = std::to_string(offset) + "(%rcx)"},
-                 .type = InstrType::Lea},
+                   .type = InstrType::Lea},
              Section::Main);
         pushRegister("%rcx");
         return;
       } else {
         // if the type was a primitive or a pointer
         long int where = structByteSizes[getUnderlying(indexType)].first;
-        visitExpr(index); // Will return a struct (with an lea)
+        visitExpr(index);  // Will return a struct (with an lea)
         // Pop the value into a register
         popToRegister("%rcx");
         for (long i = (signed)structByteSizes[getUnderlying(indexType)].second.size() - 1; i >= 0; i--) {
@@ -952,7 +953,7 @@ void codegen::memberExpr(Node::Expr *expr) {
     // Now we can access the struct's fields
     std::vector<StructMember> &fields = structByteSizes[structName].second;
     // Eval lhs (this will put the struct's address onto the stack)
-    visitExpr(e->lhs); // this could be an ident or something
+    visitExpr(e->lhs);  // this could be an ident or something
     /*
      * This is an optimization for nested member expressions.
      * In the assembly, it may look like this:
@@ -973,7 +974,8 @@ void codegen::memberExpr(Node::Expr *expr) {
     if (text_section.at(text_section.size() - 2).type != InstrType::Lea) {
       // It was just a push. This means that it was a pointer and we have to actually just do the work here.
       whatWasPushed = std::get<PushInstr>(text_section.at(text_section.size() - 1)
-                                             .var).what;
+                                              .var)
+                          .what;
       int offsetFromBase = structByteSizes[structName].first;
       for (long i = (unsigned)fields.size() - 1; i >= 0; i--) {
         offsetFromBase -= getByteSizeOfType(fields[i].second.first);
@@ -984,28 +986,29 @@ void codegen::memberExpr(Node::Expr *expr) {
       // Is another offsetFromBase += 8 here necessary? I got tests to work without it.
       bool resultIsStruct = structByteSizes.find(getUnderlying(e->asmType)) !=
                             structByteSizes.end();
-      
+
       popToRegister("%rcx");
       if (resultIsStruct) {
-        push(Instr{.var = LeaInstr{.size = DataSize::Qword, // Leas will always be qword, because we are 64-bit
-                                    .dest = "%rcx",
-                                    .src = std::to_string(offsetFromBase) + "(%rcx)"},
-                    .type = InstrType::Lea},
-              Section::Main);
+        push(Instr{.var = LeaInstr{.size = DataSize::Qword,  // Leas will always be qword, because we are 64-bit
+                                   .dest = "%rcx",
+                                   .src = std::to_string(offsetFromBase) + "(%rcx)"},
+                   .type = InstrType::Lea},
+             Section::Main);
         pushRegister("%rcx");
       } else {
         DataSize size = intDataToSize(getByteSizeOfType(e->asmType));
-        push(Instr{.var=PushInstr{.what = std::to_string(offsetFromBase) + "(%rcx)",
-                                  .whatSize = size},
-                  .type = InstrType::Push},
-              Section::Main);
+        push(Instr{.var = PushInstr{.what = std::to_string(offsetFromBase) + "(%rcx)",
+                                    .whatSize = size},
+                   .type = InstrType::Push},
+             Section::Main);
       }
       return;
     }
-    text_section.pop_back(); // Just a push. Nobody cares.
+    text_section.pop_back();  // Just a push. Nobody cares.
     whatWasPushed = std::get<LeaInstr>(text_section.at(text_section.size() - 1)
-                                           .var).src;
-    text_section.pop_back(); // The lea instruction
+                                           .var)
+                        .src;
+    text_section.pop_back();  // The lea instruction
     bool pushedHasOffset = whatWasPushed.find("(") != std::string::npos;
     signed int whatWasPushedOffset =
         pushedHasOffset
@@ -1065,7 +1068,7 @@ void codegen::memberExpr(Node::Expr *expr) {
       else
         pushRegister(
             "(" + whatWasPushed +
-            ")"); // It was not an effective address. It was just a register
+            ")");  // It was not an effective address. It was just a register
     } else {
       if (pushedHasOffset)
         pushRegister(std::to_string(whatWasPushedOffset + offset) + "(" +
@@ -1089,7 +1092,7 @@ void codegen::memberExpr(Node::Expr *expr) {
 
 void codegen::_struct(Node::Expr *expr) {
   StructExpr *e =
-      static_cast<StructExpr *>(expr); // Needed for the line and pos numbers
+      static_cast<StructExpr *>(expr);  // Needed for the line and pos numbers
   handleError(e->line, e->pos, "Orphaned structs are not allowed.", "Codegen",
               true);
 };
@@ -1115,10 +1118,15 @@ void codegen::addressExpr(Node::Expr *expr) {
     std::string var = variableTable[ident->name];
     // number offset
     long long int offset = std::stoll(var.substr(0, var.find("(")));
-    
+    long long int trueOffset = 0;
+    if (structByteSizes.find(getUnderlying(ident->asmType)) != structByteSizes.end())
+      trueOffset = offset + 8;
+    else
+      trueOffset = offset;
+
     push(Instr{.var = LeaInstr{.size = DataSize::Qword,
                                .dest = "%rcx",
-                               .src = std::to_string(offset + 8) + "(%rbp)"},
+                               .src = std::to_string(trueOffset) + "(%rbp)"},
                .type = InstrType::Lea},
          Section::Main);
     pushRegister("%rcx");
@@ -1126,7 +1134,7 @@ void codegen::addressExpr(Node::Expr *expr) {
   } else if (realRight->kind == ND_MEMBER) {
     MemberExpr *member = static_cast<MemberExpr *>(realRight);
     // Visit the lhs of the member
-    visitExpr(member->lhs); // This SHOULD be a struct
+    visitExpr(member->lhs);  // This SHOULD be a struct
     // Pop the value into a register
     popToRegister("%rcx");
     // But we must know the type of the lhs in order to know the offset of the
@@ -1139,7 +1147,7 @@ void codegen::addressExpr(Node::Expr *expr) {
       offset =
           structByteSizes[structName]
               .second.at(i)
-              .second.second; // This is the offset, not the size of the type!
+              .second.second;  // This is the offset, not the size of the type!
       if (structByteSizes[structName].second.at(i).first == fieldName)
         break;
     }
@@ -1159,13 +1167,13 @@ void codegen::addressExpr(Node::Expr *expr) {
       IntExpr *intExpr = static_cast<IntExpr *>(compute);
       signed long long int value = intExpr->value;
       // Visit the lhs of the index
-      visitExpr(index->lhs);   // This SHOULD be an array, which means it will
-                               // push the address
-      text_section.pop_back(); // Remove the 'push'
+      visitExpr(index->lhs);    // This SHOULD be an array, which means it will
+                                // push the address
+      text_section.pop_back();  // Remove the 'push'
       // There should be an LEA on top of the text_section rn
       LeaInstr instr =
           std::get<LeaInstr>(text_section.at(text_section.size() - 1).var);
-      text_section.pop_back(); // Remove the 'lea'
+      text_section.pop_back();  // Remove the 'lea'
       // Now we can "re-push" that value because its constant
       int underlyingByteSize = getByteSizeOfType(
           static_cast<ArrayType *>(index->lhs->asmType)->underlying);
@@ -1193,86 +1201,86 @@ void codegen::addressExpr(Node::Expr *expr) {
     visitExpr(compute);
     int computeByteSize = getByteSizeOfType(compute->asmType);
     switch (computeByteSize) {
-    case 1:
-      push(Instr{.var = PopInstr{.where = "%dl", .whereSize = DataSize::Byte},
-                 .type = InstrType::Pop},
-           Section::Main);
-      // Movzx
-      // TODO: If the src type is signed, do a sign extend instead
-      pushLinker("movzbq %dl, %rdx\n\t", Section::Main);
-      break;
-    case 2:
-      push(Instr{.var = PopInstr{.where = "%dx", .whereSize = DataSize::Word},
-                 .type = InstrType::Pop},
-           Section::Main);
-      // Movzx
-      pushLinker("movzwq %dx, %rdx\n\t", Section::Main);
-      break;
-    case 4:
-      push(Instr{.var = PopInstr{.where = "%edx", .whereSize = DataSize::Dword},
-                 .type = InstrType::Pop},
-           Section::Main);
-      // Movzx
-      pushLinker("movzlq %edx, %rdx\n\t", Section::Main);
-      break;
-    default: // What went wrong? Why would it not be 8? It should be 8....
-    case 8:
-      push(Instr{.var = PopInstr{.where = "%rdx", .whereSize = DataSize::Qword},
-                 .type = InstrType::Pop},
-           Section::Main);
-      break;
+      case 1:
+        push(Instr{.var = PopInstr{.where = "%dl", .whereSize = DataSize::Byte},
+                   .type = InstrType::Pop},
+             Section::Main);
+        // Movzx
+        // TODO: If the src type is signed, do a sign extend instead
+        pushLinker("movzbq %dl, %rdx\n\t", Section::Main);
+        break;
+      case 2:
+        push(Instr{.var = PopInstr{.where = "%dx", .whereSize = DataSize::Word},
+                   .type = InstrType::Pop},
+             Section::Main);
+        // Movzx
+        pushLinker("movzwq %dx, %rdx\n\t", Section::Main);
+        break;
+      case 4:
+        push(Instr{.var = PopInstr{.where = "%edx", .whereSize = DataSize::Dword},
+                   .type = InstrType::Pop},
+             Section::Main);
+        // Movzx
+        pushLinker("movzlq %edx, %rdx\n\t", Section::Main);
+        break;
+      default:  // What went wrong? Why would it not be 8? It should be 8....
+      case 8:
+        push(Instr{.var = PopInstr{.where = "%rdx", .whereSize = DataSize::Qword},
+                   .type = InstrType::Pop},
+             Section::Main);
+        break;
     }
     // Pop the value into a register
     popToRegister("%rax");
     // Visit the lhs of the index
-    visitExpr(index->lhs); // This SHOULD be an array, which means it will push
-                           // the address
+    visitExpr(index->lhs);  // This SHOULD be an array, which means it will push
+                            // the address
     popToRegister("%rdx");
     // Push the address as a effective address and multiplication
     int underlyingByteSize = getByteSizeOfType(
         static_cast<ArrayType *>(index->lhs->asmType)->underlying);
     switch (underlyingByteSize) {
-    case 1:
-      push(Instr{.var = LeaInstr{.size = DataSize::Qword,
-                                 .dest = "%rcx",
-                                 .src = "(%rdx, %rax)"},
-                 .type = InstrType::Lea},
-           Section::Main);
-      break;
-    case 2:
-      push(Instr{.var = LeaInstr{.size = DataSize::Qword,
-                                 .dest = "%rcx",
-                                 .src = "(%rdx, %rax, 2)"},
-                 .type = InstrType::Lea},
-           Section::Main);
-      break;
-    case 4:
-      push(Instr{.var = LeaInstr{.size = DataSize::Qword,
-                                 .dest = "%rcx",
-                                 .src = "(%rdx, %rax, 4)"},
-                 .type = InstrType::Lea},
-           Section::Main);
-      break;
-    case 8:
-      push(Instr{.var = LeaInstr{.size = DataSize::Qword,
-                                 .dest = "%rcx",
-                                 .src = "(%rdx, %rax, 8)"},
-                 .type = InstrType::Lea},
-           Section::Main);
-      break;
-    default:
-      push(Instr{.var = BinaryInstr{.op = "imul",
-                                    .src = "$" +
-                                           std::to_string(underlyingByteSize),
-                                    .dst = "%rax"},
-                 .type = InstrType::Binary},
-           Section::Main);
-      push(Instr{.var = LeaInstr{.size = DataSize::Qword,
-                                 .dest = "%rcx",
-                                 .src = "(%rdx, %rax)"},
-                 .type = InstrType::Lea},
-           Section::Main);
-      break;
+      case 1:
+        push(Instr{.var = LeaInstr{.size = DataSize::Qword,
+                                   .dest = "%rcx",
+                                   .src = "(%rdx, %rax)"},
+                   .type = InstrType::Lea},
+             Section::Main);
+        break;
+      case 2:
+        push(Instr{.var = LeaInstr{.size = DataSize::Qword,
+                                   .dest = "%rcx",
+                                   .src = "(%rdx, %rax, 2)"},
+                   .type = InstrType::Lea},
+             Section::Main);
+        break;
+      case 4:
+        push(Instr{.var = LeaInstr{.size = DataSize::Qword,
+                                   .dest = "%rcx",
+                                   .src = "(%rdx, %rax, 4)"},
+                   .type = InstrType::Lea},
+             Section::Main);
+        break;
+      case 8:
+        push(Instr{.var = LeaInstr{.size = DataSize::Qword,
+                                   .dest = "%rcx",
+                                   .src = "(%rdx, %rax, 8)"},
+                   .type = InstrType::Lea},
+             Section::Main);
+        break;
+      default:
+        push(Instr{.var = BinaryInstr{.op = "imul",
+                                      .src = "$" +
+                                             std::to_string(underlyingByteSize),
+                                      .dst = "%rax"},
+                   .type = InstrType::Binary},
+             Section::Main);
+        push(Instr{.var = LeaInstr{.size = DataSize::Qword,
+                                   .dest = "%rcx",
+                                   .src = "(%rdx, %rax)"},
+                   .type = InstrType::Lea},
+             Section::Main);
+        break;
     }
     pushRegister("%rcx");
     return;
@@ -1291,8 +1299,8 @@ void codegen::dereferenceExpr(Node::Expr *expr) {
   push(Instr{.var = Comment{.comment = "Dereference"},
              .type = InstrType::Comment},
        Section::Main);
-  visitExpr(e->left); // This should push the address of the thing we want to
-                      // dereference
+  visitExpr(e->left);  // This should push the address of the thing we want to
+                       // dereference
 
   // Pop the value into a register (lets pick it from the register stack)
   popToRegister("%rax");
@@ -1326,8 +1334,8 @@ void codegen::assignStructMember(Node::Expr *expr) {
            Section::Main);
       visitExpr(e->assignee);
       popToRegister(
-          "%rsi"); // The register used here doesn't matter, but rsi is rarely
-                   // used in Zura (other than syscall @ functions)
+          "%rsi");  // The register used here doesn't matter, but rsi is rarely
+                    // used in Zura (other than syscall @ functions)
       // Rdx contains the smaller struct. Rsi contains the bigger struct. Move
       // each byte!
       short byteCount = getByteSizeOfType(e->rhs->asmType);
@@ -1372,8 +1380,8 @@ void codegen::assignStructMember(Node::Expr *expr) {
   // We have to evaluate the rhs
   // Now we pop into the surrounding struct
   visitExpr(e->assignee);
-  text_section.pop_back(); // previous instr would juts be a push rcx which we
-                           // do not need
+  text_section.pop_back();  // previous instr would juts be a push rcx which we
+                            // do not need
   visitExpr(e->rhs);
   // Pop the value into a register
   push(Instr{.var = PopInstr{.where = std::to_string(getByteSizeOfType(
@@ -1401,18 +1409,18 @@ void codegen::assignDereference(Node::Expr *expr) {
                                                              2)
                                      : instr.what;
     int offset = instr.what.find('(')
-                             ? std::stoi(instr.what.substr(0, instr.what.find('(')))
-                             : 0;
+                     ? std::stoi(instr.what.substr(0, instr.what.find('(')))
+                     : 0;
     dereferenceStructPtr(static_cast<DereferenceExpr *>(e->assignee)->left, getUnderlying(e->asmType), offsetRegister, offset);
     return;
   }
 
-  visitExpr(e->rhs);  // Generate code for the right-hand side (RHS) value
-  popToRegister("%rax"); // Get the value from the stack into %rax
+  visitExpr(e->rhs);      // Generate code for the right-hand side (RHS) value
+  popToRegister("%rax");  // Get the value from the stack into %rax
 
   DereferenceExpr *deref = static_cast<DereferenceExpr *>(e->assignee);
-  visitExpr(deref->left); // Generate code for the left-hand side (LHS) address
-  popToRegister("%rcx"); // Get the address from the stack into %rcx
+  visitExpr(deref->left);  // Generate code for the left-hand side (LHS) address
+  popToRegister("%rcx");   // Get the address from the stack into %rcx
 
   // Move the value from %rax to the address in %rcx
   moveRegister("(%rcx)", "%rax", DataSize::Qword, DataSize::Qword);
@@ -1429,7 +1437,7 @@ void codegen::assignArray(Node::Expr *expr) {
     // lhs is likely an identifier to an array
     // it doesn't matter for this example, though
     visitExpr(e->lhs);
-    popToRegister("%rcx"); // rcx now has the base of the array
+    popToRegister("%rcx");  // rcx now has the base of the array
     signed short int size = getByteSizeOfType(e->lhs->asmType);
     size_t offset = idx * size;
     visitExpr(e->rhs);
@@ -1491,7 +1499,7 @@ void codegen::openExpr(Node::Expr *expr) {
     bool canWriteLiteral = false;
     bool canCreateLiteral = false;
     if (e->canRead == nullptr)
-      canReadLiteral = true; // Effectively, you wrote 'true'
+      canReadLiteral = true;  // Effectively, you wrote 'true'
     if (e->canWrite == nullptr)
       canWriteLiteral = true;
     if (e->canCreate == nullptr)
@@ -1560,9 +1568,9 @@ void codegen::openExpr(Node::Expr *expr) {
 void codegen::nullExpr(Node::Expr *expr) {
   // Has implicit value of 0.
   NullExpr *e = static_cast<NullExpr *>(expr);
-  push(Instr{.var=Comment{.comment = "Null on " + std::to_string(e->line) },
-            .type=InstrType::Comment},
+  push(Instr{.var = Comment{.comment = "Null on " + std::to_string(e->line)},
+             .type = InstrType::Comment},
        Section::Main);
-  pushRegister("$0"); // 8 bytes is fine here, since it is a pointer
+  pushRegister("$0");  // 8 bytes is fine here, since it is a pointer
   return;
 }
