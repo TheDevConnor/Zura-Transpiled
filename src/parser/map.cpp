@@ -1,5 +1,5 @@
-#include <functional>
 #include <algorithm>
+#include <functional>
 #include <string>
 #include <vector>
 
@@ -71,6 +71,8 @@ void Parser::createMaps() {
       {TokenKind::INPUT, inputStmt},
       {TokenKind::CLOSE, closeStmt},
       {TokenKind::PRINTLN, printlnStmt},
+      {TokenKind::GETARGC, getArgc},
+      {TokenKind::GETARGV, getArgv},
   };
   nud_lu = {
       {TokenKind::INT, primary},

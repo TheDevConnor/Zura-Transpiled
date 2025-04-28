@@ -475,7 +475,7 @@ Node::Stmt *Parser::importStmt(PStruct *psr, std::string name) {
   // ie: if the file that called it is in /home/user/file1
   // and the imported file is in /home/user/std/file2
   // the absolute path will be /home/user/std/file2
-  
+
   // Check if the path is already absolute
   if (path.starts_with("file://")) path = path.substr(7);
   std::filesystem::path absolutePath = path;
@@ -595,4 +595,28 @@ Node::Stmt *Parser::closeStmt(PStruct *psr, std::string name) {
   psr->expect(TokenKind::RIGHT_PAREN, "Expected a R_PAREN to end a close stmt");
   psr->expect(TokenKind::SEMICOLON, "Expected a SEMICOLON at the end of a close stmt");  // This wouldn't really return anything
   return new CloseStmt(line, column, fd, codegen::getFileID(psr->current_file));
+}
+
+Node::Stmt *Parser::getArgc(PStruct *psr, std::string name) {
+  int line = psr->tks[psr->pos].line;
+  int column = psr->tks[psr->pos].column;
+
+  (void)name;  // mark name as unused;
+
+  psr->expect(TokenKind::LEFT_PAREN, "Expected a L_PAREN to start a getArgc");
+  psr->expect(TokenKind::RIGHT_PAREN, "Expected a R_PAREN to end a getArgc");
+
+  return new GetArgcStmt(line, column, codegen::getFileID(psr->current_file));
+}
+
+Node::Stmt *Parser::getArgv(PStruct *psr, std::string name) {
+  int line = psr->tks[psr->pos].line;
+  int column = psr->tks[psr->pos].column;
+
+  (void)name;  // mark name as unused;
+
+  psr->expect(TokenKind::LEFT_PAREN, "Expected a L_PAREN to start a getArgv");
+  psr->expect(TokenKind::RIGHT_PAREN, "Expected a R_PAREN to end a getArgv");
+
+  return new GetArgvStmt(line, column, codegen::getFileID(psr->current_file));
 }

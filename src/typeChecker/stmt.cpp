@@ -1,11 +1,11 @@
 #include "../ast/stmt.hpp"
 
+#include <filesystem>
 #include <iostream>
 #include <memory>
 #include <string>
 #include <unordered_map>
 #include <vector>
-#include <filesystem>
 
 #include "../ast/types.hpp"
 #include "type.hpp"
@@ -77,15 +77,17 @@ void TypeChecker::visitFn(Node::Stmt *stmt) {
 
   visitStmt(fn_stmt->block);
 
-  // Ensure return type is properly checked
-  if (return_type == nullptr) {
-    handleError(fn_stmt->line, fn_stmt->pos, "Return type is not defined", "", "Type Error");
-  }
+  if (type_to_string(fn_stmt->returnType) != "void") {
+    // Ensure return type is properly checked
+    if (return_type == nullptr) {
+      handleError(fn_stmt->line, fn_stmt->pos, "Return type is not defined", "", "Type Error");
+    }
 
-  // Check return statement requirements
-  if (!needsReturn && type_to_string(fn_stmt->returnType) != "void") {
-    handleError(fn_stmt->line, fn_stmt->pos, "Function requires a return statement", "", "Type Error");
-    return;
+    // Check return statement requirements
+    if (!needsReturn) {
+      handleError(fn_stmt->line, fn_stmt->pos, "Function requires a return statement", "", "Type Error");
+      return;
+    }
   }
 
   // Ensure function return type matches expected type

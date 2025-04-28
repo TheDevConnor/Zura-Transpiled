@@ -143,6 +143,8 @@ Node::Stmt *linkStmt(PStruct *psr, std::string name);
 Node::Stmt *externStmt(PStruct *psr, std::string name);
 Node::Stmt *inputStmt(PStruct *psr, std::string name);
 Node::Stmt *closeStmt(PStruct *psr, std::string name);
+Node::Stmt *getArgc(PStruct *psr, std::string name);
+Node::Stmt *getArgv(PStruct *psr, std::string name);
 
 Node::Stmt *exprStmt(PStruct *psr);
 }  // namespace Parser

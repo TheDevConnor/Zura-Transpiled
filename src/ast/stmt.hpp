@@ -1,19 +1,19 @@
 #pragma once
 
-#include "ast.hpp"
-
 #include <iostream>
 #include <string>
 #include <vector>
 
+#include "ast.hpp"
+
 class ProgramStmt : public Node::Stmt {
-public:
-  std::vector<Node::Stmt *> stmt; // vector of stmts - the body
-  std::string inputPath; // yes this is actually useful trust me
+ public:
+  std::vector<Node::Stmt *> stmt;  // vector of stmts - the body
+  std::string inputPath;           // yes this is actually useful trust me
 
   ProgramStmt(std::vector<Node::Stmt *> stmt, std::string path) : stmt(stmt), inputPath(path) {
     kind = NodeKind::ND_PROGRAM;
-    file_id = -1; // This is the main file, no? It would make no sense
+    file_id = -1;  // This is the main file, no? It would make no sense
   }
 
   void debug(int indent = 0) const override {
@@ -24,11 +24,11 @@ public:
     }
   }
 
-  ~ProgramStmt() = default; // rule of threes
+  ~ProgramStmt() = default;  // rule of threes
 };
 
 class MatchStmt : public Node::Stmt {
-public:
+ public:
   int line, pos;
   Node::Expr *coverExpr;
   std::vector<std::pair<Node::Expr *, Node::Stmt *>> cases;
@@ -37,8 +37,7 @@ public:
   MatchStmt(int line, int pos, Node::Expr *coverExpr,
             std::vector<std::pair<Node::Expr *, Node::Stmt *>> cases,
             Node::Stmt *defaultCase, size_t file)
-      : line(line), pos(pos), coverExpr(coverExpr), cases(cases),
-        defaultCase(defaultCase) {
+      : line(line), pos(pos), coverExpr(coverExpr), cases(cases), defaultCase(defaultCase) {
     file_id = file;
     kind = NodeKind::ND_MATCH_STMT;
   }
@@ -68,7 +67,7 @@ public:
 };
 
 class ExprStmt : public Node::Stmt {
-public:
+ public:
   int line, pos;
   Node::Expr *expr;
 
@@ -84,11 +83,11 @@ public:
     expr->debug(indent + 1);
   }
 
-  ~ExprStmt() = default; // rule of threes
+  ~ExprStmt() = default;  // rule of threes
 };
 
 class ConstStmt : public Node::Stmt {
-public:
+ public:
   int line, pos;
   std::string name;
   Node::Stmt *value;
@@ -109,14 +108,14 @@ public:
     value->debug(indent + 1);
   }
 
-  ~ConstStmt() = default; // rule of threes
+  ~ConstStmt() = default;  // rule of threes
 };
 
 class BlockStmt : public Node::Stmt {
-public:
+ public:
   int line, pos;
   std::vector<Node::Stmt *> stmts;
-  std::vector<Node::Type *> varDeclTypes; // If there are 2 int declarations in this scope, this will be 16.
+  std::vector<Node::Type *> varDeclTypes;  // If there are 2 int declarations in this scope, this will be 16.
   bool shouldDeclareForward;
 
   BlockStmt(int line, int pos, std::vector<Node::Stmt *> stmts, bool declareForward, std::vector<Node::Type *> varDeclTypes, size_t file)
@@ -146,11 +145,11 @@ public:
     std::cout << "End of BlockStmt\n";
   }
 
-  ~BlockStmt() = default; // rule of threes
+  ~BlockStmt() = default;  // rule of threes
 };
 
 class VarStmt : public Node::Stmt {
-public:
+ public:
   int line, pos;
   bool isConst;
   std::string name;
@@ -159,8 +158,7 @@ public:
 
   VarStmt(int line, int pos, bool isConst, std::string name, Node::Type *type,
           Node::Expr *expr, size_t file)
-      : line(line), pos(pos), isConst(isConst), name(name), type(type),
-        expr(expr) {
+      : line(line), pos(pos), isConst(isConst), name(name), type(type), expr(expr) {
     file_id = file;
     kind = NodeKind::ND_VAR_STMT;
   }
@@ -183,11 +181,11 @@ public:
     }
   }
 
-  ~VarStmt() = default; // rule of threes
+  ~VarStmt() = default;  // rule of threes
 };
 
 class OutputStmt : public Node::Stmt {
-public:
+ public:
   int line, pos;
   Node::Expr *fd;
   std::vector<Node::Expr *> args;
@@ -211,10 +209,10 @@ public:
     }
   }
 
-  ~OutputStmt() = default; // rule of threes
+  ~OutputStmt() = default;  // rule of threes
 };
 class FnStmt : public Node::Stmt {
-public:
+ public:
   int line, pos;
   std::string name;
   std::vector<std::pair<std::string, Node::Type *>> params;
@@ -227,8 +225,7 @@ public:
          std::vector<std::pair<std::string, Node::Type *>> params,
          Node::Type *returnType, Node::Stmt *block, bool isMain = false,
          bool isEntry = false, size_t file = 0)
-      : line(line), pos(pos), name(name), params(std::move(params)),
-        returnType(returnType), block(block), isMain(isMain), isEntry(isEntry) {
+      : line(line), pos(pos), name(name), params(std::move(params)), returnType(returnType), block(block), isMain(isMain), isEntry(isEntry) {
     file_id = file;
     kind = NodeKind::ND_FN_STMT;
   }
@@ -257,11 +254,11 @@ public:
     block->debug(indent + 1);
   }
 
-  ~FnStmt() = default; // rule of threes
+  ~FnStmt() = default;  // rule of threes
 };
 
 class ReturnStmt : public Node::Stmt {
-public:
+ public:
   int line, pos;
   Node::Expr *expr;
 
@@ -281,11 +278,11 @@ public:
     }
   }
 
-  ~ReturnStmt() = default; // rule of threes
+  ~ReturnStmt() = default;  // rule of threes
 };
 
 class IfStmt : public Node::Stmt {
-public:
+ public:
   int line, pos;
   Node::Expr *condition;
   Node::Stmt *thenStmt;
@@ -293,8 +290,7 @@ public:
 
   IfStmt(int line, int pos, Node::Expr *condition, Node::Stmt *thenStmt,
          Node::Stmt *elseStmt, size_t file)
-      : line(line), pos(pos), condition(condition), thenStmt(thenStmt),
-        elseStmt(elseStmt) {
+      : line(line), pos(pos), condition(condition), thenStmt(thenStmt), elseStmt(elseStmt) {
     file_id = file;
     kind = NodeKind::ND_IF_STMT;
   }
@@ -315,11 +311,11 @@ public:
     }
   }
 
-  ~IfStmt() = default; // rule of threes
+  ~IfStmt() = default;  // rule of threes
 };
 
 class StructStmt : public Node::Stmt {
-public:
+ public:
   int line, pos;
   std::string name;
   std::vector<std::pair<std::string, Node::Type *>> fields;
@@ -355,11 +351,11 @@ public:
     }
   }
 
-  ~StructStmt() = default; // rule of threes
+  ~StructStmt() = default;  // rule of threes
 };
 
 class WhileStmt : public Node::Stmt {
-public:
+ public:
   int line, pos;
   Node::Expr *condition;
   Node::Expr *optional;
@@ -367,8 +363,7 @@ public:
 
   WhileStmt(int line, int pos, Node::Expr *condition, Node::Expr *optional,
             Node::Stmt *block, size_t file)
-      : line(line), pos(pos), condition(condition), optional(optional),
-       block(block) {
+      : line(line), pos(pos), condition(condition), optional(optional), block(block) {
     file_id = file;
     kind = NodeKind::ND_WHILE_STMT;
   }
@@ -389,11 +384,11 @@ public:
     block->debug(indent + 2);
   }
 
-  ~WhileStmt() = default; // rule of threes
+  ~WhileStmt() = default;  // rule of threes
 };
 
 class ForStmt : public Node::Stmt {
-public:
+ public:
   int line, pos;
   std::string name;
   Node::Expr *forLoop;
@@ -403,8 +398,7 @@ public:
 
   ForStmt(int line, int pos, std::string name, Node::Expr *forLoop,
           Node::Expr *condition, Node::Expr *optional, Node::Stmt *block, size_t file)
-      : line(line), pos(pos), name(name), forLoop(forLoop),
-        condition(condition), optional(optional), block(block) {
+      : line(line), pos(pos), name(name), forLoop(forLoop), condition(condition), optional(optional), block(block) {
     file_id = file;
     kind = NodeKind::ND_FOR_STMT;
   }
@@ -428,11 +422,11 @@ public:
     block->debug(indent + 2);
   }
 
-  ~ForStmt() = default; // rule of threes
+  ~ForStmt() = default;  // rule of threes
 };
 
 class EnumStmt : public Node::Stmt {
-public:
+ public:
   int line, pos;
   std::string name;
   std::vector<std::string> fields;
@@ -458,7 +452,7 @@ public:
 };
 
 class TemplateStmt : public Node::Stmt {
-public:
+ public:
   std::vector<std::string> typenames;
   int line, pos;
 
@@ -479,11 +473,11 @@ public:
     }
   }
 
-  ~TemplateStmt() = default; // rule of threes
+  ~TemplateStmt() = default;  // rule of threes
 };
 
 class ImportStmt : public Node::Stmt {
-public:
+ public:
   int line, pos;
   std::string name;
   Node::Stmt *stmt;
@@ -502,11 +496,11 @@ public:
     stmt->debug(indent + 1);
   }
 
-  ~ImportStmt() = default; // rule of threes
+  ~ImportStmt() = default;  // rule of threes
 };
 
 class LinkStmt : public Node::Stmt {
-public:
+ public:
   int line, pos;
   std::string name;
 
@@ -525,7 +519,7 @@ public:
 };
 
 class ExternStmt : public Node::Stmt {
-public:
+ public:
   int line, pos;
   std::string name;
   std::vector<std::string> externs;
@@ -553,7 +547,7 @@ public:
 };
 
 class BreakStmt : public Node::Stmt {
-public:
+ public:
   int line, pos;
 
   BreakStmt(int line, int pos, size_t file) : line(line), pos(pos) {
@@ -568,7 +562,7 @@ public:
 };
 
 class ContinueStmt : public Node::Stmt {
-public:
+ public:
   int line, pos;
 
   ContinueStmt(int line, int pos, size_t file) : line(line), pos(pos) {
@@ -583,13 +577,13 @@ public:
 };
 
 class InputStmt : public Node::Stmt {
-public: 
+ public:
   int line, pos;
   Node::Expr *bufferOut;
   Node::Expr *maxBytes;
   Node::Expr *fd;
-  
-  InputStmt(int line, int pos, Node::Expr *fd, Node::Expr *bufferOut, Node::Expr * sysCall, size_t file)
+
+  InputStmt(int line, int pos, Node::Expr *fd, Node::Expr *bufferOut, Node::Expr *sysCall, size_t file)
       : line(line), pos(pos), bufferOut(bufferOut), maxBytes(sysCall), fd(fd) {
     file_id = file;
     kind = NodeKind::ND_INPUT_STMT;
@@ -611,7 +605,7 @@ public:
 };
 
 class CloseStmt : public Node::Stmt {
-public:
+ public:
   int line, pos;
   Node::Expr *fd;
 
@@ -627,5 +621,35 @@ public:
     Node::printIndent(indent + 1);
     std::cout << "FD: \n";
     fd->debug(indent + 2);
+  }
+};
+
+class GetArgvStmt : public Node::Stmt {
+ public:
+  int line, pos;
+
+  GetArgvStmt(int line, int pos, size_t file) : line(line), pos(pos) {
+    file_id = file;
+    kind = NodeKind::ND_GETARGV_STMT;
+  }
+
+  void debug(int indent = 0) const override {
+    (void)indent;
+    std::cout << "GetArgv Stmt -> @getArgv" << std::endl;
+  }
+};
+
+class GetArgcStmt : public Node::Stmt {
+ public:
+  int line, pos;
+
+  GetArgcStmt(int line, int pos, size_t file) : line(line), pos(pos) {
+    file_id = file;
+    kind = NodeKind::ND_GETARGC_STMT;
+  }
+
+  void debug(int indent = 0) const override {
+    (void)indent;
+    std::cout << "GetArgc Stmt -> @getArgc" << std::endl;
   }
 };

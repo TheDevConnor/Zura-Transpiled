@@ -73,7 +73,7 @@ enum TokenKind {
   _CONST,
   PKG,
   TYPE,
-  EXIT, // Create an exit syscall from anywhere within the program, whether that be the main function or some other crazy place.
+  EXIT,  // Create an exit syscall from anywhere within the program, whether that be the main function or some other crazy place.
   IN,
   STRUCT,
   ENUM,
@@ -83,13 +83,13 @@ enum TokenKind {
   PRIV,
   TEMPLATE,
   TYPEALIAS,
-  BREAK, 
+  BREAK,
   CONTINUE,
   CAST,
-  CALL, // Call extern'd functions.
+  CALL,  // Call extern'd functions.
   LINK,
   EXTERN,
-  MATCH, // a C-like switch statement
+  MATCH,  // a C-like switch statement
   DEFAULT,
   CASE,
   INPUT,
@@ -99,8 +99,10 @@ enum TokenKind {
   FREE,
   MEMCPY,
   SIZEOF,
-  OPEN,  // open a file and return a fd from its path
-  CLOSE, // close a fd
+  OPEN,   // open a file and return a fd from its path
+  CLOSE,  // close a fd
+  GETARGC,
+  GETARGV,
 
   // Error
   ERROR_,
@@ -111,11 +113,11 @@ enum TokenKind {
 };
 
 class Lexer {
-public:
+ public:
   struct Token {
     const char *start;
     TokenKind kind;
-    std::string value; // This is also know as the lexeme
+    std::string value;  // This is also know as the lexeme
     int current;
     int column;
     int line;
@@ -154,7 +156,7 @@ public:
 
   void initMap(void);
 
-private:
+ private:
   bool match(char expected);
 
   Token makeToken(TokenKind kind);
