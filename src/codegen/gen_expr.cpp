@@ -859,24 +859,6 @@ void codegen::arrayElem(Node::Expr *expr) {
       }
     }
     // If the array is an array of pointers (or strings), we must LEA INSTEAD BECASUE OF COURSE WE WILL AHAHSFHEHAF
-    ArrayType *arrType = static_cast<ArrayType *>(e->lhs->asmType);
-    if (arrType->underlying->kind == ND_POINTER_TYPE ||
-        (arrType->underlying->kind == ND_SYMBOL_TYPE && getUnderlying(arrType->underlying) == "str")) {
-      // Pop, then lea
-      PushInstr instr = std::get<PushInstr>(text_section.at(text_section.size() - 1).var);
-      std::string whatWasPushed = instr.what;
-      text_section.pop_back();
-      push(Instr{.var = LeaInstr{.size = DataSize::Qword,
-                                 .dest = "%rcx",
-                                 .src = whatWasPushed},
-                 .type = InstrType::Lea},
-           Section::Main);
-      // Now we can push that rcx
-      push(Instr{.var = PushInstr{.what = "%rcx", .whatSize = DataSize::Qword},
-                 .type = InstrType::Push},
-           Section::Main);
-      return;
-    }
     // the end!
   }
 }

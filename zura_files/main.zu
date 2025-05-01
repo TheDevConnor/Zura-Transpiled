@@ -6,9 +6,8 @@ const main := fn () int! {
   }
   @outputln(1, "You passed in ", x, " inputs into Zura.");
   have y: *[]str = @getArgv();
-  have i: int! = 0;
-  loop (true) {
-    
-  }
+  loop (i = 0; i < x) : (i++) {
+    @outputln(1, "Input ", i, ": ", y&[i]);
+  };
   return 0;
 };

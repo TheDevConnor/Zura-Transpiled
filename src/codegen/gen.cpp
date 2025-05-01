@@ -91,7 +91,7 @@ void codegen::gen(Node::Stmt *stmt, bool isSaved, std::string output_filename,
             "  .cfi_startproc\n"
             "  movq (%rsp), %rax\n"
             "  movq %rax, .Largc(%rip)\n"
-            "  movq 8(%rsp), %rax\n"
+            "  leaq 8(%rsp), %rax\n"
             "  movq %rax, .Largv(%rip)\n"
             "  call main\n"
             "  xorq %rdi, %rdi\n"
