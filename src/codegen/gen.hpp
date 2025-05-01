@@ -46,6 +46,8 @@ inline std::vector<size_t> stackSizesForScopes = {};  // wordy term for "when we
 inline size_t stackSize = 0;
 inline std::string insideStructName = "";
 
+inline bool useArguments = false; // if calling @getArgc or @getArgv at any point in the program
+
 void visitStmt(Node::Stmt *stmt);
 void visitExpr(Node::Expr *expr);
 

@@ -1,27 +1,14 @@
-const ArgsList := struct {
-  argv: *[]str,
-  size: int!,
-};
- 
-const getCMDArgs := fn () ArgsList {
-  have argc: int! = @getArgc();    # Get the number of args
-  have argv: *[]str = @getArgv();  # Pointer to array of str
- 
-  have argsList: ArgsList = {
-    argv: argv, 
-    size: 20, 
-  }; 
- 
-  return argsList;
-};
- 
 const main := fn () int! {
-  have args: ArgsList = getCMDArgs();
-  
-  @outputln(1, "Number of arguments: ", args.size);
-  loop (i=0; i < args.size) : (i++) {
-    @outputln(1, args.argv&[i]);
+  have x: int! = @getArgc();
+  if (x < 2) {
+    @outputln(1, "You did not pass any inputs into Zura.");
+    return 1;
   }
-  
+  @outputln(1, "You passed in ", x, " inputs into Zura.");
+  have y: *[]str = @getArgv();
+  have i: int! = 0;
+  loop (true) {
+    
+  }
   return 0;
 };

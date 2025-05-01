@@ -814,10 +814,13 @@ void codegen::whileLoop(Node::Stmt *stmt) {
   // Evaluate condition
   push(Instr{.var = Label{.name = preLoop}, .type = InstrType::Label},
        Section::Main);
-  JumpCondition jc = processComparison(s->condition);
-  push(Instr{.var = JumpInstr{.op = getOpposite(jc), .label = postLoop},
-             .type = InstrType::Jmp},
-       Section::Main);
+  // Check if is a stupid loop (like if a test would fail like when checking 0 == 0)
+  if (s->condition->kind != ND_BOOL) {
+    JumpCondition jc = processComparison(s->condition);
+    push(Instr{.var = JumpInstr{.op = getOpposite(jc), .label = postLoop},
+               .type = InstrType::Jmp},
+         Section::Main);
+  }
 
   // yummers, now just do the block
   visitStmt(s->block);

@@ -785,7 +785,7 @@ void codegen::arrayElem(Node::Expr *expr) {
   } else {
     // This is a little more intricate.
     // We have to evaluate the index and multiply it by the size of the type
-    if (e->lhs->kind == ND_IDENT) {
+    if (e->lhs->kind == ND_IDENT && e->lhs->asmType->kind == ND_ARRAY_TYPE) {
       std::string ident = variableTable[static_cast<IdentExpr *>(e->lhs)->name];
       long long offset = std::stoll(ident.substr(0, ident.find("(")));
       push(Instr{.var = LeaInstr{.size = DataSize::Qword,
@@ -795,22 +795,28 @@ void codegen::arrayElem(Node::Expr *expr) {
            Section::Main);
     } else {
       visitExpr(e->lhs);
-      // lhs is always gonna be an array, but we need it to hold the addr
-      PushInstr instr = std::get<PushInstr>(text_section.at(text_section.size() - 1).var);
-      std::string whatWasPushed = instr.what;
-      text_section.pop_back();
-      push(Instr{.var = LeaInstr{.size = DataSize::Qword,
+      // What if the left side was actually a dereference?
+      if (CompileOptimizer::optimizeExpr(e->lhs)->kind != ND_DEREFERENCE) {
+        // lhs is always gonna be an array, but we need it to hold the addr
+        PushInstr instr = std::get<PushInstr>(text_section.at(text_section.size() - 1).var);
+        std::string whatWasPushed = instr.what;
+        text_section.pop_back();
+        push(Instr{.var = LeaInstr{.size = DataSize::Qword,
                                  .dest = "%rcx",
                                  .src = whatWasPushed},
                  .type = InstrType::Lea},
            Section::Main);
-      // %rcx contains the base of the array
+           // %rcx contains the base of the array
+      } else {
+        popToRegister("%rcx");
+      }
     }
     visitExpr(e->rhs);
     popToRegister("%rax");
     // Multiply it by the size of the type
     int underlyingByteSize = getByteSizeOfType(
         static_cast<ArrayType *>(e->lhs->asmType)->underlying);
+    // TEMPORARY!!
     switch (underlyingByteSize) {
       case 1: {
         // No need to multiply
@@ -852,8 +858,27 @@ void codegen::arrayElem(Node::Expr *expr) {
         break;
       }
     }
+    // If the array is an array of pointers (or strings), we must LEA INSTEAD BECASUE OF COURSE WE WILL AHAHSFHEHAF
+    ArrayType *arrType = static_cast<ArrayType *>(e->lhs->asmType);
+    if (arrType->underlying->kind == ND_POINTER_TYPE ||
+        (arrType->underlying->kind == ND_SYMBOL_TYPE && getUnderlying(arrType->underlying) == "str")) {
+      // Pop, then lea
+      PushInstr instr = std::get<PushInstr>(text_section.at(text_section.size() - 1).var);
+      std::string whatWasPushed = instr.what;
+      text_section.pop_back();
+      push(Instr{.var = LeaInstr{.size = DataSize::Qword,
+                                 .dest = "%rcx",
+                                 .src = whatWasPushed},
+                 .type = InstrType::Lea},
+           Section::Main);
+      // Now we can push that rcx
+      push(Instr{.var = PushInstr{.what = "%rcx", .whatSize = DataSize::Qword},
+                 .type = InstrType::Push},
+           Section::Main);
+      return;
+    }
+    // the end!
   }
-  // the end!
 }
 
 // z: [1, 2, 3, 4, 5]
@@ -1296,6 +1321,15 @@ void codegen::addressExpr(Node::Expr *expr) {
 void codegen::dereferenceExpr(Node::Expr *expr) {
   DereferenceExpr *e = static_cast<DereferenceExpr *>(expr);
 
+  // Do basic checking!!!
+  // Is the lhs a pointer to an array?
+
+  if (static_cast<PointerType *>(e->left->asmType)->underlying->kind == ND_ARRAY_TYPE) {
+    // Don't do literally of this shit
+    visitExpr(e->left);
+    return;
+  }
+
   push(Instr{.var = Comment{.comment = "Dereference"},
              .type = InstrType::Comment},
        Section::Main);
@@ -1576,13 +1610,20 @@ void codegen::nullExpr(Node::Expr *expr) {
 }
 
 void codegen::getArgcExpr(Node::Expr *expr) {
-  std::cout << "This is above my head. Waffles is the one who does this."
-            << std::endl;
-  exit(-1);
+  // Push debug
+  GetArgcExpr *e = static_cast<GetArgcExpr *>(expr);
+  pushDebug(e->line, expr->file_id, e->pos);
+
+  // yes, that's it LOL
+  pushRegister(".Largc(%rip)");
+  useArguments = true;
 }
 
 void codegen::getArgvExpr(Node::Expr *expr) {
-  std::cout << "This is above my head. Waffles is the one who does this."
-            << std::endl;
-  exit(-1);
+  // Push debug
+  GetArgvExpr *e = static_cast<GetArgvExpr *>(expr);
+  pushDebug(e->line, expr->file_id, e->pos);
+
+  pushRegister(".Largv(%rip)");
+  useArguments = true;
 }

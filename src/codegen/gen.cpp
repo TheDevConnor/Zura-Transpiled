@@ -60,6 +60,20 @@ void codegen::gen(Node::Stmt *stmt, bool isSaved, std::string output_filename,
   if (debug)
     // Get name of filename - do not include its directory
     file << ".file \"" << input_file << "\"\n";
+  // Before the text, we will output the BSS section
+  if (useArguments) {
+    file << ".bss\n"
+            ".Largc:\n"
+            "  .type .Largc, @object\n"
+            "  .zero 8\n"
+            "  .size .Largc, 8\n"
+            "\n"
+            ".Largv:\n"
+            "  .type .Largv, @object\n"
+            "  .zero 8\n"
+            "  .size .Largv, 8\n"
+            "\n";
+  }
   file << ".text\n";
   file << ".globl _start\n";
   if (debug) {
@@ -72,14 +86,29 @@ void codegen::gen(Node::Stmt *stmt, bool isSaved, std::string output_filename,
     }
     file << ".Ltext0:\n.weak .Ltext0\n";
   }
-  file << "_start:\n"
-          "  .cfi_startproc\n"
-          "  call main\n"
-          "  xorq %rdi, %rdi\n"
-          "  movq $60, %rax\n"
-          "  syscall\n"
-          "  .cfi_endproc\n"
-          ".size _start, .-_start\n";
+  if (useArguments) {
+    file << "_start:\n"
+            "  .cfi_startproc\n"
+            "  movq (%rsp), %rax\n"
+            "  movq %rax, .Largc(%rip)\n"
+            "  movq 8(%rsp), %rax\n"
+            "  movq %rax, .Largv(%rip)\n"
+            "  call main\n"
+            "  xorq %rdi, %rdi\n"
+            "  movq $60, %rax\n"
+            "  syscall\n"
+            "  .cfi_endproc\n"
+            ".size _start, .-_start\n";
+  } else {
+    file << "_start:\n"
+            "  .cfi_startproc\n"
+            "  call main\n"
+            "  xorq %rdi, %rdi\n"
+            "  movq $60, %rax\n"
+            "  syscall\n"
+            "  .cfi_endproc\n"
+            ".size _start, .-_start\n";
+  }
   file << Stringifier::stringifyInstrs(text_section);
   if (nativeFunctionsUsed.size() > 0) file << "\n# zura functions\n";
   if (nativeFunctionsUsed[NativeASMFunc::strlen] == true) {
