@@ -66,6 +66,7 @@ void Lexer::initMap() {
       {"@sizeof", TokenKind::SIZEOF},
       {"@getArgv", TokenKind::GETARGV},
       {"@getArgc", TokenKind::GETARGC},
+      {"@strcmp", TokenKind::STRCMP},
       // file management
       {"@open", TokenKind::OPEN},
       {"@close", TokenKind::CLOSE},

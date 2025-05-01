@@ -103,6 +103,7 @@ enum TokenKind {
   CLOSE,  // close a fd
   GETARGC,
   GETARGV,
+  STRCMP,
 
   // Error
   ERROR_,

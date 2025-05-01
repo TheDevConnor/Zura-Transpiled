@@ -802,11 +802,11 @@ void codegen::arrayElem(Node::Expr *expr) {
         std::string whatWasPushed = instr.what;
         text_section.pop_back();
         push(Instr{.var = LeaInstr{.size = DataSize::Qword,
-                                 .dest = "%rcx",
-                                 .src = whatWasPushed},
-                 .type = InstrType::Lea},
-           Section::Main);
-           // %rcx contains the base of the array
+                                   .dest = "%rcx",
+                                   .src = whatWasPushed},
+                   .type = InstrType::Lea},
+             Section::Main);
+        // %rcx contains the base of the array
       } else {
         popToRegister("%rcx");
       }
@@ -1608,4 +1608,27 @@ void codegen::getArgvExpr(Node::Expr *expr) {
 
   pushRegister(".Largv(%rip)");
   useArguments = true;
+}
+
+void codegen::strcmp(Node::Expr *expr) {
+  StrCmp *s = static_cast<StrCmp *>(expr);
+  pushDebug(s->line, expr->file_id, s->pos);
+
+  // Push the first string
+  visitExpr(s->v1);
+  popToRegister("%rsi");
+  // Push the second string
+  visitExpr(s->v2);
+  popToRegister("%rdi");
+
+  // call the native strcmp function
+  push(Instr{.var = CallInstr{.name = "native_strcmp"}, .type = InstrType::Call}, Section::Main);
+  nativeFunctionsUsed[NativeASMFunc::strcmp] = true;
+
+  // Push the result
+  push(Instr{.var = PushInstr{.what = "%rax", .whatSize = DataSize::Qword},
+             .type = InstrType::Push},
+       Section::Main);
+  // Push the result
+  pushRegister("%rax");
 }

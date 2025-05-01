@@ -43,6 +43,7 @@ enum NodeKind {
   ND_CLOSE,            // close(12)
   ND_GETARGC,          // @getArgc
   ND_GETARGV,          // @getArgv
+  ND_STRCMP,           // @strcmp(v1, v2)
 
   // Statements
   ND_EXPR_STMT,      // x = 12

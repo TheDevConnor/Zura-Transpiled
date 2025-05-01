@@ -113,6 +113,7 @@ Node::Expr *memcpyExpr(PStruct *psr);
 Node::Expr *openExpr(PStruct *psr);
 Node::Expr *getArgc(PStruct *psr);
 Node::Expr *getArgv(PStruct *psr);
+Node::Expr *strcmp(PStruct *psr);
 // Binary Functions
 Node::Expr *_postfix(PStruct *psr, Node::Expr *left, BindingPower bp);
 Node::Expr *binary(PStruct *psr, Node::Expr *left, BindingPower bp);

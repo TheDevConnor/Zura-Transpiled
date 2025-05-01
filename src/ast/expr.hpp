@@ -860,7 +860,7 @@ class GetArgvExpr : public Node::Expr {
 
   void debug(int indent = 0) const override {
     (void)indent;
-    std::cout << "GetArgv Stmt -> @getArgv" << std::endl;
+    std::cout << "GetArgv Expr -> @getArgv" << std::endl;
   }
 };
 
@@ -875,6 +875,27 @@ class GetArgcExpr : public Node::Expr {
 
   void debug(int indent = 0) const override {
     (void)indent;
-    std::cout << "GetArgc Stmt -> @getArgc" << std::endl;
+    std::cout << "GetArgc Expr -> @getArgc" << std::endl;
+  }
+};
+
+class StrCmp : public Node::Expr {
+ public:
+  int line, pos;
+  Node::Expr *v1;
+  Node::Expr *v2;
+
+  StrCmp(int line, int pos, Node::Expr *v1, Node::Expr *v2, size_t file) : line(line), pos(pos), v1(v1), v2(v2) {
+    file_id = file;
+    kind = NodeKind::ND_STRCMP;
+  }
+
+  void debug(int indent = 0) const override {
+    (void)indent;
+    std::cout << "Strcmp Expr:" << std::endl;
+    std::cout << "   value 1: ";
+    v1->debug();
+    std::cout << "   value 2: ";
+    v2->debug();
   }
 };

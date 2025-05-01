@@ -38,7 +38,7 @@ Zura supports the following data types:
 - `int!`: 32-bit unsigned integer
 - `float`: 32-bit floating-point number
 - `bool`: 8-bit boolean value (Technically 1-bit types cannot exist.)
-- `string`: 64-bit char* (pointer to the first character of the string.)
+- `str`: 64-bit char* (pointer to the first character of the string.)
 - `char`: 8-bit signed integer
 
 ```cpp

@@ -46,7 +46,7 @@ inline std::vector<size_t> stackSizesForScopes = {};  // wordy term for "when we
 inline size_t stackSize = 0;
 inline std::string insideStructName = "";
 
-inline bool useArguments = false; // if calling @getArgc or @getArgv at any point in the program
+inline bool useArguments = false;  // if calling @getArgc or @getArgv at any point in the program
 
 void visitStmt(Node::Stmt *stmt);
 void visitExpr(Node::Expr *expr);
@@ -96,6 +96,7 @@ void memcpyExpr(Node::Expr *expr);
 void openExpr(Node::Expr *expr);
 void getArgcExpr(Node::Expr *expr);
 void getArgvExpr(Node::Expr *expr);
+void strcmp(Node::Expr *expr);
 
 void assignStructMember(Node::Expr *expr);
 void assignArray(Node::Expr *expr);
@@ -145,6 +146,7 @@ enum class NativeASMFunc {
   itoa,
   uitoa,
   memcpy,
+  strcmp,
 };
 
 inline std::vector<Instr> text_section = {};

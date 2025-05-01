@@ -210,6 +210,29 @@ void codegen::gen(Node::Stmt *stmt, bool isSaved, std::string output_filename,
           "\n    ret"
           "\n.size native_memcpy, .-native_memcpy\n";
   }
+  if (nativeFunctionsUsed[NativeASMFunc::strcmp] == true) {
+    file << ".type native_strcmp, @function\n"
+            "native_strcmp:"
+            "\n    # rdi = str1, rsi = str2"
+            "\n    xorq %rax, %rax"
+            "\n.loop:"
+            "\n    movzbq (%rdi), %rcx"
+            "\n    movzbq (%rsi), %rdx"
+            "\n    cmpq %rcx, %rdx"
+            "\n    jne .notequal"
+            "\n    testq %rcx, %rcx" // Check for null terminator
+            "\n    je .equal"
+            "\n    incq %rdi"
+            "\n    incq %rsi"
+            "\n    jmp .loop"
+            "\n.equal:"
+            "\n    xorq %rax, %rax"
+            "\n    ret"
+            "\n.notequal:"
+            "\n    movq $1, %rax"
+            "\n    ret"
+            "\n.size native_strcmp, .-native_strcmp\n";
+  }
   if (debug) 
     file << ".Ldebug_text0:\n";
   if (head_section.size() > 0) {

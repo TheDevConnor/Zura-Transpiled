@@ -476,3 +476,17 @@ Node::Expr *Parser::getArgv(PStruct *psr) {
 
   return new GetArgvExpr(line, column, codegen::getFileID(psr->current_file));
 }
+
+Node::Expr *Parser::strcmp(PStruct *psr) {
+  int line = psr->tks[psr->pos].line;
+  int column = psr->tks[psr->pos].column;
+
+  psr->expect(TokenKind::STRCMP, "Expected a STRCMP keyword to start.");
+  psr->expect(TokenKind::LEFT_PAREN, "Expected LEFT_PAREN after the STRCMP keyword.");
+  Node::Expr *v1 = parseExpr(psr, defaultValue);
+  psr->expect(TokenKind::COMMA, "Expected a COMMA between the two values.");
+  Node::Expr *v2 = parseExpr(psr, defaultValue);
+  psr->expect(TokenKind::RIGHT_PAREN, "Expected RIGHT_PAREN to end the expr");
+
+  return new StrCmp(line, column, v1, v2, codegen::getFileID(psr->current_file));
+}

@@ -1,0 +1,59 @@
+@import "memory.zu";
+
+const Vector := struct {
+  data: *void,      # Pointer to the elements
+  elem_size: int!,  # Size of each element
+  size: int!,       # Current number of elements
+  capacity: int!,   # Total capacity
+
+  init := fn (self: *Vector, elem_size: int!) void {
+    self.data = nil;
+    self.elem_size = elem_size;
+    self.size = 0;
+    self.capacity = 0;
+  };
+
+  free := fn (self: *Vector) void {
+    if (self.data) @free(self.data, @sizeof(self.data));
+    self.data = nil;
+    self.size = 0;
+    self.capacity = 0;
+  };
+  
+  push := fn (self: *Vector, value: *void) int! {
+    if (self.size == self.capacity) {
+      have new_cap: int! = (self.capacity == 0) ? 2 : self.capacity * 2;
+      have new_data: *void = @alloc(new_cap * self.elem_size);
+      if (!new_data) {
+        @outputln(1, "Allocation for vector failed!");
+        return -1;
+      }
+      # Copy old data to new block
+      if (self.data) {
+        @memcpy(new_data, self.data, self.size * self.elem_size);
+        @free(self.data, @sizeof(self.data));
+      }
+      self.data = new_data;
+      self.capacity = new_cap;
+    }
+    # Copy the new element into the vector
+    @memcpy(@cast<*char>(self.data) + (self.size * self.elem_size), value, self.elem_size);
+    self.size++;
+    return 0;
+  };
+
+  push := fn (self: *Vector, out_elem: *void) {
+    if (self.size == 0) return -1; # Nothing to pop
+    self.size--;
+    if (out_elem) {
+      # Copy the popped element out if requested
+      @memcpy(out_elem, @cast<*char>(self.data) + (self.size + self.elem_size), self.elem_size);
+    }
+    return 0;
+  }; 
+
+  get := fn (self: *Vector, index: int!) *void {
+    if (index >= self.size) return nil; # Out of bounds
+    return @cast<*char>(self.data) + (index * self.elem_size);
+  };
+};

@@ -746,3 +746,28 @@ void TypeChecker::visitArgv(Node::Expr *expr) {
   (void)expr;
   return_type = std::make_shared<SymbolType>("*[]str");
 }
+
+void TypeChecker::visitStrcmp(Node::Expr *expr) {
+  StrCmp *s = static_cast<StrCmp *>(expr);
+
+  visitExpr(s->v1);
+  Node::Type *v1_type = return_type.get();
+
+  visitExpr(s->v2);
+  Node::Type *v2_type = return_type.get();
+
+  if (type_to_string(v1_type) == "str" && type_to_string(v2_type) == "str") {
+    std::cout << "Both are strings" << std::endl;
+    return_type = std::make_shared<SymbolType>("int");
+  } else if (type_to_string(v1_type) == "str" && type_to_string(v2_type) == "char") {
+    std::cout << "V1 is a string and V2 is a char" << std::endl;
+    return_type = std::make_shared<SymbolType>("int");
+  } else if (type_to_string(v1_type) == "char" && type_to_string(v2_type) == "str") {
+    std::cout << "V1 is a char and V2 is a string" << std::endl;
+    return_type = std::make_shared<SymbolType>("int");
+  } else {
+    std::string msg = "Strcmp requires both arguments to be of type 'str' or 'char' but got '" + type_to_string(v1_type) + "' and '" + type_to_string(v2_type) + "'";
+    handleError(s->line, s->pos, msg, "", "Type Error");
+  }
+  expr->asmType = new SymbolType("int");
+}

@@ -1,13 +1,17 @@
 const main := fn () int! {
   have x: int! = @getArgc();
+  have y: *[]str = @getArgv();
+
   if (x < 2) {
     @outputln(1, "You did not pass any inputs into Zura.");
     return 1;
   }
+
   @outputln(1, "You passed in ", x, " inputs into Zura.");
-  have y: *[]str = @getArgv();
   loop (i = 0; i < x) : (i++) {
-    @outputln(1, "Input ", i, ": ", y&[i]);
+    if (@strcmp(y&[i], "--build") == 0) {
+      @outputln(1, "IN HERE -> ", y&[i]);
+    }
   };
   return 0;
 };
