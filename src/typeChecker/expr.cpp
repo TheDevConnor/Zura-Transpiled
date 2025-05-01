@@ -152,7 +152,7 @@ void TypeChecker::visitIdent(Node::Expr *expr) {
       if (fn.first == ident->name) {
         lsp_idents.push_back(LSPIdentifier{res, LSPIdentifierType::Function, ident->name, (size_t)ident->line - 1, (size_t)ident->pos, ident->file_id});
         return;
-      } // my pc is about to explode of battery lol fun lol
+      }  // my pc is about to explode of battery lol fun lol
     }
     lsp_idents.push_back(LSPIdentifier{res, LSPIdentifierType::Variable, ident->name, (size_t)ident->line - 1, (size_t)ident->pos, ident->file_id});
   }
@@ -370,13 +370,12 @@ void TypeChecker::visitCall(Node::Expr *expr) {
   // add an ident for the lsp
   if (isLspMode) {
     lsp_idents.push_back(LSPIdentifier{
-      return_type.get(),
-      LSPIdentifierType::Function,
-      fnName,
-      (size_t)static_cast<IdentExpr *>(call->callee)->line,
-      (size_t)static_cast<IdentExpr *>(call->callee)->pos,
-      call->file_id
-    });
+        return_type.get(),
+        LSPIdentifierType::Function,
+        fnName,
+        (size_t)static_cast<IdentExpr *>(call->callee)->line,
+        (size_t)static_cast<IdentExpr *>(call->callee)->pos,
+        call->file_id});
   }
 }
 
@@ -736,4 +735,14 @@ void TypeChecker::visitOpen(Node::Expr *expr) {
 
   return_type = std::make_shared<SymbolType>("int");  // Just like before, the fd is always positive but less than the limit, so it can be inferred
   // asmtype is a constant int and already handled
+}
+
+void TypeChecker::visitArgc(Node::Expr *expr) {
+  (void)expr;
+  return_type = std::make_shared<SymbolType>("int");
+}
+
+void TypeChecker::visitArgv(Node::Expr *expr) {
+  (void)expr;
+  return_type = std::make_shared<SymbolType>("*[]str");
 }

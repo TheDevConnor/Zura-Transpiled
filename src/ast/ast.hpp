@@ -41,6 +41,8 @@ enum NodeKind {
   ND_SIZEOF,           // @sizeof(x)
   ND_OPEN,             // @open("file", true, false, true)
   ND_CLOSE,            // close(12)
+  ND_GETARGC,          // @getArgc
+  ND_GETARGV,          // @getArgv
 
   // Statements
   ND_EXPR_STMT,      // x = 12
@@ -64,8 +66,6 @@ enum NodeKind {
   ND_EXTERN_STMT,    // extern "C"
   ND_MATCH_STMT,     // match (x) { case 123 => { ... } }
   ND_INPUT_STMT,     // @input
-  ND_GETARGC_STMT,   // @getArgc
-  ND_GETARGV_STMT,   // @getArgv
 
   // Types
   ND_SYMBOL_TYPE,           // int

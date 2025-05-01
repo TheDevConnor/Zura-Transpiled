@@ -133,7 +133,7 @@ void codegen::primary(Node::Expr *expr) {
       BoolExpr *boolExpr = static_cast<BoolExpr *>(expr);
       // Technically just an int but SHHHHHHHH.............................
       push(Instr{.var = PushInstr{.what = "$" + std::to_string(boolExpr->value),
-                                  .whatSize = DataSize::Byte}, // A byte is so much more different than an int...
+                                  .whatSize = DataSize::Byte},  // A byte is so much more different than an int...
                  .type = InstrType::Push},
            Section::Main);
       break;
@@ -1573,4 +1573,16 @@ void codegen::nullExpr(Node::Expr *expr) {
        Section::Main);
   pushRegister("$0");  // 8 bytes is fine here, since it is a pointer
   return;
+}
+
+void codegen::getArgcExpr(Node::Expr *expr) {
+  std::cout << "This is above my head. Waffles is the one who does this."
+            << std::endl;
+  exit(-1);
+}
+
+void codegen::getArgvExpr(Node::Expr *expr) {
+  std::cout << "This is above my head. Waffles is the one who does this."
+            << std::endl;
+  exit(-1);
 }

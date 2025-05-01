@@ -71,8 +71,6 @@ void Parser::createMaps() {
       {TokenKind::INPUT, inputStmt},
       {TokenKind::CLOSE, closeStmt},
       {TokenKind::PRINTLN, printlnStmt},
-      {TokenKind::GETARGC, getArgc},
-      {TokenKind::GETARGV, getArgv},
   };
   nud_lu = {
       {TokenKind::INT, primary},
@@ -98,6 +96,8 @@ void Parser::createMaps() {
       {TokenKind::SIZEOF, sizeofExpr},
       {TokenKind::MEMCPY, memcpyExpr},
       {TokenKind::OPEN, openExpr},
+      {TokenKind::GETARGC, getArgc},
+      {TokenKind::GETARGV, getArgv},
   };
   led_lu = {
       {TokenKind::PLUS, binary},

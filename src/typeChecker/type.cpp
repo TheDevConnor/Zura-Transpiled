@@ -1,10 +1,10 @@
-#include "../helper/error/error.hpp"
-#include "../ast/stmt.hpp"
-#include "typeMaps.hpp"
 #include "type.hpp"
 
-#include <memory>
 #include <filesystem>
+#include <memory>
+
+#include "../ast/stmt.hpp"
+#include "typeMaps.hpp"
 
 void TypeChecker::performCheck(Node::Stmt *stmt, bool isMain, bool isLspServer) {
   isLspMode = isLspServer;
@@ -17,14 +17,14 @@ void TypeChecker::performCheck(Node::Stmt *stmt, bool isMain, bool isLspServer) 
     }
   }
 
-  initMaps(); // Initialize the maps
+  initMaps();  // Initialize the maps
 
   if (!context) {
     context = std::make_unique<TypeCheckerContext>();
   }
 
   context->enterScope();
-  visitStmt(stmt); // Pass the instance of Maps to the visitor
+  visitStmt(stmt);  // Pass the instance of Maps to the visitor
   context->exitScope();
 
   if (!foundMain && isMain) {

@@ -1,48 +1,27 @@
-# const ArgsList := struct {
-#   argv: *[]str,
-#   size: int!,
-# };
-# 
-# const getCMDArgs := fn () ArgsList {
-#   have argc: int! = @getArgc();     # Get the number of args
-#   have argv: *[]str = @getArgv();    # Pointer to array of str
-# 
-#   have argsList: ArgsList = {
-#     argv: argv, 
-#     size: argc, 
-#   }; 
-# 
-#   return argsList;
-# };
-# 
-# const main := fn () int! {
-#   have args: ArgsList = getCMDArgs();
-#   
-#   loop (i=0; i < args.size) : (i++) {
-#     @outputln(1, args.argv&[i]);
-#   }
-#   
-#   return 0;
-# };
-
-const Point := struct {
-  x: int!, 
-  y: int!,
+const ArgsList := struct {
+  argv: *[]str,
+  size: int!,
 };
-
-const move := fn (p: *Point, dx: int!, dy: int!) void {
-  @outputln(1, p.x, " ", p.y, " ", dx, " ", dy); 
+ 
+const getCMDArgs := fn () ArgsList {
+  have argc: int! = @getArgc();    # Get the number of args
+  have argv: *[]str = @getArgv();  # Pointer to array of str
+ 
+  have argsList: ArgsList = {
+    argv: argv, 
+    size: 20, 
+  }; 
+ 
+  return argsList;
 };
-
+ 
 const main := fn () int! {
-  have p: Point = { x: 5, y: 10 };
-
-  @outputln(1, "Before move: (", p.x, ", ", p.y, ")");
+  have args: ArgsList = getCMDArgs();
   
-  have ptr: *Point = &p;
-  move(ptr, 3, 4);
-
-  @outputln(1, "After move: (", ptr.x, ", ", ptr.y, ")");
-
+  @outputln(1, "Number of arguments: ", args.size);
+  loop (i=0; i < args.size) : (i++) {
+    @outputln(1, args.argv&[i]);
+  }
+  
   return 0;
 };

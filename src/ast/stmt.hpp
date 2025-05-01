@@ -220,12 +220,13 @@ class FnStmt : public Node::Stmt {
   Node::Stmt *block;
   bool isMain = false;
   bool isEntry = false;
+  bool isTemplate = false;
 
   FnStmt(int line, int pos, std::string name,
          std::vector<std::pair<std::string, Node::Type *>> params,
          Node::Type *returnType, Node::Stmt *block, bool isMain = false,
-         bool isEntry = false, size_t file = 0)
-      : line(line), pos(pos), name(name), params(std::move(params)), returnType(returnType), block(block), isMain(isMain), isEntry(isEntry) {
+         bool isEntry = false, bool isTemplate = false, size_t file = 0)
+      : line(line), pos(pos), name(name), params(std::move(params)), returnType(returnType), block(block), isMain(isMain), isEntry(isEntry), isTemplate(isTemplate) {
     file_id = file;
     kind = NodeKind::ND_FN_STMT;
   }
@@ -320,11 +321,12 @@ class StructStmt : public Node::Stmt {
   std::string name;
   std::vector<std::pair<std::string, Node::Type *>> fields;
   std::vector<Node::Stmt *> stmts;
+  bool isTemplate = false;
 
   StructStmt(int line, int pos, std::string name,
              std::vector<std::pair<std::string, Node::Type *>> fields,
-             std::vector<Node::Stmt *> stmts, size_t file)
-      : line(line), pos(pos), name(name), fields(fields), stmts(stmts) {
+             std::vector<Node::Stmt *> stmts, size_t file, bool isTemplate = false)
+      : line(line), pos(pos), name(name), fields(fields), stmts(stmts), isTemplate(isTemplate) {
     file_id = file;
     kind = NodeKind::ND_STRUCT_STMT;
   }
@@ -621,35 +623,5 @@ class CloseStmt : public Node::Stmt {
     Node::printIndent(indent + 1);
     std::cout << "FD: \n";
     fd->debug(indent + 2);
-  }
-};
-
-class GetArgvStmt : public Node::Stmt {
- public:
-  int line, pos;
-
-  GetArgvStmt(int line, int pos, size_t file) : line(line), pos(pos) {
-    file_id = file;
-    kind = NodeKind::ND_GETARGV_STMT;
-  }
-
-  void debug(int indent = 0) const override {
-    (void)indent;
-    std::cout << "GetArgv Stmt -> @getArgv" << std::endl;
-  }
-};
-
-class GetArgcStmt : public Node::Stmt {
- public:
-  int line, pos;
-
-  GetArgcStmt(int line, int pos, size_t file) : line(line), pos(pos) {
-    file_id = file;
-    kind = NodeKind::ND_GETARGC_STMT;
-  }
-
-  void debug(int indent = 0) const override {
-    (void)indent;
-    std::cout << "GetArgc Stmt -> @getArgc" << std::endl;
   }
 };

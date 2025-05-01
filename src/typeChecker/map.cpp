@@ -1,12 +1,8 @@
+#include <functional>
+#include <unordered_map>
+
 #include "../ast/ast.hpp"
 #include "type.hpp"
-
-#include <algorithm>
-#include <functional>
-#include <iostream>
-#include <unordered_map>
-#include <utility>
-#include <vector>
 
 using namespace TypeChecker;
 
@@ -66,6 +62,8 @@ void TypeChecker::initMaps() {
       {NodeKind::ND_SIZEOF, visitSizeof},
       {NodeKind::ND_MEMCPY_MEMORY, visitMemcpyMemory},
       {NodeKind::ND_OPEN, visitOpen},
+      {NodeKind::ND_GETARGC, visitArgc},
+      {NodeKind::ND_GETARGV, visitArgv},
   };
 }
 

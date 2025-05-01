@@ -185,8 +185,8 @@ Node::Stmt *Parser::funStmt(PStruct *psr, std::string name) {
   psr->expect(TokenKind::SEMICOLON, "Expected a SEMICOLON at the end of a function stmt");
 
   if (name == "main")
-    return new FnStmt(line, column, name, params, returnType, body, true, true, codegen::getFileID(psr->current_file));
-  return new FnStmt(line, column, name, params, returnType, body, false, false, codegen::getFileID(psr->current_file));
+    return new FnStmt(line, column, name, params, returnType, body, true, true, false, codegen::getFileID(psr->current_file));
+  return new FnStmt(line, column, name, params, returnType, body, false, false, false, codegen::getFileID(psr->current_file));
 }
 
 Node::Stmt *Parser::returnStmt(PStruct *psr, std::string name) {
@@ -291,8 +291,8 @@ Node::Stmt *Parser::structStmt(PStruct *psr, std::string name) {
   psr->expect(TokenKind::SEMICOLON, "Expected a SEMICOLON at the end of a struct stmt");
 
   if (stmts.size() > 0)
-    return new StructStmt(line, column, name, fields, stmts, codegen::getFileID(psr->current_file));
-  return new StructStmt(line, column, name, fields, {}, codegen::getFileID(psr->current_file));
+    return new StructStmt(line, column, name, fields, stmts, codegen::getFileID(psr->current_file), false);
+  return new StructStmt(line, column, name, fields, {}, codegen::getFileID(psr->current_file), false);
 }
 
 Node::Stmt *Parser::loopStmt(PStruct *psr, std::string name) {
@@ -595,28 +595,4 @@ Node::Stmt *Parser::closeStmt(PStruct *psr, std::string name) {
   psr->expect(TokenKind::RIGHT_PAREN, "Expected a R_PAREN to end a close stmt");
   psr->expect(TokenKind::SEMICOLON, "Expected a SEMICOLON at the end of a close stmt");  // This wouldn't really return anything
   return new CloseStmt(line, column, fd, codegen::getFileID(psr->current_file));
-}
-
-Node::Stmt *Parser::getArgc(PStruct *psr, std::string name) {
-  int line = psr->tks[psr->pos].line;
-  int column = psr->tks[psr->pos].column;
-
-  (void)name;  // mark name as unused;
-
-  psr->expect(TokenKind::LEFT_PAREN, "Expected a L_PAREN to start a getArgc");
-  psr->expect(TokenKind::RIGHT_PAREN, "Expected a R_PAREN to end a getArgc");
-
-  return new GetArgcStmt(line, column, codegen::getFileID(psr->current_file));
-}
-
-Node::Stmt *Parser::getArgv(PStruct *psr, std::string name) {
-  int line = psr->tks[psr->pos].line;
-  int column = psr->tks[psr->pos].column;
-
-  (void)name;  // mark name as unused;
-
-  psr->expect(TokenKind::LEFT_PAREN, "Expected a L_PAREN to start a getArgv");
-  psr->expect(TokenKind::RIGHT_PAREN, "Expected a R_PAREN to end a getArgv");
-
-  return new GetArgvStmt(line, column, codegen::getFileID(psr->current_file));
 }

@@ -1,7 +1,6 @@
 #include <memory>
 #include <unordered_set>
 
-#include "../ast/stmt.hpp"
 #include "../helper/error/error.hpp"
 #include "type.hpp"
 #include "typeMaps.hpp"

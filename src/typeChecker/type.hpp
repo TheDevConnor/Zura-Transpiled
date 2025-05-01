@@ -1,28 +1,23 @@
 #pragma once
 
-#include "../ast/ast.hpp"
-#include "../ast/expr.hpp"
-#include "../ast/stmt.hpp"
-#include "../ast/types.hpp"
-
-#include <algorithm>
 #include <functional>
 #include <memory>
 #include <string>
 #include <unordered_map>
-#include <utility>
 #include <vector>
 
+#include "../ast/ast.hpp"
+#include "../ast/expr.hpp"
+#include "../ast/stmt.hpp"
 
 namespace TypeChecker {
 extern std::string struct_name;
 extern bool isType;
 
 void handleError(int line, int pos, std::string msg, std::string note,
-                  std::string typeOfError);
+                 std::string typeOfError);
 
-
-enum class LSPIdentifierType { // Types of identifiers that can be looked up with syntax highlighting
+enum class LSPIdentifierType {  // Types of identifiers that can be looked up with syntax highlighting
   Function,
   Struct,
   Enum,
@@ -46,19 +41,28 @@ struct LSPIdentifier {
 };
 
 inline std::vector<LSPIdentifier> lsp_idents = {};
-enum class MathOp { Add, Subtract, Multiply, Divide, Modulo, Power };
+enum class MathOp { Add,
+                    Subtract,
+                    Multiply,
+                    Divide,
+                    Modulo,
+                    Power };
 const std::unordered_map<std::string, MathOp> mathOps = {
-    {"+", MathOp::Add},    {"-", MathOp::Subtract}, {"*", MathOp::Multiply},
-    {"/", MathOp::Divide}, {"%", MathOp::Modulo},   {"^", MathOp::Power}};
-enum class BoolOp { Greater, Less, GreaterEqual, LessEqual, Equal, NotEqual };
+    {"+", MathOp::Add}, {"-", MathOp::Subtract}, {"*", MathOp::Multiply}, {"/", MathOp::Divide}, {"%", MathOp::Modulo}, {"^", MathOp::Power}};
+enum class BoolOp { Greater,
+                    Less,
+                    GreaterEqual,
+                    LessEqual,
+                    Equal,
+                    NotEqual };
 const std::unordered_map<std::string, BoolOp> boolOps = {
-    {">", BoolOp::Greater},       {"<", BoolOp::Less},
-    {">=", BoolOp::GreaterEqual}, {"<=", BoolOp::LessEqual},
-    {"==", BoolOp::Equal},        {"!=", BoolOp::NotEqual}};
-enum class UnaryOP { Negate, Not, Increment, Decrement };
+    {">", BoolOp::Greater}, {"<", BoolOp::Less}, {">=", BoolOp::GreaterEqual}, {"<=", BoolOp::LessEqual}, {"==", BoolOp::Equal}, {"!=", BoolOp::NotEqual}};
+enum class UnaryOP { Negate,
+                     Not,
+                     Increment,
+                     Decrement };
 const std::unordered_map<std::string, UnaryOP> unaryOps = {
-    {"-", UnaryOP::Negate}, {"!", UnaryOP::Not},
-    {"++", UnaryOP::Increment}, {"--", UnaryOP::Decrement}};
+    {"-", UnaryOP::Negate}, {"!", UnaryOP::Not}, {"++", UnaryOP::Increment}, {"--", UnaryOP::Decrement}};
 
 inline bool foundMain = false;
 inline bool needsReturn = false;
@@ -156,4 +160,6 @@ void visitFreeMemory(Node::Expr *expr);
 void visitMemcpyMemory(Node::Expr *expr);
 void visitSizeof(Node::Expr *expr);
 void visitOpen(Node::Expr *expr);
-} // namespace TypeChecker
+void visitArgc(Node::Expr *expr);
+void visitArgv(Node::Expr *expr);
+}  // namespace TypeChecker

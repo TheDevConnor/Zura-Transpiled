@@ -454,3 +454,25 @@ Node::Expr *Parser::openExpr(PStruct *psr) {
   if (canCreate == nullptr) canCreate = new BoolExpr(line, column, true, codegen::getFileID(psr->current_file));
   return new OpenExpr(line, column, filePath, canRead, canWrite, canCreate, codegen::getFileID(psr->current_file));
 };
+
+Node::Expr *Parser::getArgc(PStruct *psr) {
+  int line = psr->tks[psr->pos].line;
+  int column = psr->tks[psr->pos].column;
+
+  psr->expect(TokenKind::GETARGC, "Expected a GETARGC keyword to start.");
+  psr->expect(TokenKind::LEFT_PAREN, "Expected a L_PAREN to start a getArgc");
+  psr->expect(TokenKind::RIGHT_PAREN, "Expected a R_PAREN to end a getArgc");
+
+  return new GetArgcExpr(line, column, codegen::getFileID(psr->current_file));
+}
+
+Node::Expr *Parser::getArgv(PStruct *psr) {
+  int line = psr->tks[psr->pos].line;
+  int column = psr->tks[psr->pos].column;
+
+  psr->expect(TokenKind::GETARGV, "Expected a GETARGV keyword to start.");
+  psr->expect(TokenKind::LEFT_PAREN, "Expected a L_PAREN to start a getArgv");
+  psr->expect(TokenKind::RIGHT_PAREN, "Expected a R_PAREN to end a getArgv");
+
+  return new GetArgvExpr(line, column, codegen::getFileID(psr->current_file));
+}

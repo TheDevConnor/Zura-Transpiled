@@ -111,6 +111,8 @@ Node::Expr *freeExpr(PStruct *psr);
 Node::Expr *sizeofExpr(PStruct *psr);
 Node::Expr *memcpyExpr(PStruct *psr);
 Node::Expr *openExpr(PStruct *psr);
+Node::Expr *getArgc(PStruct *psr);
+Node::Expr *getArgv(PStruct *psr);
 // Binary Functions
 Node::Expr *_postfix(PStruct *psr, Node::Expr *left, BindingPower bp);
 Node::Expr *binary(PStruct *psr, Node::Expr *left, BindingPower bp);
@@ -143,8 +145,5 @@ Node::Stmt *linkStmt(PStruct *psr, std::string name);
 Node::Stmt *externStmt(PStruct *psr, std::string name);
 Node::Stmt *inputStmt(PStruct *psr, std::string name);
 Node::Stmt *closeStmt(PStruct *psr, std::string name);
-Node::Stmt *getArgc(PStruct *psr, std::string name);
-Node::Stmt *getArgv(PStruct *psr, std::string name);
-
 Node::Stmt *exprStmt(PStruct *psr);
 }  // namespace Parser

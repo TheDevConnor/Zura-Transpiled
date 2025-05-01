@@ -15,6 +15,10 @@
 
 Allow integer literals to be inferred into whatever size they need; kind of like the signedness except for char, longs, shorts, etc.
 
+Also change templates to be inline for example 'fn<T> () {};' instead of '@template<T> fn () T {};'
+
+look into adding in defer to the language.
+
 A test for if adding TCP/HTTP requests
 Change @input/@output to be @read/@write and make file descriptor manually declared (0 for stdin; 1 for stdout)
 Pointers implemented now. Still backwards from C declarations tho but shh

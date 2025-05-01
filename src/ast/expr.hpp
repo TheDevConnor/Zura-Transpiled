@@ -849,3 +849,32 @@ class OpenExpr : public Node::Expr {
   }
 };
 
+class GetArgvExpr : public Node::Expr {
+ public:
+  int line, pos;
+
+  GetArgvExpr(int line, int pos, size_t file) : line(line), pos(pos) {
+    file_id = file;
+    kind = NodeKind::ND_GETARGV;
+  }
+
+  void debug(int indent = 0) const override {
+    (void)indent;
+    std::cout << "GetArgv Stmt -> @getArgv" << std::endl;
+  }
+};
+
+class GetArgcExpr : public Node::Expr {
+ public:
+  int line, pos;
+
+  GetArgcExpr(int line, int pos, size_t file) : line(line), pos(pos) {
+    file_id = file;
+    kind = NodeKind::ND_GETARGC;
+  }
+
+  void debug(int indent = 0) const override {
+    (void)indent;
+    std::cout << "GetArgc Stmt -> @getArgc" << std::endl;
+  }
+};
