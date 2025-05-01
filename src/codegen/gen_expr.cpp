@@ -1616,19 +1616,16 @@ void codegen::strcmp(Node::Expr *expr) {
 
   // Push the first string
   visitExpr(s->v1);
-  popToRegister("%rsi");
+  popToRegister("%rdi");
+  
   // Push the second string
   visitExpr(s->v2);
-  popToRegister("%rdi");
+  popToRegister("%rsi");
 
   // call the native strcmp function
   push(Instr{.var = CallInstr{.name = "native_strcmp"}, .type = InstrType::Call}, Section::Main);
   nativeFunctionsUsed[NativeASMFunc::strcmp] = true;
 
-  // Push the result
-  push(Instr{.var = PushInstr{.what = "%rax", .whatSize = DataSize::Qword},
-             .type = InstrType::Push},
-       Section::Main);
-  // Push the result
+  // The return value is in %rax, so we can just push it
   pushRegister("%rax");
 }
