@@ -19,9 +19,6 @@ Feel free to go take a look at the documentation to see how to use the language!
 [Documentation](sample/SAMPLE.md)
 
 ## Why
-<table>
-<tr>
-<td style="vertical-align: top; width: 60%;">
 C and C++ are foundational systems programming languages — but they come with decades of legacy, undefined behavior, and complexity that can make development error-prone and slow.
 
 **Zura** aims to modernize low-level programming by offering a **cleaner, safer, and more consistent alternative** to C and C++, without compromising on performance or control. It strips away the cruft and emphasizes simplicity, readability, and modern developer experience.
@@ -36,28 +33,6 @@ It’s built for those who:
 Zura is an experiment — but it's one that asks an important question:
 
 > *Can we design a systems language that feels like a reboot of C, with 2020s design sensibilities?*
-
-</td>
-<td style="vertical-align: top; width: 50%; height: 10%;">
-
-```cpp
-const main := fn () int! {
-  have x: int! = @getArgc();
-  if (x < 2) {
-    @outputln(1, "You did not pass any inputs into Zura.");
-    return 1;
-  }
-  @outputln(1, "You passed in ", x, " inputs into Zura.");
-  have y: *[]str = @getArgv();
-  loop (i=0; i < x) : (i++) {
-    @outputln(1, "Input ", i, ": ", y&[i]);
-  }
-  return 0;
-};
-```
-</td>
-</tr>
-</table>
 
 ## Project Status
 
