@@ -12,12 +12,13 @@ Zura is a statically typed language that blends familiar syntax with modern cons
 6. [Arrays](#arrays)
 7. [Structures](#structures)
 8. [Enums](#enums)
-9. [Templates](#templates)
-10. [Casting](#casting)
-11. [Pointers](#pointers)
-12. [Alloc and Free](#memory)
+9. [Pointers](#pointers)
+10. [Alloc, Free, Dereference](#memory)
+11. [Templates](#templates)
+12. [Casting](#casting)
 13. [Built-in Functions](#built-in-functions)
-14. [Debugging Zura](#debug-mode)
+14. [Getting CMDLine Args from the user](#Cmd-line-args) 
+15. [Debugging Zura](#debug-mode)
 
 ## Basic Syntax
 
@@ -185,16 +186,81 @@ have c: Color = Color.Red;
 @output(1, "Color: ", c, "\n");
 ```
 
-Each member of the enum is treated as the C-like equivalent of a `unsigned long`.
+Each member of the enum is treated as the C-like equivalent of a `unsigned long` and is auto-incrementing.
+
+## Pointers
+
+In Zura, we try to avoid the use of pointer arithmetic and other fancy operations as those often lead to segmentation faults and headaches (speaking from experience. This compiler was written in C++!).
+
+The data type of a pointer is defined with an asterisk `*`. A point-to operator that returns the address of the right-hand side is done with the `&` character.
+
+```cpp
+have i: int = 43;
+have j: *int = &i; # Contains the address of i.
+
+# Goes the address stored in j and sets that to 3.
+# The address stored in j (&i) is not affected.
+*j = 3;
+```
+
+When dereferencing a struct pointer, we use the same `.` operator that we would for regular structs, unlike the `->` in C-family languages.
+
+```cpp
+const Point := struct {
+  x: int;
+  y: int;
+};
+
+have p: Point = {
+  x: 10,
+  y: 20
+};
+
+have pP: *Point = &p;
+pP.x = 35; # Sets p.x = 35.
+```
+
+Pointers are also allowed to be the members of a struct.
+
+```cpp
+const Ray := struct {
+  endpoint: *Point;
+  angle: int;
+};
+
+have p: Point = {
+  x: 10,
+  y: 20
+};
+
+have r: Ray = {
+  endpoint: &p, # The memory address of p.
+  angle: 180;
+};
+```
+
+## Memory
+
+```cpp
+const main := fn () int! {
+  have nums: *int = @alloc(1);
+
+  nums& = 42;
+  @outputln(1, "num: ", nums&);
+
+  @free(nums, 1);
+  return 0;
+};
+```
+Write docs for this.
 
 ## Templates
 
 Zura supports templates which allow you to define generic functions and data structures.
-These are very similar to C++ templates.
+These are very similar to rust style inline generics.
 
 ```cpp
-@template <typename T>
-const swap := fn (a: T, b: T) T {
+const swap := fn <T> (a: T, b: T) T {
    have temp: T = a;
    a = b;
    b = temp;
@@ -251,68 +317,47 @@ have x: int! = 10;
 ```
 
 ```cpp
-# Add in docs for user input
-```
-
-```cpp
 # Importing a file is pretty straight forward
 @import "path_to_file";
 ```
 
-## Pointers
+Add in docs for @open, @close, @input
 
-In Zura, we try to avoid the use of pointer arithmetic and other fancy operations as those often lead to segmentation faults and headaches (speaking from experience. This compiler was written in C++!).
+## Cmd-line-args
+Zura provides built-in functions to access command-line arguments passed to the program.
 
-The data type of a pointer is defined with an asterisk `*`. A point-to operator that returns the address of the right-hand side is done with the `&` character.
-
+Here is an example of how to retrieve and use them:
 ```cpp
-have i: int = 43;
-have j: *int = &i; # Contains the address of i.
-
-# Goes the address stored in j and sets that to 3.
-# The address stored in j (&i) is not affected.
-*j = 3;
-```
-
-When dereferencing a struct pointer, we use the same `.` operator that we would for regular structs, unlike the `->` in C-family languages.
-
-```cpp
-const Point := struct {
-  x: int;
-  y: int;
+const ArgsList := struct {
+  argv: *[]str,
+  size: int!,
 };
 
-have p: Point = {
-  x: 10,
-  y: 20
+const getCMDArgs := fn () ArgsList {
+  have argc: int! = @getArgc();    # Get the number of args
+  have argv: *[]str = @getArgv();  # Pointer to array of str
+
+  have argsList: ArgsList = {
+    argv: argv, 
+    size: argc, 
+  }; 
+
+  return argsList;
 };
 
-have pP: *Point = &p;
-pP.x = 35; # Sets p.x = 35.
-```
-
-Pointers are also allowed to be the members of a struct.
-
-```cpp
-const Ray := struct {
-  endpoint: *Point;
-  angle: int;
-};
-
-have p: Point = {
-  x: 10,
-  y: 20
-};
-
-have r: Ray = {
-  endpoint: &p, # The memory address of p.
-  angle: 180;
+const main := fn () int! {
+  have args: ArgsList = getCMDArgs();
+  
+  @outputln(1, "Number of arguments: ", args.size);
+  loop (i=0; i < args.size) : (i++) {
+    @outputln(1, args.argv&[i]);
+  }
+  
+  return 0;
 };
 ```
-
-## Memory
-
-Docs on `@alloc` and `@free` are coming soon!
+This code defines a simple structure ArgsList that stores the pointer to the array of arguments and the argument count. The function `getCMDArgs()` 
+retrieves this information using the built-in `@getArgc()` and `@getArgv()` functions. The main function then prints out the argument count and each argument.
 
 ## Debug mode
 
