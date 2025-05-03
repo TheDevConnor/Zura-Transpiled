@@ -1,0 +1,10 @@
+@import "math.zu"
+
+const Buffer := struct<T> {
+  size: int!,
+  next: *Buffer,
+  ptr: int!,
+
+  create := fn (s: int!, alignement: int!) *Buffer {};
+};
+

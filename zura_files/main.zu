@@ -1,18 +1,25 @@
+#const main := fn () int! {
+#  have x: int! = @getArgc();
+#  have y: *[]str = @getArgv();
+
+#  if (x < 2) {
+#    @outputln(1, "You did not pass any inputs into Zura.");
+#    return 1;
+#  }
+
+#  @outputln(1, "You passed in ", x, " inputs into Zura.");
+#  loop (i = 0; i < x) : (i++) {
+#    if (@strcmp(y&[i], "--build") == 0) {
+#      @outputln(1, "IN HERE -> ", y&[i]);
+#    }
+#  };
+
+#  return 0;
+#};
+
+@import "std/math.zu";
+
 const main := fn () int! {
-  have x: int! = @getArgc();
-  have y: *[]str = @getArgv();
-
-  if (x < 2) {
-    @outputln(1, "You did not pass any inputs into Zura.");
-    return 1;
-  }
-
-  @outputln(1, "You passed in ", x, " inputs into Zura.");
-  loop (i = 0; i < x) : (i++) {
-    if (@strcmp(y&[i], "--build") == 0) {
-      @outputln(1, "IN HERE -> ", y&[i]);
-    }
-  };
-
+  # have x: int! = min(1, 4);
   return 0;
 };

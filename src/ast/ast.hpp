@@ -60,7 +60,6 @@ enum NodeKind {
   ND_PRINT_STMT,     // dis(x)
   ND_ENUM_STMT,      // enum x {}
   ND_IMPORT_STMT,    // import "x"
-  ND_TEMPLATE_STMT,  // template <T> fn () T {}
   ND_BREAK_STMT,     // break
   ND_CONTINUE_STMT,  // continue
   ND_LINK_STMT,      // link "x"

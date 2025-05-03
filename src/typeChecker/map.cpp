@@ -19,7 +19,6 @@ void TypeChecker::initMaps() {
       {NodeKind::ND_IF_STMT, visitIf},
       {NodeKind::ND_EXPR_STMT, visitExprStmt},
       {NodeKind::ND_PRINT_STMT, visitPrint},
-      {NodeKind::ND_TEMPLATE_STMT, visitTemplateStmt},
       {NodeKind::ND_WHILE_STMT, visitWhile},
       {NodeKind::ND_FOR_STMT, visitFor},
       {NodeKind::ND_BREAK_STMT, visitBreak},

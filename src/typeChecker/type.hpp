@@ -17,7 +17,8 @@ extern bool isType;
 void handleError(int line, int pos, std::string msg, std::string note,
                  std::string typeOfError);
 
-enum class LSPIdentifierType {  // Types of identifiers that can be looked up with syntax highlighting
+enum class LSPIdentifierType { // Types of identifiers that can be looked up
+                               // with syntax highlighting
   Function,
   Struct,
   Enum,
@@ -41,28 +42,21 @@ struct LSPIdentifier {
 };
 
 inline std::vector<LSPIdentifier> lsp_idents = {};
-enum class MathOp { Add,
-                    Subtract,
-                    Multiply,
-                    Divide,
-                    Modulo,
-                    Power };
+enum class MathOp { Add, Subtract, Multiply, Divide, Modulo, Power };
 const std::unordered_map<std::string, MathOp> mathOps = {
-    {"+", MathOp::Add}, {"-", MathOp::Subtract}, {"*", MathOp::Multiply}, {"/", MathOp::Divide}, {"%", MathOp::Modulo}, {"^", MathOp::Power}};
-enum class BoolOp { Greater,
-                    Less,
-                    GreaterEqual,
-                    LessEqual,
-                    Equal,
-                    NotEqual };
+    {"+", MathOp::Add},    {"-", MathOp::Subtract}, {"*", MathOp::Multiply},
+    {"/", MathOp::Divide}, {"%", MathOp::Modulo},   {"^", MathOp::Power}};
+enum class BoolOp { Greater, Less, GreaterEqual, LessEqual, Equal, NotEqual };
 const std::unordered_map<std::string, BoolOp> boolOps = {
-    {">", BoolOp::Greater}, {"<", BoolOp::Less}, {">=", BoolOp::GreaterEqual}, {"<=", BoolOp::LessEqual}, {"==", BoolOp::Equal}, {"!=", BoolOp::NotEqual}};
-enum class UnaryOP { Negate,
-                     Not,
-                     Increment,
-                     Decrement };
+    {">", BoolOp::Greater},       {"<", BoolOp::Less},
+    {">=", BoolOp::GreaterEqual}, {"<=", BoolOp::LessEqual},
+    {"==", BoolOp::Equal},        {"!=", BoolOp::NotEqual}};
+enum class UnaryOP { Negate, Not, Increment, Decrement };
 const std::unordered_map<std::string, UnaryOP> unaryOps = {
-    {"-", UnaryOP::Negate}, {"!", UnaryOP::Not}, {"++", UnaryOP::Increment}, {"--", UnaryOP::Decrement}};
+    {"-", UnaryOP::Negate},
+    {"!", UnaryOP::Not},
+    {"++", UnaryOP::Increment},
+    {"--", UnaryOP::Decrement}};
 
 inline bool foundMain = false;
 inline bool needsReturn = false;
@@ -74,21 +68,26 @@ std::string type_to_string(Node::Type *type);
 
 bool isIntBasedType(Node::Type *type);
 
-bool checkTypeMatch(Node::Type *lhs,
-                    Node::Type *rhs);
-void performCheck(Node::Stmt *stmt, bool isMain = true, bool isLspServer = false);
+bool checkTypeMatch(Node::Type *lhs, Node::Type *rhs);
+void performCheck(Node::Stmt *stmt, bool isMain = true,
+                  bool isLspServer = false);
 void printTables(void);
 
 std::string determineTypeKind(const std::string &type);
 
 std::shared_ptr<Node::Type> share(Node::Type *type);
-void processStructMember(MemberExpr *member, const std::string &name, std::string lhsType);
+void processStructMember(MemberExpr *member, const std::string &name,
+                         std::string lhsType);
 void processEnumMember(MemberExpr *member, const std::string &lhsType);
 void handleUnknownType(MemberExpr *member, const std::string &lhsType);
 
 void reportOverloadedFunctionError(CallExpr *call, Node::Expr *callee);
-bool validateArgumentCount(CallExpr *call, Node::Expr *callee, const std::unordered_map<std::string, Node::Type *> &fnParams);
-bool validateArgumentTypes(CallExpr *call, Node::Expr *callee, const std::unordered_map<std::string, Node::Type *> &fnParams);
+bool validateArgumentCount(
+    CallExpr *call, Node::Expr *callee,
+    const std::unordered_map<std::string, Node::Type *> &fnParams);
+bool validateArgumentTypes(
+    CallExpr *call, Node::Expr *callee,
+    const std::unordered_map<std::string, Node::Type *> &fnParams);
 
 void visitArrayType(Node::Type *type);
 
@@ -118,7 +117,6 @@ void visitBlock(Node::Stmt *stmt);
 void visitVar(Node::Stmt *stmt);
 void visitPrint(Node::Stmt *stmt);
 void visitIf(Node::Stmt *stmt);
-void visitTemplateStmt(Node::Stmt *stmt);
 void visitReturn(Node::Stmt *stmt);
 void visitWhile(Node::Stmt *stmt);
 void visitFor(Node::Stmt *stmt);
@@ -163,4 +161,4 @@ void visitOpen(Node::Expr *expr);
 void visitArgc(Node::Expr *expr);
 void visitArgv(Node::Expr *expr);
 void visitStrcmp(Node::Expr *expr);
-}  // namespace TypeChecker
+} // namespace TypeChecker

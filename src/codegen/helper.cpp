@@ -1,29 +1,30 @@
 #include "../helper/error/error.hpp"
 #include "../typeChecker/type.hpp"
+#include "gen.hpp"
 #include "optimizer/compiler.hpp"
 #include "optimizer/instr.hpp"
-#include "gen.hpp"
 
-#include <cstdint>
-#include <fstream>
+#include <algorithm>
 #include <cmath>
+#include <cstdint>
 #include <filesystem>
+#include <fstream>
 #include <unordered_map>
 
-
-void codegen::handleError(int line, int pos, std::string msg, std::string typeOfError, bool isFatal) {
+void codegen::handleError(int line, int pos, std::string msg,
+                          std::string typeOfError, bool isFatal) {
   Lexer lexer; // dummy lexer
   ErrorClass::error(line, pos, msg, "", typeOfError, node.current_file, lexer,
-                    node.tks, false, false, isFatal,
-                    false, false, true);
+                    node.tks, false, false, isFatal, false, false, true);
 }
 
 /*
- * @brief Appends a pushq instruction to the text section, using {reg} as the register to push
- * 
+ * @brief Appends a pushq instruction to the text section, using {reg} as the
+ * register to push
+ *
  * Also look at {@link popToRegister}
  * @param reg The register to push
-*/
+ */
 void codegen::pushRegister(const std::string &reg) {
   push(Instr{.var = PushInstr{.what = reg}, .type = InstrType::Push},
        Section::Main);
@@ -31,11 +32,12 @@ void codegen::pushRegister(const std::string &reg) {
 }
 
 /*
- * @brief Appends a popq instruction to the text section, using {reg} as the register to pop to
- * 
+ * @brief Appends a popq instruction to the text section, using {reg} as the
+ * register to pop to
+ *
  * Also look at {@link pushRegister}
  * @param reg The register to pop to
-*/
+ */
 void codegen::popToRegister(const std::string &reg) {
   push(Instr{.var = PopInstr{.where = reg}, .type = InstrType::Pop},
        Section::Main);
@@ -53,30 +55,26 @@ void codegen::moveRegister(const std::string &dest, const std::string &src,
 }
 
 void codegen::pushLinker(std::string val, Section section) {
-  push(Instr {
-    .var = LinkerDirective {
-      .value = val
-    },
-    .type = InstrType::Linker
-  }, section);
+  push(Instr{.var = LinkerDirective{.value = val}, .type = InstrType::Linker},
+       section);
 }
 JumpCondition codegen::getOpposite(JumpCondition in) {
   switch (in) {
-    case JumpCondition::Equal:
-      return JumpCondition::NotEqual;
-    case JumpCondition::NotEqual:
-      return JumpCondition::Equal;
-    case JumpCondition::Greater:
-      return JumpCondition::LessEqual;
-    case JumpCondition::GreaterEqual:
-      return JumpCondition::Less;
-    case JumpCondition::Less:
-      return JumpCondition::GreaterEqual;
-    case JumpCondition::LessEqual:
-      return JumpCondition::Greater;
-    case JumpCondition::Unconditioned:
-    default:
-      return JumpCondition::Unconditioned;
+  case JumpCondition::Equal:
+    return JumpCondition::NotEqual;
+  case JumpCondition::NotEqual:
+    return JumpCondition::Equal;
+  case JumpCondition::Greater:
+    return JumpCondition::LessEqual;
+  case JumpCondition::GreaterEqual:
+    return JumpCondition::Less;
+  case JumpCondition::Less:
+    return JumpCondition::GreaterEqual;
+  case JumpCondition::LessEqual:
+    return JumpCondition::Greater;
+  case JumpCondition::Unconditioned:
+  default:
+    return JumpCondition::Unconditioned;
   }
 };
 
@@ -98,7 +96,8 @@ JumpCondition codegen::getJumpCondition(const std::string &op) {
 }
 
 int codegen::getExpressionDepth(Node::Expr *e) {
-  if (e->kind != NodeKind::ND_BINARY) return 1; 
+  if (e->kind != NodeKind::ND_BINARY)
+    return 1;
   BinaryExpr *expr = static_cast<BinaryExpr *>(e);
   int lhsDepth = 1;
   if (expr->lhs->kind == NodeKind::ND_BINARY) {
@@ -123,7 +122,8 @@ int codegen::getExpressionDepth(Node::Expr *e) {
 }
 
 JumpCondition codegen::processComparison(Node::Expr *cond) {
-  // Evaluate the expression. Return the jump of condition of when the comparison is TRUE
+  // Evaluate the expression. Return the jump of condition of when the
+  // comparison is TRUE
   Node::Expr *eval = CompileOptimizer::optimizeExpr(cond);
   if (cond->kind == ND_BINARY) {
     BinaryExpr *bin = static_cast<BinaryExpr *>(eval);
@@ -131,30 +131,33 @@ JumpCondition codegen::processComparison(Node::Expr *cond) {
       // we can do a little bit of optimizing here
       int lhsDepth = getExpressionDepth(bin->lhs);
       int rhsDepth = getExpressionDepth(bin->rhs);
-      bool isFloat =  bin->lhs->asmType->kind == ND_SYMBOL_TYPE && getUnderlying(bin->lhs->asmType) == "float";
-      bool isDouble = bin->lhs->asmType->kind == ND_SYMBOL_TYPE && getUnderlying(bin->lhs->asmType) == "double";
+      bool isFloat = bin->lhs->asmType->kind == ND_SYMBOL_TYPE &&
+                     getUnderlying(bin->lhs->asmType) == "float";
+      bool isDouble = bin->lhs->asmType->kind == ND_SYMBOL_TYPE &&
+                      getUnderlying(bin->lhs->asmType) == "double";
       DataSize size = DataSize::Qword;
       std::string lhsReg = "%rax";
       std::string rhsReg = "%rbx";
-      switch (std::max(getByteSizeOfType(bin->lhs->asmType), getByteSizeOfType(bin->rhs->asmType))) {
-        case 1:
-          lhsReg = "%al";
-          rhsReg = "%bl";
-          size = DataSize::Byte;
-          break;
-        case 2:
-          lhsReg = "%ax";
-          rhsReg = "%bx";
-          size = DataSize::Word;
-          break;
-        case 4:
-          lhsReg = "%eax";
-          rhsReg = "%ebx";
-          size = DataSize::Dword;
-          break;
-        case 8:
-        default:
-          break; // It's already OK
+      switch (std::max(getByteSizeOfType(bin->lhs->asmType),
+                       getByteSizeOfType(bin->rhs->asmType))) {
+      case 1:
+        lhsReg = "%al";
+        rhsReg = "%bl";
+        size = DataSize::Byte;
+        break;
+      case 2:
+        lhsReg = "%ax";
+        rhsReg = "%bx";
+        size = DataSize::Word;
+        break;
+      case 4:
+        lhsReg = "%eax";
+        rhsReg = "%ebx";
+        size = DataSize::Dword;
+        break;
+      case 8:
+      default:
+        break; // It's already OK
       }
       if (lhsDepth > rhsDepth) {
         visitExpr(bin->lhs);
@@ -169,15 +172,18 @@ JumpCondition codegen::processComparison(Node::Expr *cond) {
       }
       // perform the compare
       if (isFloat || isDouble) {
-        pushLinker("ucomiss %xmm1, %xmm0\n\t", Section::Main);  
+        pushLinker("ucomiss %xmm1, %xmm0\n\t", Section::Main);
       } else {
-        push(Instr{.var = CmpInstr{.lhs = lhsReg, .rhs = rhsReg, .size = size}, .type = InstrType::Cmp}, Section::Main);
+        push(Instr{.var = CmpInstr{.lhs = lhsReg, .rhs = rhsReg, .size = size},
+                   .type = InstrType::Cmp},
+             Section::Main);
       }
-      return getJumpCondition(bin->op); 
+      return getJumpCondition(bin->op);
     }
   }
   visitExpr(eval);
-  PushInstr instr = std::get<PushInstr>(text_section[text_section.size() - 1].var);
+  PushInstr instr =
+      std::get<PushInstr>(text_section[text_section.size() - 1].var);
   text_section.pop_back();
   pushLinker("test " + instr.what + ", " + instr.what + "\n\t", Section::Main);
   return JumpCondition::NotZero;
@@ -198,7 +204,7 @@ void codegen::handleReturnCleanup() {
 size_t codegen::convertFloatToInt(std::string input) {
   union {
     double f; // 64-bit float
-    size_t i;   // 64-bit int
+    size_t i; // 64-bit int
   } u;
   u.f = std::stod(input);
   return u.i;
@@ -216,7 +222,7 @@ bool codegen::execute_command(const std::string &command,
     handleError(0, 0, "Error opening log file: " + log_file, "Codegen Error");
     return false;
   }
-  
+
   std::string line;
   bool first = true;
   while (getline(log, line)) {
@@ -227,7 +233,7 @@ bool codegen::execute_command(const std::string &command,
       log_contents += "\n\t" + line;
     }
   }
-  
+
   log.close();
 
   if (result != 0) {
@@ -238,43 +244,43 @@ bool codegen::execute_command(const std::string &command,
     handleError(0, 0, error_message, "Codegen Error", true);
     return false;
   }
-  
+
   return true;
 }
 
 void codegen::push(Instr instr, Section section) {
   switch (section) {
-    case Section::Main:
-      text_section.push_back(instr);
-      break;
-    case Section::Head:
-      head_section.push_back(instr);
-      break;
-    case Section::Data:
-      data_section.push_back(instr);
-      break;
-    case Section::ReadonlyData:
-      rodt_section.push_back(instr);
-      break;
-    case Section::DIE:
-      die_section.push_back(instr);
-      break;
-    case Section::DIEString:
-      dies_section.push_back(instr);
-      break;
-    case Section::DIEAbbrev:
-      diea_section.push_back(instr);
-      break;
-    case Section::DIETypes: {
-      diet_section.push_back(instr);
-      break;
-    }
+  case Section::Main:
+    text_section.push_back(instr);
+    break;
+  case Section::Head:
+    head_section.push_back(instr);
+    break;
+  case Section::Data:
+    data_section.push_back(instr);
+    break;
+  case Section::ReadonlyData:
+    rodt_section.push_back(instr);
+    break;
+  case Section::DIE:
+    die_section.push_back(instr);
+    break;
+  case Section::DIEString:
+    dies_section.push_back(instr);
+    break;
+  case Section::DIEAbbrev:
+    diea_section.push_back(instr);
+    break;
+  case Section::DIETypes: {
+    diet_section.push_back(instr);
+    break;
+  }
   }
 }
 
 /*
-  * Helper functions for printing to the console
-*/
+ * Helper functions for printing to the console
+ */
 void codegen::prepareSyscallWrite() {
   // syscall id for write on x86 is 1
   moveRegister("%rax", "$1", DataSize::Qword, DataSize::Qword);
@@ -283,7 +289,8 @@ void codegen::prepareSyscallWrite() {
        Section::Main);
 }
 
-void codegen::handlePtrDisplay(Node::Expr *fd, Node::Expr *arg, int line, int pos) {
+void codegen::handlePtrDisplay(Node::Expr *fd, Node::Expr *arg, int line,
+                               int pos) {
   if (getUnderlying(arg->asmType) == "char") {
     // Printing a char*
     visitExpr(arg);
@@ -293,24 +300,30 @@ void codegen::handlePtrDisplay(Node::Expr *fd, Node::Expr *arg, int line, int po
     prepareSyscallWrite();
   } else {
     handleError(line, pos,
-                "Cannot print pointer type. Dereference first or print as an address (int cast).",
+                "Cannot print pointer type. Dereference first or print as an "
+                "address (int cast).",
                 "Codegen Error");
   }
 }
 
-void codegen::handleArrayDisplay(Node::Expr *fd, Node::Expr *arg, int line, int pos) {
+void codegen::handleArrayDisplay(Node::Expr *fd, Node::Expr *arg, int line,
+                                 int pos) {
   if (getUnderlying(arg->asmType) != "char") {
     handleError(line, pos,
-                "Cannot print array of type '" + getUnderlying(arg->asmType) + "'. Only []char is supported.",
+                "Cannot print array of type '" + getUnderlying(arg->asmType) +
+                    "'. Only []char is supported.",
                 "Codegen Error");
     return; // Refuse to print
   }
 
   // this function will only ever happen in a []char and never anywhere else
   ArrayType *at = static_cast<ArrayType *>(arg->asmType);
-  visitExpr(arg); // the lea
+  visitExpr(arg);        // the lea
   popToRegister("%rsi"); // syscall arg
-  moveRegister("%rdx", "$" + std::to_string(getByteSizeOfType(at->underlying) * at->constSize), DataSize::Qword, DataSize::Qword); // byte count
+  moveRegister(
+      "%rdx",
+      "$" + std::to_string(getByteSizeOfType(at->underlying) * at->constSize),
+      DataSize::Qword, DataSize::Qword); // byte count
   visitExpr(fd);
   popToRegister("%rdi");
   prepareSyscallWrite();
@@ -323,42 +336,66 @@ void codegen::handleLiteralDisplay(Node::Expr *fd, Node::Expr *arg) {
   if (arg->kind == ND_INT) {
     IntExpr *intExpr = static_cast<IntExpr *>(arg);
     stringValue = std::to_string(intExpr->value);
-    push(Instr{.var=Comment{.comment="Print integer literal for some reason"},.type=InstrType::Comment},Section::Main);
+    push(Instr{.var =
+                   Comment{.comment = "Print integer literal for some reason"},
+               .type = InstrType::Comment},
+         Section::Main);
   };
   if (arg->kind == ND_BOOL) {
     BoolExpr *boolExpr = static_cast<BoolExpr *>(arg);
     stringValue = boolExpr->value ? "true" : "false";
-    push(Instr{.var=Comment{.comment="Print boolean literal for some reason"},.type=InstrType::Comment},Section::Main);
+    push(Instr{.var =
+                   Comment{.comment = "Print boolean literal for some reason"},
+               .type = InstrType::Comment},
+         Section::Main);
   };
   if (arg->kind == ND_FLOAT) {
     FloatExpr *floatExpr = static_cast<FloatExpr *>(arg);
     stringValue = floatExpr->value;
-    push(Instr{.var=Comment{.comment="Print float literal for some reason"},.type=InstrType::Comment},Section::Main);
+    push(Instr{.var = Comment{.comment = "Print float literal for some reason"},
+               .type = InstrType::Comment},
+         Section::Main);
   };
   if (arg->kind == ND_STRING) {
     // Probably the most common form of literal being printed.
     // Hello world users (everyone), you've been lied to.
     StringExpr *stringExpr = static_cast<StringExpr *>(arg);
-    stringValue = stringExpr->value.substr(1, stringExpr->value.size() - 2); // Quotes are included, for some reason.
-    push(Instr{.var=Comment{.comment="Print string ltieral for some reason"},.type=InstrType::Comment},Section::Main);
+    stringValue = stringExpr->value.substr(
+        1,
+        stringExpr->value.size() - 2); // Quotes are included, for some reason.
+    push(
+        Instr{.var = Comment{.comment = "Print string ltieral for some reason"},
+              .type = InstrType::Comment},
+        Section::Main);
   }
   // Char expr is the same as an intexpr and its kinda unused on its own
 
   // Define the string in the readonly data section
-  push(Instr{.var=Label{.name=strLabel},.type=InstrType::Label},Section::ReadonlyData);
-  //? This shouldnt be an asciz because we know the length of the str ahead of time but im not implementing the .str/.ascii directive
-  push(Instr{.var=AscizInstr{.what='"' + stringValue + '"'},.type=InstrType::Asciz},Section::ReadonlyData);
-  // perform the operation by moving the string into %rsi and the length into %rdx
-  push(Instr{.var=LeaInstr{.size=DataSize::Qword, .dest="%rsi",.src=strLabel+"(%rip)"},.type=InstrType::Lea},Section::Main);
-  
-  // if any of the characters in the string are \ and then n,r,t, etc, or something like that, we must subtract
+  push(Instr{.var = Label{.name = strLabel}, .type = InstrType::Label},
+       Section::ReadonlyData);
+  //? This shouldnt be an asciz because we know the length of the str ahead of
+  //time but im not implementing the .str/.ascii directive
+  push(Instr{.var = AscizInstr{.what = '"' + stringValue + '"'},
+             .type = InstrType::Asciz},
+       Section::ReadonlyData);
+  // perform the operation by moving the string into %rsi and the length into
+  // %rdx
+  push(Instr{.var = LeaInstr{.size = DataSize::Qword,
+                             .dest = "%rsi",
+                             .src = strLabel + "(%rip)"},
+             .type = InstrType::Lea},
+       Section::Main);
+
+  // if any of the characters in the string are \ and then n,r,t, etc, or
+  // something like that, we must subtract
   size_t realsize = stringValue.size();
   for (size_t i = 0; i < stringValue.size(); i++) {
     if (stringValue[i] == '\\') {
       realsize--;
     }
   }
-  moveRegister("%rdx", "$" + std::to_string(realsize), DataSize::Qword, DataSize::Qword);
+  moveRegister("%rdx", "$" + std::to_string(realsize), DataSize::Qword,
+               DataSize::Qword);
   visitExpr(fd);
   popToRegister("%rdi");
   prepareSyscallWrite(); // The end!
@@ -370,12 +407,22 @@ void codegen::handleStrDisplay(Node::Expr *fd, Node::Expr *arg) {
   popToRegister("%rsi"); // String address
   // calls might mess up any variables on the stack
   // lets make sure that does not happen by subtracting from stack
-  push(Instr{.var=SubInstr{.lhs="%rsp",.rhs="$"+std::to_string(variableCount), .size = DataSize::Qword},.type=InstrType::Sub},Section::Main);
-  moveRegister("%rdi", "%rsi", DataSize::Qword, DataSize::Qword);
-  push(Instr{.var = CallInstr{.name = "native_strlen"}, .type = InstrType::Call},
+  push(Instr{.var = SubInstr{.lhs = "%rsp",
+                             .rhs = "$" + std::to_string(variableCount),
+                             .size = DataSize::Qword},
+             .type = InstrType::Sub},
        Section::Main);
-  push(Instr{.var=AddInstr{.lhs="%rsp",.rhs="$"+std::to_string(variableCount), .size = DataSize::Qword},.type=InstrType::Sub},Section::Main);
-  moveRegister("%rdx", "%rax", DataSize::Qword, DataSize::Qword); // Length of string
+  moveRegister("%rdi", "%rsi", DataSize::Qword, DataSize::Qword);
+  push(
+      Instr{.var = CallInstr{.name = "native_strlen"}, .type = InstrType::Call},
+      Section::Main);
+  push(Instr{.var = AddInstr{.lhs = "%rsp",
+                             .rhs = "$" + std::to_string(variableCount),
+                             .size = DataSize::Qword},
+             .type = InstrType::Sub},
+       Section::Main);
+  moveRegister("%rdx", "%rax", DataSize::Qword,
+               DataSize::Qword); // Length of string
   visitExpr(fd);
   popToRegister("%rdi");
   prepareSyscallWrite();
@@ -384,55 +431,88 @@ void codegen::handleStrDisplay(Node::Expr *fd, Node::Expr *arg) {
 void codegen::handlePrimitiveDisplay(Node::Expr *fd, Node::Expr *arg) {
   nativeFunctionsUsed[NativeASMFunc::strlen] = true;
   visitExpr(arg);
-  bool isSigned = static_cast<SymbolType *>(arg->asmType)->signedness == SymbolType::Signedness::SIGNED;
+  bool isSigned = static_cast<SymbolType *>(arg->asmType)->signedness ==
+                  SymbolType::Signedness::SIGNED;
   switch (getByteSizeOfType(arg->asmType)) {
-    case 1:
-      push(Instr{.var=PopInstr{.where="%al",.whereSize=DataSize::Byte},.type=InstrType::Pop},Section::Main);
-      if (isSigned) pushLinker("movsbq %al, %rdi\n\t",Section::Main);
-      else pushLinker("movzbq %al, %rdi\n\t",Section::Main);
-      break;
-    case 2:
-      push(Instr{.var=PopInstr{.where="%ax",.whereSize=DataSize::Word},.type=InstrType::Pop},Section::Main);
-      if (isSigned) pushLinker("movswq %ax, %rdi\n\t",Section::Main);
-      else pushLinker("movzwq %ax, %rdi\n\t",Section::Main);
-      break;
-    case 4:
-      push(Instr{.var=PopInstr{.where="%eax",.whereSize=DataSize::Dword},.type=InstrType::Pop},Section::Main);
-      if (isSigned) pushLinker("movslq %eax, %rdi\n\t",Section::Main);
-      else pushLinker("movzlq %eax, %rdi\n\t",Section::Main);
-      break;
-    case 8:
-    default:
-      push(Instr{.var=PopInstr{.where="%rdi",.whereSize=DataSize::Qword},.type=InstrType::Pop},Section::Main);
-      break;
+  case 1:
+    push(Instr{.var = PopInstr{.where = "%al", .whereSize = DataSize::Byte},
+               .type = InstrType::Pop},
+         Section::Main);
+    if (isSigned)
+      pushLinker("movsbq %al, %rdi\n\t", Section::Main);
+    else
+      pushLinker("movzbq %al, %rdi\n\t", Section::Main);
+    break;
+  case 2:
+    push(Instr{.var = PopInstr{.where = "%ax", .whereSize = DataSize::Word},
+               .type = InstrType::Pop},
+         Section::Main);
+    if (isSigned)
+      pushLinker("movswq %ax, %rdi\n\t", Section::Main);
+    else
+      pushLinker("movzwq %ax, %rdi\n\t", Section::Main);
+    break;
+  case 4:
+    push(Instr{.var = PopInstr{.where = "%eax", .whereSize = DataSize::Dword},
+               .type = InstrType::Pop},
+         Section::Main);
+    if (isSigned)
+      pushLinker("movslq %eax, %rdi\n\t", Section::Main);
+    else
+      pushLinker("movzlq %eax, %rdi\n\t", Section::Main);
+    break;
+  case 8:
+  default:
+    push(Instr{.var = PopInstr{.where = "%rdi", .whereSize = DataSize::Qword},
+               .type = InstrType::Pop},
+         Section::Main);
+    break;
   }
   // subtract rsp
-  push(Instr{.var=SubInstr{.lhs="%rsp",.rhs="$"+std::to_string(variableCount), .size = DataSize::Qword},.type=InstrType::Sub},Section::Main);
+  push(Instr{.var = SubInstr{.lhs = "%rsp",
+                             .rhs = "$" + std::to_string(variableCount),
+                             .size = DataSize::Qword},
+             .type = InstrType::Sub},
+       Section::Main);
   // Convert the number to a printable string
   if (isSigned) {
-    push(Instr{.var = CallInstr{.name = "native_itoa"}, .type = InstrType::Call}, Section::Main);
+    push(
+        Instr{.var = CallInstr{.name = "native_itoa"}, .type = InstrType::Call},
+        Section::Main);
     nativeFunctionsUsed[NativeASMFunc::itoa] = true;
   } else {
-    push(Instr{.var = CallInstr{.name = "native_uitoa"}, .type = InstrType::Call}, Section::Main);
+    push(Instr{.var = CallInstr{.name = "native_uitoa"},
+               .type = InstrType::Call},
+         Section::Main);
     nativeFunctionsUsed[NativeASMFunc::uitoa] = true;
   }
   moveRegister("%rdi", "%rax", DataSize::Qword, DataSize::Qword);
   moveRegister("%rsi", "%rdi", DataSize::Qword, DataSize::Qword);
-  // Now we have the integer string in %rax (assuming %rax holds the pointer to the result)
-  push(Instr{.var = CallInstr{.name = "native_strlen"}, .type = InstrType::Call},
+  // Now we have the integer string in %rax (assuming %rax holds the pointer to
+  // the result)
+  push(
+      Instr{.var = CallInstr{.name = "native_strlen"}, .type = InstrType::Call},
+      Section::Main);
+  push(Instr{.var = AddInstr{.lhs = "%rsp",
+                             .rhs = "$" + std::to_string(variableCount),
+                             .size = DataSize::Qword},
+             .type = InstrType::Sub},
        Section::Main);
-  push(Instr{.var=AddInstr{.lhs="%rsp",.rhs="$"+std::to_string(variableCount), .size = DataSize::Qword},.type=InstrType::Sub},Section::Main);
-  moveRegister("%rdx", "%rax", DataSize::Qword, DataSize::Qword); // Length of number string
+  moveRegister("%rdx", "%rax", DataSize::Qword,
+               DataSize::Qword); // Length of number string
   visitExpr(fd);
   popToRegister("%rdi");
   prepareSyscallWrite();
 }
 
-void codegen::handleFloatDisplay(Node::Expr *fd, Node::Expr *arg, int line, int pos) {
-    // Still try printing something, to make it worth the trouble.
-    handleLiteralDisplay(fd, new StringExpr(line, pos, "\"Printing floats is not supported yet.\"", arg->file_id));
-    std::string msg = "Printing floats is not supported yet.";
-    handleError(line, pos, msg, "Codegen Error");
+void codegen::handleFloatDisplay(Node::Expr *fd, Node::Expr *arg, int line,
+                                 int pos) {
+  // Still try printing something, to make it worth the trouble.
+  handleLiteralDisplay(
+      fd, new StringExpr(line, pos, "\"Printing floats is not supported yet.\"",
+                         arg->file_id));
+  std::string msg = "Printing floats is not supported yet.";
+  handleError(line, pos, msg, "Codegen Error");
 }
 
 // Add 1
@@ -443,7 +523,9 @@ size_t codegen::getFileID(const std::string &file) {
   if (std::filesystem::path(file).is_relative()) {
     absoluteFilePath = std::filesystem::absolute(file).string();
   }
-  auto it = std::find(fileIDs.begin(), fileIDs.end(), absoluteFilePath); // Im assuming the standard library function would be efficient here
+  auto it = std::find(fileIDs.begin(), fileIDs.end(),
+                      absoluteFilePath); // Im assuming the standard library
+                                         // function would be efficient here
   if (it != fileIDs.end()) {
     return std::distance(fileIDs.begin(), it);
   }
@@ -453,55 +535,63 @@ size_t codegen::getFileID(const std::string &file) {
 
 void codegen::pushDebug(size_t line, size_t file, long column) {
   // If not in debug mode, this funciton will pretty much be a massive nop.
-  if (!debug) return;
+  if (!debug)
+    return;
   if (column != -1) {
-    push(Instr{.var = LinkerDirective{.value = ".loc " + std::to_string(file) + " " +
-                                                std::to_string(line) + " " + std::to_string(column) + "\n\t"},
-                .type = InstrType::Linker},
-          Section::Main);
+    push(
+        Instr{.var = LinkerDirective{.value = ".loc " + std::to_string(file) +
+                                              " " + std::to_string(line) + " " +
+                                              std::to_string(column) + "\n\t"},
+              .type = InstrType::Linker},
+        Section::Main);
   } else {
-    push(Instr{.var = LinkerDirective{.value = ".loc " + std::to_string(file) + " " +
-                                                std::to_string(line) + "\n\t"},
-                .type = InstrType::Linker},
-          Section::Main);
+    push(Instr{.var = LinkerDirective{.value = ".loc " + std::to_string(file) +
+                                               " " + std::to_string(line) +
+                                               "\n\t"},
+               .type = InstrType::Linker},
+         Section::Main);
   }
 }
 
 // A real type, not the asmType
 signed short int codegen::getByteSizeOfType(Node::Type *type) {
   switch (type->kind) {
-    case ND_POINTER_TYPE:
-    case ND_ARRAY_TYPE:
-    case ND_FUNCTION_TYPE:
-    case ND_FUNCTION_TYPE_PARAM:
-      return 8;
-    case ND_SYMBOL_TYPE: {
-      SymbolType *sym = static_cast<SymbolType *>(type);
-      if (structByteSizes.find(sym->name) != structByteSizes.end()) {
-        return structByteSizes[sym->name].first;
-      }
-      if (typeSizes.find(sym->name) != typeSizes.end()) {
-        return typeSizes[sym->name];
-      }
-      if (enumTable.find(sym->name) != enumTable.end()) {
-        return 4;
-      }
-      if (sym->name.find("*") != std::string::npos) return 8;
-      // Unknown type...
-      // Hopefully this is unreachable!
-      std::string msg = "Unknown type '" + sym->name + "'. For some reason, this type is not in the typeSizes map.";
-      handleError(0, 0, msg, "Codegen Error");
-      return 0; // Let the compiler know that this is an error
+  case ND_POINTER_TYPE:
+  case ND_ARRAY_TYPE:
+  case ND_FUNCTION_TYPE:
+  case ND_FUNCTION_TYPE_PARAM:
+    return 8;
+  case ND_SYMBOL_TYPE: {
+    SymbolType *sym = static_cast<SymbolType *>(type);
+    if (structByteSizes.find(sym->name) != structByteSizes.end()) {
+      return structByteSizes[sym->name].first;
     }
-    default:
-      std::string msg = "Unknown type '" + std::to_string((int)type->kind) + "'.";
-      handleError(0, 0, msg, "Codegen Error");
-      return 0;
+    if (typeSizes.find(sym->name) != typeSizes.end()) {
+      return typeSizes[sym->name];
+    }
+    if (enumTable.find(sym->name) != enumTable.end()) {
+      return 4;
+    }
+    if (sym->name.find("*") != std::string::npos)
+      return 8;
+    // Unknown type...
+    // Hopefully this is unreachable!
+    std::string msg =
+        "Unknown type '" + sym->name +
+        "'. For some reason, this type is not in the typeSizes map.";
+    handleError(0, 0, msg, "Codegen Error");
+    return 0; // Let the compiler know that this is an error
+  }
+  default:
+    std::string msg = "Unknown type '" + std::to_string((int)type->kind) + "'.";
+    handleError(0, 0, msg, "Codegen Error");
+    return 0;
   }
 };
 
 std::string codegen::getUnderlying(Node::Type *type) {
-  // Eventually, all underlying's will turn into SymbolType's, which is just the name of the type.
+  // Eventually, all underlying's will turn into SymbolType's, which is just the
+  // name of the type.
   if (type->kind == ND_POINTER_TYPE) {
     PointerType *p = static_cast<PointerType *>(type);
     return getUnderlying(p->underlying);
@@ -537,7 +627,8 @@ std::string codegen::type_to_diename(Node::Type *type) {
       // Variable-length array.
       return type_to_diename(a->underlying) + "_arr";
     }
-    return type_to_diename(a->underlying) + "_arr" + std::to_string(a->constSize - 1);
+    return type_to_diename(a->underlying) + "_arr" +
+           std::to_string(a->constSize - 1);
   }
   if (type->kind == ND_SYMBOL_TYPE) { // Yes, structs are symbols too
     SymbolType *s = static_cast<SymbolType *>(type);
@@ -546,16 +637,16 @@ std::string codegen::type_to_diename(Node::Type *type) {
     bool builtin = typeSizes.find(s->name) != typeSizes.end();
     if (builtin) { // only builtin types can have signedness
       switch (s->signedness) {
-        case SymbolType::Signedness::SIGNED:
-          signedness = "_s";
-          break;
-        case SymbolType::Signedness::UNSIGNED:
-          signedness = "_u";
-          break;
-        default:
-        case SymbolType::Signedness::INFER:
-          signedness = "_i";
-          break;
+      case SymbolType::Signedness::SIGNED:
+        signedness = "_s";
+        break;
+      case SymbolType::Signedness::UNSIGNED:
+        signedness = "_u";
+        break;
+      default:
+      case SymbolType::Signedness::INFER:
+        signedness = "_i";
+        break;
       }
     }
 
@@ -573,46 +664,48 @@ size_t codegen::round(size_t num, size_t multiple) {
   return (num + multiple - 1) / multiple * multiple;
 };
 
-// Get the number of bytes that `value` takes up when encoded in the LEB128 format.
+// Get the number of bytes that `value` takes up when encoded in the LEB128
+// format.
 size_t codegen::sizeOfLEB(int64_t value) {
-    size_t size = 0;
-    bool more = true;
+  size_t size = 0;
+  bool more = true;
 
-    while (more) {
-        uint8_t byte = value & 0x7F; // Get the lowest 7 bits 
-        value >>= 7;                // Arithmetic right shift for signed values
+  while (more) {
+    uint8_t byte = value & 0x7F; // Get the lowest 7 bits
+    value >>= 7;                 // Arithmetic right shift for signed values
 
-        // Determine if more bytes are needed
-        if ((value == 0 && (byte & 0x40) == 0) || (value == -1 && (byte & 0x40) != 0)) {
-            more = false; // Terminate if no more bytes are needed
-        }
-
-        ++size; // Count the byte
+    // Determine if more bytes are needed
+    if ((value == 0 && (byte & 0x40) == 0) ||
+        (value == -1 && (byte & 0x40) != 0)) {
+      more = false; // Terminate if no more bytes are needed
     }
 
-    return size;
+    ++size; // Count the byte
+  }
+
+  return size;
 }
 
 DataSize codegen::intDataToSize(signed short int data) {
   switch (data) {
-    case 1:
-      return DataSize::Byte;
-    case 2:
-      return DataSize::Word;
-    case 4:
-      return DataSize::Dword;
-    case 8:
-    default:
-      return DataSize::Qword;
+  case 1:
+    return DataSize::Byte;
+  case 2:
+    return DataSize::Word;
+  case 4:
+    return DataSize::Dword;
+  case 8:
+  default:
+    return DataSize::Qword;
   }
 };
 
 DataSize codegen::intDataToSizeFloat(signed short int data) {
   switch (data) {
-    case 4:
-    default:
-      return DataSize::SS;
-    case 8:
-      return DataSize::SD;
+  case 4:
+  default:
+    return DataSize::SS;
+  case 8:
+    return DataSize::SD;
   }
 };

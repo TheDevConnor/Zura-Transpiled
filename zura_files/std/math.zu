@@ -1,0 +1,9 @@
+const min := fn<T> (a: T, b: T) T {
+  if (b < a) return b;
+  return a;
+};
+
+const max := fn<T> (a: T, b: T) T {
+  if (a < b) return b;
+  return a;
+};

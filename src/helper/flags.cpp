@@ -16,7 +16,7 @@ using namespace std;
 void Flags::updateProgressBar(double progress) {
   const int barWidth = 50;
   std::cout << "\033[2K\r[";
-  size_t pos = (size_t)(barWidth * progress);  // truncation is fine here
+  size_t pos = (size_t)(barWidth * progress); // truncation is fine here
   for (size_t i = 0; i < barWidth; ++i) {
     if (i < pos)
       std::cout << "=";
@@ -53,30 +53,42 @@ char *Flags::readFile(const char *path) {
   return buffer;
 }
 
-void Flags::runFile(const char *path, std::string outName, bool save, bool debug, bool echoOn) {
+void Flags::runFile(const char *path, std::string outName, bool save,
+                    bool debug, bool echoOn) {
   const char *source = readFile(path);
 
-  if (echoOn) Flags::updateProgressBar(0.0);
+  if (echoOn)
+    Flags::updateProgressBar(0.0);
   Node::Stmt *result = Parser::parse(source, path);
   bool parserError = ErrorClass::printError();
-  if (parserError) Exit(ExitValue::PARSER_ERROR);
-  if (echoOn) Flags::updateProgressBar(0.25);
+  if (parserError)
+    Exit(ExitValue::PARSER_ERROR);
+  if (echoOn)
+    Flags::updateProgressBar(0.25);
 
-  // result->debug();
+  result->debug();
 
+  (void)outName;
+  (void)save;
+  (void)debug;
   TypeChecker::performCheck(result);
   bool tcError = ErrorClass::printError();
-  if (tcError) Exit(ExitValue::TYPE_ERROR);
-  if (echoOn) Flags::updateProgressBar(0.5);
-  
-  // Compiler optimize the AST!
-  result = CompileOptimizer::optimizeStmt(result);
-  if (echoOn) Flags::updateProgressBar(0.75);
-  
-  codegen::gen(result, save, outName, path, debug);
-  bool codegenError = ErrorClass::printError();
-  if (codegenError) Exit(ExitValue::GENERATOR_ERROR);
-  if (echoOn) Flags::updateProgressBar(1.0);  // We're done!
+  if (tcError)
+    Exit(ExitValue::TYPE_ERROR);
+  if (echoOn)
+    Flags::updateProgressBar(0.5);
+
+  // // Compiler optimize the AST!
+  // result = CompileOptimizer::optimizeStmt(result);
+  // if (echoOn)
+  //   Flags::updateProgressBar(0.75);
+  //
+  // codegen::gen(result, save, outName, path, debug);
+  // bool codegenError = ErrorClass::printError();
+  // if (codegenError)
+  //   Exit(ExitValue::GENERATOR_ERROR);
+  // if (echoOn)
+  //   Flags::updateProgressBar(1.0); // We're done!
 
   delete result;
   delete[] source;
