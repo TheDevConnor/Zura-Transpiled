@@ -630,15 +630,13 @@ Node::Stmt *Parser::importStmt(PStruct *psr, std::string name) {
         column);
     return nullptr;
   }
-  // Typecheck the imported file
-  // TypeChecker::performCheck(result, false);
 
   psr->expect(TokenKind::SEMICOLON,
               "Expected a SEMICOLON at the end of an import stmt");
 
   node.current_file = current_file;
 
-  return new ImportStmt(line, column, path, result,
+  return new ImportStmt(line, column, absolutePath, result,
                         codegen::getFileID(psr->current_file));
 }
 
