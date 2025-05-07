@@ -32,23 +32,6 @@ void Lexer::initLexer(const char *source, std::string file) {
  * to map token kinds to their string representations.
  */
 void Lexer::initMap() {
-  whiteSpaceMap = {
-      {' ', [](Lexer &lexer) { lexer.advance(); }},
-      {'\r', [](Lexer &lexer) { lexer.advance(); }},
-      {'\t', [](Lexer &lexer) { lexer.advance(); }},
-      {'\n',
-       [](Lexer &lexer) {
-         lexer.scanner.line++;
-         lexer.scanner.column = 0;
-         lexer.advance();
-       }},
-      {'#',
-       [](Lexer &lexer) {
-         while (lexer.peek() != '\n' && !lexer.isAtEnd())
-           lexer.advance();
-       }},
-  };
-
   at_keywords = {
       {"@template", TokenKind::TEMPLATE},
       {"@cast", TokenKind::CAST},

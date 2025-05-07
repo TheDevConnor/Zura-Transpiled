@@ -19,7 +19,11 @@ Node::Stmt *Parser::parse(const char *source, std::string file) {
 
   PStruct psr = PStruct{tks, file, 0};
   node.current_file = file;
-  ErrorClass::printError();
+  if (Error::report_error()) return nullptr; // Error handling
+  if (tks.empty()) {
+    Error::handle_error("Parser", file, "No tokens found!", tks, 0, 0);
+    return nullptr;
+  }
 
   createMaps();
   createTypeMaps();

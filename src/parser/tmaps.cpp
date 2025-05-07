@@ -23,9 +23,9 @@ T Parser::lookup(PStruct *psr, const std::vector<std::pair<U, T>> &lu, U key) {
                                                                           [key](const std::pair<U, T> &p) { return p.first == key; });
 
   if (it == lu.end()) {
-    ErrorClass::error(0, 0, "No value found for key in Type maps", "",
-                      "Parser Error", node.current_file, lexer, psr->tks,
-                      true, false, true, false, false, false);
+    Error::handle_error("Parser", psr->current_file,
+                      "No value found for key in Type maps", psr->tks,
+                      psr->current().line, psr->current().column);
     // Note: IS FATAL! Do not dereference 'it' if its bad!
   }
 
@@ -74,10 +74,9 @@ Node::Type *Parser::type_led(PStruct *psr, Node::Type *left, BindingPower bp) {
   try {
     return lookup(psr, type_led_lu, op.kind)(psr, left, bp);
   } catch (std::exception &e) {
-    ErrorClass::error(psr->current().line, psr->current().column,
-                      "Error in type_led: " + std::string(e.what()), "",
-                      "Parser Error", node.current_file, lexer, psr->tks, true,
-                      false, false, false, false, false);
+    Error::handle_error("Parser", psr->current_file,
+                      "Error in type_led: " + std::string(e.what()), psr->tks,
+                      psr->current().line, psr->current().column);
     return nullptr;
   }
   return nullptr;
@@ -99,10 +98,9 @@ Node::Type *Parser::type_nud(PStruct *psr) {
   try {
     return Parser::lookup(psr, type_nud_lu, op.kind)(psr);
   } catch (std::exception &e) {  // Return type is nullptr (aka there is non)
-    ErrorClass::error(psr->current().line, psr->current().column,
-                      "There is no type specified or type is not valid", "",
-                      "Parser Error", psr->current_file, lexer, psr->tks, true,
-                      false, false, false, false, false);
+    Error::handle_error("Parser", psr->current_file,
+                      "Error in type_nud: " + std::string(e.what()), psr->tks,
+                      psr->current().line, psr->current().column);
     return nullptr;
   }
   return nullptr;

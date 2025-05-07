@@ -47,10 +47,8 @@ Node::Expr *Parser::primary(PStruct *psr) {
       return new CharExpr(line, column, psr->advance().value[1], codegen::getFileID(psr->current_file));
     }
     default:
-      ErrorClass::error(psr->current().line, psr->current().column,
-                        "Could not parse primary expression!", "", "Parser Error",
-                        node.current_file, lexer, psr->tks, true, false, false, false,
-                        false, false);
+      std::string msg = "Expected a primary expression, but got: " + psr->current().value;
+      Error::handle_error("Parser", psr->current_file, msg, psr->tks, line, column);
       return nullptr;
   }
 }

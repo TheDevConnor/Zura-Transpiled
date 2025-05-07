@@ -20,6 +20,6 @@
 @import "std/math.zu";
 
 const main := fn () int! {
-  # have x: int! = min(1, 4);
+  have x: int! = "@getArgc()";
   return 0;
 };

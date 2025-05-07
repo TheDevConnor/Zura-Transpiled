@@ -310,7 +310,7 @@ void codegen::gen(Node::Stmt *stmt, bool isSaved, std::string output_filename,
 
   output_filename = output_filename.substr(0, output_filename.find_last_of("."));
 
-  bool isError = ErrorClass::printError();
+  bool isError = Error::report_error();
   if (isError) { return; }
 
   // Compile, but do not link main.o

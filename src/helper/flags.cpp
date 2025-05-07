@@ -60,7 +60,7 @@ void Flags::runFile(const char *path, std::string outName, bool save,
   if (echoOn)
     Flags::updateProgressBar(0.0);
   Node::Stmt *result = Parser::parse(source, path);
-  bool parserError = ErrorClass::printError();
+  bool parserError = Error::report_error();
   if (parserError)
     Exit(ExitValue::PARSER_ERROR);
   if (echoOn)
@@ -72,7 +72,7 @@ void Flags::runFile(const char *path, std::string outName, bool save,
   (void)save;
   (void)debug;
   TypeChecker::performCheck(result);
-  bool tcError = ErrorClass::printError();
+  bool tcError = Error::report_error();
   if (tcError)
     Exit(ExitValue::TYPE_ERROR);
   if (echoOn)

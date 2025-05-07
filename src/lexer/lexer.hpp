@@ -119,6 +119,7 @@ class Lexer {
     const char *start;
     TokenKind kind;
     std::string value;  // This is also know as the lexeme
+    int whitespace;
     int current;
     int column;
     int line;
@@ -136,7 +137,7 @@ class Lexer {
   void initLexer(const char *source, std::string file);
 
   Token scanToken(void);
-  Token errorToken(std::string message);
+  Token errorToken(std::string message, int whitespace);
 
   const char *tokenToString(TokenKind kind);
 
@@ -147,9 +148,7 @@ class Lexer {
   bool isAtEnd(void);
   char peek(void);
 
-  using WhiteSpaceFunction = std::function<void(Lexer &)>;
   std::unordered_map<TokenKind, const char *> tokenToStringMap;
-  std::unordered_map<char, WhiteSpaceFunction> whiteSpaceMap;
   std::unordered_map<std::string, TokenKind> at_keywords;
   std::unordered_map<std::string, TokenKind> keywords;
   std::unordered_map<std::string, TokenKind> dcMap;
@@ -160,14 +159,14 @@ class Lexer {
  private:
   bool match(char expected);
 
-  Token makeToken(TokenKind kind);
-  Token identifier(void);
-  Token number(void);
-  Token String(void);
-  Token Char(void);
+  Token makeToken(TokenKind kind, int whitespace);
+  Token identifier(int whitespace);
+  Token number(int whitespace);
+  Token String(int whitespace);
+  Token Char(int whitespace);
 
   TokenKind checkIdentMap(std::string identifier);
   TokenKind sc_dc_lookup(char c);
 
-  void skipWhitespace(void);
+  int skipWhitespace(void);
 };

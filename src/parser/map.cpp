@@ -32,9 +32,8 @@ T Parser::lookup(PStruct *psr, const std::vector<std::pair<U, T>> &lu, U key) {
                                                                           [key](const std::pair<U, T> &p) { return p.first == key; });
 
   if (it == lu.end()) {
-    ErrorClass::error(0, 0, "No value found for key (" + std::to_string(key) + ") Expr Maps!", "",
-                      "Parser Error", node.current_file, lexer, psr->tks, true,
-                      false, false, false, false, false);
+    std::string msg = "Could not find key (" + std::to_string(key) + ") in lookup table!";
+    Error::handle_error("Parser", psr->current_file, msg, psr->tks, psr->current().line, psr->current().column);
     return nullptr;
   }
 
@@ -223,10 +222,9 @@ Node::Expr *Parser::nud(PStruct *psr) {
     }
     return result(psr);
   } catch (std::runtime_error &e) {
-    ErrorClass::error(psr->current().line, psr->current().column,
-                      "Could not parse expression in NUD!", "", "Parser Error",
-                      node.current_file, lexer, psr->tks, true, false, false,
-                      false, false, false);
+    std::string msg = "Could not parse expression in NUD!";
+    Error::handle_error("Parser", psr->current_file, msg, psr->tks,
+                              psr->current().line, psr->current().column);
     return nullptr;
   }
 }
@@ -250,10 +248,9 @@ Node::Expr *Parser::led(PStruct *psr, Node::Expr *left, BindingPower bp) {
     }
     return result(psr, left, bp);
   } catch (std::runtime_error &e) {
-    ErrorClass::error(psr->current().line, psr->current().column,
-                      "Could not parse expression in LED!", "", "Parser Error",
-                      psr->current_file, lexer, psr->tks, true, false, false,
-                      false, false, false);
+    std::string msg = "Could not parse expression in LED!";
+    Error::handle_error("Parser", psr->current_file, msg, psr->tks,
+                              psr->current().line, psr->current().column);
     return nullptr;
   }
 }

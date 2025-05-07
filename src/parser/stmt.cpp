@@ -23,8 +23,6 @@ Node::Stmt *Parser::exprStmt(PStruct *psr) {
   int column = psr->tks[psr->pos].column;
 
   Node::Expr *expr = parseExpr(psr, BindingPower::defaultValue);
-  psr->expect(TokenKind::SEMICOLON,
-              "Expected a SEMICOLON at the end of a expr stmt!");
   return new ExprStmt(line, column, expr,
                       codegen::getFileID(psr->current_file));
 }
@@ -234,9 +232,9 @@ Node::Stmt *Parser::funStmt(PStruct *psr, std::string name) {
                 "Expected a COLON after the parameter name in a function stmt");
     Node::Type *paramType = parseType(psr);
     if (paramType == nullptr)
-      ErrorClass::error(line, column, "Expected a type for the parameter", "",
-                        "Parser Error", psr->current_file.c_str(), lexer,
-                        psr->tks, true, false, false, false, false, false);
+      Error::handle_error(
+          "Parser", psr->current_file, "Expected a type for the parameter",
+          psr->tks, psr->current().line, psr->current().column);
     params.push_back({paramName, paramType});
 
     if (psr->current().kind == TokenKind::RIGHT_PAREN)
@@ -249,9 +247,9 @@ Node::Stmt *Parser::funStmt(PStruct *psr, std::string name) {
 
   Node::Type *returnType = parseType(psr);
   if (returnType == nullptr)
-    ErrorClass::error(line, column, "Expected a return type for the function",
-                      "", "Parser Error", psr->current_file.c_str(), lexer,
-                      psr->tks, true, false, false, false, false, false);
+    Error::handle_error(
+        "Parser", psr->current_file, "Expected a type for the return type",
+        psr->tks, psr->current().line, psr->current().column);
 
   Node::Stmt *body = parseStmt(psr, name);
   psr->expect(TokenKind::SEMICOLON,
@@ -364,9 +362,8 @@ Node::Stmt *Parser::structStmt(PStruct *psr, std::string name) {
           std::string msg =
               "Structs only take in fields, structs, and functions. ";
           msg += "Found unexpected token: " + psr->current().value;
-          ErrorClass::error(line, column, msg, "", "Parser Error",
-                            psr->current_file.c_str(), lexer, psr->tks, true,
-                            false, false, false, false, false);
+          Error::handle_error("Parser", psr->current_file, msg, psr->tks,
+                              psr->current().line, psr->current().column);
           break;
         }
         break;
@@ -538,9 +535,8 @@ Node::Stmt *Parser::matchStmt(PStruct *psr, std::string name) {
       // This is a safety measure to prevent that.
       std::string msg =
           "Unexpected token in match statement: " + psr->current().value;
-      ErrorClass::error(line, column, msg, "", "Parser Error",
-                        psr->current_file.c_str(), lexer, psr->tks, true, false,
-                        false, false, false, false);
+      Error::handle_error("Parser", psr->current_file, msg, psr->tks,
+                          psr->current().line, psr->current().column);
       psr->advance(); // Consume the bad token
     }
   }
@@ -575,11 +571,10 @@ Node::Stmt *Parser::enumStmt(PStruct *psr, std::string name) {
       // that's fine too, but warn
       Lexer::Token semi = psr->advance();
       if (warnForSemi) {
-        ErrorClass::error(semi.line, semi.column,
-                          "Semicolons are non-standard for enumerator lists",
-                          "Found while parsing enum '" + name + "'.",
-                          "Parser Error", psr->current_file.c_str(), lexer,
-                          psr->tks, true, true, false, false, false, false);
+        Error::handle_error(
+            "Parser", psr->current_file,
+            "Semicolons are non-standard for enumerator lists",
+            psr->tks, semi.line, semi.column);
         warnForSemi = false; // only warn once to stop console from filling with
                              // all the same error (especially when the
                              // programmer only made a simple mistake)
@@ -629,10 +624,10 @@ Node::Stmt *Parser::importStmt(PStruct *psr, std::string name) {
   char *fileContent = Flags::readFile(absolutePath.string().c_str());
   Node::Stmt *result = parse(fileContent, absolutePath.string().c_str());
   if (result == nullptr) {
-    ErrorClass::error(line, column,
-                      "Could not parse the imported file '" + path + "'", "",
-                      "Parser Error", path.c_str(), lexer, psr->tks, true,
-                      false, false, false, false, false);
+    Error::handle_error(
+        "Parser", psr->current_file,
+        "Could not parse the imported file '" + path + "'", psr->tks, line,
+        column);
     return nullptr;
   }
   // Typecheck the imported file

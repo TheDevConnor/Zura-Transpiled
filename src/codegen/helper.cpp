@@ -13,9 +13,7 @@
 
 void codegen::handleError(int line, int pos, std::string msg,
                           std::string typeOfError, bool isFatal) {
-  Lexer lexer; // dummy lexer
-  ErrorClass::error(line, pos, msg, "", typeOfError, node.current_file, lexer,
-                    node.tks, false, false, isFatal, false, false, true);
+ Error::handle_error(typeOfError, node.current_file, msg, node.tks, line, pos);
 }
 
 /*

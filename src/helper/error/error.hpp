@@ -5,24 +5,30 @@
 
 #include "../../lexer/lexer.hpp"
 
-namespace ErrorClass {
-inline static std::vector<std::string> errors = {};
-inline size_t ErrorPos = 0;
+/*
+ * Total errors: 1
+ * error: TYPE_OF_ERROR
+ *   --> [1::10](main.x)
+ *    |
+ *  1 | 5 + 7 / 0
+ *    |          ^
+ * note: ERROR_MSG
+ */
 
-std::string formatLineWithTokens(int line, int pos,
-                                 const std::vector<Lexer::Token> &tokens,
-                                 bool highlightPos, bool getLastToken = false);
-std::string currentLine(int line, int pos, Lexer &lexer, bool isParser,
-                        bool isTypeError,
-                        const std::vector<Lexer::Token> &tokens, bool getLastToken = false);
-std::string error(int line, int pos, const std::string &msg,
-                  const std::string &note, const std::string &errorType,
-                  const std::string &filename, Lexer &lexer,
-                  const std::vector<Lexer::Token> &tokens, bool isParser,
-                  bool isWarning, bool isFatal, bool isMain, bool isTypeError, bool isGeneration);
+class Error {
+ public:
+  inline static std::vector<std::string> errors = {};
+  static void handle_lexer_error(Lexer &lex, std::string error_type,
+                                 std::string file_path, std::string msg);
+  static void handle_error(std::string error_type, std::string file_path,
+                           std::string msg, const std::vector<Lexer::Token> &tks, int line, int pos);
+  static bool report_error();
 
-bool printError(void);
+ private:
+  static std::string error_head(std::string error_type, int line, int pos,
+                                std::string filepath);
 
-std::string lineNumber(int line);
-std::string printLine(int line, const char *start);
-};  // namespace ErrorClass
+  static std::string line_number(int line) { return (line < 10) ? "0" : ""; }
+  static std::string generate_whitespace(int space);
+  static std::string generate_line(const std::vector<Lexer::Token> &tks, int line, int pos);
+};

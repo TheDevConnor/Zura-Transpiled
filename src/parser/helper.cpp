@@ -19,8 +19,7 @@ Lexer::Token Parser::PStruct::peek(int offset) {
 
 Lexer::Token Parser::PStruct::expect(TokenKind tk, std::string msg) {
   if (peek(0).kind == tk) return advance();
-  ErrorClass::error(current().line, current().column, msg,
-                    "", "Parser Error", current_file.c_str(),
-                    lexer, tks, true, false, false, false, false, false);
-  return advance();
+  std::string errorMsg = msg + " Found: " + peek(0).value;
+  Error::handle_error("Parser", current_file, errorMsg, tks, current().line, current().column);
+  return current();
 }

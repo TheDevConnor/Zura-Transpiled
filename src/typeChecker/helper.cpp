@@ -7,14 +7,10 @@
 
 void TypeChecker::handleError(int line, int pos, std::string msg,
                               std::string note, std::string typeOfError) {
-  Lexer lexer;  // dummy lexer
-  if (note != "") {
-    ErrorClass::error(line, pos, msg, note, typeOfError, node.current_file,
-                      lexer, node.tks, false, false, false, false, true, false);
-    return;  // don't print the error twice!
-  }
-  ErrorClass::error(line, pos, msg, "", typeOfError, node.current_file, lexer,
-                    node.tks, false, false, false, false, true, false);
+   if (note != "")
+    msg += "\nNote: " + note;
+   Error::handle_error(typeOfError, node.current_file, msg,
+                       node.tks, line, pos);
 }
 
 std::string TypeChecker::type_to_string(Node::Type *type) {
