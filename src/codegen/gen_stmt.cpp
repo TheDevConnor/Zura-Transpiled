@@ -23,7 +23,7 @@ void codegen::expr(Node::Stmt *stmt) {
   ExprStmt *s = static_cast<ExprStmt *>(stmt);
   // Just evaluate the expression
   codegen::visitExpr(s->expr);
-  text_section.pop_back();  // Get rid of the push that may follow
+  text_section.pop_back(); // Get rid of the push that may follow
 };
 
 void codegen::program(Node::Stmt *stmt) {
@@ -63,30 +63,30 @@ void codegen::funcDecl(Node::Stmt *stmt) {
   if (debug) {
     bool isVoid = getUnderlying(s->returnType) == "void";
     if (s->params.size() > 0) {
-      dwarf::useAbbrev(dwarf::DIEAbbrev::FunctionParam);  // Formal parameter
+      dwarf::useAbbrev(dwarf::DIEAbbrev::FunctionParam); // Formal parameter
       if (isVoid) {
         dwarf::useAbbrev(dwarf::DIEAbbrev::FunctionWithParamsVoid);
         pushLinker(
             ".uleb128 " +
                 std::to_string((int)dwarf::DIEAbbrev::FunctionWithParamsVoid) +
-                "\n.byte 1"  // External - This means "is it a public function?"
+                "\n.byte 1" // External - This means "is it a public function?"
                 "\n.long .L" +
                 funcName +
                 "_string\n"
                 ".byte " +
-                std::to_string(s->file_id) +  // File ID
+                std::to_string(s->file_id) + // File ID
                 "\n.byte " + std::to_string(s->line) +
-                "\n"  // Line number
+                "\n" // Line number
                 ".byte " +
                 std::to_string(s->pos) +
-                "\n"  // Line column
+                "\n" // Line column
                 ".quad " +
                 dieLabel +
-                "_debug_start\n"  // Low pc
+                "_debug_start\n" // Low pc
                 ".quad " +
                 dieLabel + "_debug_end - " + dieLabel +
-                "_debug_start\n"   // high pc
-                ".uleb128 0x01\n"  // 1 byte is gonna follow
+                "_debug_start\n"  // high pc
+                ".uleb128 0x01\n" // 1 byte is gonna follow
                 ".byte 0x9c\n",
             Section::DIE);
       } else {
@@ -96,27 +96,27 @@ void codegen::funcDecl(Node::Stmt *stmt) {
         pushLinker(
             ".uleb128 " +
                 std::to_string((int)dwarf::DIEAbbrev::FunctionWithParams) +
-                "\n.byte 1"  // External - This means "is it a public function?"
+                "\n.byte 1" // External - This means "is it a public function?"
                 "\n.long .L" +
                 funcName +
                 "_string\n"
                 ".byte " +
-                std::to_string(s->file_id) +  // File ID
+                std::to_string(s->file_id) + // File ID
                 "\n.byte " + std::to_string(s->line) +
-                "\n"  // Line number
+                "\n" // Line number
                 ".byte " +
                 std::to_string(s->pos) +
-                "\n"  // Line column
+                "\n" // Line column
                 ".long .L" +
                 type_to_diename(s->returnType) +
-                "_debug_type\n"  // Return type (DW_AT_type)
+                "_debug_type\n" // Return type (DW_AT_type)
                 ".quad " +
                 dieLabel +
-                "_debug_start\n"  // Low pc
+                "_debug_start\n" // Low pc
                 ".quad " +
                 dieLabel + "_debug_end - " + dieLabel +
-                "_debug_start\n"   // high pc
-                ".uleb128 0x01\n"  // 1 byte is gonna follow
+                "_debug_start\n"  // high pc
+                ".uleb128 0x01\n" // 1 byte is gonna follow
                 ".byte 0x9c\n",
             Section::DIE);
       }
@@ -131,19 +131,19 @@ void codegen::funcDecl(Node::Stmt *stmt) {
                 funcName +
                 "_string\n"
                 ".byte " +
-                std::to_string(s->file_id) +  // File ID
+                std::to_string(s->file_id) + // File ID
                 "\n.byte " + std::to_string(s->line) +
-                "\n"  // Line number
+                "\n" // Line number
                 ".byte " +
                 std::to_string(s->pos) +
-                "\n"  // Line column
+                "\n" // Line column
                 ".quad " +
                 dieLabel +
-                "_debug_start\n"  // Low pc
+                "_debug_start\n" // Low pc
                 ".quad " +
                 dieLabel + "_debug_end - " + dieLabel +
-                "_debug_start\n"   // high pc
-                ".uleb128 0x01\n"  // 1 byte is gonna follow
+                "_debug_start\n"  // high pc
+                ".uleb128 0x01\n" // 1 byte is gonna follow
                 ".byte 0x9c\n",
             Section::DIE);
       } else {
@@ -157,22 +157,22 @@ void codegen::funcDecl(Node::Stmt *stmt) {
                        funcName +
                        "_string\n"
                        ".byte " +
-                       std::to_string(s->file_id) +  // File ID
+                       std::to_string(s->file_id) + // File ID
                        "\n.byte " + std::to_string(s->line) +
-                       "\n"  // Line number
+                       "\n" // Line number
                        ".byte " +
                        std::to_string(s->pos) +
-                       "\n"  // Line column
+                       "\n" // Line column
                        ".long .L" +
                        type_to_diename(s->returnType) +
-                       "_debug_type\n"  // Return type (DW_AT_type)
+                       "_debug_type\n" // Return type (DW_AT_type)
                        ".quad " +
                        dieLabel +
-                       "_debug_start\n"  // Low pc
+                       "_debug_start\n" // Low pc
                        ".quad " +
                        dieLabel + "_debug_end - " + dieLabel +
-                       "_debug_start\n"   // high pc
-                       ".uleb128 0x01\n"  // 1 byte is gonna follow
+                       "_debug_start\n"  // high pc
+                       ".uleb128 0x01\n" // 1 byte is gonna follow
                        ".byte 0x9c\n",
                    Section::DIE);
       }
@@ -186,7 +186,7 @@ void codegen::funcDecl(Node::Stmt *stmt) {
 
   pushLinker("\n.type " + funcName + ", @function", Section::Main);
   pushLinker("\n.globl " + funcName + "\n",
-             Section::Main);  // All functions are global functions for now.
+             Section::Main); // All functions are global functions for now.
   push(Instr{.var = Label{.name = funcName}, .type = InstrType::Label},
        Section::Main);
   // push linker directive for the debug info (the line number)
@@ -195,15 +195,21 @@ void codegen::funcDecl(Node::Stmt *stmt) {
              .type = InstrType::Linker},
        Section::Main);
 
-  pushLinker("endbr64\n\t", Section::Main);  //? This instruction is really stupid and complicated, but it boils down to this:
-                                             //- This instruction is necessary for function pointers because when you jump some
-                                             //- stupid shit happens. Also, C does it.
+  pushLinker("endbr64\n\t",
+             Section::Main); //? This instruction is really stupid and
+                             // complicated, but it boils down to this:
+                             //- This instruction is necessary for function
+                             // pointers because when you jump some
+                             //- stupid shit happens. Also, C does it.
 
   // Define literally (do not adjust cfa for this)
   push(Instr{.var = PushInstr{.what = "%rbp", .whatSize = DataSize::Qword},
              .type = InstrType::Push},
        Section::Main);
-  push(Instr{.var = LinkerDirective{.value = ".cfi_def_cfa_offset 16\n\t.cfi_offset 6, -16\n\t"},
+  push(Instr{.var =
+                 LinkerDirective{
+                     .value =
+                         ".cfi_def_cfa_offset 16\n\t.cfi_offset 6, -16\n\t"},
              .type = InstrType::Linker},
        Section::Main);
   push(Instr{.var = MovInstr{.dest = "%rbp",
@@ -231,25 +237,26 @@ void codegen::funcDecl(Node::Stmt *stmt) {
                    DataSize::Qword);
     else
       // Integers are passed in general purpose registers
-      moveRegister(where, intArgOrder[intArgCount++], DataSize::Qword, DataSize::Qword);
+      moveRegister(where, intArgOrder[intArgCount++], DataSize::Qword,
+                   DataSize::Qword);
 
     variableTable.insert({s->params.at(i).first, where});
     variableCount += getByteSizeOfType(s->params.at(i).second);
 
     if (debug) {
       // Use the parameter type
-      pushLinker("\n.uleb128 " +
-                     std::to_string((int)dwarf::DIEAbbrev::FunctionParam) +
-                     "\n.byte " + std::to_string(s->file_id) + "\n.byte " +
-                     std::to_string(s->line) + "\n.byte " +
-                     std::to_string(s->pos) + "\n.long .L" +
-                     type_to_diename(s->params.at(i).second) + "_debug_type\n" +
-                     "\n.uleb128 0x1"  // 1 byte is gonna follow
-                     "\n.byte " +
-                     std::to_string(dwarf::argOP_regs.at(intArgOrder.at(i)) + 80) +
-                     "\n"
-                     "\n",
-                 Section::DIE);
+      pushLinker(
+          "\n.uleb128 " + std::to_string((int)dwarf::DIEAbbrev::FunctionParam) +
+              "\n.byte " + std::to_string(s->file_id) + "\n.byte " +
+              std::to_string(s->line) + "\n.byte " + std::to_string(s->pos) +
+              "\n.long .L" + type_to_diename(s->params.at(i).second) +
+              "_debug_type\n" +
+              "\n.uleb128 0x1" // 1 byte is gonna follow
+              "\n.byte " +
+              std::to_string(dwarf::argOP_regs.at(intArgOrder.at(i)) + 80) +
+              "\n"
+              "\n",
+          Section::DIE);
     }
   }
   for (size_t i = 0; i < s->params.size(); i++) {
@@ -262,7 +269,7 @@ void codegen::funcDecl(Node::Stmt *stmt) {
   // Do not push the lexical block to the dwarf stack
   dwarf::nextBlockDIE = false;
   codegen::visitStmt(s->block);
-  dwarf::nextBlockDIE = true;  // reset it
+  dwarf::nextBlockDIE = true; // reset it
   variableCount = preVC;
 
   // Check if last instruction was a "RET"
@@ -278,7 +285,7 @@ void codegen::funcDecl(Node::Stmt *stmt) {
   // Function ends with ret so we can't really push any other instructions.
   if (debug) {
     pushLinker(dieLabel + "_debug_end:\n", Section::Main);
-    pushLinker(".byte 0\n", Section::DIE);  // End of children
+    pushLinker(".byte 0\n", Section::DIE); // End of children
   }
 
   push(Instr{.var = LinkerDirective{.value = ".cfi_endproc\n"},
@@ -315,30 +322,39 @@ void codegen::varDecl(Node::Stmt *stmt) {
         structByteSizes.find(getUnderlying(s->type)) != structByteSizes.end()) {
       // It's of type struct!
       // Basically ignore the part where we allocate memory for this thing.
-      declareStructVariable(s->expr, getUnderlying(s->type), "%rbp", variableCount);
+      declareStructVariable(s->expr, getUnderlying(s->type), "%rbp",
+                            variableCount);
       int structSize = structByteSizes[getUnderlying(s->type)].first;
       variableCount += structSize;
-      variableTable.insert({s->name, std::to_string(-variableCount) + "(%rbp)"});
+      variableTable.insert(
+          {s->name, std::to_string(-variableCount) + "(%rbp)"});
     } else if (s->type->kind == ND_ARRAY_TYPE ||
                s->type->kind == ND_ARRAY_AUTO_FILL) {
       ArrayType *at = static_cast<ArrayType *>(s->type);
 
       declareArrayVariable(
           s->expr, static_cast<ArrayType *>(s->type)->constSize,
-          s->name);  // s->name so it can be inserted to variableTable, s->type
-                     // so we know the byte sizes.
+          s->name); // s->name so it can be inserted to variableTable, s->type
+                    // so we know the byte sizes.
       variableCount += (getByteSizeOfType(at->underlying) * at->constSize);
     } else {
       visitExpr(s->expr);
-      bool isFloatingType = s->type->kind == ND_SYMBOL_TYPE && (getUnderlying(s->type) == "float" || getUnderlying(s->type) == "double");
-      DataSize size = isFloatingType ? intDataToSizeFloat(getByteSizeOfType(s->type)) : intDataToSize(getByteSizeOfType(s->type));
-      push(Instr{.var = PopInstr{.where = where, .whereSize = size}, .type = InstrType::Pop}, Section::Main);  // For values small enough to fit in a register.
+      bool isFloatingType = s->type->kind == ND_SYMBOL_TYPE &&
+                            (getUnderlying(s->type) == "float" ||
+                             getUnderlying(s->type) == "double");
+      DataSize size = isFloatingType
+                          ? intDataToSizeFloat(getByteSizeOfType(s->type))
+                          : intDataToSize(getByteSizeOfType(s->type));
+      push(Instr{.var = PopInstr{.where = where, .whereSize = size},
+                 .type = InstrType::Pop},
+           Section::Main); // For values small enough to fit in a register.
       variableTable.insert({s->name, where});
       variableCount += getByteSizeOfType(s->type);
     }
   } else {
-    variableTable.insert({s->name, where});       // Insert into table
-    variableCount += getByteSizeOfType(s->type);  // Allocation (leaving space for future variables)
+    variableTable.insert({s->name, where}); // Insert into table
+    variableCount += getByteSizeOfType(
+        s->type); // Allocation (leaving space for future variables)
   }
   // Update the symbol table with the variable's position
 
@@ -353,7 +369,7 @@ void codegen::varDecl(Node::Stmt *stmt) {
   // Get the type of the variable
   // (struct, array, pointer, or basic)
   std::string asmName = type_to_diename(
-      s->type);  // This handles things like _ptr's and _arr's, too!
+      s->type); // This handles things like _ptr's and _arr's, too!
   dwarf::useType(s->type);
   dwarf::useAbbrev(dwarf::DIEAbbrev::Variable);
   dwarf::useAbbrev(dwarf::DIEAbbrev::Type);
@@ -368,8 +384,14 @@ void codegen::varDecl(Node::Stmt *stmt) {
   if (s->type->kind == ND_ARRAY_TYPE) {
     ArrayType *at = static_cast<ArrayType *>(s->type);
     // If the underlying type was AGAIN a struct
-    if (structByteSizes.find(getUnderlying(at->underlying)) != structByteSizes.end()) {
-      fbreg_loc = -((variableCount - getByteSizeOfType(structByteSizes[getUnderlying(at->underlying)].second.back().second.first)) + 16);
+    if (structByteSizes.find(getUnderlying(at->underlying)) !=
+        structByteSizes.end()) {
+      fbreg_loc =
+          -((variableCount -
+             getByteSizeOfType(structByteSizes[getUnderlying(at->underlying)]
+                                   .second.back()
+                                   .second.first)) +
+            16);
     }
   }
   pushLinker(
@@ -378,22 +400,23 @@ void codegen::varDecl(Node::Stmt *stmt) {
           "_string\n"
           ".byte " +
           std::to_string(s->file_id) +
-          "\n"  // File index
+          "\n" // File index
           ".byte " +
           std::to_string(s->line) +
-          "\n   "  // Line number
+          "\n   " // Line number
           ".byte " +
           std::to_string(s->pos) +
-          "\n"  // Line column
+          "\n" // Line column
           ".long .L" +
           asmName +
-          "_debug_type\n"  // Type - point to the DIE of the DW_TAG_base_type
+          "_debug_type\n" // Type - point to the DIE of the DW_TAG_base_type
           ".uleb128 " +
-          std::to_string(                  // Length of data in location
-              1 + sizeOfLEB(fbreg_loc)) +  // DW_OP_fbreg (length of data)
-          "\n.byte 0x91\n"                 // DW_OP_fbreg (first byte determines variable is offset from frame pointer rbp)
+          std::to_string(                 // Length of data in location
+              1 + sizeOfLEB(fbreg_loc)) + // DW_OP_fbreg (length of data)
+          "\n.byte 0x91\n" // DW_OP_fbreg (first byte determines variable is
+                           // offset from frame pointer rbp)
           ".sleb128 " +
-          std::to_string(fbreg_loc) + "\n",  // DW_OP_fbreg (actual offset)
+          std::to_string(fbreg_loc) + "\n", // DW_OP_fbreg (actual offset)
       Section::DIE);
 
   // DIE String pointer
@@ -423,14 +446,14 @@ void codegen::block(Node::Stmt *stmt) {
     dwarf::useAbbrev(dwarf::DIEAbbrev::LexicalBlock);
     pushLinker(".uleb128 " +
                    std::to_string((int)dwarf::DIEAbbrev::LexicalBlock) +
-                   "\n.byte " + std::to_string(s->file_id) +  // File ID
-                   "\n.byte " + std::to_string(s->line) +     // Line number
-                   "\n.byte " + std::to_string(s->pos) +      // Column number
+                   "\n.byte " + std::to_string(s->file_id) + // File ID
+                   "\n.byte " + std::to_string(s->line) +    // Line number
+                   "\n.byte " + std::to_string(s->pos) +     // Column number
                    "\n.long .Ldie" + std::to_string(thisDieCount) +
-                   "_begin"  // Low pc
+                   "_begin" // Low pc
                    "\n.quad .Ldie" +
                    std::to_string(thisDieCount) + "_end - .Ldie" +
-                   std::to_string(thisDieCount) + "_begin\n"  // High pc
+                   std::to_string(thisDieCount) + "_begin\n" // High pc
                ,
                Section::DIE);
   }
@@ -438,7 +461,7 @@ void codegen::block(Node::Stmt *stmt) {
     codegen::visitStmt(stm);
   }
   if (dwarf::nextBlockDIE) {
-    pushLinker(".byte 0\n", Section::DIE);  // End of children nodes of the scope
+    pushLinker(".byte 0\n", Section::DIE); // End of children nodes of the scope
     if (debug)
       push(Instr{.var = Label{.name = ".Ldie" + std::to_string(thisDieCount) +
                                       "_end"},
@@ -456,8 +479,8 @@ void codegen::ifStmt(Node::Stmt *stmt) {
   std::string endLabel = ".Lifend" + std::to_string(conditionalCount);
   conditionalCount++;
   JumpCondition jc =
-      processComparison(s->condition);  // This produces the comparison code for
-                                        // us. We need to jump
+      processComparison(s->condition); // This produces the comparison code for
+                                       // us. We need to jump
   if (s->elseStmt == nullptr) {
     // if () {};
     push(Instr{.var = JumpInstr{.op = getOpposite(jc), .label = endLabel},
@@ -509,13 +532,13 @@ void codegen::enumDecl(Node::Stmt *stmt) {
                    "\n.long .L" + s->name +
                    "_string"
                    "\n.byte " +
-                   std::to_string(s->file_id) +            // File ID
-                   "\n.byte " + std::to_string(s->line) +  // Line number
-                   "\n.byte " + std::to_string(s->pos) +   // Line column
-                   "\n.byte 4"                             // each enum member is 4 bytes
-                   "\n.byte 7"                             // encoding - DW_ATE_signed is 7
-                   "\n.long .Llong_u_debug_type\n"         // And yes, for some reason,
-                                                           // this is still required.
+                   std::to_string(s->file_id) +           // File ID
+                   "\n.byte " + std::to_string(s->line) + // Line number
+                   "\n.byte " + std::to_string(s->pos) +  // Line column
+                   "\n.byte 4" // each enum member is 4 bytes
+                   "\n.byte 7" // encoding - DW_ATE_signed is 7
+                   "\n.long .Llong_u_debug_type\n" // And yes, for some reason,
+                                                   // this is still required.
                ,
                Section::DIE);
     dwarf::useStringP(s->name);
@@ -541,7 +564,7 @@ void codegen::enumDecl(Node::Stmt *stmt) {
               "\n.long .L" + field +
               "_string"
               "\n.byte " +
-              std::to_string(fieldCount - 1) +  // Value of the enum member
+              std::to_string(fieldCount - 1) + // Value of the enum member
               "\n",
           Section::DIE);
       // Push the name of the enum member
@@ -550,12 +573,12 @@ void codegen::enumDecl(Node::Stmt *stmt) {
   }
 
   if (debug)
-    pushLinker("\n.byte 0\n", Section::DIE);  // End of children
+    pushLinker("\n.byte 0\n", Section::DIE); // End of children
 
   // Add the enum to the global table
   variableTable.insert(
-      {s->name, ""});  // You should never refer to the enum base itself. You can
-                       // only ever get its values
+      {s->name, ""}); // You should never refer to the enum base itself. You can
+                      // only ever get its values
 }
 
 void codegen::structDecl(Node::Stmt *stmt) {
@@ -566,7 +589,7 @@ void codegen::structDecl(Node::Stmt *stmt) {
   std::vector<StructMember> members = {};
   for (std::pair<std::string, Node::Type *> field : s->fields) {
     short fieldSize = getByteSizeOfType(field.second);
-    size += fieldSize;  // Yes, even calculates the size of nested structs.
+    size += fieldSize; // Yes, even calculates the size of nested structs.
   }
   long subSize = size;
   // Calculate size by adding the size of members
@@ -577,7 +600,8 @@ void codegen::structDecl(Node::Stmt *stmt) {
 
     // In both cases, the last element is stored at 0
     long offset = subSize - getByteSizeOfType(s->fields.back().second);
-    members.push_back({s->fields.at(i).first, {s->fields.at(i).second, offset}});
+    members.push_back(
+        {s->fields.at(i).first, {s->fields.at(i).second, offset}});
     subSize -= getByteSizeOfType(s->fields.at(i).second);
   }
   structByteSizes.insert({s->name, {size, members}});
@@ -587,8 +611,8 @@ void codegen::structDecl(Node::Stmt *stmt) {
   for (Node::Stmt *stmt : s->stmts) {
     insideStructName += s->name;
     visitStmt(stmt);
-    insideStructName = prevSname;  // Nested structs are not allowed currently,
-                                   // but may be later.
+    insideStructName = prevSname; // Nested structs are not allowed currently,
+                                  // but may be later.
   }
   if (debug) {
     // Loop over fields, append as DIEs
@@ -605,10 +629,10 @@ void codegen::structDecl(Node::Stmt *stmt) {
                    "\n.long .L" + s->name +
                    "_string\n"
                    ".byte " +
-                   std::to_string(s->file_id) +            // File ID
-                   "\n.byte " + std::to_string(s->line) +  // Line number
-                   "\n.byte " + std::to_string(s->pos) +   // Line column
-                   "\n.short " + std::to_string(size) +    // Size of struct
+                   std::to_string(s->file_id) +           // File ID
+                   "\n.byte " + std::to_string(s->line) + // Line number
+                   "\n.byte " + std::to_string(s->pos) +  // Line column
+                   "\n.short " + std::to_string(size) +   // Size of struct
                    "\n",
                Section::DIE);
     // Push name
@@ -627,7 +651,7 @@ void codegen::structDecl(Node::Stmt *stmt) {
                      "_debug_type"
                      //  "\n.byte " + std::to_string(sizeOfLEB(-currentByte)) +
                      "\n.sleb128 " +
-                     std::to_string(currentByte) +  // Offset in struct
+                     std::to_string(currentByte) + // Offset in struct
                      "\n",
                  Section::DIE);
       // push name in string
@@ -648,15 +672,17 @@ void codegen::_return(Node::Stmt *stmt) {
   pushDebug(returnStmt->line, stmt->file_id, returnStmt->pos);
   if (returnStmt->expr == nullptr) {
     if (isEntryPoint) {
-      // Entry point (Main) function is an unsigned int, meaning that it is acceptable to return as a int here
+      // Entry point (Main) function is an unsigned int, meaning that it is
+      // acceptable to return as a int here
       moveRegister("%rdi", "$0", DataSize::Qword, DataSize::Qword);
       handleExitSyscall();
       return;
     } else {
-      handleReturnCleanup();  // We don't care about rax! We're exiting. We already
-                              // know that nothing is being returned therefore we
-                              // know that this is ok.
-      std::string msg = "WARNING: Returning from a non-void function without a return value. This is undefined behavior.";
+      handleReturnCleanup(); // We don't care about rax! We're exiting. We
+                             // already know that nothing is being returned
+                             // therefore we know that this is ok.
+      std::string msg = "WARNING: Returning from a non-void function without a "
+                        "return value. This is undefined behavior.";
       handleError(returnStmt->line, returnStmt->pos, msg, "codegen");
       return;
     }
@@ -664,21 +690,30 @@ void codegen::_return(Node::Stmt *stmt) {
   // Generate return value for the function
   codegen::visitExpr(returnStmt->expr);
   if (isEntryPoint) {
-    // Depending on the size of the return value, we have to use the right kind of pop size
+    // Depending on the size of the return value, we have to use the right kind
+    // of pop size
     switch (getByteSizeOfType(returnStmt->expr->asmType)) {
-      case 1:
-        push(Instr{.var = PopInstr{.where = "%dil", .whereSize = DataSize::Byte}, .type = InstrType::Pop}, Section::Main);
-        break;
-      case 2:
-        push(Instr{.var = PopInstr{.where = "%di", .whereSize = DataSize::Word}, .type = InstrType::Pop}, Section::Main);
-        break;
-      case 4:
-        push(Instr{.var = PopInstr{.where = "%edi", .whereSize = DataSize::Dword}, .type = InstrType::Pop}, Section::Main);
-        break;
-      case 8:
-      default:
-        push(Instr{.var = PopInstr{.where = "%rdi", .whereSize = DataSize::Qword}, .type = InstrType::Pop}, Section::Main);
-        break;
+    case 1:
+      push(Instr{.var = PopInstr{.where = "%dil", .whereSize = DataSize::Byte},
+                 .type = InstrType::Pop},
+           Section::Main);
+      break;
+    case 2:
+      push(Instr{.var = PopInstr{.where = "%di", .whereSize = DataSize::Word},
+                 .type = InstrType::Pop},
+           Section::Main);
+      break;
+    case 4:
+      push(Instr{.var = PopInstr{.where = "%edi", .whereSize = DataSize::Dword},
+                 .type = InstrType::Pop},
+           Section::Main);
+      break;
+    case 8:
+    default:
+      push(Instr{.var = PopInstr{.where = "%rdi", .whereSize = DataSize::Qword},
+                 .type = InstrType::Pop},
+           Section::Main);
+      break;
     }
     handleExitSyscall();
     return;
@@ -686,32 +721,44 @@ void codegen::_return(Node::Stmt *stmt) {
   if (returnStmt->expr->asmType->kind == ND_POINTER_TYPE ||
       returnStmt->expr->asmType->kind == ND_FUNCTION_TYPE ||
       returnStmt->expr->asmType->kind == ND_FUNCTION_TYPE_PARAM) {
-    popToRegister("%rax");  // rax is fine in this case- it is ALWAYS 8 bytes
+    popToRegister("%rax"); // rax is fine in this case- it is ALWAYS 8 bytes
     handleReturnCleanup();
     return;
   }
   // Probably a symbol type!
   SymbolType *st = static_cast<SymbolType *>(returnStmt->expr->asmType);
   if (st->name == "float" || st->name == "double") {
-    push(Instr{.var = PopInstr{.where = "%xmm0", .whereSize = DataSize::SS}, .type = InstrType::Pop}, Section::Main);
+    push(Instr{.var = PopInstr{.where = "%xmm0", .whereSize = DataSize::SS},
+               .type = InstrType::Pop},
+         Section::Main);
     handleReturnCleanup();
   } else {
     int byteSize = getByteSizeOfType(returnStmt->expr->asmType);
     if (byteSize <= 8) {
       switch (byteSize) {
-        case 1:
-          push(Instr{.var = PopInstr{.where = "%al", .whereSize = DataSize::Byte}, .type = InstrType::Pop}, Section::Main);
-          break;
-        case 2:
-          push(Instr{.var = PopInstr{.where = "%ax", .whereSize = DataSize::Word}, .type = InstrType::Pop}, Section::Main);
-          break;
-        case 4:
-          push(Instr{.var = PopInstr{.where = "%eax", .whereSize = DataSize::Dword}, .type = InstrType::Pop}, Section::Main);
-          break;
-        case 8:
-        default:
-          push(Instr{.var = PopInstr{.where = "%rax", .whereSize = DataSize::Qword}, .type = InstrType::Pop}, Section::Main);
-          break;
+      case 1:
+        push(Instr{.var = PopInstr{.where = "%al", .whereSize = DataSize::Byte},
+                   .type = InstrType::Pop},
+             Section::Main);
+        break;
+      case 2:
+        push(Instr{.var = PopInstr{.where = "%ax", .whereSize = DataSize::Word},
+                   .type = InstrType::Pop},
+             Section::Main);
+        break;
+      case 4:
+        push(Instr{.var =
+                       PopInstr{.where = "%eax", .whereSize = DataSize::Dword},
+                   .type = InstrType::Pop},
+             Section::Main);
+        break;
+      case 8:
+      default:
+        push(Instr{.var =
+                       PopInstr{.where = "%rax", .whereSize = DataSize::Qword},
+                   .type = InstrType::Pop},
+             Section::Main);
+        break;
       }
       handleReturnCleanup();
       return;
@@ -736,10 +783,13 @@ void codegen::forLoop(Node::Stmt *stmt) {
   AssignmentExpr *assign = static_cast<AssignmentExpr *>(s->forLoop);
   IdentExpr *assignee = static_cast<IdentExpr *>(assign->assignee);
 
-  push(Instr{.var = Comment{.comment = "For loop variable declaration"}, .type = InstrType::Comment}, Section::Main);
+  push(Instr{.var = Comment{.comment = "For loop variable declaration"},
+             .type = InstrType::Comment},
+       Section::Main);
   pushDebug(s->line, stmt->file_id, s->pos);
   // assign var
-  variableTable.insert({assignee->name, std::to_string(-variableCount) + "(%rbp)"});
+  variableTable.insert(
+      {assignee->name, std::to_string(-variableCount) + "(%rbp)"});
   variableCount += 8;
   // Push a variable declaration for the loop variable
   if (debug) {
@@ -750,23 +800,23 @@ void codegen::forLoop(Node::Stmt *stmt) {
                    "\n.long .L" + assignee->name +
                    "_string\n"
                    "\n.byte " +
-                   std::to_string(s->file_id) +            // File ID
-                   "\n.byte " + std::to_string(s->line) +  // Line number
-                   "\n.byte " + std::to_string(s->pos) +   // Line column
+                   std::to_string(s->file_id) +           // File ID
+                   "\n.byte " + std::to_string(s->line) + // Line number
+                   "\n.byte " + std::to_string(s->pos) +  // Line column
                    "\n.long .L" + type_to_diename(assignee->asmType) +
-                   "_debug_type\n"  // Type - point to the DIE of
-                                    // the DW_TAG_base_type
+                   "_debug_type\n" // Type - point to the DIE of
+                                   // the DW_TAG_base_type
                    "\n.uleb128 " +
                    std::to_string(1 + sizeOfLEB(-variableCount -
-                                                16)) +  // 1 byte is gonna follow
-                   "\n.byte 0x91\n"                     // DW_OP_fbreg (first byte)
+                                                16)) + // 1 byte is gonna follow
+                   "\n.byte 0x91\n" // DW_OP_fbreg (first byte)
                    "\n.sleb128 " +
                    std::to_string(-variableCount - 16) + "\n",
                Section::DIE);
     // Push the name of the variable
     dwarf::useStringP(assignee->name);
   }
-  visitExpr(assign);  // Process the initial loop assignment (e.g., i = 0)
+  visitExpr(assign); // Process the initial loop assignment (e.g., i = 0)
   // Remove the last instruction!! Its a push and thats bad!
   text_section.pop_back();
 
@@ -780,11 +830,11 @@ void codegen::forLoop(Node::Stmt *stmt) {
        Section::Main);
 
   // Execute the loop body (if condition is true)
-  visitStmt(s->block);  // Visit the statements inside the loop body
+  visitStmt(s->block); // Visit the statements inside the loop body
 
   // Evaluate the loop increment (e.g., i++)
   if (s->optional != nullptr) {
-    visitExpr(s->optional);  // Process the loop increment if provided
+    visitExpr(s->optional); // Process the loop increment if provided
     text_section.pop_back();
   }
 
@@ -800,7 +850,7 @@ void codegen::forLoop(Node::Stmt *stmt) {
 
   // Pop the loop variable from the stack
   variableTable.erase(assignee->name);
-  variableCount -= 8;  // We now have room for another variable!
+  variableCount -= 8; // We now have room for another variable!
 };
 
 void codegen::whileLoop(Node::Stmt *stmt) {
@@ -814,7 +864,8 @@ void codegen::whileLoop(Node::Stmt *stmt) {
   // Evaluate condition
   push(Instr{.var = Label{.name = preLoop}, .type = InstrType::Label},
        Section::Main);
-  // Check if is a stupid loop (like if a test would fail like when checking 0 == 0)
+  // Check if is a stupid loop (like if a test would fail like when checking 0
+  // == 0)
   if (s->condition->kind != ND_BOOL) {
     JumpCondition jc = processComparison(s->condition);
     push(Instr{.var = JumpInstr{.op = getOpposite(jc), .label = postLoop},
@@ -851,16 +902,16 @@ void codegen::_break(Node::Stmt *stmt) {
 
   // Jump to the end of the loop
   push(Instr{.var = JumpInstr{.op = JumpCondition::Unconditioned,
-                              .label = ".Lloop_post" +
-                                       std::to_string(loopCount - 1)},
+                              .label =
+                                  "loop_post" + std::to_string(loopCount - 1)},
              .type = InstrType::Jmp},
        Section::Main);
 
   // Break statements are only valid inside loops
-  if (loopDepth < 1) {
-    std::cerr << "Error: Break statement outside of loop" << std::endl;
-    exit(-1);
-  }
+  // if (loopDepth < 1) {
+  //   std::cerr << "Error: Break statement outside of loop" << std::endl;
+  //   exit(-1);
+  // }
 };
 
 void codegen::_continue(Node::Stmt *stmt) {
@@ -922,7 +973,9 @@ void codegen::matchStmt(Node::Stmt *stmt) {
         std::get<PushInstr>(text_section[text_section.size() - 1].var);
     text_section.pop_back();
 
-    push(Instr{.var = CmpInstr{.lhs = "%rax", .rhs = prevPush.what, .size = DataSize::Qword},
+    push(Instr{.var = CmpInstr{.lhs = "%rax",
+                               .rhs = prevPush.what,
+                               .size = DataSize::Qword},
                .type = InstrType::Cmp},
          Section::Main);
     // Jump if equal to the case
@@ -978,7 +1031,8 @@ void codegen::matchStmt(Node::Stmt *stmt) {
 };
 
 void codegen::dereferenceStructPtr(Node::Expr *expr, std::string structName,
-                                   std::string offsetRegister, size_t startOffset) {
+                                   std::string offsetRegister,
+                                   size_t startOffset) {
   // have DerefStruct: StructName = Struct&;
   // see how large the struct is
   DereferenceExpr *deref = static_cast<DereferenceExpr *>(expr);
@@ -992,22 +1046,36 @@ void codegen::dereferenceStructPtr(Node::Expr *expr, std::string structName,
         std::get<PushInstr>(text_section[text_section.size() - 1].var);
     popToRegister("%rsi");
     // the destination is just the offset register and the offset, lol
-    push(Instr{.var = Comment{.comment = "Optimized struct copy"}, .type = InstrType::Comment}, Section::Main);
+    push(Instr{.var = Comment{.comment = "Optimized struct copy"},
+               .type = InstrType::Comment},
+         Section::Main);
     // lea the dest
-    short int sizeOfLastStructElement = getByteSizeOfType(structByteSizes[structName].second.back().second.first);
-    push(Instr{.var = LeaInstr{.size = DataSize::Qword, .dest = "%rdi", .src = std::to_string(-((signed)startOffset + structSize - sizeOfLastStructElement)) + "(" + offsetRegister + ")"}, .type = InstrType::Lea}, Section::Main);
+    short int sizeOfLastStructElement = getByteSizeOfType(
+        structByteSizes[structName].second.back().second.first);
+    push(Instr{.var = LeaInstr{.size = DataSize::Qword,
+                               .dest = "%rdi",
+                               .src = std::to_string(
+                                          -((signed)startOffset + structSize -
+                                            sizeOfLastStructElement)) +
+                                      "(" + offsetRegister + ")"},
+               .type = InstrType::Lea},
+         Section::Main);
     // if divisible by 8, do qword, if 4, do dword, etc
     if (structSize % 8 == 0) {
-      moveRegister("%rcx", "$" + std::to_string(structSize / 8), DataSize::Qword, DataSize::Qword);
+      moveRegister("%rcx", "$" + std::to_string(structSize / 8),
+                   DataSize::Qword, DataSize::Qword);
       pushLinker("rep movsq\n\t", Section::Main);
     } else if (structSize % 4 == 0) {
-      moveRegister("%rcx", "$" + std::to_string(structSize / 4), DataSize::Qword, DataSize::Qword);
+      moveRegister("%rcx", "$" + std::to_string(structSize / 4),
+                   DataSize::Qword, DataSize::Qword);
       pushLinker("rep movsd\n\t", Section::Main);
     } else if (structSize % 2 == 0) {
-      moveRegister("%rcx", "$" + std::to_string(structSize / 2), DataSize::Qword, DataSize::Qword);
+      moveRegister("%rcx", "$" + std::to_string(structSize / 2),
+                   DataSize::Qword, DataSize::Qword);
       pushLinker("rep movsw\n\t", Section::Main);
     } else {
-      moveRegister("%rcx", "$" + std::to_string(structSize), DataSize::Qword, DataSize::Qword);
+      moveRegister("%rcx", "$" + std::to_string(structSize), DataSize::Qword,
+                   DataSize::Qword);
       pushLinker("rep movsb\n\t", Section::Main);
     }
     return;
@@ -1020,34 +1088,48 @@ void codegen::dereferenceStructPtr(Node::Expr *expr, std::string structName,
     if (structSize >= 8) {
       // move a qword from src to dst
       structSize -= 8;
-      moveRegister("%rax", std::to_string(structSize) + "(%rsi)", DataSize::Qword, DataSize::Qword);
-      moveRegister(std::to_string(-((signed)startOffset + structSize)) + "(" + offsetRegister + ")", "%rax", DataSize::Qword, DataSize::Qword);
+      moveRegister("%rax", std::to_string(structSize) + "(%rsi)",
+                   DataSize::Qword, DataSize::Qword);
+      moveRegister(std::to_string(-((signed)startOffset + structSize)) + "(" +
+                       offsetRegister + ")",
+                   "%rax", DataSize::Qword, DataSize::Qword);
     } else if (structSize >= 4) {
       structSize -= 4;
-      moveRegister("%eax", std::to_string(structSize) + "(%rsi)", DataSize::Dword, DataSize::Dword);
-      moveRegister(std::to_string(-((signed)startOffset + structSize)) + "(" + offsetRegister + ")", "%eax", DataSize::Dword, DataSize::Dword);
+      moveRegister("%eax", std::to_string(structSize) + "(%rsi)",
+                   DataSize::Dword, DataSize::Dword);
+      moveRegister(std::to_string(-((signed)startOffset + structSize)) + "(" +
+                       offsetRegister + ")",
+                   "%eax", DataSize::Dword, DataSize::Dword);
     } else if (structSize >= 2) {
       structSize -= 2;
-      moveRegister("%ax", std::to_string(structSize) + "(%rsi)", DataSize::Word, DataSize::Word);
-      moveRegister(std::to_string(-((signed)startOffset + structSize)) + "(" + offsetRegister + ")", "%ax", DataSize::Word, DataSize::Word);
+      moveRegister("%ax", std::to_string(structSize) + "(%rsi)", DataSize::Word,
+                   DataSize::Word);
+      moveRegister(std::to_string(-((signed)startOffset + structSize)) + "(" +
+                       offsetRegister + ")",
+                   "%ax", DataSize::Word, DataSize::Word);
     } else {
       structSize -= 1;
-      moveRegister("%al", std::to_string(structSize) + "(%rsi)", DataSize::Byte, DataSize::Byte);
-      moveRegister(std::to_string(-((signed)startOffset + structSize)) + "(" + offsetRegister + ")", "%al", DataSize::Byte, DataSize::Byte);
+      moveRegister("%al", std::to_string(structSize) + "(%rsi)", DataSize::Byte,
+                   DataSize::Byte);
+      moveRegister(std::to_string(-((signed)startOffset + structSize)) + "(" +
+                       offsetRegister + ")",
+                   "%al", DataSize::Byte, DataSize::Byte);
     }
   }
 }
 
 // Structname passed by the varStmt's "type" field
 void codegen::declareStructVariable(Node::Expr *expr, std::string structName,
-                                    std::string offsetRegister, size_t startOffset) {
+                                    std::string offsetRegister,
+                                    size_t startOffset) {
   if (expr->kind == ND_DEREFERENCE) {
     dereferenceStructPtr(expr, structName, offsetRegister, startOffset);
-    return;  // We do not want to continue!
+    return; // We do not want to continue!
   }
   StructExpr *s = static_cast<StructExpr *>(expr);
   // The only purpose of this function is to put memory in the right place
-  // it does not declare the struct in the variable table or modify the variable count
+  // it does not declare the struct in the variable table or modify the variable
+  // count
 
   // Order the fields in the struct
   std::vector<Node::Expr *> fields = {};
@@ -1064,17 +1146,23 @@ void codegen::declareStructVariable(Node::Expr *expr, std::string structName,
     Node::Expr *field = fields.at(i);
     signed long offset = structByteSizes[structName].second.at(i).second.second;
     if (structByteSizes[structName].second.size() > 1) {
-      // offset -= getByteSizeOfType(structByteSizes[structName].second.at(0).second.first);
+      // offset -=
+      // getByteSizeOfType(structByteSizes[structName].second.at(0).second.first);
     }
-    if (field->asmType->kind == ND_SYMBOL_TYPE && structByteSizes.find(getUnderlying(field->asmType)) != structByteSizes.end()) {
+    if (field->asmType->kind == ND_SYMBOL_TYPE &&
+        structByteSizes.find(getUnderlying(field->asmType)) !=
+            structByteSizes.end()) {
       if (field->kind == ND_STRUCT) {
         // Evaluate THAT struct but place it in the outer struct at the offset
-        declareStructVariable(field, getUnderlying(field->asmType), offsetRegister, startOffset + offset);
+        declareStructVariable(field, getUnderlying(field->asmType),
+                              offsetRegister, startOffset + offset);
         continue;
       }
-      // It must be an identifier or something, which means we must copy each byte from the original into this
+      // It must be an identifier or something, which means we must copy each
+      // byte from the original into this
       visitExpr(field);
-      popToRegister("%rdx");  // Hopefully, 'field' will be something that returns the address
+      popToRegister("%rdx"); // Hopefully, 'field' will be something that
+                             // returns the address
 
       // NEXT UPPP we must copy each byte
       short byteCount = getByteSizeOfType(field->asmType);
@@ -1082,23 +1170,35 @@ void codegen::declareStructVariable(Node::Expr *expr, std::string structName,
         if (byteCount >= 8) {
           // Move a qword
           byteCount -= 8;
-          moveRegister("%rax", std::to_string(-byteCount) + "(%rdx)", DataSize::Qword, DataSize::Qword);
-          moveRegister(std::to_string(-(byteCount + startOffset + offset)) + "(" + offsetRegister + ")", "%rax", DataSize::Qword, DataSize::Qword);
+          moveRegister("%rax", std::to_string(-byteCount) + "(%rdx)",
+                       DataSize::Qword, DataSize::Qword);
+          moveRegister(std::to_string(-(byteCount + startOffset + offset)) +
+                           "(" + offsetRegister + ")",
+                       "%rax", DataSize::Qword, DataSize::Qword);
         } else if (byteCount >= 4) {
           // Move a dword (long)
           byteCount -= 4;
-          moveRegister("%eax", std::to_string(-byteCount) + "(%rdx)", DataSize::Dword, DataSize::Dword);
-          moveRegister(std::to_string(-(byteCount + startOffset + offset)) + "(" + offsetRegister + ")", "%eax", DataSize::Dword, DataSize::Dword);
+          moveRegister("%eax", std::to_string(-byteCount) + "(%rdx)",
+                       DataSize::Dword, DataSize::Dword);
+          moveRegister(std::to_string(-(byteCount + startOffset + offset)) +
+                           "(" + offsetRegister + ")",
+                       "%eax", DataSize::Dword, DataSize::Dword);
         } else if (byteCount >= 2) {
           // Move a word (short)
           byteCount -= 2;
-          moveRegister("%ax", std::to_string(-byteCount) + "(%rdx)", DataSize::Word, DataSize::Word);
-          moveRegister(std::to_string(-(byteCount + startOffset + offset)) + "(" + offsetRegister + ")", "%ax", DataSize::Word, DataSize::Word);
+          moveRegister("%ax", std::to_string(-byteCount) + "(%rdx)",
+                       DataSize::Word, DataSize::Word);
+          moveRegister(std::to_string(-(byteCount + startOffset + offset)) +
+                           "(" + offsetRegister + ")",
+                       "%ax", DataSize::Word, DataSize::Word);
         } else {
           // Move a byte (char)
           byteCount -= 1;
-          moveRegister("%al", std::to_string(-byteCount) + "(%rdx)", DataSize::Byte, DataSize::Byte);
-          moveRegister(std::to_string(-(byteCount + startOffset + offset)) + "(" + offsetRegister + ")", "%al", DataSize::Byte, DataSize::Byte);
+          moveRegister("%al", std::to_string(-byteCount) + "(%rdx)",
+                       DataSize::Byte, DataSize::Byte);
+          moveRegister(std::to_string(-(byteCount + startOffset + offset)) +
+                           "(" + offsetRegister + ")",
+                       "%al", DataSize::Byte, DataSize::Byte);
         }
       }
       continue;
@@ -1106,12 +1206,20 @@ void codegen::declareStructVariable(Node::Expr *expr, std::string structName,
 
     if (getByteSizeOfType(field->asmType) > 8) {
       // How is that possible? It's not even a struct.
-      handleError(s->line, s->pos, "Struct field is too large to fit in a struct", "codegen", true);
+      handleError(s->line, s->pos,
+                  "Struct field is too large to fit in a struct", "codegen",
+                  true);
     }
 
     // Evaluate the field and store it in the struct
     visitExpr(field);
-    push(Instr{.var = PopInstr{.where = std::to_string(-((long long)startOffset + offset)) + "(" + offsetRegister + ")", .whereSize = intDataToSize(getByteSizeOfType(field->asmType))}, .type = InstrType::Pop}, Section::Main);
+    push(Instr{.var = PopInstr{.where = std::to_string(-(
+                                            (long long)startOffset + offset)) +
+                                        "(" + offsetRegister + ")",
+                               .whereSize = intDataToSize(
+                                   getByteSizeOfType(field->asmType))},
+               .type = InstrType::Pop},
+         Section::Main);
     continue;
   }
 }
@@ -1119,7 +1227,8 @@ void codegen::declareStructVariable(Node::Expr *expr, std::string structName,
 void codegen::declareArrayVariable(Node::Expr *expr, long long arrayLength,
                                    std::string varName) {
   if (expr->kind == ND_ARRAY_AUTO_FILL) {
-    // This is an implicit shorthand version of setting an array to [0, 0, 0, 0, ....]
+    // This is an implicit shorthand version of setting an array to [0, 0, 0, 0,
+    // ....]
     ArrayAutoFill *s = static_cast<ArrayAutoFill *>(expr);
     long long totalSize = arrayLength * getByteSizeOfType(s->fillType);
     if (totalSize <= 256) {
@@ -1129,59 +1238,126 @@ void codegen::declareArrayVariable(Node::Expr *expr, long long arrayLength,
       while (remainingBytes > 0) {
         if (remainingBytes >= 8) {
           // Fill with a quad word
-          push(Instr{.var = MovInstr{.dest = std::to_string(-((long long)variableCount + remainingBytes)) + "(%rbp)", .src = "$0", .destSize = DataSize::Qword, .srcSize = DataSize::Qword}, .type = InstrType::Mov}, Section::Main);
+          push(Instr{.var = MovInstr{.dest = std::to_string(
+                                                 -((long long)variableCount +
+                                                   remainingBytes)) +
+                                             "(%rbp)",
+                                     .src = "$0",
+                                     .destSize = DataSize::Qword,
+                                     .srcSize = DataSize::Qword},
+                     .type = InstrType::Mov},
+               Section::Main);
           remainingBytes -= 8;
           continue;
         } else if (remainingBytes >= 4) {
           // Fill with a long word
-          push(Instr{.var = MovInstr{.dest = std::to_string(-((long long)variableCount + remainingBytes)) + "(%rbp)", .src = "$0", .destSize = DataSize::Dword, .srcSize = DataSize::Dword}, .type = InstrType::Mov}, Section::Main);
+          push(Instr{.var = MovInstr{.dest = std::to_string(
+                                                 -((long long)variableCount +
+                                                   remainingBytes)) +
+                                             "(%rbp)",
+                                     .src = "$0",
+                                     .destSize = DataSize::Dword,
+                                     .srcSize = DataSize::Dword},
+                     .type = InstrType::Mov},
+               Section::Main);
           remainingBytes -= 4;
           continue;
         } else if (remainingBytes >= 2) {
           // Fill with a word
-          push(Instr{.var = MovInstr{.dest = std::to_string(-((long long)variableCount + remainingBytes)) + "(%rbp)", .src = "$0", .destSize = DataSize::Word, .srcSize = DataSize::Word}, .type = InstrType::Mov}, Section::Main);
+          push(Instr{.var = MovInstr{.dest = std::to_string(
+                                                 -((long long)variableCount +
+                                                   remainingBytes)) +
+                                             "(%rbp)",
+                                     .src = "$0",
+                                     .destSize = DataSize::Word,
+                                     .srcSize = DataSize::Word},
+                     .type = InstrType::Mov},
+               Section::Main);
           remainingBytes -= 2;
           continue;
         } else {
           // Fill with a single byte
-          push(Instr{.var = MovInstr{.dest = std::to_string(-((long long)variableCount + remainingBytes)) + "(%rbp)", .src = "$0", .destSize = DataSize::Byte, .srcSize = DataSize::Byte}, .type = InstrType::Mov}, Section::Main);
+          push(Instr{.var = MovInstr{.dest = std::to_string(
+                                                 -((long long)variableCount +
+                                                   remainingBytes)) +
+                                             "(%rbp)",
+                                     .src = "$0",
+                                     .destSize = DataSize::Byte,
+                                     .srcSize = DataSize::Byte},
+                     .type = InstrType::Mov},
+               Section::Main);
           remainingBytes -= 1;
           continue;
         }
       }
-      variableTable.insert({varName, std::to_string(-((long long)variableCount + totalSize)) + "(%rbp)"});
+      variableTable.insert(
+          {varName,
+           std::to_string(-((long long)variableCount + totalSize)) + "(%rbp)"});
       return;
     }
-    // C allocates 16 bytes near the top for some reason, let's rip them off and do the same
-    // Assuming the autofill is small enough, we could manually fill them with 0's mov by mov
+    // C allocates 16 bytes near the top for some reason, let's rip them off and
+    // do the same Assuming the autofill is small enough, we could manually fill
+    // them with 0's mov by mov
     size_t preVarCount = (size_t)variableCount;
     variableCount = (int64_t)round((size_t)variableCount, 16);
-    push(Instr{.var = MovInstr{.dest = std::to_string(-(variableCount + totalSize)) + "(%rbp)", .src = "$0", .destSize = DataSize::Qword, .srcSize = DataSize::Qword}, .type = InstrType::Mov}, Section::Main);
-    push(Instr{.var = MovInstr{.dest = std::to_string(-(variableCount + totalSize - 8)) + "(%rbp)", .src = "$0", .destSize = DataSize::Qword, .srcSize = DataSize::Qword}, .type = InstrType::Mov}, Section::Main);
+    push(Instr{.var = MovInstr{.dest = std::to_string(
+                                           -(variableCount + totalSize)) +
+                                       "(%rbp)",
+                               .src = "$0",
+                               .destSize = DataSize::Qword,
+                               .srcSize = DataSize::Qword},
+               .type = InstrType::Mov},
+         Section::Main);
+    push(Instr{.var = MovInstr{.dest = std::to_string(
+                                           -(variableCount + totalSize - 8)) +
+                                       "(%rbp)",
+                               .src = "$0",
+                               .destSize = DataSize::Qword,
+                               .srcSize = DataSize::Qword},
+               .type = InstrType::Mov},
+         Section::Main);
     // Prepare the registers for the rep stosq instruction
-    push(Instr{.var = LeaInstr{.size = DataSize::Qword, .dest = "%rdx", .src = "-" + std::to_string(variableCount + arrayLength - 16) + "(%rbp)"}, .type = InstrType::Lea}, Section::Main);
-    push(Instr{.var = XorInstr{.lhs = "%rax", .rhs = "%rax"}, .type = InstrType::Xor}, Section::Main);
+    push(Instr{.var = LeaInstr{.size = DataSize::Qword,
+                               .dest = "%rdx",
+                               .src = "-" +
+                                      std::to_string(variableCount +
+                                                     arrayLength - 16) +
+                                      "(%rbp)"},
+               .type = InstrType::Lea},
+         Section::Main);
+    push(Instr{.var = XorInstr{.lhs = "%rax", .rhs = "%rax"},
+               .type = InstrType::Xor},
+         Section::Main);
     moveRegister("%rdi", "%rdx", DataSize::Qword, DataSize::Qword);
     long long newSize = totalSize - 16;
     if (newSize % 8 == 0) {
       moveRegister("%rcx", "$" + std::to_string(newSize / 8), DataSize::Qword,
                    DataSize::Qword);
-      pushLinker("rep stosq\n\t", Section::Main);  // Repeat %rcx times to fill ptr %rdx with the value of %rax (every 8 bytes)
+      pushLinker("rep stosq\n\t",
+                 Section::Main); // Repeat %rcx times to fill ptr %rdx with the
+                                 // value of %rax (every 8 bytes)
     } else if (newSize % 4 == 0) {
       moveRegister("%rcx", "$" + std::to_string(newSize / 4), DataSize::Qword,
                    DataSize::Qword);
-      pushLinker("rep stosd\n\t", Section::Main);  // Repeat %rcx times to fill ptr %rdx with the value of %rax (every 8 bytes)
+      pushLinker("rep stosd\n\t",
+                 Section::Main); // Repeat %rcx times to fill ptr %rdx with the
+                                 // value of %rax (every 8 bytes)
     } else if (newSize % 2 == 0) {
       moveRegister("%rcx", "$" + std::to_string(newSize / 2), DataSize::Qword,
                    DataSize::Qword);
-      pushLinker("rep stosw\n\t", Section::Main);  // Repeat %rcx times to fill ptr %rdx with the value of %rax (every 8 bytes)
+      pushLinker("rep stosw\n\t",
+                 Section::Main); // Repeat %rcx times to fill ptr %rdx with the
+                                 // value of %rax (every 8 bytes)
     } else {
       moveRegister("%rcx", "$" + std::to_string(newSize), DataSize::Qword,
                    DataSize::Qword);
-      pushLinker("rep stosb\n\t", Section::Main);  // Repeat %rcx times to fill ptr %rdx with the value of %rax (every 8 bytes)
+      pushLinker("rep stosb\n\t",
+                 Section::Main); // Repeat %rcx times to fill ptr %rdx with the
+                                 // value of %rax (every 8 bytes)
     }
     // Add the array to the variable table
-    variableTable.insert({varName, std::to_string(-(variableCount + totalSize)) + "(%rbp)"});
+    variableTable.insert(
+        {varName, std::to_string(-(variableCount + totalSize)) + "(%rbp)"});
     variableCount = preVarCount;
     return;
   }
@@ -1197,29 +1373,40 @@ void codegen::declareArrayVariable(Node::Expr *expr, long long arrayLength,
     if (element->kind == ND_STRUCT) {
       // Structs cannot be generated in the expr.
       // We must assign each value to its place in the array.
-      long long startingPoint = arrayBase + ((s->elements.size() - 1 - i) * underlyingByteSize);
+      long long startingPoint =
+          arrayBase + ((s->elements.size() - 1 - i) * underlyingByteSize);
       declareStructVariable(element, getUnderlying(at), "%rbp", startingPoint);
       continue;
-    } else if (structByteSizes.find(getUnderlying(element->asmType)) != structByteSizes.end()) {
+    } else if (structByteSizes.find(getUnderlying(element->asmType)) !=
+               structByteSizes.end()) {
       // Although this is a struct, this is not a struct literal.
-      // This means we must move whatever is in the struct into the array by copying it
+      // This means we must move whatever is in the struct into the array by
+      // copying it
 
       std::cout << "do this later" << std::endl;
       continue;
     }
     visitExpr(element);
     // Pop the value into a register
-    popToRegister(std::to_string(-(arrayBase + ((((signed)s->elements.size()) - 1 - i) * underlyingByteSize))) +
-                  "(%rbp)");
+    popToRegister(
+        std::to_string(-(arrayBase + ((((signed)s->elements.size()) - 1 - i) *
+                                      underlyingByteSize))) +
+        "(%rbp)");
   }
 
-  // NOTE: The value of arrays, when referencing their variable name, is a pointer to element #1.
-  // NOTE: So let's do the same calculation as earlier to find that very 1st byte.
-  long long firstByteOffset = -(arrayBase + ((s->elements.size()) * underlyingByteSize));
+  // NOTE: The value of arrays, when referencing their variable name, is a
+  // pointer to element #1. NOTE: So let's do the same calculation as earlier to
+  // find that very 1st byte.
+  long long firstByteOffset =
+      -(arrayBase + ((s->elements.size()) * underlyingByteSize));
   // if struct, we must calculate something else
-  if (structByteSizes.find(getUnderlying(at->underlying)) != structByteSizes.end()) {
+  if (structByteSizes.find(getUnderlying(at->underlying)) !=
+      structByteSizes.end()) {
     // We must calculate the size of the struct and add that to the offset
-    firstByteOffset += getByteSizeOfType(structByteSizes[getUnderlying(at->underlying)].second.back().second.first);
+    firstByteOffset +=
+        getByteSizeOfType(structByteSizes[getUnderlying(at->underlying)]
+                              .second.back()
+                              .second.first);
   }
   variableTable.insert({varName, std::to_string(firstByteOffset) + "(%rbp)"});
 }
@@ -1227,32 +1414,41 @@ void codegen::declareArrayVariable(Node::Expr *expr, long long arrayLength,
 void codegen::inputStmt(Node::Stmt *stmt) {
   InputStmt *s = static_cast<InputStmt *>(stmt);
 
-  push(Instr{.var = Comment{.comment = "input statement"}, .type = InstrType::Comment}, Section::Main);
+  push(Instr{.var = Comment{.comment = "input statement"},
+             .type = InstrType::Comment},
+       Section::Main);
   pushDebug(s->line, stmt->file_id, s->pos);
 
-  // Now that we printed the "prompt", we now have to make the syscall using the values
-  // do in reverse order because one of these may screw up the values of the registers
-  visitExpr(s->bufferOut);  // rsi (should be leaq'd)
-  visitExpr(s->maxBytes);   // rdx
-  visitExpr(s->fd);         // rdi
-  popToRegister("%rdi");    // rdi
-  popToRegister("%rdx");    // rdx
-  popToRegister("%rsi");    // rsi
-  // RAX and RDI are constant in this case- constant syscall number and constant file descriptor (fd of stdin is 0)
-  push(Instr{.var = XorInstr{.lhs = "%rax", .rhs = "%rax"}, .type = InstrType::Xor}, Section::Main);
-  push(Instr{.var = Syscall{.name = "SYS_READ"}, .type = InstrType::Syscall}, Section::Main);
+  // Now that we printed the "prompt", we now have to make the syscall using the
+  // values do in reverse order because one of these may screw up the values of
+  // the registers
+  visitExpr(s->bufferOut); // rsi (should be leaq'd)
+  visitExpr(s->maxBytes);  // rdx
+  visitExpr(s->fd);        // rdi
+  popToRegister("%rdi");   // rdi
+  popToRegister("%rdx");   // rdx
+  popToRegister("%rsi");   // rsi
+  // RAX and RDI are constant in this case- constant syscall number and constant
+  // file descriptor (fd of stdin is 0)
+  push(Instr{.var = XorInstr{.lhs = "%rax", .rhs = "%rax"},
+             .type = InstrType::Xor},
+       Section::Main);
+  push(Instr{.var = Syscall{.name = "SYS_READ"}, .type = InstrType::Syscall},
+       Section::Main);
 }
 
 void codegen::closeStmt(Node::Stmt *stmt) {
   CloseStmt *s = static_cast<CloseStmt *>(stmt);
   pushDebug(s->line, stmt->file_id, s->pos);
 
-  // Now that we printed the "prompt", we now have to make the syscall using the values
-  // do in reverse order because one of these may screw up the values of the registers
-  visitExpr(s->fd);       // rdi
-  popToRegister("%rdi");  // rdi
+  // Now that we printed the "prompt", we now have to make the syscall using the
+  // values do in reverse order because one of these may screw up the values of
+  // the registers
+  visitExpr(s->fd);      // rdi
+  popToRegister("%rdi"); // rdi
   // RAX is constant in this case- constant syscall number
   // Stupid AI! Rax is not 0...
   moveRegister("%rax", "$3", DataSize::Qword, DataSize::Qword);
-  push(Instr{.var = Syscall{.name = "SYS_CLOSE"}, .type = InstrType::Syscall}, Section::Main);
+  push(Instr{.var = Syscall{.name = "SYS_CLOSE"}, .type = InstrType::Syscall},
+       Section::Main);
 }

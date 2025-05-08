@@ -66,11 +66,8 @@ void Flags::runFile(const char *path, std::string outName, bool save,
   if (echoOn)
     Flags::updateProgressBar(0.25);
 
-  result->debug();
+  // result->debug();
 
-  (void)outName;
-  (void)save;
-  (void)debug;
   TypeChecker::performCheck(result);
   bool tcError = Error::report_error();
   if (tcError)
@@ -78,17 +75,16 @@ void Flags::runFile(const char *path, std::string outName, bool save,
   if (echoOn)
     Flags::updateProgressBar(0.5);
 
-  // // Compiler optimize the AST!
-  // result = CompileOptimizer::optimizeStmt(result);
-  // if (echoOn)
-  //   Flags::updateProgressBar(0.75);
-  //
-  // codegen::gen(result, save, outName, path, debug);
-  // bool codegenError = ErrorClass::printError();
-  // if (codegenError)
-  //   Exit(ExitValue::GENERATOR_ERROR);
-  // if (echoOn)
-  //   Flags::updateProgressBar(1.0); // We're done!
+  // Compiler optimize the AST!
+  result = CompileOptimizer::optimizeStmt(result);
+  if (echoOn)
+    Flags::updateProgressBar(0.75);
+  codegen::gen(result, save, outName, path, debug);
+  bool codegenError = Error::report_error();
+  if (codegenError)
+    Exit(ExitValue::GENERATOR_ERROR);
+  if (echoOn)
+    Flags::updateProgressBar(1.0); // We're done!
 
   delete result;
   delete[] source;

@@ -23,6 +23,7 @@ Node::Stmt *Parser::exprStmt(PStruct *psr) {
   int column = psr->tks[psr->pos].column;
 
   Node::Expr *expr = parseExpr(psr, BindingPower::defaultValue);
+  psr->expect(TokenKind::SEMICOLON, "Expected a SEMICOLON after an expr stmt");
   return new ExprStmt(line, column, expr,
                       codegen::getFileID(psr->current_file));
 }
@@ -232,9 +233,9 @@ Node::Stmt *Parser::funStmt(PStruct *psr, std::string name) {
                 "Expected a COLON after the parameter name in a function stmt");
     Node::Type *paramType = parseType(psr);
     if (paramType == nullptr)
-      Error::handle_error(
-          "Parser", psr->current_file, "Expected a type for the parameter",
-          psr->tks, psr->current().line, psr->current().column);
+      Error::handle_error("Parser", psr->current_file,
+                          "Expected a type for the parameter", psr->tks,
+                          psr->current().line, psr->current().column);
     params.push_back({paramName, paramType});
 
     if (psr->current().kind == TokenKind::RIGHT_PAREN)
@@ -247,9 +248,9 @@ Node::Stmt *Parser::funStmt(PStruct *psr, std::string name) {
 
   Node::Type *returnType = parseType(psr);
   if (returnType == nullptr)
-    Error::handle_error(
-        "Parser", psr->current_file, "Expected a type for the return type",
-        psr->tks, psr->current().line, psr->current().column);
+    Error::handle_error("Parser", psr->current_file,
+                        "Expected a type for the return type", psr->tks,
+                        psr->current().line, psr->current().column);
 
   Node::Stmt *body = parseStmt(psr, name);
   psr->expect(TokenKind::SEMICOLON,
@@ -571,10 +572,9 @@ Node::Stmt *Parser::enumStmt(PStruct *psr, std::string name) {
       // that's fine too, but warn
       Lexer::Token semi = psr->advance();
       if (warnForSemi) {
-        Error::handle_error(
-            "Parser", psr->current_file,
-            "Semicolons are non-standard for enumerator lists",
-            psr->tks, semi.line, semi.column);
+        Error::handle_error("Parser", psr->current_file,
+                            "Semicolons are non-standard for enumerator lists",
+                            psr->tks, semi.line, semi.column);
         warnForSemi = false; // only warn once to stop console from filling with
                              // all the same error (especially when the
                              // programmer only made a simple mistake)
@@ -624,10 +624,9 @@ Node::Stmt *Parser::importStmt(PStruct *psr, std::string name) {
   char *fileContent = Flags::readFile(absolutePath.string().c_str());
   Node::Stmt *result = parse(fileContent, absolutePath.string().c_str());
   if (result == nullptr) {
-    Error::handle_error(
-        "Parser", psr->current_file,
-        "Could not parse the imported file '" + path + "'", psr->tks, line,
-        column);
+    Error::handle_error("Parser", psr->current_file,
+                        "Could not parse the imported file '" + path + "'",
+                        psr->tks, line, column);
     return nullptr;
   }
 

@@ -2,7 +2,18 @@
 
 void codegen::initMaps() {
   stmtHandlers = {
-      {ND_PROGRAM, program}, {ND_CONST_STMT, constDecl}, {ND_VAR_STMT, varDecl}, {ND_FN_STMT, funcDecl}, {ND_BLOCK_STMT, block}, {ND_RETURN_STMT, _return}, {ND_IF_STMT, ifStmt}, {ND_EXPR_STMT, expr}, {ND_PRINT_STMT, print}, {ND_WHILE_STMT, whileLoop}, {ND_FOR_STMT, forLoop}, {ND_BREAK_STMT, _break}, {ND_CONTINUE_STMT, _continue}, {ND_STRUCT_STMT, structDecl}, {ND_ENUM_STMT, enumDecl}, {ND_IMPORT_STMT, importDecl}, {ND_LINK_STMT, linkFile}, {ND_EXTERN_STMT, externName}, {ND_MATCH_STMT, matchStmt}, {ND_INPUT_STMT, inputStmt}, {ND_CLOSE, closeStmt}};
+      {ND_PROGRAM, program},         {ND_CONST_STMT, constDecl},
+      {ND_VAR_STMT, varDecl},        {ND_FN_STMT, funcDecl},
+      {ND_BLOCK_STMT, block},        {ND_RETURN_STMT, _return},
+      {ND_IF_STMT, ifStmt},          {ND_EXPR_STMT, expr},
+      {ND_PRINT_STMT, print},        {ND_WHILE_STMT, whileLoop},
+      {ND_FOR_STMT, forLoop},        {ND_BREAK_STMT, _break},
+      {ND_CONTINUE_STMT, _continue}, {ND_STRUCT_STMT, structDecl},
+      {ND_ENUM_STMT, enumDecl},      {ND_IMPORT_STMT, importDecl},
+      {ND_LINK_STMT, linkFile},      {ND_EXTERN_STMT, externName},
+      {ND_MATCH_STMT, matchStmt},    {ND_INPUT_STMT, inputStmt},
+      {ND_CLOSE, closeStmt},
+  };
   exprHandlers = {
       {ND_BINARY, binary},
       {ND_UNARY, unary},
@@ -37,28 +48,24 @@ void codegen::initMaps() {
       {ND_STRCMP, strcmp},
   };
   opMap = {
-      {"+", "add"},
-      {"-", "sub"},
-      {"*", "imul"},
-      {"/", "idiv"},
-      {"%", "mod"},  // mod is div but special
-      {"^", "exp"},
-      {"~", "not"},
-      {"<<", "shl"},
-      {">>", "shr"},
+      {"+", "add"},   {"-", "sub"},    {"*", "imul"}, {"/", "idiv"},
+      {"%", "mod"}, // mod is div but special
+      {"^", "exp"},   {"~", "not"},    {"<<", "shl"}, {">>", "shr"},
 
-      {"==", "sete"},
-      {"!=", "setne"},
-      {">", "setg"},
-      {">=", "setge"},
-      {"<", "setl"},
-      {"<=", "setle"},
-      {"||", "lor"},
-      {"|", "bor"},
+      {"==", "sete"}, {"!=", "setne"}, {">", "setg"}, {">=", "setge"},
+      {"<", "setl"},  {"<=", "setle"}, {"||", "lor"}, {"|", "bor"},
       {"&&", "land"},
   };
-  typeSizes = {
-      {"int", 8}, {"float", 4}, {"enum", 4}, {"str", 8}, {"char", 1}, {"bool", 1}, {"void", 0}, {"double", 8}, {"$", 0},  // Imagine this represents None- an integer literal whose size depends on the context.
-      {"long double", 10},
-      {"long", 4}};
+  typeSizes = {{"int", 8},
+               {"float", 4},
+               {"enum", 4},
+               {"str", 8},
+               {"char", 1},
+               {"bool", 1},
+               {"void", 0},
+               {"double", 8},
+               {"$", 0}, // Imagine this represents None- an integer literal
+                         // whose size depends on the context.
+               {"long double", 10},
+               {"long", 4}};
 }
