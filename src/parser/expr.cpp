@@ -426,6 +426,7 @@ Node::Expr *Parser::openExpr(PStruct *psr) {
   psr->expect(TokenKind::LEFT_PAREN, "Expected a L_Paren to start an open expr!");
 
   Node::Expr *filePath = parseExpr(psr, defaultValue);
+  psr->expect(TokenKind::COMMA, "Expected a COMMA after the file path in an open expr!");
 
   Node::Expr *canRead = nullptr;
   Node::Expr *canWrite = nullptr;
@@ -439,8 +440,11 @@ Node::Expr *Parser::openExpr(PStruct *psr) {
     } else if (canCreate == nullptr) {
       canCreate = parseExpr(psr, defaultValue);
     } else {
-      psr->expect(TokenKind::COMMA, "Expected a COMMA after an argument in an open expr!");
+      std::string msg = "Expected a maximum of 3 arguments for an open expr!";
+      Error::handle_error("Parser", psr->current_file, msg, psr->tks, line, column);
     }
+    if (psr->current().kind == TokenKind::RIGHT_PAREN) break;
+    psr->expect(TokenKind::COMMA, "Expected a COMMA between the open expr arguments!");
   }
 
   // this time there MUST be a closing parenthesis
