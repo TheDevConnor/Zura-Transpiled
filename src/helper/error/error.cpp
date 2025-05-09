@@ -23,7 +23,7 @@ std::string Error::generate_whitespace(int space) {
   return final;
 }
 
-std::string Error::generate_line(const std::vector<Lexer::Token> &tks, int line, int pos) {
+std::string Error::generate_line(const std::vector<Lexer::Token> &tks, int line, int pos, Color::C c) {
   (void)pos;
   std::string ln = "";
 
@@ -35,7 +35,7 @@ std::string Error::generate_line(const std::vector<Lexer::Token> &tks, int line,
   try {
     for (const Lexer::Token &tk : tks) {
       if (tk.line != line) continue;
-      ln += col.color(generate_whitespace(tk.whitespace) + tk.value, Color::WHITE, false, true);
+      ln += col.color(generate_whitespace(tk.whitespace) + tk.value, c, false, true);
     }
     ln += "\n";
     return ln;
@@ -85,6 +85,22 @@ void Error::handle_lexer_error(Lexer &lex, std::string error_type,
   }
 }
 
+std::string Error::handle_type_error(const std::vector<Lexer::Token> &tks, int line,
+                                 int pos) {
+  std::string error;
+  
+  std::string formatted_line_before = line_number(line-1) + std::to_string(line-1) + "|";
+  std::string formatted_line = line_number(line) + std::to_string(line) + "|";
+  std::string formatted_line_after = line_number(line+1) + std::to_string(line+1) + "|";
+  
+  error += " " + formatted_line_before + generate_line(tks, line - 1, pos, Color::GRAY);
+  error += " " + formatted_line + generate_line(tks, line, pos);
+  error += col.color("   |", Color::GRAY) + generate_whitespace(pos - 1) +
+           col.color("^", Color::RED, true, true) + "\n";
+  error += " " + formatted_line_after + generate_line(tks, line + 1, pos, Color::GRAY);
+  return error;
+}
+
 void Error::handle_error(std::string error_type, std::string file_path,
                          std::string msg, const std::vector<Lexer::Token> &tks,
                          int line, int pos) {
@@ -97,6 +113,11 @@ void Error::handle_error(std::string error_type, std::string file_path,
     // Handle the case when we're at the end of the file
     if (tks.empty()) {
       error += " " + formatted_line + "\n";
+    } else if (error_type == "Type Error") {
+      error += handle_type_error(tks, line, pos);
+      error += col.color("note", Color::CYAN) + ": " + msg;
+      errors.push_back(error);
+      return;
     } else {
       error += " " + formatted_line + generate_line(tks, line, pos);
     }

@@ -3,6 +3,7 @@
 #include <string>
 #include <vector>
 
+#include "../term_color/color.hpp"
 #include "../../lexer/lexer.hpp"
 
 /*
@@ -20,6 +21,8 @@ class Error {
   inline static std::vector<std::string> errors = {};
   static void handle_lexer_error(Lexer &lex, std::string error_type,
                                  std::string file_path, std::string msg);
+  static std::string handle_type_error(const std::vector<Lexer::Token> &tks, int line,
+  int pos);
   static void handle_error(std::string error_type, std::string file_path,
                            std::string msg, const std::vector<Lexer::Token> &tks, int line, int pos);
   static bool report_error();
@@ -30,5 +33,5 @@ class Error {
 
   static std::string line_number(int line) { return (line < 10) ? "0" : ""; }
   static std::string generate_whitespace(int space);
-  static std::string generate_line(const std::vector<Lexer::Token> &tks, int line, int pos);
+  static std::string generate_line(const std::vector<Lexer::Token> &tks, int line, int pos, Color::C c = Color::WHITE);
 };

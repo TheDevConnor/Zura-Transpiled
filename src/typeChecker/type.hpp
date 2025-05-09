@@ -10,6 +10,8 @@
 #include "../ast/expr.hpp"
 #include "../ast/stmt.hpp"
 
+inline size_t struct_size;
+
 namespace TypeChecker {
 extern std::string struct_name;
 extern bool isType;

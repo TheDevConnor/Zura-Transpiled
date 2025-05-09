@@ -108,6 +108,7 @@ struct StructTable : std::unordered_map<std::string, std::map<std::string, std::
     void addMember(const std::string &structName, const std::string &memberName, Node::Type *type) {
         if (contains(structName)) {
             at(structName).insert({memberName, {type, {}}});
+            struct_size++;
             return;
         }
         std::string msg = "Struct not declared: " + structName;

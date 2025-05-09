@@ -158,6 +158,7 @@ void TypeChecker::visitStruct(Node::Stmt *stmt) {
   // handle fn stmts in the struct
   ParamsAndTypes params;
   for (Node::Stmt *stmt : struct_stmt->stmts) {
+    context->enterScope();
     FnStmt *fn_stmt = static_cast<FnStmt *>(stmt);
 
     for (std::pair<std::string, Node::Type *> &param : fn_stmt->params) {
@@ -210,7 +211,7 @@ void TypeChecker::visitStruct(Node::Stmt *stmt) {
     context->declareGlobal(fn_stmt->name, fn_stmt->returnType);
 
     return_type = nullptr;
-    context->exitScope(); // clear the local table for the next function
+    context->exitScope();
   }
 
   return_type = std::make_shared<SymbolType>(struct_stmt->name);

@@ -1,6 +1,20 @@
+const Point := struct {
+  x: int!, 
+  y: int!,
+
+  display := fn(self: *Point) void {
+    @outputln(1, "x: ", self.x, " y: ", self.y);
+  };
+};
+
 const main := fn () int! {
   have x: int! = @getArgc();
   have y: *[]str = @getArgv();
+  have p: Point = {
+    x: 100,
+    y: 200,
+    z: 500,
+  };
 
   if (x < 2) {
     @outputln(1, "You did not pass any inputs into Zura.");
@@ -10,8 +24,8 @@ const main := fn () int! {
   @outputln(1, "You passed in ", x, " inputs into Zura.");
   # NOTE: Fixed the strcmp but now when we do i < x we segfault because we are going out of bounds it seems like
   loop (i = 0; i < 2) : (i++) {
-    if (@strcmp(y&[i], "--build") == 0) {
-      @outputln(1, "IN HERE -> ", y&[i]);
+    if (@strcmp(y&[i], "--struct") == 0) {
+      p.display();
     }
   };
 
