@@ -388,22 +388,58 @@ void codegen::unary(Node::Expr *expr) {
   pushDebug(e->line, expr->file_id, e->pos);
   visitExpr(e->expr);
   // Its gonna be a pop guys
-  PushInstr instr = std::get<PushInstr>(text_section.at(text_section.size() - 1).var);
-  std::string whatWasPushed = instr.what;
-
-  text_section.pop_back();
-
+  
   if (e->op == "-") {
     // Perform the operation
-    push(Instr{.var = NegInstr{.what = whatWasPushed}, .type = InstrType::Neg}, Section::Main);
+    DataSize size = intDataToSize(getByteSizeOfType(e->asmType));
+    std::string reg = "%rax";
+    switch (size) {
+      case DataSize::Byte:
+        reg = "%al";
+        break;
+      case DataSize::Word:
+        reg = "%ax";
+        break;
+      case DataSize::Dword:
+        reg = "%eax";
+        break;
+      case DataSize::Qword:
+      default:
+        reg = "%rax";
+        break;
+    }
+    push(Instr{.var = PopInstr{.where = reg, .whereSize = size}, .type = InstrType::Pop}, Section::Main);
+    push(Instr{.var = NegInstr{.what = reg, .size = size}, .type = InstrType::Neg}, Section::Main);
+    push(Instr{.var = PushInstr{.what = reg, .whatSize = size}, .type = InstrType::Push}, Section::Main);
   } else if (e->op == "++" || e->op == "--") {
     // Perform the operation
+    PushInstr instr = std::get<PushInstr>(text_section.at(text_section.size() - 1).var);
+    std::string whatWasPushed = instr.what;
+  
+    text_section.pop_back();
     std::string res = (e->op == "++") ? "inc" : "dec";
+    DataSize size = intDataToSize(getByteSizeOfType(e->asmType));
+    std::string character = "";
+    switch (size) {
+      case DataSize::Byte:
+        character = "b";
+        break;
+      case DataSize::Word:
+        character = "w";
+        break;
+      case DataSize::Dword:
+        character = "l";
+        break;
+      case DataSize::Qword:
+      default:
+        character = "q";
+        break;
+    }
     // Dear code reader, i apologize
-    push(Instr{.var = LinkerDirective{.value = res + "q " + whatWasPushed + "\n\t"}, .type = InstrType::Linker}, Section::Main);
+    push(Instr{.var = LinkerDirective{.value = res + character + " " + whatWasPushed + "\n\t"}, .type = InstrType::Linker}, Section::Main);
+    // Push the result
+    pushRegister(whatWasPushed);
   }
-  // Push the result
-  pushRegister(whatWasPushed);
 }
 
 void codegen::grouping(Node::Expr *expr) {

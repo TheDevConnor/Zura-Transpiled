@@ -86,6 +86,7 @@ struct CmpInstr {
 
 struct NegInstr {
   std::string what;
+  DataSize size;
 };
 
 struct NotInstr {

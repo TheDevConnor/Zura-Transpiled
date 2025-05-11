@@ -891,11 +891,10 @@ class StrCmp : public Node::Expr {
   }
 
   void debug(int indent = 0) const override {
-    (void)indent;
     std::cout << "Strcmp Expr:" << std::endl;
     std::cout << "   value 1: ";
-    v1->debug();
+    v1->debug(indent);
     std::cout << "   value 2: ";
-    v2->debug();
+    v2->debug(indent);
   }
 };

@@ -195,7 +195,7 @@ class Stringifier {  // converts Instr structures into AT&T Syntax strings
       }
       // 2's complement - negate a reg / effective addr
       std::string operator()(NegInstr instr) const {
-        return "negq " + instr.what + "\n\t";
+        return "neg" + dsToChar(instr.size) + " " + instr.what + "\n\t";
       }
       // bitwise not
       std::string operator()(NotInstr instr) const {

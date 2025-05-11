@@ -253,6 +253,7 @@ void TypeChecker::visitUnary(Node::Expr *expr) {
       handleError(unary->line, unary->pos, msg, "", "Type Error");
     }
   }
+  unary->asmType = createDuplicate(return_type.get());
 }
 
 void TypeChecker::visitGrouping(Node::Expr *expr) {

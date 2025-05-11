@@ -129,6 +129,15 @@ class TestZuraPrograms(unittest.TestCase):
     def test_array_of_structs(self):
         run_test("const a := struct { x: int!, y: int!, }; const main := fn () int! { have b: [2]a = [{ x: 1, y: 2 }, { x: 3, y: 4 }]; return b[1].x; };", expected_exit_code=3)
     
+    def test_array_pointer_index(self):
+        run_test("const main := fn () int! { have a: [5]int! = [4, 6, 19, 192, 184]; have b: *[5]int! = &a; return b&[2]; };", expected_exit_code=19)
+
+    def test_array_pointer_struct_index(self):
+        run_test("const a := struct { x: int!, y: int!, }; const main := fn () int! { have b: [2]a = [{ x: 1, y: 2 }, { x: 3, y: 4 }]; have c: *[2]a = &b; return c&[1].x; };", expected_exit_code=3)
+    
+    def test_array_pointer_big_struct_index(self):
+        run_test("const a := struct { x: int!, y: int!, z: int!, w: int!, }; const main := fn () int! { have b: [2]a = [{ x: 1, y: 2, z: 3, w: 4 }, { x: 5, y: 6, z: 7, w: 8 }]; have c: *[2]a = &b; return c&[1].w; };", expected_exit_code=8)
+
     def test_loop_over_array(self):
         run_test("const main := fn () int! { have a: [5]int! = [1, 2, 3, 4, 5]; have total: int! = 0; loop (i=0; i<5) : (i++) { total = total + a[i]; } return total; };", expected_exit_code=15)
    
