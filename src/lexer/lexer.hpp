@@ -109,6 +109,8 @@ enum TokenKind {
   BIND,   // bind a socket to an address
   LISTEN, // listen for connections on a socket
   ACCEPT, // accept a connection on a socket
+  RECV,   // receive bytes from a connection
+  SEND,   // send bytes to a connection
 
   // Error
   ERROR_,

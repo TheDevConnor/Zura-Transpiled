@@ -1,35 +1,45 @@
-const Point := struct {
-  x: int!, 
-  y: int!,
-
-  display := fn(self: *Point) void {
-    @output(1, "x: ", self.x, " y: ", self.y, "\n");
-  };
+const SockAddrInV4 := struct {
+  family: short!,
+  port: short!,
+  addr: int!,
+  zero: int!
 };
 
 const main := fn () int! {
-  have x: int! = @getArgc();
-  have y: *[]str = @getArgv();
-  have p: Point = {
-    x: 100,
-    y: 200,
-    z: 500,
-  };
-
-  if (x < 2) {
-    @outputln(1, "You did not pass any inputs into Zura.");
+  # Create a socket
+  have socket: int! = @socket(2, 1, 0); # AF_INET, SOCK_STREAM, 0
+  if (socket < 0) {
+    @outputln(1, "Failed to create socket :(");
     return 1;
   }
 
-  @outputln(1, "You passed in ", x, " inputs into Zura.");
-  # NOTE: Fixed the strcmp but now when we do i < x we segfault because we are going out of bounds it seems like
-  loop (i = 0; i < 2) : (i++) {
-    if (@strcmp(y&[i], "--struct") == 0) {
-      p.display();
-    }
+  # Bind
+  have addrIn: SockAddrInV4 = {
+    family: 2, # AF_INET... again for some reason
+    port: 36895 # 0x901f, which is hex(htons(8080))
+    addr: 0, # INADDR_ANY (which means, LET EVERYONE IN!!!)
+    zero: 0, # padding becasue linux is stupid (jk ily torvalds)
   };
+  have bindResult: int! = @bind(socket, &addrIn, @sizeof(addrIn));
+  if (bindResult < 0) {
+    @outputln(1, "Failed to bind socket :(");
+    return 1;
+  }
+  # Listen
+  have listenResult: int! = @listen(socket, 5); # 5 is the backlog
+  if (listenResult < 0) {
+    @outputln(1, "Failed to listen on socket :(");
+    return 1;
+  }
+  # Accept
+  have clientFd: int! = @accept(socket, nil, 0);
+  if (clientFd < 0) {
+    @outputln(1, "Failed to accept connection :(");
+    return 1;
+  }
 
+  @close(clientFd);
+  @close(socket); # Close the listening socket, we don't need it anymore
+  @outputln(1, "Successfully accepted a connection :)");
   return 0;
 };
-
- 

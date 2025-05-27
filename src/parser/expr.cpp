@@ -683,3 +683,59 @@ Node::Expr *Parser::acceptExpr(PStruct *psr) {
   return new AcceptExpr(line, column, socket, address, port,
                         codegen::getFileID(psr->current_file));
 }
+
+Node::Expr *Parser::sendExpr(PStruct *psr) {
+  int line = psr->tks[psr->pos].line;
+  int column = psr->tks[psr->pos].column;
+
+  psr->expect(TokenKind::SEND,
+              "Expected a SEND keyword to start a send expr!");
+  psr->expect(TokenKind::LEFT_PAREN,
+              "Expected a L_Paren to start a send expr!");
+
+  Node::Expr *socket = parseExpr(psr, defaultValue);
+  psr->expect(TokenKind::COMMA,
+              "Expected a COMMA after the socket in a send expr!");
+  Node::Expr *data = parseExpr(psr, defaultValue);
+  psr->expect(TokenKind::COMMA,
+              "Expected a COMMA after the data in a send expr!");
+  Node::Expr *size = parseExpr(psr, defaultValue);
+  psr->expect(TokenKind::COMMA,
+              "Expected a COMMA after the size in a send expr!");
+  Node::Expr *flags = nullptr;
+  if (psr->current().kind != TokenKind::RIGHT_PAREN) {
+    flags = parseExpr(psr, defaultValue);
+  }
+  psr->expect(TokenKind::RIGHT_PAREN, "Expected a R_Paren to end a send expr!");
+
+  return new SendExpr(line, column, socket, data, size, flags,
+                      codegen::getFileID(psr->current_file));
+}
+
+Node::Expr *Parser::recvExpr(PStruct *psr) {
+  int line = psr->tks[psr->pos].line;
+  int column = psr->tks[psr->pos].column;
+
+  psr->expect(TokenKind::RECV,
+              "Expected a RECV keyword to start a recv expr!");
+  psr->expect(TokenKind::LEFT_PAREN,
+              "Expected a L_Paren to start a recv expr!");
+
+  Node::Expr *socket = parseExpr(psr, defaultValue);
+  psr->expect(TokenKind::COMMA,
+              "Expected a COMMA after the socket in a recv expr!");
+  Node::Expr *buffer = parseExpr(psr, defaultValue);
+  psr->expect(TokenKind::COMMA,
+              "Expected a COMMA after the buffer in a recv expr!");
+  Node::Expr *size = parseExpr(psr, defaultValue);
+  psr->expect(TokenKind::COMMA,
+              "Expected a COMMA after the size in a recv expr!");
+  Node::Expr *flags = nullptr;
+  if (psr->current().kind != TokenKind::RIGHT_PAREN) {
+    flags = parseExpr(psr, defaultValue);
+  }
+  psr->expect(TokenKind::RIGHT_PAREN, "Expected a R_Paren to end a recv expr!");
+
+  return new RecvExpr(line, column, socket, buffer, size, flags,
+                      codegen::getFileID(psr->current_file));
+}

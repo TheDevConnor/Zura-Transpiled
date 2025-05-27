@@ -58,6 +58,8 @@ void Lexer::initMap() {
       {"@bind", TokenKind::BIND},
       {"@listen", TokenKind::LISTEN},
       {"@accept", TokenKind::ACCEPT},
+      {"@recv", TokenKind::RECV},
+      {"@send", TokenKind::SEND},
   };
 
   keywords = {

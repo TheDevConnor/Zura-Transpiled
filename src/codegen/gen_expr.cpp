@@ -223,9 +223,9 @@ void codegen::binary(Node::Expr *expr) {
         push(Instr{.var = DivInstr{.from = rhsReg, .isSigned = true, .size = size}, .type = InstrType::Div}, Section::Main);
       } else {
         // it was unsigned so we have way less shit to worry about
-        DataSize size = intDataToSize(getByteSizeOfType(returnType));
+        DataSize size2 = intDataToSize(getByteSizeOfType(returnType));
         push(Instr{.var = XorInstr{.lhs = "%rdi", .rhs = "%rdi"}, .type = InstrType::Xor}, Section::Main);
-        push(Instr{.var = DivInstr{.from = rhsReg, .isSigned = false, .size = size}, .type = InstrType::Div}, Section::Main);
+        push(Instr{.var = DivInstr{.from = rhsReg, .isSigned = false, .size = size2}, .type = InstrType::Div}, Section::Main);
       }
 
       if (op == "mod") {

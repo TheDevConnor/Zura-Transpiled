@@ -921,9 +921,9 @@ public:
 class SocketExpr : public Node::Expr {
 public:
   int line, pos;
-  Node::Expr *domain;     // e.g. "AF_INET", "AF_INET6"
-  Node::Expr *socketType; // e.g. "TCP", "UDP"
-  Node::Expr *protocol;   // e.g. "IPv4", "IPv6"
+  Node::Expr *domain;     // this is the part of the internet to be listening to, like IPv4 (AF_INET)
+  Node::Expr *socketType; // how to handle the data, like TCP (SOCK_STREAM) or UDP (SOCK_DGRAM)
+  Node::Expr *protocol;   // each SocketType has a protocol but we can infer this with 0
 
   SocketExpr(int line, int pos, Node::Expr *domain, Node::Expr *socketType,
              Node::Expr *protocol, size_t file)
@@ -931,7 +931,7 @@ public:
         protocol(protocol) {
     file_id = file;
     kind = NodeKind::ND_SOCKET;
-    asmType = new SymbolType("int"); // Returns a socket descriptor
+    asmType = new SymbolType("int", SymbolType::Signedness::UNSIGNED); // Returns a file descriptor or a negative error code
   }
 
   void debug(int indent = 0) const override {
@@ -953,15 +953,15 @@ class BindExpr : public Node::Expr {
 public:
   int line, pos;
   Node::Expr *socket;  // The socket to bind
-  Node::Expr *address; // The address to bind to
-  Node::Expr *port;    // The port to bind to
-                       //
-  BindExpr(int line, int pos, Node::Expr *socket, Node::Expr *address,
-           Node::Expr *port, size_t file)
-      : line(line), pos(pos), socket(socket), address(address), port(port) {
+  Node::Expr *structPtr; // A pointer to the struct containing bind information
+  Node::Expr *structSize;    // The size of the address struct
+
+  BindExpr(int line, int pos, Node::Expr *socket, Node::Expr *structPtr,
+           Node::Expr *structSize, size_t file)
+      : line(line), pos(pos), socket(socket), structPtr(structPtr), structSize(structSize) {
     file_id = file;
     kind = NodeKind::ND_BIND;
-    asmType = new SymbolType("int"); // Returns an int status code
+    asmType = new SymbolType("int", SymbolType::Signedness::SIGNED); // Returns an int status code
   }
 
   void debug(int indent = 0) const override {
@@ -972,10 +972,10 @@ public:
     socket->debug(indent + 2);
     Node::printIndent(indent + 1);
     std::cout << "Address: \n";
-    address->debug(indent + 2);
+    structPtr->debug(indent + 2);
     Node::printIndent(indent + 1);
     std::cout << "Port: \n";
-    port->debug(indent + 2);
+    structSize->debug(indent + 2);
   }
 };
 
@@ -983,7 +983,7 @@ class ListenExpr : public Node::Expr {
 public:
   int line, pos;
   Node::Expr *socket;  // The socket to listen on
-  Node::Expr *backlog; // The maximum length of the queue of pending connections
+  Node::Expr *backlog; // The maximum number of conections that can be waiting before they are refused
 
   ListenExpr(int line, int pos, Node::Expr *socket, Node::Expr *backlog,
              size_t file)
@@ -1008,16 +1008,16 @@ public:
 class AcceptExpr : public Node::Expr {
 public:
   int line, pos;
-  Node::Expr *socket; // The socket to accept connections on
-  Node::Expr *addr;   // The address to accept connections from
-  Node::Expr *port;   // The port to accept connections on
+  Node::Expr *socketFd; // The socket to accept connections on
+  Node::Expr *structPtr;   // This is the pointer to the address structure. It can be NIL.
+  Node::Expr *structSize;   // This is the size of the address structure. It can be 0.
 
-  AcceptExpr(int line, int pos, Node::Expr *socket, Node::Expr *addr,
-             Node::Expr *port, size_t file)
-      : line(line), pos(pos), socket(socket), addr(addr), port(port) {
+  AcceptExpr(int line, int pos, Node::Expr *socketFd, Node::Expr *structPtr,
+             Node::Expr *structSize, size_t file)
+      : line(line), pos(pos), socketFd(socketFd), structPtr(structPtr), structSize(structSize) {
     file_id = file;
     kind = NodeKind::ND_ACCEPT;
-    asmType = new SymbolType("int"); // Returns a socket descriptor
+    asmType = new SymbolType("int", SymbolType::Signedness::SIGNED); // Returns a socket descriptor
   }
 
   void debug(int indent = 0) const override {
@@ -1025,12 +1025,76 @@ public:
     std::cout << "AcceptExpr: \n";
     Node::printIndent(indent + 1);
     std::cout << "Socket: \n";
-    socket->debug(indent + 2);
+    socketFd->debug(indent + 2);
     Node::printIndent(indent + 1);
-    std::cout << "Address: \n";
-    addr->debug(indent + 2);
+    std::cout << "Struct Pointer: \n";
+    structPtr->debug(indent + 2);
     Node::printIndent(indent + 1);
-    std::cout << "Port: \n";
-    port->debug(indent + 2);
+    std::cout << "Struct Size: \n";
+    structSize->debug(indent + 2);
+  }
+};
+
+class RecvExpr : public Node::Expr {
+public:
+  int line, pos;
+  Node::Expr *socketFd; // The socket to receive data from
+  Node::Expr *buffer;   // The buffer to store the received data
+  Node::Expr *length;   // The length of the buffer
+  Node::Expr *flags;    // Flags for the receive operation (optional)
+
+  RecvExpr(int line, int pos, Node::Expr *socketFd, Node::Expr *buffer,
+           Node::Expr *length, Node::Expr *flags, size_t file)
+      : line(line), pos(pos), socketFd(socketFd), buffer(buffer), length(length), flags(flags) {
+    file_id = file;
+    kind = NodeKind::ND_RECV;
+    asmType = new SymbolType("int", SymbolType::Signedness::SIGNED); // Returns the number of bytes received
+  }
+
+  void debug(int indent = 0) const override {
+    Node::printIndent(indent);
+    std::cout << "RecvExpr: \n";
+    Node::printIndent(indent + 1);
+    std::cout << "Socket: \n";
+    socketFd->debug(indent + 2);
+    Node::printIndent(indent + 1);
+    std::cout << "Buffer: \n";
+    buffer->debug(indent + 2);
+    Node::printIndent(indent + 1);
+    std::cout << "Length: \n";
+    length->debug(indent + 2);
+  }
+};
+
+class SendExpr : public Node::Expr {
+public:
+  int line, pos;
+  // Under the hood, this syscall is a SENDTO. It actually has 6 arguments,
+  // but the last 2 can be NULL and 0.
+  Node::Expr *socketFd; // The socket to send data through
+  Node::Expr *buffer;   // The buffer containing the data to send
+  Node::Expr *length;   // The length of the data to send
+  Node::Expr *flags;    // Flags for the send operation (optional)
+
+  SendExpr(int line, int pos, Node::Expr *socketFd, Node::Expr *buffer,
+           Node::Expr *length, Node::Expr *flags, size_t file)
+      : line(line), pos(pos), socketFd(socketFd), buffer(buffer), length(length), flags(flags) {
+    file_id = file;
+    kind = NodeKind::ND_SEND;
+    asmType = new SymbolType("int", SymbolType::Signedness::SIGNED); // Returns the number of bytes sent
+  }
+
+  void debug(int indent = 0) const override {
+    Node::printIndent(indent);
+    std::cout << "SendExpr: \n";
+    Node::printIndent(indent + 1);
+    std::cout << "Socket: \n";
+    socketFd->debug(indent + 2);
+    Node::printIndent(indent + 1);
+    std::cout << "Buffer: \n";
+    buffer->debug(indent + 2);
+    Node::printIndent(indent + 1);
+    std::cout << "Length: \n";
+    length->debug(indent + 2);
   }
 };

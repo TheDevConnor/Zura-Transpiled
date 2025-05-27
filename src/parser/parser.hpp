@@ -118,6 +118,8 @@ Node::Expr *socketExpr(PStruct *psr);
 Node::Expr *bindExpr(PStruct *psr);
 Node::Expr *listenExpr(PStruct *psr);
 Node::Expr *acceptExpr(PStruct *psr);
+Node::Expr *recvExpr(PStruct *psr);
+Node::Expr *sendExpr(PStruct *psr);
 
 // Binary Functions
 Node::Expr *_postfix(PStruct *psr, Node::Expr *left, BindingPower bp);

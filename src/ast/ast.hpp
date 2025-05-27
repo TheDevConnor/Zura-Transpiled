@@ -43,11 +43,13 @@ enum NodeKind {
   ND_CLOSE,           // close(12)
   ND_GETARGC,         // @getArgc
   ND_GETARGV,         // @getArgv
-  ND_STRCMP,          // @strcmp(v1, v2)
-  ND_SOCKET,          // @socket(v1, v2, v3) -> (int!, int!, int!)
-  ND_BIND,            // @bind(v1, *v2, v3) -> (int!, *, int!)
-  ND_LISTEN,          // @listen(v1, v2) -> (int!, int!)
-  ND_ACCEPT,          // @accept(v1, *v2, v3) -> (int!, *, int!)
+  ND_STRCMP,          // @strcmp(x, y)
+  ND_SOCKET,          // @socket(x, y, z) -> (int!, int!, int!)
+  ND_BIND,            // @bind(x, *y, z) -> (int!, *, int!)
+  ND_LISTEN,          // @listen(x, y) -> (int!, int!)
+  ND_ACCEPT,          // @accept(x, *y, z) -> (int!, *, int!)
+  ND_RECV,            // @recv(x, y, z, w)
+  ND_SEND,            // @send(x, y, z, w)
 
   // Statements
   ND_EXPR_STMT,     // x = 12
