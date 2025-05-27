@@ -8,12 +8,14 @@
 #include "types.hpp"
 
 class IntExpr : public Node::Expr {
- public:
+public:
   int line, pos;
   long long value;
-  bool isUnsigned = true;  // this HAS to be true, because the only time an intExpr would be negative would be unaryexpr's -
+  bool isUnsigned = true; // this HAS to be true, because the only time an
+                          // intExpr would be negative would be unaryexpr's -
 
-  IntExpr(int line, int pos, long long value, size_t file) : line(line), pos(pos), value(value) {
+  IntExpr(int line, int pos, long long value, size_t file)
+      : line(line), pos(pos), value(value) {
     kind = NodeKind::ND_INT;
     file_id = file;
     // make a new type of "int"
@@ -27,12 +29,13 @@ class IntExpr : public Node::Expr {
 };
 
 class FloatExpr : public Node::Expr {
- public:
+public:
   int line, pos;
-  std::string value;  // The reason we are using the string and not the float converston
-                      // is because the user may want more precision that could be cut off later
-                      // in the stof function. "Long double" literals exist, and we cannot risk
-                      // the loss of precision (otherwise, why use a long double at all?)
+  std::string value; // The reason we are using the string and not the float
+                     // converston is because the user may want more precision
+                     // that could be cut off later in the stof function. "Long
+                     // double" literals exist, and we cannot risk the loss of
+                     // precision (otherwise, why use a long double at all?)
 
   FloatExpr(int line, int pos, std::string value, size_t file)
       : line(line), pos(pos), value(value) {
@@ -48,7 +51,7 @@ class FloatExpr : public Node::Expr {
 };
 
 class ExternalCall : public Node::Expr {
- public:
+public:
   int line, pos;
   std::string name;
   std::vector<Node::Expr *> args;
@@ -61,8 +64,8 @@ class ExternalCall : public Node::Expr {
   // EX: printf returns an int, but since that's part of the Cstdlib,
   // we don't know that.
 
-  ExternalCall(int line, int pos, std::string name, std::vector<Node::Expr *> args,
-               size_t file)
+  ExternalCall(int line, int pos, std::string name,
+               std::vector<Node::Expr *> args, size_t file)
       : line(line), pos(pos), name(name), args(args) {
     kind = NodeKind::ND_EXTERNAL_CALL;
     file_id = file;
@@ -84,7 +87,7 @@ class ExternalCall : public Node::Expr {
 };
 
 class IdentExpr : public Node::Expr {
- public:
+public:
   int line, pos;
   std::string name;
   Node::Type *type;
@@ -109,7 +112,7 @@ class IdentExpr : public Node::Expr {
 };
 
 class StringExpr : public Node::Expr {
- public:
+public:
   int line, pos;
   std::string value;
 
@@ -127,7 +130,7 @@ class StringExpr : public Node::Expr {
 };
 
 class CharExpr : public Node::Expr {
- public:
+public:
   int line, pos;
   char value;
 
@@ -145,12 +148,13 @@ class CharExpr : public Node::Expr {
 };
 
 class CastExpr : public Node::Expr {
- public:
+public:
   int line, pos;
   Node::Expr *castee;
   Node::Type *castee_type;
 
-  CastExpr(int line, int pos, Node::Expr *castee, Node::Type *castee_type, size_t file)
+  CastExpr(int line, int pos, Node::Expr *castee, Node::Type *castee_type,
+           size_t file)
       : line(line), pos(pos), castee(castee), castee_type(castee_type) {
     file_id = file;
     kind = NodeKind::ND_CAST;
@@ -165,15 +169,17 @@ class CastExpr : public Node::Expr {
     castee->debug(indent + 2);
     Node::printIndent(indent + 1);
     std::cout << "To: \n";
-    Node::printIndent(indent + 2);  // for some reason this does not happen from within the type
+    Node::printIndent(
+        indent +
+        2); // for some reason this does not happen from within the type
     castee_type->debug(indent + 2);
   }
 
-  ~CastExpr() = default;  // rule of threes
+  ~CastExpr() = default; // rule of threes
 };
 
 class BinaryExpr : public Node::Expr {
- public:
+public:
   int line, pos;
   Node::Expr *lhs;
   Node::Expr *rhs;
@@ -184,7 +190,8 @@ class BinaryExpr : public Node::Expr {
       : line(line), pos(pos), lhs(lhs), rhs(rhs), op(op) {
     kind = NodeKind::ND_BINARY;
     file_id = file;
-    // Assigning ASMType should be typechecker's problem, where it is supposed to be
+    // Assigning ASMType should be typechecker's problem, where it is supposed
+    // to be
   }
 
   void debug(int indent = 0) const override {
@@ -196,11 +203,11 @@ class BinaryExpr : public Node::Expr {
     rhs->debug(indent + 1);
   }
 
-  ~BinaryExpr() = default;  // rule of threes
+  ~BinaryExpr() = default; // rule of threes
 };
 
 class UnaryExpr : public Node::Expr {
- public:
+public:
   int line, pos;
   Node::Expr *expr;
   std::string op;
@@ -211,7 +218,8 @@ class UnaryExpr : public Node::Expr {
     kind = NodeKind::ND_UNARY;
     SymbolType *exprType = static_cast<SymbolType *>(expr->asmType);
     if (op == "-" && exprType->name != "int" && exprType->name != "float") {
-      std::cerr << "excuse me bruh how do i negate a '" << exprType->name << "'?" << std::endl;
+      std::cerr << "excuse me bruh how do i negate a '" << exprType->name
+                << "'?" << std::endl;
     }
     asmType = exprType;
   }
@@ -224,10 +232,10 @@ class UnaryExpr : public Node::Expr {
     expr->debug(indent + 1);
   }
 
-  ~UnaryExpr() = default;  // rule of threes
+  ~UnaryExpr() = default; // rule of threes
 };
 class PrefixExpr : public Node::Expr {
- public:
+public:
   int line, pos;
   Node::Expr *expr;
   std::string op;
@@ -247,10 +255,10 @@ class PrefixExpr : public Node::Expr {
     expr->debug(indent + 1);
   }
 
-  ~PrefixExpr() = default;  // rule of threes
+  ~PrefixExpr() = default; // rule of threes
 };
 class PostfixExpr : public Node::Expr {
- public:
+public:
   int line, pos;
   Node::Expr *expr;
   std::string op;
@@ -270,11 +278,11 @@ class PostfixExpr : public Node::Expr {
     std::cout << op << "\n";
   }
 
-  ~PostfixExpr() = default;  // rule of threes
+  ~PostfixExpr() = default; // rule of threes
 };
 
 class GroupExpr : public Node::Expr {
- public:
+public:
   int line, pos;
   Node::Expr *expr;
 
@@ -291,11 +299,11 @@ class GroupExpr : public Node::Expr {
     expr->debug(indent + 1);
   }
 
-  ~GroupExpr() = default;  // rule of threes
+  ~GroupExpr() = default; // rule of threes
 };
 
 class NullExpr : public Node::Expr {
- public:
+public:
   int line, pos;
 
   NullExpr(int line, int pos, size_t file) : line(line), pos(pos) {
@@ -309,11 +317,11 @@ class NullExpr : public Node::Expr {
     std::cout << "NullExpr\n";
   }
 
-  ~NullExpr() = default;  // rule of threes
+  ~NullExpr() = default; // rule of threes
 };
 
 class AddressExpr : public Node::Expr {
- public:
+public:
   int line, pos;
   Node::Expr *right;
 
@@ -329,11 +337,11 @@ class AddressExpr : public Node::Expr {
     right->debug(indent + 1);
   }
 
-  ~AddressExpr() = default;  // rule of threes
+  ~AddressExpr() = default; // rule of threes
 };
 
 class DereferenceExpr : public Node::Expr {
- public:
+public:
   int line, pos;
   Node::Expr *left;
 
@@ -349,11 +357,11 @@ class DereferenceExpr : public Node::Expr {
     left->debug(indent + 1);
   }
 
-  ~DereferenceExpr() = default;  // rule of threes
+  ~DereferenceExpr() = default; // rule of threes
 };
 
 class ArrayExpr : public Node::Expr {
- public:
+public:
   int line, pos;
   Node::Type *type;
   std::vector<Node::Expr *> elements;
@@ -374,11 +382,11 @@ class ArrayExpr : public Node::Expr {
     }
   }
 
-  ~ArrayExpr() = default;  // rule of threes
+  ~ArrayExpr() = default; // rule of threes
 };
 
 class IndexExpr : public Node::Expr {
- public:
+public:
   int line, pos;
   Node::Expr *lhs;
   Node::Expr *rhs;
@@ -401,18 +409,17 @@ class IndexExpr : public Node::Expr {
     rhs->debug(indent + 2);
   }
 
-  ~IndexExpr() = default;  // rule of threes
+  ~IndexExpr() = default; // rule of threes
 };
 
 // have x: [4]int = [0]; # Auto fills the array with bytes of 0.
 class ArrayAutoFill : public Node::Expr {
- public:
+public:
   int line, pos;
   size_t fillCount;
   Node::Type *fillType;
 
-  ArrayAutoFill(int line, int pos, size_t file)
-      : line(line), pos(pos) {
+  ArrayAutoFill(int line, int pos, size_t file) : line(line), pos(pos) {
     file_id = file;
     kind = NodeKind::ND_ARRAY_AUTO_FILL;
   }
@@ -424,11 +431,11 @@ class ArrayAutoFill : public Node::Expr {
     fillType->debug(indent + 2);
   }
 
-  ~ArrayAutoFill() = default;  // rule of threes
+  ~ArrayAutoFill() = default; // rule of threes
 };
 
 class PopExpr : public Node::Expr {
- public:
+public:
   int line, pos;
   Node::Expr *lhs;
   Node::Expr *rhs;
@@ -455,11 +462,11 @@ class PopExpr : public Node::Expr {
     rhs->debug(indent + 2);
   }
 
-  ~PopExpr() = default;  // rule of threes
+  ~PopExpr() = default; // rule of threes
 };
 
 class PushExpr : public Node::Expr {
- public:
+public:
   int line, pos;
   Node::Expr *lhs;
   Node::Expr *rhs;
@@ -489,17 +496,18 @@ class PushExpr : public Node::Expr {
     }
   }
 
-  ~PushExpr() = default;  // rule of threes
+  ~PushExpr() = default; // rule of threes
 };
 
 class AssignmentExpr : public Node::Expr {
- public:
+public:
   int line, pos;
   Expr *assignee;
   std::string op;
   Expr *rhs;
 
-  AssignmentExpr(int line, int pos, Expr *assignee, std::string op, Expr *rhs, size_t file)
+  AssignmentExpr(int line, int pos, Expr *assignee, std::string op, Expr *rhs,
+                 size_t file)
       : line(line), pos(pos), assignee(assignee), op(op), rhs(rhs) {
     file_id = file;
     kind = NodeKind::ND_ASSIGN;
@@ -519,11 +527,11 @@ class AssignmentExpr : public Node::Expr {
     rhs->debug(indent + 2);
   }
 
-  ~AssignmentExpr() = default;  // rule of threes
+  ~AssignmentExpr() = default; // rule of threes
 };
 
 class CallExpr : public Node::Expr {
- public:
+public:
   int line, pos;
   Node::Expr *callee;
   std::vector<Node::Expr *> args;
@@ -549,19 +557,20 @@ class CallExpr : public Node::Expr {
     }
   }
 
-  ~CallExpr() = default;  // rule of threes
+  ~CallExpr() = default; // rule of threes
 };
 
 class TemplateCallExpr : public Node::Expr {
- public:
+public:
   int line, pos;
   Node::Expr *callee;
   Node::Type *template_type;
   Node::Expr *args;
 
-  TemplateCallExpr(int line, int pos, Node::Expr *callee, Node::Type *template_type,
-                   Node::Expr *args, size_t file)
-      : line(line), pos(pos), callee(callee), template_type(template_type), args(args) {
+  TemplateCallExpr(int line, int pos, Node::Expr *callee,
+                   Node::Type *template_type, Node::Expr *args, size_t file)
+      : line(line), pos(pos), callee(callee), template_type(template_type),
+        args(args) {
     file_id = file;
     kind = NodeKind::ND_TEMPLATE_CALL;
     // what the fuck
@@ -582,11 +591,11 @@ class TemplateCallExpr : public Node::Expr {
     args->debug(indent + 2);
   }
 
-  ~TemplateCallExpr() = default;  // rule of threes
+  ~TemplateCallExpr() = default; // rule of threes
 };
 
 class TernaryExpr : public Node::Expr {
- public:
+public:
   int line, pos;
   Node::Expr *condition;
   Node::Expr *lhs;
@@ -613,11 +622,11 @@ class TernaryExpr : public Node::Expr {
     rhs->debug(indent + 2);
   }
 
-  ~TernaryExpr() = default;  // rule of threes
+  ~TernaryExpr() = default; // rule of threes
 };
 
 class MemberExpr : public Node::Expr {
- public:
+public:
   int line, pos;
   Node::Expr *lhs;
   Node::Expr *rhs;
@@ -640,16 +649,17 @@ class MemberExpr : public Node::Expr {
     rhs->debug(indent + 2);
   }
 
-  ~MemberExpr() = default;  // rule of threes
+  ~MemberExpr() = default; // rule of threes
 };
 
 class ResolutionExpr : public Node::Expr {
- public:
+public:
   int line, pos;
   Node::Expr *lhs;
   Node::Expr *rhs;
 
-  ResolutionExpr(int line, int pos, Node::Expr *lhs, Node::Expr *rhs, size_t file)
+  ResolutionExpr(int line, int pos, Node::Expr *lhs, Node::Expr *rhs,
+                 size_t file)
       : line(line), pos(pos), lhs(lhs), rhs(rhs) {
     file_id = file;
     kind = NodeKind::ND_RESOLUTION;
@@ -667,15 +677,16 @@ class ResolutionExpr : public Node::Expr {
     rhs->debug(indent + 2);
   }
 
-  ~ResolutionExpr() = default;  // rule of threes
+  ~ResolutionExpr() = default; // rule of threes
 };
 
 class BoolExpr : public Node::Expr {
- public:
+public:
   int line, pos;
   bool value;
 
-  BoolExpr(int line, int pos, bool value, size_t file) : line(line), pos(pos), value(value) {
+  BoolExpr(int line, int pos, bool value, size_t file)
+      : line(line), pos(pos), value(value) {
     file_id = file;
     kind = NodeKind::ND_BOOL;
     asmType = new SymbolType("bool");
@@ -691,11 +702,12 @@ class BoolExpr : public Node::Expr {
 
 // { name: value, name: value, ... }
 class StructExpr : public Node::Expr {
- public:
+public:
   int line, pos;
   std::unordered_map<std::string, Node::Expr *> values;
 
-  StructExpr(int line, int pos, std::unordered_map<std::string, Node::Expr *> values, size_t file)
+  StructExpr(int line, int pos,
+             std::unordered_map<std::string, Node::Expr *> values, size_t file)
       : line(line), pos(pos), values(std::move(values)) {
     file_id = file;
     kind = NodeKind::ND_STRUCT;
@@ -706,7 +718,8 @@ class StructExpr : public Node::Expr {
     Node::printIndent(indent);
     std::cout << "StructExpr: \n";
     for (size_t i = 0; i < values.size(); i++) {
-      std::pair<std::string, Node::Expr *> pair = *std::next(values.begin(), i);  // :sob:
+      std::pair<std::string, Node::Expr *> pair =
+          *std::next(values.begin(), i); // :sob:
       Node::printIndent(indent + 1);
       std::cout << "Field #" + std::to_string(i) + ": \n";
       Node::printIndent(indent + 2);
@@ -719,11 +732,11 @@ class StructExpr : public Node::Expr {
     }
   }
 
-  ~StructExpr() = default;  // rule of threes
+  ~StructExpr() = default; // rule of threes
 };
 
 class AllocMemoryExpr : public Node::Expr {
- public:
+public:
   int line, pos;
   Node::Expr *bytesToAlloc;
 
@@ -744,12 +757,13 @@ class AllocMemoryExpr : public Node::Expr {
 };
 
 class FreeMemoryExpr : public Node::Expr {
- public:
+public:
   int line, pos;
   Node::Expr *whatToFree;
   Node::Expr *bytesToFree;
 
-  FreeMemoryExpr(int line, int pos, Node::Expr *whatToFree, Node::Expr *bytesToFree, size_t file)
+  FreeMemoryExpr(int line, int pos, Node::Expr *whatToFree,
+                 Node::Expr *bytesToFree, size_t file)
       : line(line), pos(pos), whatToFree(whatToFree), bytesToFree(bytesToFree) {
     file_id = file;
     kind = NodeKind::ND_FREE_MEMORY;
@@ -769,7 +783,7 @@ class FreeMemoryExpr : public Node::Expr {
 };
 
 class SizeOfExpr : public Node::Expr {
- public:
+public:
   int line, pos;
   Node::Expr *whatToSizeOf;
 
@@ -790,13 +804,14 @@ class SizeOfExpr : public Node::Expr {
 };
 
 class MemcpyExpr : public Node::Expr {
- public:
+public:
   int line, pos;
   Node::Expr *dest;
   Node::Expr *src;
   Node::Expr *bytes;
 
-  MemcpyExpr(int line, int pos, Node::Expr *dest, Node::Expr *src, Node::Expr *bytes, size_t file)
+  MemcpyExpr(int line, int pos, Node::Expr *dest, Node::Expr *src,
+             Node::Expr *bytes, size_t file)
       : line(line), pos(pos), dest(dest), src(src), bytes(bytes) {
     file_id = file;
     kind = NodeKind::ND_MEMCPY_MEMORY;
@@ -819,19 +834,22 @@ class MemcpyExpr : public Node::Expr {
 };
 
 class OpenExpr : public Node::Expr {
- public:
+public:
   int line, pos;
   Node::Expr *filename;
   Node::Expr *flags;
   // flags
-  // TODO: Create global constants for these and allow for them to be OR'd together manually
+  // TODO: Create global constants for these and allow for them to be OR'd
+  // together manually
   // TODO: Most imporant flags: O_CREAT
   Node::Expr *canRead;
   Node::Expr *canWrite;
   Node::Expr *canCreate;
 
-  OpenExpr(int line, int pos, Node::Expr *filename, Node::Expr *canRead, Node::Expr *canWrite, Node::Expr *canCreate, size_t file)
-      : line(line), pos(pos), filename(filename), canRead(canRead), canWrite(canWrite), canCreate(canCreate) {
+  OpenExpr(int line, int pos, Node::Expr *filename, Node::Expr *canRead,
+           Node::Expr *canWrite, Node::Expr *canCreate, size_t file)
+      : line(line), pos(pos), filename(filename), canRead(canRead),
+        canWrite(canWrite), canCreate(canCreate) {
     file_id = file;
     kind = NodeKind::ND_OPEN;
     asmType = new SymbolType("int");
@@ -850,7 +868,7 @@ class OpenExpr : public Node::Expr {
 };
 
 class GetArgvExpr : public Node::Expr {
- public:
+public:
   int line, pos;
 
   GetArgvExpr(int line, int pos, size_t file) : line(line), pos(pos) {
@@ -865,7 +883,7 @@ class GetArgvExpr : public Node::Expr {
 };
 
 class GetArgcExpr : public Node::Expr {
- public:
+public:
   int line, pos;
 
   GetArgcExpr(int line, int pos, size_t file) : line(line), pos(pos) {
@@ -880,12 +898,13 @@ class GetArgcExpr : public Node::Expr {
 };
 
 class StrCmp : public Node::Expr {
- public:
+public:
   int line, pos;
   Node::Expr *v1;
   Node::Expr *v2;
 
-  StrCmp(int line, int pos, Node::Expr *v1, Node::Expr *v2, size_t file) : line(line), pos(pos), v1(v1), v2(v2) {
+  StrCmp(int line, int pos, Node::Expr *v1, Node::Expr *v2, size_t file)
+      : line(line), pos(pos), v1(v1), v2(v2) {
     file_id = file;
     kind = NodeKind::ND_STRCMP;
   }
@@ -896,5 +915,122 @@ class StrCmp : public Node::Expr {
     v1->debug(indent);
     std::cout << "   value 2: ";
     v2->debug(indent);
+  }
+};
+
+class SocketExpr : public Node::Expr {
+public:
+  int line, pos;
+  Node::Expr *domain;     // e.g. "AF_INET", "AF_INET6"
+  Node::Expr *socketType; // e.g. "TCP", "UDP"
+  Node::Expr *protocol;   // e.g. "IPv4", "IPv6"
+
+  SocketExpr(int line, int pos, Node::Expr *domain, Node::Expr *socketType,
+             Node::Expr *protocol, size_t file)
+      : line(line), pos(pos), domain(domain), socketType(socketType),
+        protocol(protocol) {
+    file_id = file;
+    kind = NodeKind::ND_SOCKET;
+    asmType = new SymbolType("int"); // Returns a socket descriptor
+  }
+
+  void debug(int indent = 0) const override {
+    Node::printIndent(indent);
+    std::cout << "SocketExpr: \n";
+    Node::printIndent(indent + 1);
+    std::cout << "Domain: \n";
+    domain->debug(indent + 2);
+    Node::printIndent(indent + 1);
+    std::cout << "Socket Type: \n";
+    socketType->debug(indent + 2);
+    Node::printIndent(indent + 1);
+    std::cout << "Protocol: \n";
+    protocol->debug(indent + 2);
+  }
+};
+
+class BindExpr : public Node::Expr {
+public:
+  int line, pos;
+  Node::Expr *socket;  // The socket to bind
+  Node::Expr *address; // The address to bind to
+  Node::Expr *port;    // The port to bind to
+                       //
+  BindExpr(int line, int pos, Node::Expr *socket, Node::Expr *address,
+           Node::Expr *port, size_t file)
+      : line(line), pos(pos), socket(socket), address(address), port(port) {
+    file_id = file;
+    kind = NodeKind::ND_BIND;
+    asmType = new SymbolType("int"); // Returns an int status code
+  }
+
+  void debug(int indent = 0) const override {
+    Node::printIndent(indent);
+    std::cout << "BindExpr: \n";
+    Node::printIndent(indent + 1);
+    std::cout << "Socket: \n";
+    socket->debug(indent + 2);
+    Node::printIndent(indent + 1);
+    std::cout << "Address: \n";
+    address->debug(indent + 2);
+    Node::printIndent(indent + 1);
+    std::cout << "Port: \n";
+    port->debug(indent + 2);
+  }
+};
+
+class ListenExpr : public Node::Expr {
+public:
+  int line, pos;
+  Node::Expr *socket;  // The socket to listen on
+  Node::Expr *backlog; // The maximum length of the queue of pending connections
+
+  ListenExpr(int line, int pos, Node::Expr *socket, Node::Expr *backlog,
+             size_t file)
+      : line(line), pos(pos), socket(socket), backlog(backlog) {
+    file_id = file;
+    kind = NodeKind::ND_LISTEN;
+    asmType = new SymbolType("int"); // Returns an int status code
+  }
+
+  void debug(int indent = 0) const override {
+    Node::printIndent(indent);
+    std::cout << "ListenExpr: \n";
+    Node::printIndent(indent + 1);
+    std::cout << "Socket: \n";
+    socket->debug(indent + 2);
+    Node::printIndent(indent + 1);
+    std::cout << "Backlog: \n";
+    backlog->debug(indent + 2);
+  }
+};
+
+class AcceptExpr : public Node::Expr {
+public:
+  int line, pos;
+  Node::Expr *socket; // The socket to accept connections on
+  Node::Expr *addr;   // The address to accept connections from
+  Node::Expr *port;   // The port to accept connections on
+
+  AcceptExpr(int line, int pos, Node::Expr *socket, Node::Expr *addr,
+             Node::Expr *port, size_t file)
+      : line(line), pos(pos), socket(socket), addr(addr), port(port) {
+    file_id = file;
+    kind = NodeKind::ND_ACCEPT;
+    asmType = new SymbolType("int"); // Returns a socket descriptor
+  }
+
+  void debug(int indent = 0) const override {
+    Node::printIndent(indent);
+    std::cout << "AcceptExpr: \n";
+    Node::printIndent(indent + 1);
+    std::cout << "Socket: \n";
+    socket->debug(indent + 2);
+    Node::printIndent(indent + 1);
+    std::cout << "Address: \n";
+    addr->debug(indent + 2);
+    Node::printIndent(indent + 1);
+    std::cout << "Port: \n";
+    port->debug(indent + 2);
   }
 };

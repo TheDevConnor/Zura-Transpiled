@@ -30,7 +30,7 @@ enum BindingPower {
 };
 struct PStruct;
 inline Lexer lexer;
-}  // namespace Parser
+} // namespace Parser
 
 struct Parser::PStruct {
   std::vector<Lexer::Token> tks;
@@ -114,6 +114,11 @@ Node::Expr *openExpr(PStruct *psr);
 Node::Expr *getArgc(PStruct *psr);
 Node::Expr *getArgv(PStruct *psr);
 Node::Expr *strcmp(PStruct *psr);
+Node::Expr *socketExpr(PStruct *psr);
+Node::Expr *bindExpr(PStruct *psr);
+Node::Expr *listenExpr(PStruct *psr);
+Node::Expr *acceptExpr(PStruct *psr);
+
 // Binary Functions
 Node::Expr *_postfix(PStruct *psr, Node::Expr *left, BindingPower bp);
 Node::Expr *binary(PStruct *psr, Node::Expr *left, BindingPower bp);
@@ -146,4 +151,4 @@ Node::Stmt *externStmt(PStruct *psr, std::string name);
 Node::Stmt *inputStmt(PStruct *psr, std::string name);
 Node::Stmt *closeStmt(PStruct *psr, std::string name);
 Node::Stmt *exprStmt(PStruct *psr);
-}  // namespace Parser
+} // namespace Parser

@@ -17,7 +17,7 @@ void Lexer::initLexer(const char *source, std::string file) {
   scanner.line = 1;
   scanner.file = file;
 
-  initMap();  // Create the maps when the lexer is initialized
+  initMap(); // Create the maps when the lexer is initialized
 }
 
 /**
@@ -54,6 +54,10 @@ void Lexer::initMap() {
       {"@open", TokenKind::OPEN},
       {"@close", TokenKind::CLOSE},
       {"@outputln", TokenKind::PRINTLN},
+      {"@socket", TokenKind::SOCKET},
+      {"@bind", TokenKind::BIND},
+      {"@listen", TokenKind::LISTEN},
+      {"@accept", TokenKind::ACCEPT},
   };
 
   keywords = {
@@ -89,28 +93,17 @@ void Lexer::initMap() {
   };
 
   scMap = {
-      {'(', TokenKind::LEFT_PAREN},
-      {')', TokenKind::RIGHT_PAREN},
-      {'{', TokenKind::LEFT_BRACE},
-      {'}', TokenKind::RIGHT_BRACE},
-      {';', TokenKind::SEMICOLON},
-      {',', TokenKind::COMMA},
-      {'.', TokenKind::DOT},
-      {'-', TokenKind::MINUS},
-      {'+', TokenKind::PLUS},
-      {'/', TokenKind::SLASH},
-      {'*', TokenKind::STAR},
-      {'%', TokenKind::MODULO},
-      {'^', TokenKind::CARET},
-      {'[', TokenKind::LEFT_BRACKET},
-      {']', TokenKind::RIGHT_BRACKET},
-      {'?', TokenKind::QUESTION},
-      {':', TokenKind::COLON},
-      {'=', TokenKind::EQUAL},
-      {'!', TokenKind::BANG},
-      {'<', TokenKind::LESS},
-      {'>', TokenKind::GREATER},
-      {'&', TokenKind::LAND},
+      {'(', TokenKind::LEFT_PAREN},    {')', TokenKind::RIGHT_PAREN},
+      {'{', TokenKind::LEFT_BRACE},    {'}', TokenKind::RIGHT_BRACE},
+      {';', TokenKind::SEMICOLON},     {',', TokenKind::COMMA},
+      {'.', TokenKind::DOT},           {'-', TokenKind::MINUS},
+      {'+', TokenKind::PLUS},          {'/', TokenKind::SLASH},
+      {'*', TokenKind::STAR},          {'%', TokenKind::MODULO},
+      {'^', TokenKind::CARET},         {'[', TokenKind::LEFT_BRACKET},
+      {']', TokenKind::RIGHT_BRACKET}, {'?', TokenKind::QUESTION},
+      {':', TokenKind::COLON},         {'=', TokenKind::EQUAL},
+      {'!', TokenKind::BANG},          {'<', TokenKind::LESS},
+      {'>', TokenKind::GREATER},       {'&', TokenKind::LAND},
       {'|', TokenKind::LOR},
   };
 
@@ -208,21 +201,24 @@ void Lexer::initMap() {
 }
 
 const char *Lexer::tokenToString(TokenKind kind) {
-  std::unordered_map<TokenKind, const char *>::iterator it = tokenToStringMap.find(kind);
+  std::unordered_map<TokenKind, const char *>::iterator it =
+      tokenToStringMap.find(kind);
   if (it != tokenToStringMap.end())
     return it->second;
   return "Unknown";
 }
 
 TokenKind Lexer::checkIdentMap(std::string identifier) {
-  std::unordered_map<std::string, TokenKind>::iterator it = keywords.find(identifier);
+  std::unordered_map<std::string, TokenKind>::iterator it =
+      keywords.find(identifier);
   if (it != keywords.end())
     return it->second;
   return TokenKind::IDENTIFIER;
 }
 
 TokenKind Lexer::sc_dc_lookup(char c) {
-  std::unordered_map<std::string, TokenKind>::iterator dc = dcMap.find(std::string(1, c) + std::string(1, peek()));
+  std::unordered_map<std::string, TokenKind>::iterator dc =
+      dcMap.find(std::string(1, c) + std::string(1, peek()));
   if (dc != dcMap.end()) {
     advance();
     return dc->second;
