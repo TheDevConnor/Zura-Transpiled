@@ -82,7 +82,7 @@ void FlagConfig::runBuild(int argc, char **argv) {
     // Color col;
     // std::cout << col.color("Zura " + ZuraVersion + " LSP", Color::CYAN, false, true) << "\n";
     // std::cout << col.color("The builtin LSP is made solely for the computers. It is not meant for humans. You have been warned!", Color::RED, false, true) << "\n";
-    lsp::initialize();
+    lsp::main();
     return;
   }
 

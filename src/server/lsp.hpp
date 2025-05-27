@@ -1,10 +1,55 @@
 #pragma once
-#include <vector>
+#include <fstream>
+#include <map>
 #include "json.hpp"
-#include "../typeChecker/type.hpp"
 
 namespace lsp {
-    // -- TYPES --
+  inline std::ofstream logFile;
+  void main(); // Initializes the LSP to start listening to stdout
+  void handleMethod(const std::string& method, const nlohmann::json& object); // Handles the method received from the client
+  void handleResponse(const nlohmann::json& response); // This is what we send back to the client. More often than not, its usually just null
+  // NOTE: 'object' is for regular methods that want a response, while 'params' is for events, which are
+  // NOTE: methods that do not expect a response.
+  //- METHODS: LIFECYCLE
+  void handleMethodInitialize(const nlohmann::json& object); // Handles the "initialize" method
+  void handleMethodShutdown(const nlohmann::json& object); // Handles the "shutdown" method
+  void handleMethodExit(const nlohmann::json& object); // Handles the "exit" method
+  //- METHODS: DOCUMENTS
+  using URI = std::string;
+  extern std::map<URI, std::string> documents;
+  size_t getOffset(const std::string& text, size_t line, size_t character); // Calculates the offset in the text based on line and character
+  void handleMethodTextDocumentDidOpen(const nlohmann::json& params); // Handles the "textDocument/didOpen" method
+  void handleMethodTextDocumentDidChange(const nlohmann::json& params); // Handles the "textDocument/didChange" method
+  void handleMethodTextDocumentDidClose(const nlohmann::json& params); // Handles the "textDocument/didClose" method
+  void handleMethodTextDocumentDidSave(const nlohmann::json& params); // Handles the "textDocument/didSave" method
+  //- METHODS: HOVERS & COMPLETIONS
+  std::string getBuiltinNote(const std::string& builtin); // Returns a note about the builtin function
+  bool isTokenCharacter(char c); // Checks if the character is a valid token character (alphanumeric or underscore)
+  void handleMethodTextDocumentHover(const nlohmann::json& object); // Handles the "textDocument/hover" method
+  // void handleMethodTextDocumentCompletion(const nlohmann::json& object); // Handles the "textDocument/completion" method
+
+  enum class ServerStatus {
+    Unknown,
+    
+    Waiting,
+    Initialized,
+    Running,
+    
+    Stopped,
+    Exiting,
+  };
+
+  enum class TextDocumentSyncKind {
+    None = 0,        // Dont send any events
+    Full = 1,        // Send events, and contain the entirety of the new document
+    Incremental = 2, // Send events, and only contain the parts of the document that changed
+  };
+
+  struct Document {
+    std::string contents; // The text contents of the document
+    // A date: This will be useful so we know when to check the document again
+    std::time_t lastModified; // The last time the document was modified
+  };
 
   struct Position {
     size_t line;
@@ -12,76 +57,14 @@ namespace lsp {
   };
 
   struct Range {
-    Position start;
-    Position end;
-  };
-
-  enum class TextDocumentSyncKind {
-    None = 0,
-    Full = 1,
-    Incremental = 2
-  };
-
-  enum class CompletionItemKind {
-    Text = 1,
-    Method = 2,
-    Function = 3,
-    Constructor = 4,
-    Field = 5,
-    Variable = 6,
-    Class = 7,
-    Interface = 8,
-    Module = 9,
-    Property = 10,
-    Unit = 11,
-    Value = 12,
-    Enum = 13,
-    Keyword = 14,
-    Snippet = 15,
-    Color = 16,
-    File = 17,
-    Reference = 18,
-    Folder = 19,
-    EnumMember = 20,
-    Constant = 21,
-    Struct = 22,
-    Event = 23,
-    Operator = 24,
-    TypeParameter = 25,
+    Position start; // The starting position of the range
+    Position end;   // The ending position of the range
   };
 
   struct Word {
-    std::string word;
-    Range range;
+    std::string text; // The text of the word
+    Range range;      // The range of the word in the document
   };
 
-  // -- METHODS --
-
-  void initialize();
-  void main();
-
-  namespace methods {
-    nlohmann::ordered_json initialize(nlohmann::json& request);
-    nlohmann::ordered_json shutdown(nlohmann::json& request); // In this scenario, the return type nor the input is used- "null" is always returned
-    nlohmann::ordered_json exit(nlohmann::json& request);     // Return type and parameter not used
-    nlohmann::ordered_json completion(nlohmann::json& request);
-    nlohmann::ordered_json cancelRequest(nlohmann::json& request); // We don't care about what is getting cancelled, but we must respond to these events anyway
-    nlohmann::ordered_json hover(nlohmann::json& request);
-  }
-
-  namespace events {
-    void documentOpen(nlohmann::json& request);
-    void documentChange(nlohmann::json& request); // The complicated one
-  };
-
-  namespace document {
-    void setCharAtPos(std::string uri, Position pos, std::string changeChar);
-    char charAtPos(std::string uri, Position pos);
-    Word wordUnderPos(std::string uri, Position pos);
-    std::string getText(std::string uri);
-  };
-
-  TypeChecker::LSPIdentifier getIdentifierUnderPos(Position pos, std::string uri);
-
-  std::vector<std::string> split(std::string in, std::string delim);
-};
+  Word getWordUnder(const std::string& text, size_t line, size_t character);
+}

@@ -3,7 +3,7 @@ const Point := struct {
   y: int!,
 
   display := fn(self: *Point) void {
-    @outputln(1, "x: ", self.x, " y: ", self.y);
+    @output(1, "x: ", self.x, " y: ", self.y, "\n");
   };
 };
 
