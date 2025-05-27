@@ -97,6 +97,10 @@ void Parser::createMaps() {
       {TokenKind::GETARGC, getArgc},
       {TokenKind::GETARGV, getArgv},
       {TokenKind::STRCMP, strcmp},
+      {TokenKind::SOCKET, socketExpr},
+      {TokenKind::BIND, bindExpr},
+      {TokenKind::ACCEPT, acceptExpr},
+      {TokenKind::LISTEN, listenExpr},
   };
   led_lu = {
       {TokenKind::PLUS, binary},

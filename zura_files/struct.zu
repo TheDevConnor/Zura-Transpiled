@@ -7,14 +7,14 @@ const Hobbies := enum {
 
 const Person := struct {
     name: str,
-    age: int,
+    age: int!,
     
     greet := fn (self: *Person) void {
-        @output("Hello, my name is ", self.name, " and I am ", self.age, " years old.\n");
+        @output(1, "Hello, my name is ", self.name, " and I am ", self.age, " years old.\n");
     }; 
 };
 
-const main := fn () int {
+const main := fn () int! {
   have John: Person = {
     name: "John",
     age: 25

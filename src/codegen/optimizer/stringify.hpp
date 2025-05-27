@@ -87,7 +87,7 @@ class Stringifier {  // converts Instr structures into AT&T Syntax strings
             // it's a number! if its larger than 2^32, we must use movabsq
             if (std::stoll(instr.src.substr(1)) > 4294967295) {
               std::stringstream ss;
-              // in this case, i highly doubt that the destSize will be anything other than Qword
+              // you cant fit a number greater than 2^32 into a 32-bit integer but we put a dsToChar here for parity
               ss << "movabs" << dsToChar(instr.destSize) << ' ' << instr.src << ", " << instr.dest << "\n\t";
               return ss.str();
             }

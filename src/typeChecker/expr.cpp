@@ -577,23 +577,25 @@ void TypeChecker::visitCast(Node::Expr *expr) {
   expr->asmType = cast->castee_type;
   return_type = share(cast->castee_type);
 }
-
 void TypeChecker::visitStructExpr(Node::Expr *expr) {
   StructExpr *struct_expr = static_cast<StructExpr *>(expr);
 
-  std::string struct_name = "";
-  if (return_type.get() == nullptr) {
+  // Try to determine the struct name from the type context or from the AST node
+  std::string struct_name;
+  if (return_type.get() != nullptr &&
+      return_type.get()->kind == ND_SYMBOL_TYPE) {
+    struct_name = dynamic_cast<SymbolType *>(return_type.get())->name;
+  } else if (return_type.get() == nullptr) {
     return_type = std::make_shared<SymbolType>("unknown");
+    struct_name = "unknown";
   } else if (return_type.get()->kind == ND_ARRAY_TYPE) {
-    // The struct name will actually have to be the underlying, because
-    // obviously you cannot define a struct's name with `[]`.
     struct_name =
         type_to_string(static_cast<ArrayType *>(return_type.get())->underlying);
   } else {
     struct_name = type_to_string(return_type.get());
   }
 
-  // find the struct in the struct table (no it does not work) I know why
+  // Check if the struct exists in the struct table
   if (context->structTable.find(struct_name) == context->structTable.end()) {
     std::string msg =
         "Struct '" + struct_name + "' is not defined in the scope.";
@@ -603,16 +605,13 @@ void TypeChecker::visitStructExpr(Node::Expr *expr) {
     return;
   }
 
-  // We do not need ti check the struct size if the struct expression is empty
-  if (struct_expr->values.empty()) {
-    return_type = std::make_shared<SymbolType>(struct_name);
-    struct_expr->asmType = new SymbolType(struct_name);
-    return;
-  }
+  // Get the struct definition
+  const auto &structDef = context->structTable[struct_name];
+  size_t structSize = structDef.size();
 
-  if (struct_size != struct_expr->values.size()) {
+  if (structSize != struct_expr->values.size()) {
     std::string msg = "Struct '" + struct_name + "' requires " +
-                      std::to_string(struct_size) + " elements but got " +
+                      std::to_string(structSize) + " elements but got " +
                       std::to_string(struct_expr->values.size());
     handleError(struct_expr->line, struct_expr->pos, msg, "", "Type Error");
     return_type = std::make_shared<SymbolType>("unknown");
@@ -620,29 +619,23 @@ void TypeChecker::visitStructExpr(Node::Expr *expr) {
     return;
   }
 
-  // Now compare the types of the struct elements with the types of the struct
-  // expression elements
-  for (std::pair<std::string, Node::Expr *> elem : struct_expr->values) {
-    // find the type of the struct element;
-    Node::Type *elem_type = nullptr;
-    // set elem_type to the type of the struct element, if it exists
-    for (const auto &member : context->structTable[struct_name]) {
-      if (member.first == elem.first) {
-        elem_type = member.second.first;
-        break;
-      }
-    }
+  // For each member in the struct expression, check type against struct definition
+  for (const auto &elem : struct_expr->values) {
+    const std::string &memberName = elem.first;
+    Node::Expr *memberExpr = elem.second;
 
-    if (elem_type == nullptr) {
-      std::string msg = "Named member '" + elem.first +
+    // Find the expected type for this member
+    auto memberIt = structDef.find(memberName);
+    if (memberIt == structDef.end()) {
+      std::string msg = "Named member '" + memberName +
                         "' not found in struct '" + struct_name + "'";
-      // did you mean?
+      // Suggest closest member name
       std::vector<std::string> known;
-      for (const auto &member : context->structTable[struct_name]) {
+      for (const auto &member : structDef) {
         known.push_back(member.first);
       }
       std::optional<std::string> closest =
-          string_distance(known, elem.first, 3);
+          string_distance(known, memberName, 3);
       if (closest.has_value()) {
         handleError(struct_expr->line, struct_expr->pos, msg,
                     "Did you mean '" + closest.value() + "'?", "Type Error");
@@ -653,41 +646,37 @@ void TypeChecker::visitStructExpr(Node::Expr *expr) {
       struct_expr->asmType = new SymbolType("unknown");
       return;
     }
-    // find if the type of the struct expression element is a nested struct of a
-    // bigger one
-    if (elem.second->kind == ND_STRUCT) { // The work of typechecking the little
-                                          // guy has already been done for us
-      return_type = share(elem_type);
-      struct_expr->asmType = createDuplicate(return_type.get());
-      return;
+    Node::Type *expectedType = memberIt->second.first;
+
+    // Visit the member expression to get its type
+    // In case this happens to be a nested struct, we have to
+    // change the return_type to be the expected struct type
+    // of the child
+    if (expectedType->kind == ND_SYMBOL_TYPE) {
+      return_type = share(expectedType);
+    }
+    visitExpr(memberExpr);
+
+    // Special handling for nested struct initializers
+    if (memberExpr->kind == ND_STRUCT) {
+      // Set the expected struct type as the context for the nested struct
+      return_type = share(expectedType);
+      visitStructExpr(memberExpr);
     }
 
-    visitExpr(elem.second);
-    // check for enums
-    if (elem.second->kind == ND_MEMBER) {
-      MemberExpr *member = static_cast<MemberExpr *>(elem.second);
-      if (member->lhs->kind == ND_IDENT) {
-        IdentExpr *ident = static_cast<IdentExpr *>(member->lhs);
-        if (context->enumTable.find(ident->name) != context->enumTable.end()) {
-          processEnumMember(member,
-                            ident->name); // Will automatically set return_type
-          member->asmType =
-              new SymbolType(ident->name); // maybe this works idrk lmao
-        }
-      }
-    }
-    Node::Type *expected =
-        context->structTable[type_to_string(elem_type)][elem.first].first;
-    if (checkTypeMatch(return_type.get(), expected)) {
-      std::string msg = "Struct element '" + elem.first + "' requires type '" +
-                        type_to_string(expected) + "' but got '" +
+    // After visiting, check type match
+    if (!checkTypeMatch(return_type.get(), expectedType)) {
+      std::string msg = "Struct element '" + memberName + "' requires type '" +
+                        type_to_string(expectedType) + "' but got '" +
                         type_to_string(return_type.get()) + "'";
       handleError(struct_expr->line, struct_expr->pos, msg, "", "Type Error");
       return_type = std::make_shared<SymbolType>("unknown");
+      struct_expr->asmType = new SymbolType("unknown");
       return;
     }
   }
-  // set the return type to the struct type
+
+  // Set the return type to the struct type
   return_type = std::make_shared<SymbolType>(struct_name);
   expr->asmType = new SymbolType(struct_name);
 }

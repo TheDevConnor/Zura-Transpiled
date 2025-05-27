@@ -7,7 +7,11 @@ const SockAddrInV4 := struct {
 
 const main := fn () int! {
   # Create a socket
-  have socket: int! = @socket(2, 1, 0); # AF_INET, SOCK_STREAM, 0
+  have socket: int! = @socket(2, 1, 0); # AF_INET, SOCK_STREAM, 
+  # AF_INET means listen to the general internet with IP v4
+  # SOCK_STREAM basically means TCP, which is "sequences, reliable, two-way, connection-based byte streams" according to man
+  # 0 is for the protocol. each socket type has a different protocol, but 0 means assume the default one for this type
+  # because AF_INET only has like 1 or 2 possible protocols, using 0 is probably best
   if (socket < 0) {
     @outputln(1, "Failed to create socket :(");
     return 1;
@@ -16,7 +20,7 @@ const main := fn () int! {
   # Bind
   have addrIn: SockAddrInV4 = {
     family: 2, # AF_INET... again for some reason
-    port: 36895 # 0x901f, which is hex(htons(8080))
+    port: 36895, # 0x901f, which is htons(8080) (HTONS is Host TO Network Short, which converts the port into what the network expects, which is BIG ENDIAN!!)
     addr: 0, # INADDR_ANY (which means, LET EVERYONE IN!!!)
     zero: 0, # padding becasue linux is stupid (jk ily torvalds)
   };
