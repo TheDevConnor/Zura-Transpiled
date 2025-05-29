@@ -155,7 +155,7 @@ public:
   bool isAtEnd(void);
   char peek(void);
 
-  std::unordered_map<TokenKind, const char *> tokenToStringMap;
+  inline static std::unordered_map<TokenKind, const char *> tokenToStringMap;
   std::unordered_map<std::string, TokenKind> at_keywords;
   std::unordered_map<std::string, TokenKind> keywords;
   std::unordered_map<std::string, TokenKind> dcMap;

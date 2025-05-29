@@ -103,7 +103,7 @@ void assignArray(Node::Expr *expr);
 void assignDereference(Node::Expr *expr);
 void dereferenceStructPtr(Node::Expr *expr, std::string structName, std::string offsetRegister, size_t startOffset);
 void declareStructVariable(Node::Expr *expr, std::string structName, std::string offsetRegister, size_t startOffset);
-void declareArrayVariable(Node::Expr *expr, long long arrayLength, std::string varName);
+void declareArrayVariable(Node::Expr *expr, long long arrayLength);
 
 size_t sizeOfLEB(int64_t value);
 size_t convertFloatToInt(std::string input);    // Float input. Crazy, right?
@@ -117,11 +117,12 @@ inline std::set<std::string> enumTable = {};
 inline std::unordered_map<std::string, Struct> structByteSizes = {};  // Name of a struct and its size in bytes
 
 void orderStructFields(std::unordered_map<std::string, Node::Expr *> &fields, std::string &structName, std::vector<std::pair<std::string, Node::Expr *>> *orderedFields);
-signed short int getByteSizeOfType(Node::Type *type);  // Return the size of a type in bytes, ie pointers are a size_t (os specific macros baby!)
+long int getByteSizeOfType(Node::Type *type);  // Return the size of a type in bytes, ie pointers are a size_t (os specific macros baby!)
 std::string getUnderlying(Node::Type *type);           // Get the underlying type name of a type (ie, int* -> int, []int -> int, int -> int)
 std::string type_to_diename(Node::Type *type);
-DataSize intDataToSizeFloat(signed short int data);
-DataSize intDataToSize(signed short int data);
+DataSize intDataToSizeFloat(long int data);
+DataSize intDataToSize(long int data);
+long int dataSizeToInt(DataSize data);
 
 inline std::set<std::string> linkedFiles = {};
 inline std::set<std::string> externalNames = {};  // Make sure that when external functions are called, we run "call 'ExternalName'" rather than "call 'usr_FuncName'"/
@@ -143,10 +144,10 @@ enum class
     };
 
 enum class NativeASMFunc {
-  strlen,
+  strlen_func,
   itoa,
   uitoa,
-  memcpy,
+  memcpy_func,
   strcmp,
 };
 
@@ -155,6 +156,7 @@ inline std::vector<Instr> head_section = {};
 inline std::vector<Instr> data_section = {};  // This is only really one of three instructions
 inline std::vector<Instr> rodt_section = {};  // Same as data section
 inline std::vector<Instr> die_section = {};   // Acronym for Dwarf Information Entry
+inline std::vector<std::pair<std::string, std::string>> die_arange_section = {}; // DIE address ranges, used for skipping around the CU
 inline std::vector<Instr> diet_section = {};  // Acronym for Dwarf Information Entry
 inline std::vector<Instr> diea_section = {};  // DIE abbreviation (defines attributes used in DIE's)
 inline std::vector<Instr> dies_section = {};  // Dwarf Information Entries strings, referenced from DIE's

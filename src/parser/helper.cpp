@@ -18,6 +18,13 @@ Lexer::Token Parser::PStruct::peek(int offset) {
 }
 
 Lexer::Token Parser::PStruct::expect(TokenKind tk, std::string msg) {
+  // C++ runtime errors :)
+  if (!hadTokens()) {
+    std::string message = "Expected token of type '" + std::string(Lexer::tokenToStringMap.at(tk)) + "', but instead found the end of the file.";
+    Error::handle_error("Parser", current_file, message, tks,
+                        tks.back().line, tks.back().column);
+    return tks.back();
+  }
   if (peek(0).kind == tk) return advance();
   std::string errorMsg = msg + " Found: " + peek(0).value;
   Error::handle_error("Parser", current_file, errorMsg, tks, current().line, current().column);

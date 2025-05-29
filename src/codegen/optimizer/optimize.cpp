@@ -108,8 +108,8 @@ void Optimizer::processOppositePair(std::vector<Instr> *output, Instr &prev, Ins
             prev = Instr {.var = {}, .type=InstrType::NONE};
             // Try pop
             tryPop(output);
-            output->push_back(curr);
-        }
+          }
+          output->push_back(curr); // Push it anyway
     } else {
         output->push_back(curr);
     }

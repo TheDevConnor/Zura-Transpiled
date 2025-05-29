@@ -22,7 +22,6 @@ void codegen::visitExpr(Node::Expr *expr) {
 
 // A basic "fallback" type of expression that covers all 1-D, basic expr's
 void codegen::primary(Node::Expr *expr) {
-  // TODO: Implement the primary expression
   switch (expr->kind) {
     case NodeKind::ND_INT: {
       IntExpr *e = static_cast<IntExpr *>(expr);
@@ -739,7 +738,70 @@ void codegen::assign(Node::Expr *expr) {
 void codegen::arrayElem(Node::Expr *expr) {
   IndexExpr *e = static_cast<IndexExpr *>(expr);
   pushDebug(e->line, expr->file_id, e->pos);
-
+  // Screw me, haha!
+  visitExpr(e->lhs); // This is the array. This should be a pointer to the first (top) element.
+  // We must pop this somewhere. Then, the value we are trying to access, will be
+  // an effective address using that register
+  popToRegister("%rcx"); // Pop the array pointer into %rcx
+  // Get the index (element # * size of each element)
+  // If all things go well, we should be able to do some very funny x64 magic!
+  // If not, then we will collectively cry.
+  std::string expression = ""; // Depending on if the element is a struct or array, or a normal value, this will be lea'd
+  Node::Expr *optimizedRhs = CompileOptimizer::optimizeExpr(e->rhs);
+  long elementByteSize = getByteSizeOfType(dynamic_cast<ArrayType *>(e->lhs->asmType)->underlying);
+  if (optimizedRhs->kind == ND_INT) {
+    // We can optimize! Hurray!
+    // Calculate the (index * size) inline, at comptime, so
+    // that the code doesn't look completely stupid.
+    IntExpr *index = static_cast<IntExpr *>(optimizedRhs);
+    long long indexValue = index->value;
+    // Get the size of the element
+    if (indexValue < 0) {
+      // Zura, for now at least, will NOT be a goofy "negative is the back of the array" language
+      // We will throw an error. Cry about it. Do the mental math. arr[-1]? No. Just do array size - 1 in your head.
+      handleError(e->line, e->pos, "Negative array indices are not allowed.", "Codegen", true);
+      return; // Don't bother.
+    }
+    // The assembly would look kind of gross with "0(%rcx)" so i am saving your eyeballs
+    if (indexValue == 0) expression = "(%rcx)";
+    else expression = std::to_string(indexValue * elementByteSize) + "(%rcx)";
+  } else {
+    visitExpr(optimizedRhs); // This is the index- the [1] or [4] or whatever
+    // We will pop this into %rdi. Hopefully nothing important was happening in there.
+    popToRegister("%rdi"); // Pop the index into %rdi
+    // Now we can do the funny x64 magic! Hooray!
+    if (elementByteSize == 2 || elementByteSize == 4 || elementByteSize == 8) {
+      expression = "(%rcx, %rdi, " + std::to_string(elementByteSize) + ")";
+    } else if (elementByteSize == 1) {
+      expression = "(%rcx, %rdi)";
+    } else {
+      // Fine!! We'll do the calculation...
+      // Multiply rdi by the size of the elemnt
+      push(Instr{.var= BinaryInstr{.op = "imul",
+                                              .src = "$" + std::to_string(elementByteSize),
+                                              .dst = "%rdi"},
+                 .type = InstrType::Binary},
+           Section::Main);
+      // Now we can return the expression as if we are all normal
+      expression = "(%rcx, %rdi)";
+    }
+  }
+  // Finally! Time to actually push (or lea) the expression
+  if (structByteSizes.contains(getUnderlying(e->asmType)) || e->asmType->kind == ND_ARRAY_TYPE) {
+    // If the element is a struct, we need to lea the address of the element
+    push(Instr{.var = LeaInstr{.size = DataSize::Qword,
+                               .dest = "%rcx",
+                               .src = expression},
+               .type = InstrType::Lea},
+         Section::Main);
+    pushRegister("%rcx");
+  } else {
+    // Otherwise, we can push the result
+    DataSize size = intDataToSize(getByteSizeOfType(e->asmType));
+    push(Instr{.var = PushInstr{.what = expression, .whatSize = size},
+               .type = InstrType::Push},
+         Section::Main);
+  }
 }
 
 // z: [1, 2, 3, 4, 5]
@@ -766,6 +828,95 @@ void codegen::memberExpr(Node::Expr *expr) {
                .type = InstrType::Push},
          Section::Main);
     return;
+  }
+
+  if (structByteSizes.contains(lhsName)) {
+    // Depending on if we have a pointer to the struct or a bunch of other
+    // factors, we will handle the dereferencing differently.
+    // In the scenario of an identifier, we are pushing the address of the 1st byte
+    // so we can just pop that somewhere then push an offset from that
+
+    // Check if ident
+    // if (e->lhs->kind != ND_IDENT) return; // Come back later
+    visitExpr(e->lhs);
+    if (e->lhs->asmType->kind == ND_POINTER_TYPE) {
+      // What was pushed? A pointer. That means we should pop it straight up
+      popToRegister("%rcx");
+      pushRegister("%rcx"); // We are popping this off anyways
+    }
+    // TOP ON STACK: variable
+    // Get the offset and lea and stuff
+    PushInstr instr =
+        std::get<PushInstr>(text_section.at(text_section.size() - 1).var);
+    std::string whatWasPushed = instr.what;
+    text_section.pop_back();
+    size_t elementIndex = 99999; // This would be a stupid struct to have.
+    for (size_t i = 0; i < whatWasPushed.size(); i++) {
+      if (structByteSizes[lhsName].second.at(i).first == dynamic_cast<IdentExpr *>(e->rhs)->name) {
+        elementIndex = i;
+        break;
+      }
+    }
+    // Check what was pushed. Was it an effective address?
+    if (whatWasPushed.find('(') == std::string::npos) {
+      // It was an effective address, so we can just push the offset
+      // We need to get the offset of the member
+      long long offset = structByteSizes[lhsName].second.at(elementIndex).second.second;
+      // If the member is another struct, we need to lea
+      Node::Type *memberType = structByteSizes[lhsName].second[elementIndex].second.first;
+      if (structByteSizes.contains(getUnderlying(memberType)) && (memberType->kind == ND_SYMBOL_TYPE || memberType->kind == ND_POINTER_TYPE || memberType->kind == ND_ARRAY_TYPE)) {
+        // We need to lea the address of the member
+        push(Instr{.var = LeaInstr{.size = DataSize::Qword,
+                                   .dest = "%rcx",
+                                   .src = std::to_string(offset) + "(" + whatWasPushed + ")"},
+                   .type = InstrType::Lea},
+             Section::Main);
+        pushRegister("%rcx");
+        return;
+      }
+      // Otherwise, we push
+      DataSize size = intDataToSize(getByteSizeOfType(memberType));
+      push(Instr{.var = PushInstr{.what = std::to_string(offset) + "(" +
+                                          whatWasPushed + ")",
+                                      .whatSize = size},
+                 .type = InstrType::Push},
+           Section::Main);
+      return;
+    }
+    // Phew! If we reached this point, then that means we pushed something with an address in it.
+    // Uh oh.
+    // It was likely something similar to "-8(%rbp)", so we must extract -8 and %rbp.
+    size_t openParen = whatWasPushed.find('(');
+    size_t closeParen = whatWasPushed.find(')');
+    int offset = openParen == 0 ? 0 : std::stoi(whatWasPushed.substr(0, openParen));
+    std::string baseRegister = whatWasPushed.substr(openParen + 1, closeParen - openParen - 1);
+    // Now that we have extracted -8 and %rbp, we can do the work!
+    // Check if the member is a struct
+    int structOffset = structByteSizes[lhsName].second[elementIndex].second.second;
+    Node::Type *memberType = structByteSizes[lhsName].second[elementIndex].second.first;
+    if (structByteSizes.contains(getUnderlying(memberType)) &&
+        (memberType->kind == ND_SYMBOL_TYPE ||
+         memberType->kind == ND_POINTER_TYPE)) {
+      // We need to lea the address of the member
+      // Because we are using x64, then "size" is always Qword, but i missed this when
+      // i created the instruction so oopsies its here to stay until zura self host
+      push(Instr{.var = LeaInstr{.size = DataSize::Qword,
+                                 .dest = "%rcx",
+                                 .src = std::to_string(offset + structOffset) + "(" +
+                                        baseRegister + ")"},
+                 .type = InstrType::Lea},
+           Section::Main);
+      pushRegister("%rcx");
+      return;
+    }
+    // Otherwise, we push the offset
+    DataSize size = intDataToSize(getByteSizeOfType(memberType));
+    push(Instr{.var = PushInstr{.what = std::to_string(offset + structOffset) + "(" +
+                                        baseRegister + ")",
+                                .whatSize = size},
+               .type = InstrType::Push},
+         Section::Main);
+    return; // Hopefully it works!
   }
 
 
@@ -799,30 +950,20 @@ void codegen::addressExpr(Node::Expr *expr) {
       std::get<PushInstr>(text_section.at(text_section.size() - 1).var);
   std::string whatWasPushed = instr.what;
   text_section.pop_back();
-  // check if we did this to a struct
-
-  if (realRight->kind == ND_IDENT) {
-    IdentExpr *ident = static_cast<IdentExpr *>(realRight);
-
-    // Analyze the variable table contents
-    std::string var = variableTable[ident->name];
-    // number offset
-    long long int offset = std::stoll(var.substr(0, var.find("(")));
-    long long int trueOffset = 0;
-    if (structByteSizes.find(getUnderlying(ident->asmType)) != structByteSizes.end())
-      trueOffset = offset + 8;
-    else
-      trueOffset = offset;
-
+  // Lea that and then push the effective address
+  if (whatWasPushed.find('(') == std::string::npos) {
+    // It was a pointer, so we can just push it
+    push(Instr{.var = PushInstr{.what = whatWasPushed, .whatSize = DataSize::Qword},
+               .type = InstrType::Push},
+         Section::Main);
+  } else {
+    // It was an effective address, so we can lea it
     push(Instr{.var = LeaInstr{.size = DataSize::Qword,
                                .dest = "%rcx",
-                               .src = std::to_string(trueOffset) + "(%rbp)"},
+                               .src = whatWasPushed},
                .type = InstrType::Lea},
          Section::Main);
     pushRegister("%rcx");
-    return;
-  }
-  if (realRight->kind == ND_MEMBER) {
   }
 };
 
@@ -859,10 +1000,12 @@ void codegen::assignStructMember(Node::Expr *expr) {
 
 void codegen::assignDereference(Node::Expr *expr) {
   AssignmentExpr *e = static_cast<AssignmentExpr *>(expr);
+  // im still scared
 };
 
 void codegen::assignArray(Node::Expr *expr) {
   AssignmentExpr *assign = static_cast<AssignmentExpr *>(expr);
+  // im scared
 };
 
 void codegen::openExpr(Node::Expr *expr) {

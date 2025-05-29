@@ -33,12 +33,12 @@ void TypeChecker::visitInt(Node::Expr *expr) {
     // It is signed
     return_type =
         std::make_shared<SymbolType>("int", SymbolType::Signedness::SIGNED);
-    expr->asmType = new SymbolType("$", SymbolType::Signedness::SIGNED);
+    expr->asmType = new SymbolType("int", SymbolType::Signedness::SIGNED);
   } else {
     // It is an unsigned int
     return_type =
-        std::make_shared<SymbolType>("int", SymbolType::Signedness::UNSIGNED);
-    expr->asmType = new SymbolType("$", SymbolType::Signedness::UNSIGNED);
+        std::make_shared<SymbolType>("int", SymbolType::Signedness::INFER);
+    expr->asmType = new SymbolType("int", SymbolType::Signedness::INFER);
   }
 }
 
@@ -476,7 +476,7 @@ void TypeChecker::visitArray(Node::Expr *expr) {
     return;
   }
 
-  if (at->constSize != (long long)array->elements.size()) {
+  if (at->constSize > 0 && (at->constSize != (long long)array->elements.size())) {
     std::string msg = "Array requires " + std::to_string(at->constSize) +
                       " elements but got " +
                       std::to_string(array->elements.size());
@@ -501,8 +501,8 @@ void TypeChecker::visitArray(Node::Expr *expr) {
     }
   }
 
-  return_type = std::make_shared<ArrayType>(at);
-  expr->asmType = at;
+  return_type = std::make_shared<ArrayType>(at->underlying, array->elements.size());
+  expr->asmType = createDuplicate(return_type.get());
 }
 
 void TypeChecker::visitArrayType(Node::Type *type) {

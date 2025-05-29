@@ -401,7 +401,7 @@ void codegen::handleLiteralDisplay(Node::Expr *fd, Node::Expr *arg) {
 };
 
 void codegen::handleStrDisplay(Node::Expr *fd, Node::Expr *arg) {
-  nativeFunctionsUsed[NativeASMFunc::strlen] = true;
+  nativeFunctionsUsed[NativeASMFunc::strlen_func] = true;
   visitExpr(arg);
   popToRegister("%rsi"); // String address
   // calls might mess up any variables on the stack
@@ -428,7 +428,7 @@ void codegen::handleStrDisplay(Node::Expr *fd, Node::Expr *arg) {
 }
 
 void codegen::handlePrimitiveDisplay(Node::Expr *fd, Node::Expr *arg) {
-  nativeFunctionsUsed[NativeASMFunc::strlen] = true;
+  nativeFunctionsUsed[NativeASMFunc::strlen_func] = true;
   visitExpr(arg);
   bool isSigned = static_cast<SymbolType *>(arg->asmType)->signedness ==
                   SymbolType::Signedness::SIGNED;
@@ -553,10 +553,17 @@ void codegen::pushDebug(size_t line, size_t file, long column) {
 }
 
 // A real type, not the asmType
-signed short int codegen::getByteSizeOfType(Node::Type *type) {
+long int codegen::getByteSizeOfType(Node::Type *type) {
   switch (type->kind) {
+  case ND_ARRAY_TYPE: {
+    ArrayType *a = static_cast<ArrayType *>(type);
+    if (a->constSize <= 0) {
+      // Give up
+      return 8;
+    }
+    return a->constSize * getByteSizeOfType(a->underlying);
+  }
   case ND_POINTER_TYPE:
-  case ND_ARRAY_TYPE:
   case ND_FUNCTION_TYPE:
   case ND_FUNCTION_TYPE_PARAM:
     return 8;
@@ -685,7 +692,7 @@ size_t codegen::sizeOfLEB(int64_t value) {
   return size;
 }
 
-DataSize codegen::intDataToSize(signed short int data) {
+DataSize codegen::intDataToSize(long int data) {
   switch (data) {
   case 1:
     return DataSize::Byte;
@@ -699,7 +706,7 @@ DataSize codegen::intDataToSize(signed short int data) {
   }
 };
 
-DataSize codegen::intDataToSizeFloat(signed short int data) {
+DataSize codegen::intDataToSizeFloat(long int data) {
   switch (data) {
   case 4:
   default:

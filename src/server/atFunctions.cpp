@@ -406,7 +406,40 @@ std::string lsp::getBuiltinNote(const std::string &builtin) {
            "\t@close(socketFD); # Close the socket\n"
            "}\n"
            "```";
-  } else {
+  } else
+  if (builtin == "getArgv") {
+    return "This function will return the command line arguments passed into the program.\n"
+           "It returns a *[]str, and you can access elements in it like a normal array.\n"
+           "Be careful that the first element is the relative path to the program, then the actual arguments follow.\n"
+           "Also be advised that the array is NOT null-terminated. You use argc to determine, and that's it.\n"
+           "\n"
+           "Example:\n"
+           "```zura\n"
+            "const main := fn () int! {\n"
+            "\thave args: *[]str = @getArgv(); # Get the command line arguments\n"
+            "\t@outputln(1, args[0]); # Print the first argument (the program name)\n"
+            "\treturn argc;"
+            "};\n"
+           "```";
+  } else
+  if (builtin == "getArgc") {
+    return "This function will return how many arguments (or elements) are in argv.\n"
+           "You need argc in order to determine how many elements there actually are. If you attempt to access an element that is out of bounds, you get a segmentation fault.\n"
+           "The function takes in no arguments and returns an `int!` that lists how many arguments there are.\n"
+           "Argc is always >= 1, as the first argument is the path to the program.\n"
+            "\n"
+            "Example:\n"
+            "```zura\n"
+            "const main := fn () int! {\n"
+            "\tconst argc: int! = @getArgc(); # Get the number of command line arguments\n"
+            "\t@outputln(1, argc); # Print the number of arguments\n"
+            "\thave args: *[]str = @getArgv(); # Get the command line arguments\n"  
+            "\t@outputln(1, args[0]); # Print the first argument (the program name)\n"
+            "\treturn argc; # Return the number of arguments\n"
+            "};\n"
+            "```";
+  } else
+  {
     return "";
   }
 }

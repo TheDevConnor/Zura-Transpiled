@@ -326,7 +326,7 @@ void codegen::memcpyExpr(Node::Expr *expr) {
   // Emit the memcpy instruction
   push(Instr{.var = Comment{.comment = "memcpy(dest, src, bytes)"}, .type = InstrType::Comment}, Section::Main);
   push(Instr{.var = CallInstr{.name = "native_memcpy"}, .type = InstrType::Call}, Section::Main);
-  nativeFunctionsUsed[NativeASMFunc::memcpy] = true;
+  nativeFunctionsUsed[NativeASMFunc::memcpy_func] = true;
 
   // Push the return value to the stack
   pushRegister("%rax");

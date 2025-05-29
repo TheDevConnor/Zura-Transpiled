@@ -61,6 +61,10 @@ void codegen::funcDecl(Node::Stmt *stmt) {
 
   std::string dieLabel = ".Ldie" + std::to_string(dieCount++);
   if (debug) {
+    // .cfi_sections .debug_frame
+    // That tells the assembler to put the call frame information in both the .eh_frame section and the .debug_frame section
+    // Im not sure if this is important. Gdb and lldb work off of the .eh_frame JUST fine. I am including this for completion's sake
+    pushLinker("\n.cfi_sections .debug_frame\n\t", Section::Main);
     bool isVoid = getUnderlying(s->returnType) == "void";
     if (s->params.size() > 0) {
       dwarf::useAbbrev(dwarf::DIEAbbrev::FunctionParam); // Formal parameter
@@ -182,11 +186,13 @@ void codegen::funcDecl(Node::Stmt *stmt) {
     push(Instr{.var = Label{.name = dieLabel + "_debug_start"},
                .type = InstrType::Label},
          Section::Main);
+    // Push the label addresses to the debug aranges
+    die_arange_section.push_back({dieLabel + "_debug_start", dieLabel + "_debug_end"});
   }
 
   pushLinker("\n.type " + funcName + ", @function", Section::Main);
   pushLinker("\n.globl " + funcName + "\n",
-             Section::Main); // All functions are global functions for now.
+             Section::Main); // All functions are global (public, linker viewable) functions for now.
   push(Instr{.var = Label{.name = funcName}, .type = InstrType::Label},
        Section::Main);
   // push linker directive for the debug info (the line number)
@@ -209,7 +215,7 @@ void codegen::funcDecl(Node::Stmt *stmt) {
   push(Instr{.var =
                  LinkerDirective{
                      .value =
-                         ".cfi_def_cfa_offset 16\n\t.cfi_offset 6, -16\n\t"},
+                         ".cfi_def_cfa_offset 16\n\t.cfi_offset %rbp, -16\n\t"},
              .type = InstrType::Linker},
        Section::Main);
   push(Instr{.var = MovInstr{.dest = "%rbp",
@@ -218,7 +224,7 @@ void codegen::funcDecl(Node::Stmt *stmt) {
                              .srcSize = DataSize::Qword},
              .type = InstrType::Mov},
        Section::Main);
-  push(Instr{.var = LinkerDirective{.value = ".cfi_def_cfa_register 6\n\t"},
+  push(Instr{.var = LinkerDirective{.value = ".cfi_def_cfa_register %rbp\n\t"},
              .type = InstrType::Linker},
        Section::Main);
 
@@ -277,7 +283,7 @@ void codegen::funcDecl(Node::Stmt *stmt) {
     // Push a ret anyway
     // Otherwise we SEGFAULTT
     popToRegister("%rbp");
-    pushLinker(".cfi_def_cfa 7, 8\n\t", Section::Main);
+    pushLinker(".cfi_def_cfa %rsp, 8\n\t", Section::Main);
     push(Instr{.var = Ret{.fromWhere = funcName}, .type = InstrType::Ret},
          Section::Main);
   }
@@ -327,19 +333,17 @@ void codegen::varDecl(Node::Stmt *stmt) {
       int structSize = structByteSizes[getUnderlying(s->type)].first;
       variableCount += structSize;
       variableTable.insert(
-          {s->name, std::to_string(-(variableCount)) + "(%rbp)"});
+        {s->name, std::to_string(-(variableCount - 8)) + "(%rbp)"});
     } else if (s->type->kind == ND_ARRAY_TYPE ||
                s->type->kind == ND_ARRAY_AUTO_FILL) {
       ArrayType *at = static_cast<ArrayType *>(s->type);
 
       declareArrayVariable(
-          s->expr, static_cast<ArrayType *>(s->type)->constSize,
-          s->name); // s->name so it can be inserted to variableTable, s->type
-                    // so we know the byte sizes.
+          s->expr, static_cast<ArrayType *>(s->type)->constSize);
       // Insert the variable into the table
       variableCount += (getByteSizeOfType(at->underlying) * at->constSize);
       variableTable.insert(
-          {s->name, std::to_string(-(variableCount)) + "(%rbp)"});
+          {s->name, std::to_string(-(variableCount - 8)) + "(%rbp)"});
     } else {
       visitExpr(s->expr);
       bool isFloatingType = s->type->kind == ND_SYMBOL_TYPE &&
@@ -591,7 +595,7 @@ void codegen::structDecl(Node::Stmt *stmt) {
   long size = 0;
   std::vector<StructMember> members = {};
   for (std::pair<std::string, Node::Type *> field : s->fields) {
-    short fieldSize = getByteSizeOfType(field.second);
+    long fieldSize = getByteSizeOfType(field.second);
     size += fieldSize; // Yes, even calculates the size of nested structs.
   }
   long subSize = size;
@@ -736,7 +740,7 @@ void codegen::_return(Node::Stmt *stmt) {
          Section::Main);
     handleReturnCleanup();
   } else {
-    int byteSize = getByteSizeOfType(returnStmt->expr->asmType);
+    long byteSize = getByteSizeOfType(returnStmt->expr->asmType);
     if (byteSize <= 8) {
       switch (byteSize) {
       case 1:
@@ -1040,6 +1044,68 @@ void codegen::dereferenceStructPtr(Node::Expr *expr, std::string structName,
   // see how large the struct is
   DereferenceExpr *deref = static_cast<DereferenceExpr *>(expr);
   int structSize = structByteSizes[structName].first;
+  // If the struct is <= 16, then hooray! We can skip all the complicated BS and just copy it straight up with a mov.
+  if (structSize <= 16) {
+    long structSizeRemaining = structSize;
+    long runningTotal = 0;
+    visitExpr(deref->left); // Structs are pushed as pointers because screw you
+    popToRegister("%rdi");
+    std::string registerName = "%r13";
+    while (structSizeRemaining > 0) {
+      DataSize pushSize = DataSize::Qword;
+      if (structSizeRemaining >= 8) {
+        pushSize = DataSize::Qword;
+        registerName = "%r13";
+      } else if (structSizeRemaining >= 4) {
+        pushSize = DataSize::Dword;
+        registerName = "%r13d";
+      } else if (structSizeRemaining >= 2) {
+        pushSize = DataSize::Word;
+        registerName = "%r13w";
+      } else {
+        pushSize = DataSize::Byte; 
+        registerName = "%r13b";
+      }
+      // Copy a quad word
+      structSizeRemaining -= dataSizeToInt(pushSize);
+      push(Instr{.var = MovInstr{.dest = registerName,
+                                  .src = std::to_string(runningTotal) + "(%rdi)",
+                                  .destSize = DataSize::Qword,
+                                  .srcSize = pushSize},
+                  .type = InstrType::Mov},
+            Section::Main);
+      runningTotal += dataSizeToInt(pushSize);
+      push(Instr{.var = MovInstr{.dest = std::to_string(-((long long)startOffset + (structSizeRemaining))) + "(" + offsetRegister + ")",
+                                  .src = registerName,
+                                  .destSize = DataSize::Qword,
+                                  .srcSize = pushSize},
+                  .type = InstrType::Mov},
+            Section::Main);
+      // Subtract from remaining size
+    }
+    return;
+  }
+  // It's a big boy struct! This means we have to do some actual copying from a pointer
+
+  // DO THIS LATER! IF YOU HAVE A STRUCT THIS BIG, YOU PROBABLY HAVE A PROBLEM
+}
+
+long int codegen::dataSizeToInt(DataSize size) {
+  switch (size) {
+    case DataSize::Byte:
+      return 1;
+    case DataSize::Word:
+      return 2;
+    case DataSize::Dword:
+    case DataSize::SS:
+      return 4;
+    case DataSize::Qword:
+    case DataSize::SD:
+      return 8;
+    case DataSize::None:
+    default:
+      return 0;
+  }
 }
 
 // Structname passed by the varStmt's "type" field
@@ -1065,11 +1131,11 @@ void codegen::declareStructVariable(Node::Expr *expr, std::string structName,
     if (field.second->kind == ND_ARRAY) {
       // This is an array, so we need to declare it as such
       ArrayExpr *arr = static_cast<ArrayExpr *>(field.second);
-      declareArrayVariable(arr, arr->elements.size(), field.first);
+      declareArrayVariable(arr, arr->elements.size());
       continue;
     }
 
-    unsigned short int fieldSize = getByteSizeOfType(field.second->asmType);
+    long int fieldSize = getByteSizeOfType(field.second->asmType);
     // Let's ignore other types of fields for now and only deal with normal variables
     if (fieldSize > 8) {
       // We cannot handle this yet, so we will just skip it
@@ -1081,37 +1147,12 @@ void codegen::declareStructVariable(Node::Expr *expr, std::string structName,
     // Finally! A normal field!
     visitExpr(field.second);
     long fieldOffset = -(startOffset + structByteSizes[structName].second[i].second.second);
-    switch (fieldSize) {
-      case 1: {
-        push(Instr{.var=PopInstr{
-          .where = std::to_string(fieldOffset) + "(%rbp)",
-          .whereSize = DataSize::Byte
-        }, .type = InstrType::Pop}, Section::Main);
-        break;
-      }
-      case 2: {
-        push(Instr{.var=PopInstr{
-          .where = std::to_string(fieldOffset) + "(%rbp)",
-          .whereSize = DataSize::Word
-        }, .type = InstrType::Pop}, Section::Main);
-        break;
-      }
-      case 4: {
-        push(Instr{.var=PopInstr{
-          .where = std::to_string(fieldOffset) + "(%rbp)",
-          .whereSize = DataSize::Dword
-        }, .type = InstrType::Pop}, Section::Main);
-        break;
-      }
-      default:
-      case 8: {
-        push(Instr{.var=PopInstr{
-          .where = std::to_string(fieldOffset) + "(%rbp)",
-          .whereSize = DataSize::Qword
-        }, .type = InstrType::Pop}, Section::Main);
-        break;
-      }
-    }
+    DataSize fieldSizeData = intDataToSize(fieldSize);
+    push(Instr{.var=PopInstr{
+      .where = std::to_string(fieldOffset) + "(" + offsetRegister + ")",
+      .whereSize = fieldSizeData},
+      .type = InstrType::Pop},
+    Section::Main);
   }
 }
 
@@ -1131,8 +1172,7 @@ void codegen::orderStructFields(std::unordered_map<std::string, Node::Expr *> &f
   }
 }
 
-void codegen::declareArrayVariable(Node::Expr *expr, long long arrayLength,
-                                   std::string varName) {
+void codegen::declareArrayVariable(Node::Expr *expr, long long arrayLength) {
   if (expr->kind == ND_ARRAY_AUTO_FILL) {
     // This is an implicit shorthand version of setting an array to [0, 0, 0, 0,
     // ....]
@@ -1197,15 +1237,11 @@ void codegen::declareArrayVariable(Node::Expr *expr, long long arrayLength,
           continue;
         }
       }
-      variableTable.insert(
-          {varName,
-           std::to_string(-((long long)variableCount + totalSize)) + "(%rbp)"});
       return;
     }
     // C allocates 16 bytes near the top for some reason, let's rip them off and
     // do the same Assuming the autofill is small enough, we could manually fill
     // them with 0's mov by mov
-    size_t preVarCount = (size_t)variableCount;
     variableCount = (int64_t)round((size_t)variableCount, 16);
     push(Instr{.var = MovInstr{.dest = std::to_string(
                                            -(variableCount + totalSize)) +
@@ -1262,16 +1298,37 @@ void codegen::declareArrayVariable(Node::Expr *expr, long long arrayLength,
                  Section::Main); // Repeat %rcx times to fill ptr %rdx with the
                                  // value of %rax (every 8 bytes)
     }
-    // Add the array to the variable table
-    variableTable.insert(
-        {varName, std::to_string(-(variableCount + totalSize)) + "(%rbp)"});
-    variableCount = preVarCount;
     return;
   }
   ArrayExpr *s = static_cast<ArrayExpr *>(expr);
   ArrayType *at = static_cast<ArrayType *>(s->type);
   dwarf::useType(s->type);
-  
+  // Time for the fun part!! Woohoo!
+  if (s->elements.size() == 0) return; // This means that it was defined as a placeholder. Let varDecl handle it.
+  // Go through each element of the array one by one and pop it into place.
+  // Also, arrays are backwards because fuck you
+  long offsetTotal = s->elements.size() * getByteSizeOfType(at->underlying);
+  for (long i = s->elements.size() - 1; i >= 0; i--) { // This condition is actually always true but shut up
+    // What was the type of element?
+    Node::Expr *element = s->elements[i];
+    long sizeOfType = getByteSizeOfType(element->asmType);
+    if (element->kind == ND_STRUCT) {
+      offsetTotal -= sizeOfType;
+      declareStructVariable(element, getUnderlying(element->asmType), "%rbp", variableCount + offsetTotal); // Maybe this will work, probably not though
+      continue;
+    }
+    if (element->kind == ND_ARRAY) {
+      offsetTotal -= sizeOfType;
+      declareArrayVariable(element, dynamic_cast<ArrayType *>(element->asmType)->constSize);
+      continue;
+    }
+    // Finally! The fun can begin.
+    visitExpr(element);
+    // Calculate where the hell we pop this
+    DataSize size = intDataToSize(sizeOfType);
+    offsetTotal -= sizeOfType;
+    push(Instr{.var=PopInstr{.where = std::to_string(-(offsetTotal + variableCount)) + "(%rbp)",.whereSize=size},.type=InstrType::Pop},Section::Main);
+  }
 }
 
 void codegen::inputStmt(Node::Stmt *stmt) {

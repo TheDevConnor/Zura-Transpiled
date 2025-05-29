@@ -1,49 +1,32 @@
-const SockAddrInV4 := struct {
-  family: short!,
-  port: short!,
-  addr: int!,
-  zero: int!
-};
-
+# This actually runs! Haha!
 const main := fn () int! {
-  # Create a socket
-  have socket: int! = @socket(2, 1, 0); # AF_INET, SOCK_STREAM, 
-  # AF_INET means listen to the general internet with IP v4
-  # SOCK_STREAM basically means TCP, which is "sequences, reliable, two-way, connection-based byte streams" according to man
-  # 0 is for the protocol. each socket type has a different protocol, but 0 means assume the default one for this type
-  # because AF_INET only has like 1 or 2 possible protocols, using 0 is probably best
-  if (socket < 0) {
-    @outputln(1, "Failed to create socket :(");
-    return 1;
+  have bytes: [256]char! = [0]; # Auto-fill array: fill with zeroes
+  @input(0, bytes, 256); # Read from the console (1) and place (256) bytes into (bytes)
+  loop (i = 0; i < 256) : (i++) {
+    if (bytes[i] == 0) break;
+    @outputln(0, @cast<int!>(bytes[i])); # Print the number version of the character located there
   }
-
-  # Bind
-  have addrIn: SockAddrInV4 = {
-    family: 2, # AF_INET... again for some reason
-    port: 36895, # 0x901f, which is htons(8080) (HTONS is Host TO Network Short, which converts the port into what the network expects, which is BIG ENDIAN!!)
-    addr: 0, # INADDR_ANY (which means, LET EVERYONE IN!!!)
-    zero: 0, # padding becasue linux is stupid (jk ily torvalds)
-  };
-  have bindResult: int! = @bind(socket, &addrIn, @sizeof(addrIn));
-  if (bindResult < 0) {
-    @outputln(1, "Failed to bind socket :(");
-    return 1;
-  }
-  # Listen
-  have listenResult: int! = @listen(socket, 5); # 5 is the backlog
-  if (listenResult < 0) {
-    @outputln(1, "Failed to listen on socket :(");
-    return 1;
-  }
-  # Accept
-  have clientFd: int! = @accept(socket, nil, 0);
-  if (clientFd < 0) {
-    @outputln(1, "Failed to accept connection :(");
-    return 1;
-  }
-
-  @close(clientFd);
-  @close(socket); # Close the listening socket, we don't need it anymore
-  @outputln(1, "Successfully accepted a connection :)");
   return 0;
-};
+}; # build for release :sob:
+
+# const LigmaStruct := struct {
+#   a: int!,
+#   b: int!,
+#   # c: int!
+# };
+
+# const main := fn () int! {
+#   # struct member and deref test
+#   have s: LigmaStruct = {
+#     a: 123,
+#     b: 234,
+#     # c: 345
+#   };
+
+#   have sPtr: *LigmaStruct = &s; # Lea of 's'
+#   have sDeref: LigmaStruct = sPtr&; # Move each lea'd byte of 's' into the new allocated memory :)
+#   @outputln(0, sDeref.a); # Should print 123
+#   @outputln(0, sDeref.b); # Should print 234
+#   # @outputln(0, sDeref.c);
+#   return 0;
+# }

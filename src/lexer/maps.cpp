@@ -203,11 +203,10 @@ void Lexer::initMap() {
 }
 
 const char *Lexer::tokenToString(TokenKind kind) {
-  std::unordered_map<TokenKind, const char *>::iterator it =
-      tokenToStringMap.find(kind);
-  if (it != tokenToStringMap.end())
-    return it->second;
-  return "Unknown";
+  if (!tokenToStringMap.contains(kind)) {
+    return "UNKNOWN";
+  }
+  return tokenToStringMap.at(kind);
 }
 
 TokenKind Lexer::checkIdentMap(std::string identifier) {

@@ -111,7 +111,7 @@ void codegen::gen(Node::Stmt *stmt, bool isSaved, std::string output_filename,
   }
   file << Stringifier::stringifyInstrs(text_section);
   if (nativeFunctionsUsed.size() > 0) file << "\n# zura functions\n";
-  if (nativeFunctionsUsed[NativeASMFunc::strlen] == true) {
+  if (nativeFunctionsUsed[NativeASMFunc::strlen_func] == true) {
     file << ".type native_strlen, @function"
             "\nnative_strlen:"
             "\n  #input in rdi"
@@ -201,7 +201,7 @@ void codegen::gen(Node::Stmt *stmt, bool isSaved, std::string output_filename,
             "\n"
             ".size native_itoa, .-native_itoa\n";
   }
-  if (nativeFunctionsUsed[NativeASMFunc::memcpy] == true) {
+  if (nativeFunctionsUsed[NativeASMFunc::memcpy_func] == true) {
     file << ".type native_memcpy, @function\n"
           "native_memcpy:"
           "\n    # rdi = dest, rsi = src, rdx = bytes"
@@ -261,7 +261,7 @@ void codegen::gen(Node::Stmt *stmt, bool isSaved, std::string output_filename,
             "\n.byte 0x1" // Unit-type DW_UT_compile
             "\n.byte 0x8" // 8-bytes registers (64-bit os)
             "\n.long .Ldebug_abbrev"
-            "\n"
+            "\n.Lcu_start:"
             "\n.uleb128 " + std::to_string((int)dwarf::DIEAbbrev::CompileUnit) + // Compilation unit name
             "\n.long .Ldebug_producer_string - .Ldebug_str_start" // Producer - command or program that created this stinky assembly code
             "\n.short 0x8042" // Custom Language (ZU) - not standardized in DWARF so we're allowed ot use it for "custom" purposes
@@ -269,7 +269,7 @@ void codegen::gen(Node::Stmt *stmt, bool isSaved, std::string output_filename,
             "\n.long .Ldebug_file_dir - .Ldebug_line_str_start" // Filepath
             "\n.quad .Ltext0" // Low PC (beginning of .text)
             "\n.quad .Ldebug_text0 - .Ltext0" // High PC (end of .text)
-            "\n.long .Ldebug_line0"
+            "\n.long .Ldebug_line0-.debug_line"
             "\n";
     // Attributes or whatever that follow
     file << Stringifier::stringifyInstrs(die_section) << "\n";
@@ -284,13 +284,30 @@ void codegen::gen(Node::Stmt *stmt, bool isSaved, std::string output_filename,
     dwarf::useAbbrev(dwarf::DIEAbbrev::CompileUnit); // required
     file << dwarf::generateAbbreviations();
     
-    // I dont think the debug_aranges section is totally required
-    // so im not wasting brainpower on it
+    // The debug_aranges section is used for lookup (or so i've heard)
+    // Thanks, ChatGPT!! <3
+    file << ".section .debug_aranges,\"\",@progbits\n"
+            ".Laranges_start:\n"
+            ".long .Laranges_end-.Laranges_start-4\n" // -4 because we are excluding this very own .long
+            ".short 2\n" // DWARF version 2
+            ".long .Lcu_start-.debug_info\n" // DWARF info section
+            ".byte 8\n" // 8-byte address size (which means we are 64-bit system)
+            ".byte 0\n" // No segment selector (we don't use segments in x86_64)
+            ".align 8\n";
+    // list of functions and stuff
+    for (auto &func : die_arange_section) {
+      file << ".quad " << func.first << "\n"; // function address
+      file << ".quad " << func.second << " - " + func.first + "\n"; // function size
+    }
 
+      
+    file << ".quad 0\n.quad 0\n.Laranges_end:\n"; // terminator (means we are done)
     // debug_line
+    // even though it is populated automatically, we still need to emit this for a label
     file << ".section .debug_line,\"\",@progbits\n";
     file << ".Ldebug_line0:\n";
-    // TODO
+    // Do later
+
     // debug_str
     file << ".section .debug_str,\"MS\",@progbits,1\n"
             ".Ldebug_str_start:\n"
