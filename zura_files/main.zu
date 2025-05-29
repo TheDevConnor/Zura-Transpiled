@@ -3,9 +3,9 @@ const main := fn () int! {
   have bytes: *char = @cast<*char>(@alloc(256));
   @input(0, bytes, 256); # read into that thing yummy yum
   loop (i = 0; i < 256) : (i++) {
-    if (bytes[i] == 0) break; # get out
+    if (bytes[i] == 0) break;
 
-    @output(1, @cast<int!>(bytes[i]));
+    @output(1, @cast<int!>(bytes[i]), "; ");
   }
   @free(bytes, 256);
   bytes = nil;

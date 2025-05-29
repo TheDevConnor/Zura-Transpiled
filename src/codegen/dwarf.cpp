@@ -338,8 +338,8 @@ void codegen::dwarf::useType(Node::Type *type) {
     push(Instr{.var = Label{.name = ".L" + dieName + "_debug_type"}, .type = InstrType::Label}, Section::DIETypes);
     pushLinker(".uleb128 " + std::to_string((int)DIEAbbrev::PointerType) +
                "\n.byte 8 # AT_byte_size (all pointers are 8 bytes)"
-               "\n.long .L" + underlyingName + "_string # FORM_strp"
-               "\n.long .L" + underlyingName + "_debug_type # FORM_ref4"
+               "\n.long .L" + dieName + "_string # FORM_strp"
+               "\n.long .L" + dieName + "_debug_type # FORM_ref4"
                , Section::DIETypes);
   } else if (type->kind == NodeKind::ND_ARRAY_TYPE) {
     // Create an ArrayType
