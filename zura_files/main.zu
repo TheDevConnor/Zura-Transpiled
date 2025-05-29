@@ -1,13 +1,16 @@
 # This actually runs! Haha!
 const main := fn () int! {
-  have bytes: [256]char! = [0]; # Auto-fill array: fill with zeroes
-  @input(0, bytes, 256); # Read from the console (1) and place (256) bytes into (bytes)
+  have bytes: *char = @cast<*char>(@alloc(256));
+  @input(0, bytes, 256); # read into that thing yummy yum
   loop (i = 0; i < 256) : (i++) {
-    if (bytes[i] == 0) break;
-    @outputln(0, @cast<int!>(bytes[i])); # Print the number version of the character located there
+    if (bytes[i] == 0) break; # get out
+
+    @output(1, @cast<int!>(bytes[i]));
   }
+  @free(bytes, 256);
+  bytes = nil;
   return 0;
-}; # build for release :sob:
+};
 
 # const LigmaStruct := struct {
 #   a: int!,

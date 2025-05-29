@@ -748,7 +748,17 @@ void codegen::arrayElem(Node::Expr *expr) {
   // If not, then we will collectively cry.
   std::string expression = ""; // Depending on if the element is a struct or array, or a normal value, this will be lea'd
   Node::Expr *optimizedRhs = CompileOptimizer::optimizeExpr(e->rhs);
-  long elementByteSize = getByteSizeOfType(dynamic_cast<ArrayType *>(e->lhs->asmType)->underlying);
+  long elementByteSize = 0;
+  dwarf::useType(e->lhs->asmType);
+  if (e->lhs->asmType->kind == ND_ARRAY_TYPE) {
+    elementByteSize = getByteSizeOfType(dynamic_cast<ArrayType *>(e->lhs->asmType)->underlying);
+  }
+  if (e->lhs->asmType->kind == ND_POINTER_TYPE) {
+    if (getUnderlying(e->lhs->asmType) == "char") {
+      // yeah its ok go ahead
+      elementByteSize = 1; // char is 1 byte
+    }
+  }
   if (optimizedRhs->kind == ND_INT) {
     // We can optimize! Hurray!
     // Calculate the (index * size) inline, at comptime, so

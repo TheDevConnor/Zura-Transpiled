@@ -523,8 +523,19 @@ void TypeChecker::visitIndex(Node::Expr *expr) {
   // search for '[]' in the lhs type and 'int' in the rhs type
   std::string lhsStr = type_to_string(lhsType);
   std::string rhsStr = type_to_string(rhsType);
-
-  if (lhsType->kind != ND_ARRAY_TYPE) {
+  bool doError = true;
+  if (lhsType->kind == ND_ARRAY_TYPE) doError = false;
+  if (lhsType->kind == ND_POINTER_TYPE) {
+    // If the lhs is a pointer, we can dereference it to get the underlying type
+    Node::Type *underlying = dynamic_cast<PointerType *>(lhsType)->underlying;
+    if (underlying->kind == ND_ARRAY_TYPE) doError = false;
+    if (underlying->kind == ND_SYMBOL_TYPE) {
+      if (type_to_string(underlying) == "char" || type_to_string(underlying) == "str") {
+        doError = false;
+      }
+    }
+  }
+  if (doError) {
     std::string msg =
         "Indexing requires the left hand side to be an array but got '" +
         lhsStr + "'";
