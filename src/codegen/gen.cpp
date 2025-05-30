@@ -261,7 +261,7 @@ void codegen::gen(Node::Stmt *stmt, bool isSaved, std::string output_filename,
             "\n.byte 0x1" // Unit-type DW_UT_compile
             "\n.byte 0x8" // 8-bytes registers (64-bit os)
             "\n.long .Ldebug_abbrev"
-            "\n.Lcu_start:"
+            "\n.Lcu_info:"
             "\n.uleb128 " + std::to_string((int)dwarf::DIEAbbrev::CompileUnit) + // Compilation unit name
             "\n.long .Ldebug_producer_string - .Ldebug_str_start" // Producer - command or program that created this stinky assembly code
             "\n.short 0x8042" // Custom Language (ZU) - not standardized in DWARF so we're allowed ot use it for "custom" purposes
@@ -284,30 +284,25 @@ void codegen::gen(Node::Stmt *stmt, bool isSaved, std::string output_filename,
     dwarf::useAbbrev(dwarf::DIEAbbrev::CompileUnit); // required
     file << dwarf::generateAbbreviations();
     
-    // The debug_aranges section is used for lookup (or so i've heard)
-    // Thanks, ChatGPT!! <3
+    // I wanan die right now guys
+    // debug_aranges
     file << ".section .debug_aranges,\"\",@progbits\n"
-            ".Laranges_start:\n"
-            ".long .Laranges_end-.Laranges_start-4\n" // -4 because we are excluding this very own .long
-            ".short 2\n" // DWARF version 2
-            ".long .Lcu_start-.debug_info\n" // DWARF info section
-            ".byte 8\n" // 8-byte address size (which means we are 64-bit system)
-            ".byte 0\n" // No segment selector (we don't use segments in x86_64)
-            ".align 8\n";
-    // list of functions and stuff
+            ".Ldebug_aranges0:\n"
+            ".long .Laranges_end - .Ldebug_aranges0 - 4\n" // subtract 4 becasue the long is here
+            ".short 2\n" // DWARF version 2 (aranges is no longer used in 5, it is replaced by debug_something idk)
+            ".long .Lcu_info - .debug_info\n" // Offset of the compilation unit within the debug_info section
+            ".byte 8\n" // 64-bits, 8 bytes poitners
+            ".byte 0\n" // "Flat memoery model" thanks chatgpt
+            ".align 8\n"; // padding
     for (auto &func : die_arange_section) {
-      file << ".quad " << func.first << "\n"; // function address
-      file << ".quad " << func.second << " - " + func.first + "\n"; // function size
+      file << ".quad " << func.first << "\n"; // Function address
+      file << ".quad " << func.second << "-" + func.first + "\n"; // Function size
     }
 
-      
-    file << ".quad 0\n.quad 0\n.Laranges_end:\n"; // terminator (means we are done)
+    file << ".quad 0\n.quad 0\n.Laranges_end:\n"; // Terminate the debug aranges section since we only have 1 CU
     // debug_line
-    // even though it is populated automatically, we still need to emit this for a label
     file << ".section .debug_line,\"\",@progbits\n";
-    file << ".Ldebug_line0:\n";
-    // Do later
-
+    file << ".Ldebug_line0:\n"; // This is all we need. GCC will fill in with the .loc's, but we need this label here because of the CU DIE.
     // debug_str
     file << ".section .debug_str,\"MS\",@progbits,1\n"
             ".Ldebug_str_start:\n"

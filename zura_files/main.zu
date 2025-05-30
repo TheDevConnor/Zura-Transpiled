@@ -1,35 +1,39 @@
 # This actually runs! Haha!
-const main := fn () int! {
-  have bytes: *char = @cast<*char>(@alloc(256));
-  @input(0, bytes, 256); # read into that thing yummy yum
-  loop (i = 0; i < 256) : (i++) {
-    if (bytes[i] == 0) break;
+# const main := fn () int! {
+#   have bytes: *char = @cast<*char>(@alloc(256));
+#   @input(0, bytes, 256); # read into that thing yummy yum
+#   loop (i = 0; i < 256) : (i++) {
+#     if (bytes[i] == 0) break;
 
-    @output(1, @cast<int!>(bytes[i]), "; ");
-  }
-  @free(bytes, 256);
-  bytes = nil;
-  return 0;
-};
-
-# const LigmaStruct := struct {
-#   a: int!,
-#   b: int!,
-#   # c: int!
+#     @output(1, @cast<int!>(bytes[i]), "; ");
+#   }
+#   @free(bytes, 256);
+#   bytes = nil;
+#   return 0; # i dont think it works ...
 # };
 
-# const main := fn () int! {
-#   # struct member and deref test
-#   have s: LigmaStruct = {
-#     a: 123,
-#     b: 234,
-#     # c: 345
-#   };
+const LigmaStruct := struct {
+  a: int!,
+  b: int!,
+  # c: int!
+};
 
-#   have sPtr: *LigmaStruct = &s; # Lea of 's'
-#   have sDeref: LigmaStruct = sPtr&; # Move each lea'd byte of 's' into the new allocated memory :)
-#   @outputln(0, sDeref.a); # Should print 123
-#   @outputln(0, sDeref.b); # Should print 234
-#   # @outputln(0, sDeref.c);
+const main := fn () int! {
+  # struct member and deref test
+  have s: LigmaStruct = {
+    a: 123,
+    b: 234,
+    # c: 345
+  };
+
+  have sPtr: *LigmaStruct = &s; # Lea of 's'
+  have sDeref: LigmaStruct = sPtr&; # Move each lea'd byte of 's' into the new allocated memory :)
+  # @outputln(0, sDeref.a); # Should print 123
+  # @outputln(0, sDeref.b); # Should print 234
+  # @outputln(0, sDeref.c);
+  return sDeref.a;
+};
+
+# const main := fn () int! {
 #   return 0;
-# }
+# };

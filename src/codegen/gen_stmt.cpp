@@ -598,18 +598,18 @@ void codegen::structDecl(Node::Stmt *stmt) {
     long fieldSize = getByteSizeOfType(field.second);
     size += fieldSize; // Yes, even calculates the size of nested structs.
   }
-  long subSize = size;
+  long subSize = 0;
   // Calculate size by adding the size of members
-  for (long i = 0; i < (signed)s->fields.size(); i++) {
+  for (size_t i = 0; i < s->fields.size(); i++) {
     // Turn into offsets
     // For example: { short, int } -> { 2, 0 }
     // For example: { int, short, int } -> { 6, 2, 0 }
 
     // In both cases, the last element is stored at 0
-    long offset = subSize - getByteSizeOfType(s->fields.back().second);
+    long offset = subSize;// + getByteSizeOfType(s->fields.back().second);
     members.push_back(
         {s->fields.at(i).first, {s->fields.at(i).second, offset}});
-    subSize -= getByteSizeOfType(s->fields.at(i).second);
+    subSize += getByteSizeOfType(s->fields.at(i).second);
   }
   structByteSizes.insert({s->name, {size, members}});
 
@@ -1121,7 +1121,7 @@ void codegen::declareStructVariable(Node::Expr *expr, std::string structName,
   std::vector<std::pair<std::string, Node::Expr *>> orderedFields = {};
   orderStructFields(s->values, structName, &orderedFields);
   // Now we can actually get to the fun part, where we evaluate each member
-  for (size_t i = 0; i < orderedFields.size(); i++) {
+  for (long i = (signed)orderedFields.size() - 1; i >= 0; i--) {
     std::pair<std::string, Node::Expr *> &field = orderedFields[i];
     if (field.second->kind == ND_STRUCT) {
       declareStructVariable(field.second, getUnderlying(field.second->asmType), offsetRegister, startOffset + structByteSizes[structName].second[i].second.second);
