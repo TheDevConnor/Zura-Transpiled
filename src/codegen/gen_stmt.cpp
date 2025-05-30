@@ -325,7 +325,8 @@ void codegen::varDecl(Node::Stmt *stmt) {
     // It might be a pointer to struct declaration, but the underlyingType func
     // makes it seem like a normal one instead.
     if (s->type->kind == ND_SYMBOL_TYPE &&
-        structByteSizes.find(getUnderlying(s->type)) != structByteSizes.end()) {
+        structByteSizes.contains(getUnderlying(s->type)) && 
+        s->expr->kind == ND_STRUCT) {
       // It's of type struct!
       // Basically ignore the part where we allocate memory for this thing.
       declareStructVariable(s->expr, getUnderlying(s->type), "%rbp",
@@ -352,11 +353,16 @@ void codegen::varDecl(Node::Stmt *stmt) {
       DataSize size = isFloatingType
                           ? intDataToSizeFloat(getByteSizeOfType(s->type))
                           : intDataToSize(getByteSizeOfType(s->type));
-      push(Instr{.var = PopInstr{.where = where, .whereSize = size},
-                 .type = InstrType::Pop},
-           Section::Main); // For values small enough to fit in a register.
-      variableTable.insert({s->name, where});
-      variableCount += getByteSizeOfType(s->type);
+      // If it was a call expression, and it returned a struct, DONT DO THIS
+      if (s->expr->kind == ND_CALL && structByteSizes.contains(getUnderlying(s->type)) && getByteSizeOfType(s->type) > 8) {
+        variableTable.insert({s->name, std::to_string(-variableCount + 8) + "(%rbp)"});
+      } else {
+        push(Instr{.var = PopInstr{.where = where, .whereSize = size},
+          .type = InstrType::Pop},
+             Section::Main); // For values small enough to fit in a register.
+        variableTable.insert({s->name, where});
+        variableCount += getByteSizeOfType(s->type);
+      }
     }
   } else {
     variableTable.insert({s->name, where}); // Insert into table
@@ -695,10 +701,10 @@ void codegen::_return(Node::Stmt *stmt) {
     }
   }
   // Generate return value for the function
-  codegen::visitExpr(returnStmt->expr);
   if (isEntryPoint) {
     // Depending on the size of the return value, we have to use the right kind
     // of pop size
+    visitExpr(returnStmt->expr);
     switch (getByteSizeOfType(returnStmt->expr->asmType)) {
     case 1:
       push(Instr{.var = PopInstr{.where = "%dil", .whereSize = DataSize::Byte},
@@ -728,6 +734,7 @@ void codegen::_return(Node::Stmt *stmt) {
   if (returnStmt->expr->asmType->kind == ND_POINTER_TYPE ||
       returnStmt->expr->asmType->kind == ND_FUNCTION_TYPE ||
       returnStmt->expr->asmType->kind == ND_FUNCTION_TYPE_PARAM) {
+    visitExpr(returnStmt->expr);
     popToRegister("%rax"); // rax is fine in this case- it is ALWAYS 8 bytes
     handleReturnCleanup();
     return;
@@ -735,13 +742,27 @@ void codegen::_return(Node::Stmt *stmt) {
   // Probably a symbol type!
   SymbolType *st = static_cast<SymbolType *>(returnStmt->expr->asmType);
   if (st->name == "float" || st->name == "double") {
-    push(Instr{.var = PopInstr{.where = "%xmm0", .whereSize = DataSize::SS},
+    visitExpr(returnStmt->expr);
+    push(Instr{.var = PopInstr{.where = "%xmm0", .whereSize = intDataToSizeFloat(getByteSizeOfType(st))},
                .type = InstrType::Pop},
          Section::Main);
     handleReturnCleanup();
   } else {
     long byteSize = getByteSizeOfType(returnStmt->expr->asmType);
     if (byteSize <= 8) {
+      if (returnStmt->expr->kind == ND_STRUCT) {
+        // a struct literal. we will put this into a temporary variable
+        // then push the temporary variable.
+        declareStructVariable(returnStmt->expr, st->name, "%rbp",
+                              variableCount);
+        push(Instr{.var=PushInstr{
+                    .what = std::to_string(-(variableCount)) + "(%rbp)",
+                    .whatSize = intDataToSize(byteSize),},
+                    .type = InstrType::Push},
+              Section::Main);
+      } else {
+        visitExpr(returnStmt->expr);
+      }
       switch (byteSize) {
       case 1:
         push(Instr{.var = PopInstr{.where = "%al", .whereSize = DataSize::Byte},
@@ -771,6 +792,37 @@ void codegen::_return(Node::Stmt *stmt) {
       return;
     }
     // TODO: Return things LARGER than 8 bytes!
+    // If a struct:
+    bool isStruct = structByteSizes.contains(st->name);
+    if (isStruct) {
+      if (byteSize <= 16) {
+        // Return the two halves into the second register
+        // Are we returning a literal?
+        if (returnStmt->expr->kind == ND_STRUCT) {
+          // Declare the struct as a variable-- put it into a temporary place of memory
+          // then return it
+          declareStructVariable(returnStmt->expr, st->name, "%rbp", variableCount);
+          // We already know that it is greater than 8 bytes large, so we will automatically
+          // put its fields into %rax and %rdi (%RAX = bottom half)
+
+          push(Instr{.var = MovInstr{.dest = "%rdi",
+                                     .src = std::to_string(-(variableCount)) + "(%rbp)",
+                                     .destSize = DataSize::Qword,
+                                     .srcSize = DataSize::Qword},
+                     .type = InstrType::Mov},
+               Section::Main);
+          variableCount += 8;
+          push(Instr{.var = MovInstr{.dest = "%rax",
+                                     .src = std::to_string(-variableCount) + "(%rbp)",
+                                     .destSize = DataSize::Qword,
+                                     .srcSize = DataSize::Qword},
+                     .type = InstrType::Mov},
+                Section::Main);
+          return;
+        }
+        visitExpr(returnStmt->expr);
+      }
+    }
   }
 }
 

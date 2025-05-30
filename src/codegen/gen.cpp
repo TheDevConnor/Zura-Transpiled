@@ -253,6 +253,7 @@ void codegen::gen(Node::Stmt *stmt, bool isSaved, std::string output_filename,
   // DWARF debug yayy
   if (debug) {
     // Debug symbols should be included
+    file << "# DEBUG INFORMATION: use readelf --debug-dump=i to print the actual information stored here\n";
 	  file << ".section	.debug_info,\"\",@progbits\n\t";
     file << "\n.long .Ldebug_end - .Ldebug_info" // Length of the debug info header 
             "\n.Ldebug_info:" // NOTE: ^^^^ This long tag right here requires the EXCLUSION of those 4 bytes there
@@ -264,7 +265,7 @@ void codegen::gen(Node::Stmt *stmt, bool isSaved, std::string output_filename,
             "\n.Lcu_info:"
             "\n.uleb128 " + std::to_string((int)dwarf::DIEAbbrev::CompileUnit) + // Compilation unit name
             "\n.long .Ldebug_producer_string - .Ldebug_str_start" // Producer - command or program that created this stinky assembly code
-            "\n.short 0x8042" // Custom Language (ZU) - not standardized in DWARF so we're allowed ot use it for "custom" purposes
+            "\n.short 0x8042" // Custom langauges start at 0x8000. Since we are not asking DWARF to be placed into their standards, we will be 0x8042.
             "\n.long .Ldebug_file_string - .Ldebug_line_str_start" // Filename
             "\n.long .Ldebug_file_dir - .Ldebug_line_str_start" // Filepath
             "\n.quad .Ltext0" // Low PC (beginning of .text)
@@ -279,6 +280,7 @@ void codegen::gen(Node::Stmt *stmt, bool isSaved, std::string output_filename,
     // then they are not visible to other CU's (other files)
     file << ".byte 0\n"; // End of compile unit's children -- THIS ACTUALLY NEEDS TO GO HERE!
     file << ".Ldebug_end:\n";
+    file << "# DEBUG ABBREVIATIONS: use readelf --debug-dump=a to print the actual information stored here\n";
     file << ".section .debug_abbrev,\"\",@progbits\n";
     file << ".Ldebug_abbrev:\n";
     dwarf::useAbbrev(dwarf::DIEAbbrev::CompileUnit); // required
@@ -286,6 +288,8 @@ void codegen::gen(Node::Stmt *stmt, bool isSaved, std::string output_filename,
     
     // I wanan die right now guys
     // debug_aranges
+    file << "# DEBUG ARANGES: use readelf --debug-dump=aranges to print the actual information stored here\n";
+    file << "# dwarf 5 technically doesn't use this section anymore, it has been replaced by debug_rnglists but we use it because that's too new and gdb doesn't care.\n";
     file << ".section .debug_aranges,\"\",@progbits\n"
             ".Ldebug_aranges0:\n"
             ".long .Laranges_end - .Ldebug_aranges0 - 4\n" // subtract 4 becasue the long is here
@@ -301,9 +305,12 @@ void codegen::gen(Node::Stmt *stmt, bool isSaved, std::string output_filename,
 
     file << ".quad 0\n.quad 0\n.Laranges_end:\n"; // Terminate the debug aranges section since we only have 1 CU
     // debug_line
+    file << "# DEBUG LINE: use readelf --debug-dump=line to print the actual information stored here\n";
+    file << "# or, you know, look at the .loc directives all throughout the file\n";
     file << ".section .debug_line,\"\",@progbits\n";
     file << ".Ldebug_line0:\n"; // This is all we need. GCC will fill in with the .loc's, but we need this label here because of the CU DIE.
     // debug_str
+    file << "# DEBUG STRINGS: it's like a rodata section, but for strings only visible to DWARF\n";
     file << ".section .debug_str,\"MS\",@progbits,1\n"
             ".Ldebug_str_start:\n"
             ".Ldebug_producer_string: .string \"Zura compiler " + ZuraVersion + "\"\n";
@@ -312,6 +319,7 @@ void codegen::gen(Node::Stmt *stmt, bool isSaved, std::string output_filename,
     std::string fileRelPath = static_cast<ProgramStmt *>(stmt)->inputPath;
     std::string fileName = fileRelPath.substr(fileRelPath.find_last_of("/") + 1);
     std::string fileDir = fileRelPath.substr(0, fileRelPath.find_last_of("/"));
+    file << "# DEBUG LINE STRINGS: similar to debug_str, but lists information about the files and their structures\n";
     file << ".section .debug_line_str,\"MS\",@progbits,1\n"
             ".Ldebug_line_str_start:\n"
             ".Ldebug_file_string: .string \"" << fileName << "\"\n"

@@ -535,43 +535,65 @@ void codegen::call(Node::Expr *expr) {
       SymbolType *st = static_cast<SymbolType *>(e->asmType);
       if (st->name == "float" || st->name == "double") {
         push(
-            Instr{.var = PushInstr{.what = "%xmm0", .whatSize = DataSize::SS},
+            Instr{.var = PushInstr{.what = "%xmm0", .whatSize = intDataToSizeFloat(getByteSizeOfType(st))},
                   .type = InstrType::Push},
             Section::Main);  // abi standard (can hold many bytes of data, so its
                              // fine for both floats AND doubles to fit in here)
       } else if (structByteSizes.find(st->name) != structByteSizes.end()) {
-        // TODO: No! This is really wrong!!!!
-        pushRegister("%rax");  // When tossing this thing around, its handled
-                               // basically as a pointer
-      } else {
-        // switch over the byte size of return type
-        switch (getByteSizeOfType(e->asmType)) {
-          case 1:
-            push(
-                Instr{.var = PushInstr{.what = "%al", .whatSize = DataSize::Byte},
-                      .type = InstrType::Push},
-                Section::Main);
-            break;
-          case 2:
-            push(
-                Instr{.var = PushInstr{.what = "%ax", .whatSize = DataSize::Word},
-                      .type = InstrType::Push},
-                Section::Main);
-            break;
-          case 4:
-            push(Instr{.var =
-                           PushInstr{.what = "%eax", .whatSize = DataSize::Dword},
-                       .type = InstrType::Push},
-                 Section::Main);
-            break;
-          case 8:
-          default:
-            push(Instr{.var =
-                           PushInstr{.what = "%rax", .whatSize = DataSize::Qword},
-                       .type = InstrType::Push},
-                 Section::Main);
-            break;
+        if (structByteSizes[st->name].first > 16) {
+          pushRegister("%rax"); // big boy struct
+          return;
         }
+        // We will put this into a temporary variable
+        if (structByteSizes[st->name].first > 8 && 
+            structByteSizes[st->name].first <= 16) {
+          // Put into the variable
+          push(Instr{.var = MovInstr{.dest = "-" + std::to_string(variableCount) + "(%rbp)", .src = "%rdi",
+                                     .destSize = DataSize::Qword,
+                                     .srcSize = DataSize::Qword},
+                     .type = InstrType::Mov},
+               Section::Main);
+          variableCount += 8;
+          push(Instr{.var = MovInstr{.dest = "-" + std::to_string(variableCount) + "(%rbp)", .src = "%rax",
+                                    .destSize = DataSize::Qword,
+                                    .srcSize = DataSize::Qword},
+                    .type = InstrType::Mov},
+              Section::Main);
+          variableCount += 8;
+          return;
+        }
+        // What if it was greater than 16? I have no idea!
+        if (structByteSizes[st->name].first > 16) {
+          return;
+        }
+      }
+      // switch over the byte size of return type
+      switch (getByteSizeOfType(e->asmType)) {
+        case 1:
+          push(
+              Instr{.var = PushInstr{.what = "%al", .whatSize = DataSize::Byte},
+                    .type = InstrType::Push},
+              Section::Main);
+          break;
+        case 2:
+          push(
+              Instr{.var = PushInstr{.what = "%ax", .whatSize = DataSize::Word},
+                    .type = InstrType::Push},
+              Section::Main);
+          break;
+        case 4:
+          push(Instr{.var =
+                          PushInstr{.what = "%eax", .whatSize = DataSize::Dword},
+                      .type = InstrType::Push},
+                Section::Main);
+          break;
+        case 8:
+        default:
+          push(Instr{.var =
+                          PushInstr{.what = "%rax", .whatSize = DataSize::Qword},
+                      .type = InstrType::Push},
+                Section::Main);
+          break;
       }
     }
   } else if (e->callee->kind == ND_MEMBER) {
@@ -631,43 +653,64 @@ void codegen::call(Node::Expr *expr) {
       SymbolType *st = static_cast<SymbolType *>(e->asmType);
       if (st->name == "float" || st->name == "double") {
         push(
-            Instr{.var = PushInstr{.what = "%xmm0", .whatSize = DataSize::SS},
+            Instr{.var = PushInstr{.what = "%xmm0", .whatSize = intDataToSizeFloat(getByteSizeOfType(st))},
                   .type = InstrType::Push},
             Section::Main);  // abi standard (can hold many bytes of data, so its
                              // fine for both floats AND doubles to fit in here)
       } else if (structByteSizes.find(st->name) != structByteSizes.end()) {
         // TODO: No! This is really wrong!!!!
-        pushRegister("%rax");  // When tossing this thing around, its handled
-                               // basically as a pointer
-      } else {
-        // switch over the byte size of return type
-        switch (getByteSizeOfType(e->asmType)) {
-          case 1:
-            push(
-                Instr{.var = PushInstr{.what = "%al", .whatSize = DataSize::Byte},
-                      .type = InstrType::Push},
-                Section::Main);
-            break;
-          case 2:
-            push(
-                Instr{.var = PushInstr{.what = "%ax", .whatSize = DataSize::Word},
-                      .type = InstrType::Push},
-                Section::Main);
-            break;
-          case 4:
-            push(Instr{.var =
-                           PushInstr{.what = "%eax", .whatSize = DataSize::Dword},
-                       .type = InstrType::Push},
-                 Section::Main);
-            break;
-          case 8:
-          default:
-            push(Instr{.var =
-                           PushInstr{.what = "%rax", .whatSize = DataSize::Qword},
-                       .type = InstrType::Push},
-                 Section::Main);
-            break;
+        if (structByteSizes[st->name].first > 16) {
+          pushRegister("%rax");
+          return;
         }
+        if (structByteSizes[st->name].first > 8 && 
+            structByteSizes[st->name].first <= 16) {
+          // Put into the variable
+          push(Instr{.var = MovInstr{.dest = "-" + std::to_string(variableCount) + "(%rbp)", .src = "%rax",
+                                     .destSize = DataSize::Qword,
+                                     .srcSize = DataSize::Qword},
+                     .type = InstrType::Mov},
+               Section::Main);
+          variableCount += 8;
+          push(Instr{.var = MovInstr{.dest = "-" + std::to_string(variableCount) + "(%rbp)", .src = "%rdi",
+                                    .destSize = DataSize::Qword,
+                                    .srcSize = DataSize::Qword},
+                    .type = InstrType::Mov},
+              Section::Main);
+          return;
+        }
+        // What if it was greater than 16? I have no idea!
+        if (structByteSizes[st->name].first > 16) {
+          return;
+        }
+      }
+      // switch over the byte size of return type
+      switch (getByteSizeOfType(e->asmType)) {
+        case 1:
+          push(
+              Instr{.var = PushInstr{.what = "%al", .whatSize = DataSize::Byte},
+                    .type = InstrType::Push},
+              Section::Main);
+          break;
+        case 2:
+          push(
+              Instr{.var = PushInstr{.what = "%ax", .whatSize = DataSize::Word},
+                    .type = InstrType::Push},
+              Section::Main);
+          break;
+        case 4:
+          push(Instr{.var =
+                          PushInstr{.what = "%eax", .whatSize = DataSize::Dword},
+                      .type = InstrType::Push},
+                Section::Main);
+          break;
+        case 8:
+        default:
+          push(Instr{.var =
+                          PushInstr{.what = "%rax", .whatSize = DataSize::Qword},
+                      .type = InstrType::Push},
+                Section::Main);
+          break;
       }
     }
   }

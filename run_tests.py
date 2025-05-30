@@ -120,7 +120,14 @@ class TestZuraPrograms(unittest.TestCase):
         run_test("const main := fn () int! { have i: int! = 43; have j: *int! = &i; return j&;};", expected_exit_code=43);
     
     def test_dereference(self):
-        run_test("const main := fn () int! { have i: int! = 43; have j: *int! = &i; j& = 3; return j&;};", expected_exit_code=3);
+        run_test("const main := fn () int! { have i: int! = 43; have j: *int! = &i; j& = 3; return j&;};", expected_exit_code=3)
+    
+    def test_small_struct_returns(self):
+        run_test("const s := struct { a: int!, }; const b := fn () s { return { a: 37 }; }; const main := fn () int! { have c: s = b(); return c.a; };", expected_exit_code=37);
+
+    # 16 byte struct returns
+    def test_big_struct_returns(self):
+        run_test("const s := struct { a: int!, b: int! }; const b := fn () s { return { a: 37, b: 12 }; }; const main := fn () int! { have c: s = b(); return c.a + c.b; };", expected_exit_code=49);
 
     # no ! or ? symbol in the underlying type
     def test_inferred_signedness_arrays(self):
