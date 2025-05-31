@@ -10,7 +10,7 @@ def run_test(code: str, expected_exit_code=None, expected_output=None):
     with open("zura_files/main.zu", "w") as f:
         f.write(code)
     
-    subprocess.run(["./release/zura", "build", "zura_files/main.zu", "-name", "main", "-quiet"], check=True)
+    subprocess.run(["./zura", "build", "zura_files/main.zu", "-name", "main", "-quiet"], check=True)
     
     result = subprocess.run("./main", capture_output=True, text=True)
     exit_code = result.returncode
@@ -182,11 +182,6 @@ class TestZuraPrograms(unittest.TestCase):
         os.remove(f'test{filename}.txt') # NOTE: If test fails, the program will exit before this line is reached
 
 if __name__ == "__main__":
-    # Run the build.sh script to build the project in release mode
-    if not os.path.exists("./build.sh"):
-        raise FileNotFoundError("Zura build script not found. In the worst case scenario, run the cmake --build command manually.")
-    subprocess.run(["./build.sh", "release"], check=True)
-
-    if not os.path.exists("./release/zura"):
+    if not os.path.exists("./zura"):
         raise FileNotFoundError("Zura executable not found after building. Check the build script output for errors.")
     unittest.main()
