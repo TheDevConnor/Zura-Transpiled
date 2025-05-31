@@ -1,36 +1,62 @@
-# If you were to compile this code and debug it, it would work exactly as expected! Woo-hoo!
-# This particular commit took a lot of effort, by the way!
-
-const hobby := enum {
-  reading,
-  gaming,
-  cooking,
-  editing,
-  coding
+const ERRORS := enum {
+  InvlaidArgument,
+  OutputError,
+  NoArgumentsProvided,
+  NoPathProvided,
+  NoActionProvided,
 };
 
-const person := struct {
-  # Shuffle the order to test if member expressions work lol
-  hobbies: hobby,
-  age: int!,
-  name: str,
-  random: int!,
+const readFile := fn (path: *char) *char {
+  have numBytes: int! = 2048; # 2048 is VERY few character but allow this to be changed later, maybe implement paging???  
+  have bytes: *char = @cast<*char>(@alloc(numBytes));
+  have fd: int! = @open(path, true, false, false);
 
-  # functiotn
-  greet := fn (this: *person) void {
-    @outputln(1, "hello my name is ", this.name, " and i am ", this.age, " years old. i enjoy ", @cast<int!>(this.hobbies), ".");
-    # outputln pritnsa new line lets go baby
-  };
+  if (fd < 0) {
+    @outputln(1, "ERROR: Could not open file: ", path);
+    @free(bytes, numBytes);
+    return nil; # Return nil if the file could not be opened
+  }
+
+  @input(fd, bytes, numBytes);
+  @close(fd);
+  return bytes;
 };
 
 const main := fn () int! {
-  have SovietPancakes: person = {
-    name: "SovietPancakes",
-    age: 69,
-    hobbies: hobby.coding,
-    random: 420,
-  };
+  have argv: *[]str = @getArgv();
+  have argc: int! = @getArgc();
 
-  SovietPancakes.greet();
+  if (argc < 2) {
+    @outputln(1, "No arguments provided. Please provide a string to reverse.");
+    return ERRORS.NoArgumentsProvided; # 2
+  }
+
+  have filePath: *char = nil;
+  loop (i = 0; i < argc) :  (i++) {
+    if (@strcmp(argv&[i], "build")) {
+      # expect the very next argument to be a path, if there IS a next argument
+      if (i == argc - 1) {
+        @outputln(1, "ERROR: No filepath to build.");
+        return ERRORS.NoPathProvided; # 3
+      }
+
+      # That means that there IS a next argument! Yippee!
+      i++;
+      @outputln(1, "Building file: ", argv&[i]); # Should be a path to a file
+      filePath = @cast<*char>(argv&[i]);
+      # THe loop will increase it again and we can skip this argument en
+    }
+  }
+
+  if (filePath == nil) {
+    # you cant read a null file right??
+    return ERRORS.NoActionProvided;
+  }
+
+  have fileContents: *char = readFile(filePath);
+
+  @output(1, fileContents); # i am tweaking its so cold
+
+  @free(fileContents, 2048);
   return 0;
 };

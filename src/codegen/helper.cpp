@@ -71,8 +71,15 @@ JumpCondition codegen::getOpposite(JumpCondition in) {
     return JumpCondition::GreaterEqual;
   case JumpCondition::LessEqual:
     return JumpCondition::Greater;
+  case JumpCondition::Zero:
+    return JumpCondition::NotZero;
+  case JumpCondition::NotZero:
+    return JumpCondition::Zero;
+  case JumpCondition::NotGreater:
+    return JumpCondition::Greater;
+  case JumpCondition::NotLess:
+    return JumpCondition::Less;
   case JumpCondition::Unconditioned:
-  default:
     return JumpCondition::Unconditioned;
   }
 };
@@ -181,11 +188,9 @@ JumpCondition codegen::processComparison(Node::Expr *cond) {
     }
   }
   visitExpr(eval);
-  PushInstr instr =
-      std::get<PushInstr>(text_section[text_section.size() - 1].var);
-  text_section.pop_back();
-  pushLinker("test " + instr.what + ", " + instr.what + "\n\t", Section::Main);
-  return JumpCondition::NotZero;
+  popToRegister("%rax");
+  pushLinker("testq %rax, %rax\n\t", Section::Main);
+  return JumpCondition::NotZero; // If it is not zero, it is rue
 }
 
 void codegen::handleExitSyscall() {

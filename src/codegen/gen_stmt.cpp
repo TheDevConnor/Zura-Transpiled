@@ -23,7 +23,8 @@ void codegen::expr(Node::Stmt *stmt) {
   ExprStmt *s = static_cast<ExprStmt *>(stmt);
   // Just evaluate the expression
   codegen::visitExpr(s->expr);
-  text_section.pop_back(); // Get rid of the push that may follow
+  if (text_section.back().type == InstrType::Push)
+    text_section.pop_back(); // Get rid of the push that may follow
 };
 
 void codegen::program(Node::Stmt *stmt) {
@@ -859,7 +860,17 @@ void codegen::forLoop(Node::Stmt *stmt) {
   // Push a variable declaration for the loop variable
   if (debug) {
     dwarf::useAbbrev(dwarf::DIEAbbrev::Variable);
+    dwarf::useAbbrev(dwarf::DIEAbbrev::LexicalBlock);
     dwarf::useType(assignee->asmType);
+    push(Instr{.var=Label{.name=".Ldie_loop" + std::to_string(loopCount) + "_begin"}, .type=InstrType::Label},Section::Main);
+    pushLinker(".uleb128 " + std::to_string((int)dwarf::DIEAbbrev::LexicalBlock) +
+               "\n.byte " + std::to_string(s->file_id) +
+               "\n.byte " + std::to_string(dynamic_cast<BlockStmt *>(s->block)->line) +
+               "\n.byte " + std::to_string(dynamic_cast<BlockStmt *>(s->block)->pos) +
+               // Low pc (the address of the start of the block- thats RIGHT NOW!)
+               "\n.quad .Ldie_loop" + std::to_string(loopCount) + "_begin"
+               "\n.quad .Ldie_loop" + std::to_string(loopCount) + "_end-.Ldie_loop" + std::to_string(loopCount) + "_begin\n",
+            Section::DIE);
     // we know the type is always int
     pushLinker(".uleb128 " + std::to_string((int)dwarf::DIEAbbrev::Variable) +
                    "\n.long .L" + assignee->name +
@@ -873,10 +884,10 @@ void codegen::forLoop(Node::Stmt *stmt) {
                                    // the DW_TAG_base_type
                    "\n.uleb128 " +
                    std::to_string(1 + sizeOfLEB(-variableCount -
-                                                16)) + // 1 byte is gonna follow
+                                                8)) + // 1 byte is gonna follow
                    "\n.byte 0x91\n" // DW_OP_fbreg (first byte)
                    "\n.sleb128 " +
-                   std::to_string(-variableCount - 16) + "\n",
+                   std::to_string(-variableCount - 8) + "\n",
                Section::DIE);
     // Push the name of the variable
     dwarf::useStringP(assignee->name);
@@ -895,6 +906,7 @@ void codegen::forLoop(Node::Stmt *stmt) {
        Section::Main);
 
   // Execute the loop body (if condition is true)
+  if (debug) dwarf::nextBlockDIE = false;
   visitStmt(s->block); // Visit the statements inside the loop body
 
   // Evaluate the loop increment (e.g., i++)
@@ -912,6 +924,10 @@ void codegen::forLoop(Node::Stmt *stmt) {
   // Set loop end label
   push(Instr{.var = Label{.name = postLoopLabel}, .type = InstrType::Label},
        Section::Main);
+  if (debug) {
+    push(Instr{.var=Label{.name=".Ldie_loop" + std::to_string(loopCount) + "_end"},.type=InstrType::Label},Section::Main);
+    pushLinker(".byte 0\n", Section::DIE); // Explain that the LexicalBlock is over!
+  }
 
   // Pop the loop variable from the stack
   variableTable.erase(assignee->name);
@@ -939,6 +955,7 @@ void codegen::whileLoop(Node::Stmt *stmt) {
   }
 
   // yummers, now just do the block
+  if (debug) dwarf::nextBlockDIE = true;
   visitStmt(s->block);
 
   // Eval the optional ': ()' part

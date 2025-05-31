@@ -211,27 +211,46 @@ void codegen::gen(Node::Stmt *stmt, bool isSaved, std::string output_filename,
           "\n.size native_memcpy, .-native_memcpy\n";
   }
   if (nativeFunctionsUsed[NativeASMFunc::strcmp] == true) {
-    file << ".type native_strcmp, @function\n"
-            "native_strcmp:"
-            "\n    # rdi = str1, rsi = str2"
-            "\n    xorq %rax, %rax"
-            "\n.loop:"
-            "\n    movzbq (%rdi), %rcx"
-            "\n    movzbq (%rsi), %rdx"
-            "\n    cmpq %rcx, %rdx"
-            "\n    jne .notequal"
-            "\n    testq %rcx, %rcx" // Check for null terminator
-            "\n    je .equal"
-            "\n    incq %rdi"
-            "\n    incq %rsi"
-            "\n    jmp .loop"
-            "\n.equal:"
-            "\n    xorq %rax, %rax"
-            "\n    ret"
-            "\n.notequal:"
-            "\n    movq $1, %rax"
-            "\n    ret"
-            "\n.size native_strcmp, .-native_strcmp\n";
+    // native_strcmp:
+    // .Lstrcmp_loop:
+    //     movzbq (%rdi), %rax      # Load *rdi -> rax (zero-extend)
+    //     movzbq (%rsi), %rcx      # Load *rsi -> rcx (zero-extend)
+    //     cmp %rax, %rcx           # Compare characters
+    //     jne .Lstrcmp_diff        # If different, return difference
+    //     test %al, %al            # Check for null terminator
+    //     je .Lstrcmp_equal        # Both null → equal
+    //     inc %rdi
+    //     inc %rsi
+    //     jmp .Lstrcmp_loop
+
+    // .Lstrcmp_diff:
+    //     sub %rcx, %rax           # Return difference (like C strcmp)
+    //     ret
+
+    // .Lstrcmp_equal:
+    //     xor %rax, %rax           # Return 0
+    //     ret
+
+    // .size native_strcmp, .-native_strcmp
+    file  << ".type native_strcmp, @function\n"
+             "native_strcmp:"
+             "\n.Lstrcmp_loop:"
+             "\n    movzbq (%rdi), %rax      # Load *rdi -> rax (zero-extend)"
+             "\n    movzbq (%rsi), %rcx      # Load *rsi -> rcx (zero-extend)"
+             "\n    cmp %rax, %rcx           # Compare characters"
+             "\n    jne .Lstrcmp_diff        # If different, return difference"
+             "\n    test %al, %al            # Check for null terminator"
+             "\n    je .Lstrcmp_equal        # Both null → equal"
+             "\n    inc %rdi"
+             "\n    inc %rsi"
+             "\n    jmp .Lstrcmp_loop"
+             "\n.Lstrcmp_diff:"
+             "\n    xorq %rax, %rax          # return false (they are not equal)"
+             "\n    ret"
+             "\n.Lstrcmp_equal:"
+             "\n    movq $1, %rax            # Return true (they are equal)"
+             "\n    ret"
+             "\n.size native_strcmp, .-native_strcmp\n";
   }
   if (debug) 
     file << ".Ldebug_text0:\n";
@@ -254,7 +273,8 @@ void codegen::gen(Node::Stmt *stmt, bool isSaved, std::string output_filename,
   if (debug) {
     // Debug symbols should be included
     file << "# DEBUG INFORMATION: use readelf --debug-dump=i to print the actual information stored here\n";
-	  file << ".section	.debug_info,\"\",@progbits\n\t";
+	  file << ".section	.debug_info,\"\",@progbits\n\t"
+            "\n.Lcu_info:";
     file << "\n.long .Ldebug_end - .Ldebug_info" // Length of the debug info header 
             "\n.Ldebug_info:" // NOTE: ^^^^ This long tag right here requires the EXCLUSION of those 4 bytes there
             "\n.weak .Ldebug_info"
@@ -262,7 +282,6 @@ void codegen::gen(Node::Stmt *stmt, bool isSaved, std::string output_filename,
             "\n.byte 0x1" // Unit-type DW_UT_compile
             "\n.byte 0x8" // 8-bytes registers (64-bit os)
             "\n.long .Ldebug_abbrev"
-            "\n.Lcu_info:"
             "\n.uleb128 " + std::to_string((int)dwarf::DIEAbbrev::CompileUnit) + // Compilation unit name
             "\n.long .Ldebug_producer_string - .Ldebug_str_start" // Producer - command or program that created this stinky assembly code
             "\n.short 0x8042" // Custom langauges start at 0x8000. Since we are not asking DWARF to be placed into their standards, we will be 0x8042.
@@ -294,7 +313,7 @@ void codegen::gen(Node::Stmt *stmt, bool isSaved, std::string output_filename,
             ".Ldebug_aranges0:\n"
             ".long .Laranges_end - .Ldebug_aranges0 - 4\n" // subtract 4 becasue the long is here
             ".short 2\n" // DWARF version 2 (aranges is no longer used in 5, it is replaced by debug_something idk)
-            ".long .Lcu_info - .debug_info\n" // Offset of the compilation unit within the debug_info section
+            ".long .Lcu_info-.debug_info\n" // Offset of the compilation unit within the debug_info section
             ".byte 8\n" // 64-bits, 8 bytes poitners
             ".byte 0\n" // "Flat memoery model" thanks chatgpt
             ".align 8\n"; // padding

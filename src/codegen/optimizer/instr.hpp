@@ -197,8 +197,8 @@ enum class JumpCondition {
   Equal,
   NotEqual,
 
-  Zero,
-  NotZero,
+  Zero,     // Yes (enum value 3)
+  NotZero, // Zura comment moment Wait
 
   Greater,
   GreaterEqual,

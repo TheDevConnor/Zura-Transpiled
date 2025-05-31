@@ -155,6 +155,7 @@ void codegen::binary(Node::Expr *expr) {
   DataSize size = DataSize::Qword;
   std::string lhsReg = "";
   std::string rhsReg = "";
+  //! TEMPORARILY store the inter values into a variable
   switch (getByteSizeOfType(returnType)) {
     case 1:
       size = DataSize::Byte;
@@ -185,14 +186,16 @@ void codegen::binary(Node::Expr *expr) {
     int rhsDepth = getExpressionDepth(e->rhs);
     if (lhsDepth > rhsDepth) {
       visitExpr(e->lhs);
+      push(Instr{.var = PopInstr{.where = std::to_string(-variableCount) + "(%rbp)", .whereSize = size}, .type = InstrType::Pop}, Section::Main);
       visitExpr(e->rhs);
       push(Instr{.var = PopInstr{.where = rhsReg, .whereSize = size}, .type = InstrType::Pop}, Section::Main);
-      push(Instr{.var = PopInstr{.where = lhsReg, .whereSize = size}, .type = InstrType::Pop}, Section::Main);
-    } else {
+      moveRegister(lhsReg, std::to_string(-variableCount) + "(%rbp)", size, size);
+    } else { // ill brb can you do that here pls ^^^^
       visitExpr(e->rhs);
+      push(Instr{.var = PopInstr{.where = std::to_string(-variableCount) + "(%rbp)", .whereSize = size}, .type = InstrType::Pop}, Section::Main);
       visitExpr(e->lhs);
       push(Instr{.var = PopInstr{.where = lhsReg, .whereSize = size}, .type = InstrType::Pop}, Section::Main);
-      push(Instr{.var = PopInstr{.where = rhsReg, .whereSize = size}, .type = InstrType::Pop}, Section::Main);
+      moveRegister(rhsReg, std::to_string(-variableCount) + "(%rbp)", size, size);
     }
 
     // Perform the operation
@@ -354,14 +357,16 @@ void codegen::binary(Node::Expr *expr) {
     int rhsDepth = getExpressionDepth(e->rhs);
     if (lhsDepth > rhsDepth) {
       visitExpr(e->lhs);
+      push(Instr{.var = PopInstr{.where = std::to_string(-variableCount) + "(%rbp)", .whereSize = size}, .type = InstrType::Pop}, Section::Main);
       visitExpr(e->rhs);
       push(Instr{.var = PopInstr{.where = rhsReg, .whereSize = size}, .type = InstrType::Pop}, Section::Main);
-      push(Instr{.var = PopInstr{.where = lhsReg, .whereSize = size}, .type = InstrType::Pop}, Section::Main);
+      moveRegister(lhsReg, std::to_string(-variableCount) + "(%rbp)", size, size);
     } else {
       visitExpr(e->rhs);
+      push(Instr{.var = PopInstr{.where = std::to_string(-variableCount) + "(%rbp)", .whereSize = size}, .type = InstrType::Pop}, Section::Main);
       visitExpr(e->lhs);
-      push(Instr{.var = PopInstr{.where = lhsReg, .whereSize = size}, .type = InstrType::Pop}, Section::Main);
       push(Instr{.var = PopInstr{.where = rhsReg, .whereSize = size}, .type = InstrType::Pop}, Section::Main);
+      moveRegister(rhsReg, std::to_string(-variableCount) + "(%rbp)", size, size); // it should buld but now i reall yhave to go
     }
     // Get the operation
     std::string op = lookup(opMap, e->op);
@@ -437,7 +442,10 @@ void codegen::unary(Node::Expr *expr) {
     // Dear code reader, i apologize
     push(Instr{.var = LinkerDirective{.value = res + character + " " + whatWasPushed + "\n\t"}, .type = InstrType::Linker}, Section::Main);
     // Push the result
-    pushRegister(whatWasPushed);
+    push(Instr{.var=PushInstr{
+      .what = whatWasPushed,
+      .whatSize = size     
+    }, .type=InstrType::Push},Section::Main);
   }
 }
 
@@ -1195,9 +1203,25 @@ void codegen::strcmp(Node::Expr *expr) {
   popToRegister("%rsi");
 
   // call the native strcmp function
+  // Subtract variable count before call because of course we do
+  long long offsetAmount = round(variableCount - 8, 8);
+  if (offsetAmount)
+    push(Instr{.var = SubInstr{.lhs = "%rsp",
+                                .rhs = "$" + std::to_string(offsetAmount),
+                                .size = DataSize::Qword},
+                .type = InstrType::Sub},
+          Section::Main);
   push(Instr{.var = CallInstr{.name = "native_strcmp"}, .type = InstrType::Call}, Section::Main);
   nativeFunctionsUsed[NativeASMFunc::strcmp] = true;
-
+  if (offsetAmount)
+    push(Instr{.var = AddInstr{.lhs = "%rsp",
+                                .rhs = "$" + std::to_string(offsetAmount),
+                                .size = DataSize::Qword},
+                .type = InstrType::Sub},
+          Section::Main);
   // The return value is in %rax, so we can just push it
-  pushRegister("%rax");
+  push(Instr{.var=PushInstr{
+    .what="%al",
+    .whatSize=DataSize::Byte // booleans
+  }, .type=InstrType::Push}, Section::Main);
 }

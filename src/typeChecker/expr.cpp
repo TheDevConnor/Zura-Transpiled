@@ -858,5 +858,6 @@ void TypeChecker::visitStrcmp(Node::Expr *expr) {
     handleError(s->line, s->pos, msg, "", "Type Error");
   }
 
-  expr->asmType = new SymbolType("int");
+  expr->asmType = new SymbolType("bool");
+  return_type = std::make_shared<SymbolType>("bool");
 }

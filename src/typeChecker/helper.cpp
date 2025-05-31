@@ -7,6 +7,9 @@
 
 void TypeChecker::handleError(int line, int pos, std::string msg,
                               std::string note, std::string typeOfError) {
+  if (msg.find("unknown") != std::string::npos)
+    return;  // Do not report this error because it is already handled
+
    if (note != "")
     msg += "\nNote: " + note;
    Error::handle_error(typeOfError, node.current_file, msg,
@@ -102,8 +105,6 @@ bool TypeChecker::checkTypeMatch(Node::Type *lhs, Node::Type *rhs) {
     return l->name == r->name;
   }
 
-  std::cerr << "helper.cpp:102" << std::endl;
-  std::cerr << "Unknown checkTypeMatch! lhs: " << type_to_string(lhs) << " rhs: " << type_to_string(rhs) << std::endl;
   return false;
 }
 
