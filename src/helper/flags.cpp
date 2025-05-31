@@ -70,7 +70,7 @@ void Flags::runFile(const char *path, std::string outName, bool save,
 
   TypeChecker::performCheck(result);
   bool tcError = Error::report_error();
-  if (tcError)
+  if (tcError && shouldPrintErrors)
     Exit(ExitValue::TYPE_ERROR);
   if (echoOn)
     Flags::updateProgressBar(0.5);
@@ -81,7 +81,7 @@ void Flags::runFile(const char *path, std::string outName, bool save,
     Flags::updateProgressBar(0.75);
   codegen::gen(result, save, outName, path, debug);
   bool codegenError = Error::report_error();
-  if (codegenError)
+  if (codegenError && shouldPrintErrors)
     Exit(ExitValue::GENERATOR_ERROR);
   if (echoOn)
     Flags::updateProgressBar(1.0); // We're done!

@@ -606,16 +606,21 @@ void codegen::structDecl(Node::Stmt *stmt) {
   }
   long subSize = 0;
   // Calculate size by adding the size of members
-  for (size_t i = 0; i < s->fields.size(); i++) {
+  for (long i = s->fields.size() - 1; i >= 0; i--) {
+  // for (size_t i = 0; i < s->fields.size(); i++) {
     // Turn into offsets
     // For example: { short, int } -> { 2, 0 }
     // For example: { int, short, int } -> { 6, 2, 0 }
 
     // In both cases, the last element is stored at 0
-    long offset = subSize;// + getByteSizeOfType(s->fields.back().second);
     members.push_back(
-        {s->fields.at(i).first, {s->fields.at(i).second, offset}});
-    subSize += getByteSizeOfType(s->fields.at(i).second);
+      {s->fields.at(i).first, {s->fields.at(i).second, subSize}});
+
+    // add the size of the NEXTT field
+    if (i > 0)
+      subSize += getByteSizeOfType(s->fields.at(i - 1).second);
+    // if (i + 1 < s->fields.size())
+    //   subSize += getByteSizeOfType(s->fields.at(i + 1).second);
   }
   structByteSizes.insert({s->name, {size, members}});
 
@@ -652,7 +657,8 @@ void codegen::structDecl(Node::Stmt *stmt) {
     dwarf::useStringP(s->name);
 
     long currentByte = 0;
-    for (std::pair<std::string, Node::Type *> field : s->fields) {
+    for (size_t i = 0; i < s->fields.size(); i++) {
+      auto &field = s->fields.at(i);
       // Push member DIE
       dwarf::useType(field.second);
       pushLinker(".uleb128 " +
@@ -670,7 +676,7 @@ void codegen::structDecl(Node::Stmt *stmt) {
       // push name in string
       dwarf::useStringP(field.first);
 
-      // Add the byte size of this to the current byte
+      // Add the byte size of the field
       currentByte += getByteSizeOfType(field.second);
     }
 
@@ -1174,6 +1180,7 @@ void codegen::declareStructVariable(Node::Expr *expr, std::string structName,
   orderStructFields(s->values, structName, &orderedFields);
   // Now we can actually get to the fun part, where we evaluate each member
   for (long i = (signed)orderedFields.size() - 1; i >= 0; i--) {
+  // for (size_t i = 0; i < orderedFields.size(); i++) {
     std::pair<std::string, Node::Expr *> &field = orderedFields[i];
     if (field.second->kind == ND_STRUCT) {
       declareStructVariable(field.second, getUnderlying(field.second->asmType), offsetRegister, startOffset + structByteSizes[structName].second[i].second.second);
@@ -1210,10 +1217,9 @@ void codegen::declareStructVariable(Node::Expr *expr, std::string structName,
 
 void codegen::orderStructFields(std::unordered_map<std::string, Node::Expr *> &fieldsToOrder, std::string &structName,
                        std::vector<std::pair<std::string, Node::Expr *>> *orderedFields) {
-  // I'm sorry, but the only way I can think of doing this is with a 2-d loop :(
-  for (auto &field : fieldsToOrder) {
-    // For each field to order, we must loop over the struct declaration
-    for (auto &declaredField : structByteSizes[structName].second) {
+  // For each field to order, we must loop over the struct declaration
+  for (auto &declaredField : structByteSizes[structName].second) {
+    for (auto &field : fieldsToOrder) {
       if (declaredField.first == field.first) {
         // We found the field in the declaration, so we can add it to the ordered
         // fields

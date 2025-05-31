@@ -26,7 +26,7 @@ Lexer::Token Parser::PStruct::expect(TokenKind tk, std::string msg) {
     return tks.back();
   }
   if (peek(0).kind == tk) return advance();
-  std::string errorMsg = msg + " Found: " + peek(0).value;
+  std::string errorMsg = msg;
   Error::handle_error("Parser", current_file, errorMsg, tks, current().line, current().column);
   return current();
 }

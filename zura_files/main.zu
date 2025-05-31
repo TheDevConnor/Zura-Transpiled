@@ -1,23 +1,36 @@
-const LigmaStruct := struct {
-  a: int!,
-  b: int!,
+# If you were to compile this code and debug it, it would work exactly as expected! Woo-hoo!
+# This particular commit took a lot of effort, by the way!
+
+const hobby := enum {
+  reading,
+  gaming,
+  cooking,
+  editing,
+  coding
 };
 
-const getLigmaStruct := fn () LigmaStruct {
-  return { a: 42, b: 69 };
+const person := struct {
+  # Shuffle the order to test if member expressions work lol
+  hobbies: hobby,
+  age: int!,
+  name: str,
+  random: int!,
+
+  # functiotn
+  greet := fn (this: *person) void {
+    @outputln(1, "hello my name is ", this.name, " and i am ", this.age, " years old. i enjoy ", @cast<int!>(this.hobbies), ".");
+    # outputln pritnsa new line lets go baby
+  };
 };
-
-# const LigmaStruct := struct {
-#   a: int!,
-# };
-
-# const getLigmaStruct := fn () LigmaStruct {
-#   return { a: 42 };
-# };
 
 const main := fn () int! {
-  # struct member and deref test
-  have s: LigmaStruct = getLigmaStruct();
-  @outputln(0, s.a);
-  return s.a;
+  have SovietPancakes: person = {
+    name: "SovietPancakes",
+    age: 69,
+    hobbies: hobby.coding,
+    random: 420,
+  };
+
+  SovietPancakes.greet();
+  return 0;
 };

@@ -439,6 +439,90 @@ std::string lsp::getBuiltinNote(const std::string &builtin) {
             "};\n"
             "```";
   } else
+  if (builtin == "extern") {
+    return "This function will declare a function exposed by @link as usable by the program.\n"
+           "It is used when importing a (static) library and you want to select certain functions to be used.\n"
+           "You would NOT, however, use extern when importing a Zura module, as those are compiled on the fly and are not considered static nor external.\n"
+           "The function takes in a string that is the name of the function.\n"
+           "This newly exposed function is callable via @call.\n"
+           "\n"
+           "Example:\n"
+           "```zura\n"
+           "# By default, standard libraries are actually NOT included in the final executable.\n"
+           "# This not only saves space in the final executable, but it also means that most calls are very direct,\n"
+           "# do not require external linking, are more efficient, more portable, and, in my own personal SovietPancakes opinion,\n"
+           "# more fun and easier to see what is happening.\n"
+           "@link(\"stdlibc\");"
+           "@extern(\"printf\"); # Declare the printf function as an external function\n"
+           "const main := fn () int! {\n"
+           "\t@call<printf>(\"Hello, World!\\n\"); # Call the printf function with the string \"Hello, World!\\n\" (PS: for reasons above, the builtin @outputln function is better here LOL)\n"
+           "\treturn 0; # Return 0 to indicate success\n"
+            "};\n"
+            "```";
+  } else
+  if (builtin == "link") {
+    return "This function will link a static library to the program.\n"
+           "It is used to import a static library and make its functions available for use in the program.\n"
+           "The function takes in a string that is the name of the library to link.\n"
+           "> [!NOTE]\n"
+           "> The library must be compiled and available in the system's library path.\n"
+           "\n"
+           "Example:\n"
+           "```zura\n"
+           "# By default, standard libraries are actually NOT included in the final executable.\n"
+           "# This not only saves space in the final executable, but it also means that most calls are very direct,\n"
+           "# do not require external linking, are more efficient, more portable, and, in my own personal SovietPancakes opinion,\n"
+           "# more fun and easier to see what is happening.\n"
+           "@link(\"stdlibc\"); # Link the standard C library\n"
+           "@extern(\"printf\"); # Declare the printf function as an external function\n"
+           "const main := fn () int! {\n"
+           "\t@call<printf>(\"Hello, world!\"); # Print to console with a newline\n"
+           "\treturn 0; # Return 0 to indicate success\n"
+            "};\n"
+            "```";
+  } else
+  if (builtin == "call") {
+    return "This function will call an external function that has been declared with @extern.\n"
+           "It is used to call functions from static libraries or other external sources.\n"
+           "The function takes in a string that is the name of the function to call, as well as any arguments to pass to the function.\n"
+           "> [!NOTE]\n"
+           "> The function must have been declared with @extern before it can be called with @call.\n"
+           "\n"
+           "Example:\n"
+           "```zura\n"
+           "# By default, standard libraries are actually NOT included in the final executable.\n"
+           "# This not only saves space in the final executable, but it also means that most calls are very direct,\n"
+           "# do not require external linking, are more efficient, more portable, and, in my own personal SovietPancakes opinion,\n"
+           "# more fun and easier to see what is happening.\n"
+           "@link(\"stdlibc\"); # Link the standard C library\n"
+           "@extern(\"printf\"); # Declare the printf function as an external function\n"
+           "const main := fn () int! {\n"
+           "\t@call<printf>(\"Hello, world!\"); # Call the printf function with the string \"Hello, world!\"\n"
+           "\treturn 0; # Return 0 to indicate success\n"
+            "};\n"
+            "```";
+  } 
+  if (builtin == "import") {
+    return "This function will import another Zura file and make its functions usable in your current one.\n"
+           "This could be useful for organization, reusing old code, or importing somebody else's code.\n"
+           "It takes in a string for the path (can be relative or absolute) to the new Zura file to import.\n"
+           "Everything you expect to happen when importing will happen. All public functions will be accessible to all new files that import it, or that import you.\n"
+           "\n"
+            "Example (test.zu):\n"
+            "```zura\n"
+            "const favoriteAnimal := fn () int! {\n"
+            "\t@outputln(1, \"My favorite animal is a cat!\"); # Print my favorite animal to the console (NOTHING ON DOG PEOPLE BTW)\n"
+            "};\n"
+            "```\n"
+            "Example (main.zu):\n"
+            "```zura\n"
+            "@import(\"test.zu\"); # Import the test.zu file\n"
+            "const main := fn () int! {\n"
+            "\tfavoriteAnimal(); # Call the favoriteAnimal function from the imported file\n"
+            "\treturn 0; # Return 0 to indicate success\n"
+            "};\n"
+            "```";
+  } else
   {
     return "";
   }

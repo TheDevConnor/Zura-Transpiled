@@ -3,7 +3,7 @@
 
 #include <string>
 
-inline std::string ZuraVersion = "v0.1.44";
+inline std::string ZuraVersion = "v0.1.45";
 inline bool shouldPrintErrors = true;
 
 class FlagConfig {

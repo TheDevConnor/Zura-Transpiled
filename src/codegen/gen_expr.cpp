@@ -910,18 +910,20 @@ void codegen::memberExpr(Node::Expr *expr) {
         break;
       }
     }
+    
+    auto &thisStructSizes = structByteSizes[lhsName].second;
+    // long long inStructOffset = thisStructSizes.at(elementIndex).second.second;
+    long long inStructOffset = structByteSizes[lhsName].first - (thisStructSizes[elementIndex].second.second) - getByteSizeOfType(thisStructSizes[0].second.first);
     // Check what was pushed. Was it an effective address?
     if (whatWasPushed.find('(') == std::string::npos) {
       // It was an effective address, so we can just push the offset
-      // We need to get the offset of the member
-      long long offset = structByteSizes[lhsName].second.at(elementIndex).second.second;
       // If the member is another struct, we need to lea
       Node::Type *memberType = structByteSizes[lhsName].second[elementIndex].second.first;
       if (structByteSizes.contains(getUnderlying(memberType)) && (memberType->kind == ND_SYMBOL_TYPE || memberType->kind == ND_POINTER_TYPE || memberType->kind == ND_ARRAY_TYPE)) {
         // We need to lea the address of the member
         push(Instr{.var = LeaInstr{.size = DataSize::Qword,
                                    .dest = "%rcx",
-                                   .src = std::to_string(offset) + "(" + whatWasPushed + ")"},
+                                   .src = std::to_string(inStructOffset) + "(" + whatWasPushed + ")"},
                    .type = InstrType::Lea},
              Section::Main);
         pushRegister("%rcx");
@@ -929,7 +931,7 @@ void codegen::memberExpr(Node::Expr *expr) {
       }
       // Otherwise, we push
       DataSize size = intDataToSize(getByteSizeOfType(memberType));
-      push(Instr{.var = PushInstr{.what = std::to_string(offset) + "(" +
+      push(Instr{.var = PushInstr{.what = std::to_string(inStructOffset) + "(" +
                                           whatWasPushed + ")",
                                       .whatSize = size},
                  .type = InstrType::Push},
@@ -945,7 +947,6 @@ void codegen::memberExpr(Node::Expr *expr) {
     std::string baseRegister = whatWasPushed.substr(openParen + 1, closeParen - openParen - 1);
     // Now that we have extracted -8 and %rbp, we can do the work!
     // Check if the member is a struct
-    int structOffset = structByteSizes[lhsName].second[elementIndex].second.second;
     Node::Type *memberType = structByteSizes[lhsName].second[elementIndex].second.first;
     if (structByteSizes.contains(getUnderlying(memberType)) &&
         (memberType->kind == ND_SYMBOL_TYPE ||
@@ -955,7 +956,7 @@ void codegen::memberExpr(Node::Expr *expr) {
       // i created the instruction so oopsies its here to stay until zura self host
       push(Instr{.var = LeaInstr{.size = DataSize::Qword,
                                  .dest = "%rcx",
-                                 .src = std::to_string(offset + structOffset) + "(" +
+                                 .src = std::to_string(offset + inStructOffset) + "(" +
                                         baseRegister + ")"},
                  .type = InstrType::Lea},
            Section::Main);
@@ -964,7 +965,7 @@ void codegen::memberExpr(Node::Expr *expr) {
     }
     // Otherwise, we push the offset
     DataSize size = intDataToSize(getByteSizeOfType(memberType));
-    push(Instr{.var = PushInstr{.what = std::to_string(offset + structOffset) + "(" +
+    push(Instr{.var = PushInstr{.what = std::to_string(offset + inStructOffset) + "(" +
                                         baseRegister + ")",
                                 .whatSize = size},
                .type = InstrType::Push},

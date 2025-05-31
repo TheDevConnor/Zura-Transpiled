@@ -3,16 +3,22 @@
 #include <iostream>
 #include <string>
 
+#include "../../common.hpp"
 #include "../term_color/color.hpp"
 
 Color col;
 
 std::string Error::error_head(std::string error_type, int line, int pos,
-                              std::string filepath) {
-  std::string ln = col.color(std::to_string(line), Color::YELLOW, true, false);
-  std::string ps = col.color(std::to_string(pos), Color::YELLOW, true, false);
-  std::string error = col.color("error", Color::RED, false, true) + ": ";
-  std::string type = col.color(error_type, Color::WHITE, true, true);
+                              std::string filepath, bool isWarn) {
+  std::string ln = col.color(std::to_string(line), Color::C::YELLOW, true, false);
+  std::string ps = col.color(std::to_string(pos), Color::C::YELLOW, true, false);
+  std::string error = "";
+  if (isWarn) {
+    error = col.color("warn", Color::C::YELLOW, false, true) + ": ";
+  } else {
+    error = col.color("error", Color::C::RED, false, true) + ": ";
+  }
+  std::string type = col.color(error_type, Color::C::WHITE, true, true);
   return error + type + "\n  --> [" + ln + "::" + ps + "](" + filepath + ")\n";
 }
 
@@ -46,12 +52,20 @@ std::string Error::generate_line(const std::vector<Lexer::Token> &tks, int line,
 }
 
 bool Error::report_error() {
+  if (!shouldPrintErrors) return errors.size() > 0;
   if (errors.size() > 0) {
     std::cout << "Total Errors: "
-              << col.color(std::to_string(errors.size()), Color::RED) << "\n";
-    for (std::string error : errors)
+              << col.color(std::to_string(errors.size()), Color::C::RED) << "\n";
+    for (std::string &error : errors)
       std::cout << error << std::endl;
     return true;
+  }
+  if (warnings.size() > 0) {
+    std::cout << "Total Warnigns: "
+              << col.color(std::to_string(warnings.size()), Color::C::YELLOW) << "\n";
+    for (std::string &warning : warnings)
+      std::cout << warning << std::endl;
+    return false;
   }
   return false;
 }
@@ -64,15 +78,15 @@ void Error::handle_lexer_error(Lexer &lex, std::string error_type,
     while (*end != '\n' && *end != '\0')
       end++;
 
-    std::string error = error_head(error_type, lex.scanner.line, lex.scanner.column, file_path);
-    error += col.color("   |\n", Color::GRAY);
+    std::string error = error_head(error_type, lex.scanner.line, lex.scanner.column, file_path, false);
+    error += col.color("   |\n", Color::C::GRAY);
     std::string formatted_line =
         line_number(lex.scanner.line) + std::to_string(lex.scanner.line) + "|";
     error +=
         " " + formatted_line + std::string(start, unsigned(end - start)) + "\n";
     std::string error_space = std::string(static_cast<std::size_t>(std::max(0, lex.scanner.column - 1)), ' ');
-    error += col.color("   |", Color::GRAY) + error_space + col.color("^", Color::RED, true, true) + "\n";
-    error += col.color("note", Color::CYAN) + ": " + msg;
+    error += col.color("   |", Color::C::GRAY) + error_space + col.color("^", Color::C::RED, true, true) + "\n";
+    error += col.color("note", Color::C::CYAN) + ": " + msg;
 
     errors.push_back(error);
   } catch (const std::exception &e) {
@@ -93,21 +107,21 @@ std::string Error::handle_type_error(const std::vector<Lexer::Token> &tks, int l
   std::string formatted_line = line_number(line) + std::to_string(line) + "|";
   std::string formatted_line_after = line_number(line+1) + std::to_string(line+1) + "|";
   
-  error += " " + formatted_line_before + generate_line(tks, line - 1, pos, Color::GRAY);
+  error += " " + formatted_line_before + generate_line(tks, line - 1, pos, Color::C::GRAY);
   error += " " + formatted_line + generate_line(tks, line, pos);
-  error += col.color("   |", Color::GRAY) + generate_whitespace(pos - 1) +
-           col.color("^", Color::RED, true, true) + "\n";
-  error += " " + formatted_line_after + generate_line(tks, line + 1, pos, Color::GRAY);
+  error += col.color("   |", Color::C::GRAY) + generate_whitespace(pos - 1) +
+           col.color("^", Color::C::RED, true, true) + "\n";
+  error += " " + formatted_line_after + generate_line(tks, line + 1, pos, Color::C::GRAY);
   return error;
 }
 
 void Error::handle_error(std::string error_type, std::string file_path,
                          std::string msg, const std::vector<Lexer::Token> &tks,
-                         int line, int pos) {
+                         int line, int pos, bool isWarn) {
   if (msg.find("Expected a SEMICOLON") == 0) line = line - 1;
   try {
-    std::string error = error_head(error_type, line, pos, file_path);
-    error += col.color("   |\n", Color::GRAY);
+    std::string error = error_head(error_type, line, pos, file_path, isWarn);
+    error += col.color("   |\n", Color::C::GRAY);
     std::string formatted_line = line_number(line) + std::to_string(line) + "|";
 
     // Handle the case when we're at the end of the file
@@ -115,7 +129,7 @@ void Error::handle_error(std::string error_type, std::string file_path,
       error += " " + formatted_line + "\n";
     } else if (error_type == "Type Error") {
       error += handle_type_error(tks, line, pos);
-      error += col.color("note", Color::CYAN) + ": " + msg;
+      error += col.color("note", Color::C::CYAN) + ": " + msg;
       errors.push_back(error);
       return;
     } else {
@@ -125,16 +139,21 @@ void Error::handle_error(std::string error_type, std::string file_path,
     // Make sure we don't generate negative spaces
     int pointer_pos = pos > 0 ? pos - 1 : 0;
     std::string error_space = std::string(static_cast<std::size_t>(std::max(0, pointer_pos)), '~');
-    error += col.color("   |", Color::GRAY) + col.color(error_space, Color::RED) + col.color("^", Color::RED, true, true) + "\n";
-    error += col.color("note", Color::CYAN) + ": " + msg;
-
-    errors.push_back(error);
+    error += col.color("   |", Color::C::GRAY) + col.color(error_space, Color::C::RED) + col.color("^", Color::C::RED, true, true) + "\n";
+    error += col.color("note", Color::C::CYAN) + ": " + msg;
+    if (isWarn)
+      warnings.push_back(error);
+    else
+      errors.push_back(error);
   } catch (const std::exception &e) {
     // If any exception occurs while formatting the error, fallback to a simple message
     std::string simpleError = "Error in " + file_path + " at line " +
                               std::to_string(line) + ", pos " +
                               std::to_string(pos) + ": " + msg +
                               " (Error formatting failed: " + e.what() + ")";
-    errors.push_back(simpleError);
+    if (isWarn)
+      warnings.push_back(simpleError);
+    else
+      errors.push_back(simpleError);
   }
 }

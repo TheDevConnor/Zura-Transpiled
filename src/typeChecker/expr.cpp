@@ -618,7 +618,11 @@ void TypeChecker::visitStructExpr(Node::Expr *expr) {
 
   // Get the struct definition
   const auto &structDef = context->structTable[struct_name];
-  size_t structSize = structDef.size();
+  // Only count actual fields (not functions)
+  size_t structSize = 0;
+  for (auto &field : structDef) {
+    if (field.second.second.empty()) structSize++;
+  }
 
   if (structSize != struct_expr->values.size()) {
     std::string msg = "Struct '" + struct_name + "' requires " +

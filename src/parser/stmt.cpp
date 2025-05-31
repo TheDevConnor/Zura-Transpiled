@@ -377,8 +377,13 @@ Node::Stmt *Parser::structStmt(PStruct *psr, std::string name) {
       if (psr->peek().kind == TokenKind::RIGHT_BRACE)
         break; // who cares about the semicolon/comma?
       if (warnForSemi) {
-        psr->expect(TokenKind::COMMA, "Semicolons are non-standard for struct "
-                                      "field lists; use commas instead");
+        if (psr->current().kind == TokenKind::SEMICOLON) {
+          // Warn that semicolons are not standard, but do not exit the program; allow compilation as normal
+          Error::handle_error("Parser", psr->current_file, "Semicolons are not standard in struct field lists; use commas instead",
+                              psr->tks, psr->current().line, psr->current().column, true);
+        } else
+          psr->expect(TokenKind::COMMA, "Expected a COMMA after a struct field, "
+                                        "instead got a " + std::string(Lexer::tokenToStringMap[psr->current().kind]));
       } else {
         if (psr->current().kind == TokenKind::COMMA) {
           psr->advance();
