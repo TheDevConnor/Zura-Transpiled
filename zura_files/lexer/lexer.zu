@@ -1,0 +1,49 @@
+const TokenKind := enum {
+  Plus,
+  Dash,
+  Star,
+  Slash,
+  LParen,
+  RParen,
+  Number,
+  Identifier,
+  String,
+  Comma,
+  Semicolon,
+  Equals,
+  LBrace,
+  RBrace,
+  LBracket,
+  RBracket,
+  Less,
+  Greater,
+  Ampersand,
+  Percent,
+  Bang,
+  Question,
+  Colon,
+  Dot
+};
+
+const PosInfo := struct {
+  start: *char,
+  end: short!,
+  line: short!,
+  pos: short!,
+};
+
+const Token := struct {
+  kind: TokenKind,
+  value: *char,
+};
+
+# TODO: Implement the functions below
+const peek := fn (tk: *Token) char {};
+const advance := fn (tk: *Token) char {};
+const isDigit := fn (tk: *Token) bool {};
+const isAlpha := fn (tk: *Token) bool {};
+
+const skipWhitespace := fn (tk: *Token) void {};
+
+const makeToken := fn (tk: *Token, kind: TokenKind, value: *char, posInfo: PosInfo) Token {};
+const next_token := fn (tk: *Token) Token {};

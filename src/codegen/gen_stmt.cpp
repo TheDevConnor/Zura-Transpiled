@@ -1029,6 +1029,7 @@ void codegen::matchStmt(Node::Stmt *stmt) {
     // anyway?
     dwarf::nextBlockDIE = true;
     visitStmt(s->defaultCase);
+    dwarf::nextBlockDIE = false;
     return;
   }
   if (s->cases.size() == 0 && s->defaultCase == nullptr) {
@@ -1107,6 +1108,7 @@ void codegen::matchStmt(Node::Stmt *stmt) {
     // No need to jump here. Since we evaluated this last, we can simply fall
     // through to the end.
   };
+  dwarf::nextBlockDIE = false;
 
   // We're done! Simply append the finishing label and we will be good to go.
   push(Instr{.var = Label{.name = matchEndWhere}, .type = InstrType::Label},

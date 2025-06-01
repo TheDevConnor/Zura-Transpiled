@@ -1,14 +1,13 @@
-const readFile := fn (path: *char) *char {
-  have numBytes: int! = 2048; # 2048 is VERY few character but allow this to be changed later, maybe implement paging???  
-  have bytes: *char = @cast<*char>(@alloc(numBytes));
+const readFile := fn (path: *char, size: int!) *char {
+  have bytes: *char = @cast<*char>(@alloc(size));
   have fd: int! = @open(path, true, false, false);
 
   if (fd < 0) {
-    @free(bytes, numBytes);
+    @free(bytes, size);
     return nil; # Return nil if the file could not be opened
   }
 
-  @input(fd, bytes, numBytes);
+  @input(fd, bytes, size);
   @close(fd);
   return bytes;
 };

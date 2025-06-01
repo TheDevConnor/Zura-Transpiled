@@ -5,6 +5,7 @@
 const main := fn () int! {
   have argv: *[]str = @getArgv();
   have argc: int! = @getArgc();
+  have size: int! = 2048; # Size of the buffer to read from file
 
   if (argc < 2) {
     @outputln(1, "No arguments provided. Please provide a string to reverse.");
@@ -31,17 +32,18 @@ const main := fn () int! {
 
   if (filePath == nil) return ERRORS.NoActionProvided; # 4
 
-  have fileContents: *char = readFile(filePath);
+  have fileContents: *char = readFile(filePath, size);
 
   if (fileContents == nil) {
     @outputln(1, "ERROR: Could not open file: ", filePath);
     return ERRORS.FileOpenFailed; # 5
   }
+  
   # LEXER TIME
-  loop (i = 0; i < 2048) : (i++) {
+  loop (i = 0; i < size) : (i++) {
     @output(1, AsciiToString(fileContents[i]));
   }
 
-  @free(fileContents, 2048);
+  @free(fileContents, size);
   return 0;
 };

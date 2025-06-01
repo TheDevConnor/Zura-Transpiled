@@ -392,11 +392,10 @@ void TypeChecker::visitCall(Node::Expr *expr) {
     }
     // check if the argument type matches the function parameter type
     // get element by index from map
-    if (!checkTypeMatch(paramTypes[realIndex], argType)) {
-      std::string msg = "Function '" + fnName + "' requires argument " +
-                        std::to_string(i) + " to be of type '" +
-                        type_to_string(paramTypes[realIndex]) + "' but got '" +
-                        type_to_string(argType) + "'";
+    if (realIndex >= paramTypes.size()) {
+      std::string msg = "Function '" + fnName +
+                        "' requires " + std::to_string(paramTypes.size()) +
+                        " parameters but got " + std::to_string(call->args.size());
       handleError(call->line, call->pos, msg, "", "Type Error");
       return_type = std::make_shared<SymbolType>("unknown");
       expr->asmType = new SymbolType("unknown");
