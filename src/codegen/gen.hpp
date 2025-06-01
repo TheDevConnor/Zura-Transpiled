@@ -291,6 +291,7 @@ std::string addBackslashes(std::string str);
 void moveRegister(const std::string &dest, const std::string &src, DataSize dest_size, DataSize src_size);
 void popToRegister(const std::string &reg);
 void pushRegister(const std::string &reg);
+void handleBinaryExprs(int lhsDepth, int rhsDepth, std::string lhsReg, std::string rhsReg, Node::Expr *lhs, Node::Expr *rhs);
 void pushDebug(size_t line, size_t file, long column = -1);
 void handleExitSyscall(void);
 void handleInputSyscall(void);

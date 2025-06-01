@@ -1,9 +1,10 @@
 const ERRORS := enum {
-  InvlaidArgument,
-  OutputError,
-  NoArgumentsProvided,
-  NoPathProvided,
-  NoActionProvided,
+  InvlaidArgument,     # 0
+  OutputError,         # 1
+  NoArgumentsProvided, # 2
+  NoPathProvided,      # 3
+  NoActionProvided,    # 4
+  FileOpenFailed,      # 5
 };
 
 const readFile := fn (path: *char) *char {
@@ -12,7 +13,6 @@ const readFile := fn (path: *char) *char {
   have fd: int! = @open(path, true, false, false);
 
   if (fd < 0) {
-    @outputln(1, "ERROR: Could not open file: ", path);
     @free(bytes, numBytes);
     return nil; # Return nil if the file could not be opened
   }
@@ -50,12 +50,17 @@ const main := fn () int! {
 
   if (filePath == nil) {
     # you cant read a null file right??
-    return ERRORS.NoActionProvided;
+    return ERRORS.NoActionProvided; # 4
   }
 
   have fileContents: *char = readFile(filePath);
 
-  @output(1, fileContents); # i am tweaking its so cold
+  if (fileContents == nil) {
+    @outputln(1, "ERROR: Could not open file: ", filePath);
+    return ERRORS.FileOpenFailed; # 5
+  }
+
+  @output(1, fileContents);
 
   @free(fileContents, 2048);
   return 0;

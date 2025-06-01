@@ -22,3 +22,11 @@ zura
 build/
 release/
 debug/
+
+# files that nobody needs to see
+main
+test
+# assembly
+*.s
+*.asm
+*.o

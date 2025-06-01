@@ -79,6 +79,7 @@ JumpCondition codegen::getOpposite(JumpCondition in) {
     return JumpCondition::Greater;
   case JumpCondition::NotLess:
     return JumpCondition::Less;
+  default:
   case JumpCondition::Unconditioned:
     return JumpCondition::Unconditioned;
   }
@@ -165,17 +166,7 @@ JumpCondition codegen::processComparison(Node::Expr *cond) {
       default:
         break; // It's already OK
       }
-      if (lhsDepth > rhsDepth) {
-        visitExpr(bin->lhs);
-        visitExpr(bin->rhs);
-        popToRegister(rhsReg);
-        popToRegister(lhsReg);
-      } else {
-        visitExpr(bin->rhs);
-        visitExpr(bin->lhs);
-        popToRegister(lhsReg);
-        popToRegister(rhsReg);
-      }
+      handleBinaryExprs(lhsDepth, rhsDepth, lhsReg, rhsReg, bin->lhs, bin->rhs);
       // perform the compare
       if (isFloat || isDouble) {
         pushLinker("ucomiss %xmm1, %xmm0\n\t", Section::Main);
@@ -191,6 +182,42 @@ JumpCondition codegen::processComparison(Node::Expr *cond) {
   popToRegister("%rax");
   pushLinker("testq %rax, %rax\n\t", Section::Main);
   return JumpCondition::NotZero; // If it is not zero, it is rue
+}
+
+void codegen::handleBinaryExprs(int lhsDepth, int rhsDepth, std::string lhsReg,
+                                std::string rhsReg, Node::Expr *lhs,
+                                Node::Expr *rhs) {
+  // you cant add an int to a float so they will both be float here
+  bool isFloat = lhs->asmType->kind == ND_SYMBOL_TYPE &&
+                 (getUnderlying(lhs->asmType) == "float" || 
+                  getUnderlying(lhs->asmType) == "double");
+  DataSize lhsSize = intDataToSize(getByteSizeOfType(lhs->asmType));
+  DataSize rhsSize = intDataToSize(getByteSizeOfType(rhs->asmType));
+  if (isFloat) {
+    lhsSize = intDataToSizeFloat(getByteSizeOfType(lhs->asmType));
+    rhsSize = intDataToSizeFloat(getByteSizeOfType(rhs->asmType));
+  }
+  // if (lhsDepth == 1 && rhsDepth == 1) {
+  //   // If both are depth 1, we can just load them into registers
+  //   visitExpr(lhs);
+  //   popToRegister(lhsReg);
+  //   visitExpr(rhs);
+  //   popToRegister(rhsReg);
+  //   return;
+  // }
+  if (lhsDepth > rhsDepth) {
+    visitExpr(lhs);
+    push(Instr{.var = PopInstr{.where = std::to_string(-variableCount) + "(%rbp)", .whereSize = lhsSize}, .type = InstrType::Pop}, Section::Main);
+    visitExpr(rhs);
+    push(Instr{.var = PopInstr{.where = rhsReg, .whereSize = lhsSize}, .type = InstrType::Pop}, Section::Main);
+    moveRegister(lhsReg, std::to_string(-variableCount) + "(%rbp)", lhsSize, lhsSize);
+  } else {
+    visitExpr(rhs);
+    push(Instr{.var = PopInstr{.where = std::to_string(-variableCount) + "(%rbp)", .whereSize = rhsSize}, .type = InstrType::Pop}, Section::Main);
+    visitExpr(lhs);
+    push(Instr{.var = PopInstr{.where = lhsReg, .whereSize = lhsSize}, .type = InstrType::Pop}, Section::Main);
+    moveRegister(rhsReg, std::to_string(-variableCount) + "(%rbp)", rhsSize, rhsSize);
+  }
 }
 
 void codegen::handleExitSyscall() {

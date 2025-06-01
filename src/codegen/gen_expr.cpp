@@ -184,19 +184,7 @@ void codegen::binary(Node::Expr *expr) {
   if (TypeChecker::isIntBasedType(returnType)) {
     int lhsDepth = getExpressionDepth(e->lhs);
     int rhsDepth = getExpressionDepth(e->rhs);
-    if (lhsDepth > rhsDepth) {
-      visitExpr(e->lhs);
-      push(Instr{.var = PopInstr{.where = std::to_string(-variableCount) + "(%rbp)", .whereSize = size}, .type = InstrType::Pop}, Section::Main);
-      visitExpr(e->rhs);
-      push(Instr{.var = PopInstr{.where = rhsReg, .whereSize = size}, .type = InstrType::Pop}, Section::Main);
-      moveRegister(lhsReg, std::to_string(-variableCount) + "(%rbp)", size, size);
-    } else { // ill brb can you do that here pls ^^^^
-      visitExpr(e->rhs);
-      push(Instr{.var = PopInstr{.where = std::to_string(-variableCount) + "(%rbp)", .whereSize = size}, .type = InstrType::Pop}, Section::Main);
-      visitExpr(e->lhs);
-      push(Instr{.var = PopInstr{.where = lhsReg, .whereSize = size}, .type = InstrType::Pop}, Section::Main);
-      moveRegister(rhsReg, std::to_string(-variableCount) + "(%rbp)", size, size);
-    }
+    handleBinaryExprs(lhsDepth, rhsDepth, lhsReg, rhsReg, e->lhs, e->rhs);
 
     // Perform the operation
     std::string op = lookup(opMap, e->op);
@@ -291,17 +279,7 @@ void codegen::binary(Node::Expr *expr) {
     std::string suffix = size == DataSize::SS ? "ss" : "sd";
     int lhsDepth = getExpressionDepth(static_cast<BinaryExpr *>(e->lhs));
     int rhsDepth = getExpressionDepth(static_cast<BinaryExpr *>(e->rhs));
-    if (lhsDepth > rhsDepth) {
-      visitExpr(e->lhs);
-      visitExpr(e->rhs);
-      popToRegister("%xmm1");  // Pop RHS into XMM1
-      popToRegister("%xmm0");  // Pop LHS into XMM0
-    } else {
-      visitExpr(e->rhs);
-      visitExpr(e->lhs);
-      popToRegister("%xmm0");  // Pop LHS into XMM0
-      popToRegister("%xmm1");  // Pop RHS into XMM1
-    }
+    handleBinaryExprs(lhsDepth, rhsDepth, "%xmm0", "%xmm1", e->lhs, e->rhs);
 
     std::string op;
     if (e->op == "+")
@@ -355,19 +333,7 @@ void codegen::binary(Node::Expr *expr) {
     }
     int lhsDepth = getExpressionDepth(e->lhs);
     int rhsDepth = getExpressionDepth(e->rhs);
-    if (lhsDepth > rhsDepth) {
-      visitExpr(e->lhs);
-      push(Instr{.var = PopInstr{.where = std::to_string(-variableCount) + "(%rbp)", .whereSize = size}, .type = InstrType::Pop}, Section::Main);
-      visitExpr(e->rhs);
-      push(Instr{.var = PopInstr{.where = rhsReg, .whereSize = size}, .type = InstrType::Pop}, Section::Main);
-      moveRegister(lhsReg, std::to_string(-variableCount) + "(%rbp)", size, size);
-    } else {
-      visitExpr(e->rhs);
-      push(Instr{.var = PopInstr{.where = std::to_string(-variableCount) + "(%rbp)", .whereSize = size}, .type = InstrType::Pop}, Section::Main);
-      visitExpr(e->lhs);
-      push(Instr{.var = PopInstr{.where = rhsReg, .whereSize = size}, .type = InstrType::Pop}, Section::Main);
-      moveRegister(rhsReg, std::to_string(-variableCount) + "(%rbp)", size, size); // it should buld but now i reall yhave to go
-    }
+    handleBinaryExprs(lhsDepth, rhsDepth, lhsReg, rhsReg, e->lhs, e->rhs);
     // Get the operation
     std::string op = lookup(opMap, e->op);
     // Perform the operation
@@ -1057,7 +1023,71 @@ void codegen::assignStructMember(Node::Expr *expr) {
   AssignmentExpr *e = static_cast<AssignmentExpr *>(expr);
   // This is where you go
   // struct.member = value;
-
+  visitExpr(e->assignee); // This should be a struct. What is being pushed right now is a pointer
+  std::string rhsName = dynamic_cast<IdentExpr *>(e->rhs)->name;
+  auto &thisByteSizes = structByteSizes[getUnderlying(e->assignee->asmType)];
+  size_t elementIndex = 99999; // This would be a stupid struct to have.
+  for (size_t i = 0; i < thisByteSizes.second.size(); i++) {
+    if (thisByteSizes.second.at(i).first == rhsName) {
+      elementIndex = i;
+      break;
+    }
+  }
+  // we know that the member exists because the typechecker exists
+  // Is the member a new struct?
+  long long inStructOffset = thisByteSizes.first - (thisByteSizes.second.at(elementIndex).second.second) - getByteSizeOfType(thisByteSizes.second[0].second.first);
+  if (structByteSizes.contains(getUnderlying(thisByteSizes.second.at(elementIndex).second.first))) {
+    if (e->rhs->kind == ND_STRUCT) {
+      // we will just declare struct variable but put it at the relative location here
+      popToRegister("%rcx");
+      declareStructVariable(e->rhs, getUnderlying(e->asmType), "%rcx", 
+                            inStructOffset); // i hope that works lel
+      push(Instr{.var=LeaInstr{.size = DataSize::Qword,
+                                 .dest = "%rcx",
+                                 .src = std::to_string(inStructOffset) + "(%rcx)"},
+                 .type = InstrType::Lea},
+           Section::Main);
+      pushRegister("%rcx");
+      return;  
+    }
+    // if what we are copying is <= 16 bytes, we will juts mov
+    if (getByteSizeOfType(thisByteSizes.second.at(elementIndex).second.first) <= 16) {
+      // We can just mov the value into the struct member
+      popToRegister("%rdx"); // rdx = &struct.member
+      visitExpr(e->rhs);
+      popToRegister("%rdi"); // rdi = &value
+      long remainingBytes = getByteSizeOfType(thisByteSizes.second.at(elementIndex).second.first);
+      while (remainingBytes > 0) {
+        DataSize size;
+        std::string whereReg;
+        if (remainingBytes >= 8) {
+          size = DataSize::Qword;
+          whereReg = "%rdx";
+        } else if (remainingBytes >= 4) {
+          size = DataSize::Dword;
+          whereReg = "%rdx";
+        } else if (remainingBytes >= 2) {
+          size = DataSize::Word;
+          whereReg = "%rdx";
+        } else {
+          size = DataSize::Byte;
+          whereReg = "%rdx";
+        }
+        remainingBytes -= getByteSizeOfType(thisByteSizes.second.at(elementIndex).second.first);
+        push(Instr{.var=MovInstr{.dest=whereReg, .src=std::to_string(remainingBytes) + "(%rdi)",
+                                 .destSize=size, .srcSize=size},
+                   .type=InstrType::Mov},
+             Section::Main);
+        push(Instr{.var=MovInstr{.dest=std::to_string(remainingBytes) + "(%rdx)", .src="%rdi",
+                                 .destSize=size, .srcSize=size},
+                   .type=InstrType::Mov},
+             Section::Main);
+      }
+      return;
+    }
+    // Well, we have to copy the memory manually
+    // TODO do later lel
+  }
 };
 
 void codegen::assignDereference(Node::Expr *expr) {
