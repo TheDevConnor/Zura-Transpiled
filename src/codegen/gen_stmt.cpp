@@ -463,7 +463,7 @@ void codegen::block(Node::Stmt *stmt) {
                    "\n.byte " + std::to_string(s->file_id) + // File ID
                    "\n.byte " + std::to_string(s->line) +    // Line number
                    "\n.byte " + std::to_string(s->pos) +     // Column number
-                   "\n.long .Ldie" + std::to_string(thisDieCount) +
+                   "\n.quad .Ldie" + std::to_string(thisDieCount) +
                    "_begin" // Low pc
                    "\n.quad .Ldie" +
                    std::to_string(thisDieCount) + "_end - .Ldie" +
@@ -1027,6 +1027,7 @@ void codegen::matchStmt(Node::Stmt *stmt) {
   if (s->cases.size() == 0 && s->defaultCase != nullptr) {
     // Always jump to the default. What the hell are you using a switch for,
     // anyway?
+    dwarf::nextBlockDIE = true;
     visitStmt(s->defaultCase);
     return;
   }
@@ -1090,6 +1091,7 @@ void codegen::matchStmt(Node::Stmt *stmt) {
                                     std::to_string(conditionalCount + i)},
                .type = InstrType::Label},
          Section::Main);
+    dwarf::nextBlockDIE = true;
     visitStmt(matchCase.second);
     // Only jump to the end if there is a break. Otherwise, fall through!
     // Yes, this is intended. If you made a mistake and forgot to break, then we
@@ -1404,46 +1406,4 @@ void codegen::declareArrayVariable(Node::Expr *expr, long long arrayLength) {
     offsetTotal -= sizeOfType;
     push(Instr{.var=PopInstr{.where = std::to_string(-(offsetTotal + variableCount)) + "(%rbp)",.whereSize=size},.type=InstrType::Pop},Section::Main);
   }
-}
-
-void codegen::inputStmt(Node::Stmt *stmt) {
-  InputStmt *s = static_cast<InputStmt *>(stmt);
-
-  push(Instr{.var = Comment{.comment = "input statement"},
-             .type = InstrType::Comment},
-       Section::Main);
-  pushDebug(s->line, stmt->file_id, s->pos);
-
-  // Now that we printed the "prompt", we now have to make the syscall using the
-  // values do in reverse order because one of these may screw up the values of
-  // the registers
-  visitExpr(s->bufferOut); // rsi (should be leaq'd)
-  visitExpr(s->maxBytes);  // rdx
-  visitExpr(s->fd);        // rdi
-  popToRegister("%rdi");   // rdi
-  popToRegister("%rdx");   // rdx
-  popToRegister("%rsi");   // rsi
-  // RAX and RDI are constant in this case- constant syscall number and constant
-  // file descriptor (fd of stdin is 0)
-  push(Instr{.var = XorInstr{.lhs = "%rax", .rhs = "%rax"},
-             .type = InstrType::Xor},
-       Section::Main);
-  push(Instr{.var = Syscall{.name = "SYS_READ"}, .type = InstrType::Syscall},
-       Section::Main);
-}
-
-void codegen::closeStmt(Node::Stmt *stmt) {
-  CloseStmt *s = static_cast<CloseStmt *>(stmt);
-  pushDebug(s->line, stmt->file_id, s->pos);
-
-  // Now that we printed the "prompt", we now have to make the syscall using the
-  // values do in reverse order because one of these may screw up the values of
-  // the registers
-  visitExpr(s->fd);      // rdi
-  popToRegister("%rdi"); // rdi
-  // RAX is constant in this case- constant syscall number
-  // Stupid AI! Rax is not 0...
-  moveRegister("%rax", "$3", DataSize::Qword, DataSize::Qword);
-  push(Instr{.var = Syscall{.name = "SYS_CLOSE"}, .type = InstrType::Syscall},
-       Section::Main);
 }

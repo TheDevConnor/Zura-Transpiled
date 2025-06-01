@@ -259,6 +259,7 @@ inline size_t stringCount = 0;
 inline size_t floatCount = 0;
 inline size_t loopCount = 0;
 inline size_t arrayCount = 0;
+inline bool isUsingNewline = false;
 //                            idx    # ELEM
 inline std::vector<std::pair<size_t, size_t>> arrayCounts = {};
 

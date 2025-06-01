@@ -211,27 +211,6 @@ void codegen::gen(Node::Stmt *stmt, bool isSaved, std::string output_filename,
           "\n.size native_memcpy, .-native_memcpy\n";
   }
   if (nativeFunctionsUsed[NativeASMFunc::strcmp] == true) {
-    // native_strcmp:
-    // .Lstrcmp_loop:
-    //     movzbq (%rdi), %rax      # Load *rdi -> rax (zero-extend)
-    //     movzbq (%rsi), %rcx      # Load *rsi -> rcx (zero-extend)
-    //     cmp %rax, %rcx           # Compare characters
-    //     jne .Lstrcmp_diff        # If different, return difference
-    //     test %al, %al            # Check for null terminator
-    //     je .Lstrcmp_equal        # Both null → equal
-    //     inc %rdi
-    //     inc %rsi
-    //     jmp .Lstrcmp_loop
-
-    // .Lstrcmp_diff:
-    //     sub %rcx, %rax           # Return difference (like C strcmp)
-    //     ret
-
-    // .Lstrcmp_equal:
-    //     xor %rax, %rax           # Return 0
-    //     ret
-
-    // .size native_strcmp, .-native_strcmp
     file  << ".type native_strcmp, @function\n"
              "native_strcmp:"
              "\n.Lstrcmp_loop:"
@@ -262,6 +241,7 @@ void codegen::gen(Node::Stmt *stmt, bool isSaved, std::string output_filename,
     file << "\n# readonly data section - contains constant strings and floats (for now)"
             "\n.section .rodata\n";
     file << Stringifier::stringifyInstrs(rodt_section);
+    if (isUsingNewline) file << "\n.Lstring_newline:\n\t.ascii \"\\n\"\n";
   }
   if (data_section.size() > 0) {
     file << "\n# data section for pre-allocated, mutable data"

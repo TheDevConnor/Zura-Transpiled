@@ -12,22 +12,22 @@ void codegen::print(Node::Stmt *stmt) {
   pushDebug(print->line, stmt->file_id);
 
   for (Node::Expr *arg : print->args) {
-    std::string argType = TypeChecker::type_to_string(arg->asmType);
     Node::Expr *optimizedArg = CompileOptimizer::optimizeExpr(arg);
-    if (optimizedArg->asmType->kind == ND_POINTER_TYPE)
-      handlePtrDisplay(print->fd, arg, print->line, print->pos);
+    std::string argType = TypeChecker::type_to_string(optimizedArg->asmType);
+    if (argType == "str" || argType == "*char") // Is it a *char???`
+      return handleStrDisplay(print->fd, optimizedArg);
+    else if (optimizedArg->asmType->kind == ND_POINTER_TYPE)
+      return handlePtrDisplay(print->fd, arg, print->line, print->pos);
     else if (optimizedArg->kind == ND_INT || optimizedArg->kind == ND_BOOL || optimizedArg->kind == ND_CHAR || optimizedArg->kind == ND_FLOAT || optimizedArg->kind == ND_STRING)
-      handleLiteralDisplay(print->fd, optimizedArg);
-    else if (argType == "str")
-      handleStrDisplay(print->fd, optimizedArg);
+      return handleLiteralDisplay(print->fd, optimizedArg);
     else if (TypeChecker::isIntBasedType(arg->asmType))
-      handlePrimitiveDisplay(print->fd, optimizedArg);
+      return handlePrimitiveDisplay(print->fd, optimizedArg);
     else if (argType == "float" || argType == "double")
-      handleFloatDisplay(print->fd, optimizedArg, print->line, print->pos);
+      return handleFloatDisplay(print->fd, optimizedArg, print->line, print->pos);
     else if (optimizedArg->asmType->kind == ND_ARRAY_TYPE)  // must always be a char array, no other type of arr is allowed (char[] are also literally just char* anyway so lol)
-      handleArrayDisplay(print->fd, optimizedArg, print->line, print->pos);
+      return handleArrayDisplay(print->fd, optimizedArg, print->line, print->pos);
     else
-      handleError(print->line, print->pos,
+      return handleError(print->line, print->pos,
                   "Cannot print type '" + argType + "'.", "Codegen Error");
   }
 }
@@ -38,7 +38,10 @@ void codegen::importDecl(Node::Stmt *stmt) {
 
   ImportStmt *s = static_cast<ImportStmt *>(stmt);
   push(Instr{.var = Comment{.comment = "Import file '" + s->name + "'."}, .type = InstrType::Comment}, Section::Main);
+  std::string preFilePath = node.current_file;
+  node.current_file = s->name;
   codegen::program(s->stmt);
+  node.current_file = preFilePath;
 };
 
 void codegen::linkFile(Node::Stmt *stmt) {
@@ -330,4 +333,193 @@ void codegen::memcpyExpr(Node::Expr *expr) {
 
   // Push the return value to the stack
   pushRegister("%rax");
+}
+
+void codegen::getArgcExpr(Node::Expr *expr) {
+  // Push debug
+  GetArgcExpr *e = static_cast<GetArgcExpr *>(expr);
+  pushDebug(e->line, expr->file_id, e->pos);
+
+  // yes, that's it LOL
+  pushRegister(".Largc(%rip)");
+  useArguments = true;
+}
+
+void codegen::getArgvExpr(Node::Expr *expr) {
+  // Push debug
+  GetArgvExpr *e = static_cast<GetArgvExpr *>(expr);
+  pushDebug(e->line, expr->file_id, e->pos);
+
+  pushRegister(".Largv(%rip)");
+  useArguments = true;
+}
+
+void codegen::strcmp(Node::Expr *expr) {
+  StrCmp *s = static_cast<StrCmp *>(expr);
+  pushDebug(s->line, expr->file_id, s->pos);
+
+  // Push the first string
+  visitExpr(s->v1);
+  popToRegister("%rdi");
+  
+  // Push the second string
+  visitExpr(s->v2);
+  popToRegister("%rsi");
+
+  // call the native strcmp function
+  // Subtract variable count before call because of course we do
+  long long offsetAmount = round(variableCount - 8, 8);
+  if (offsetAmount)
+    push(Instr{.var = SubInstr{.lhs = "%rsp",
+                                .rhs = "$" + std::to_string(offsetAmount),
+                                .size = DataSize::Qword},
+                .type = InstrType::Sub},
+          Section::Main);
+  push(Instr{.var = CallInstr{.name = "native_strcmp"}, .type = InstrType::Call}, Section::Main);
+  nativeFunctionsUsed[NativeASMFunc::strcmp] = true;
+  if (offsetAmount)
+    push(Instr{.var = AddInstr{.lhs = "%rsp",
+                                .rhs = "$" + std::to_string(offsetAmount),
+                                .size = DataSize::Qword},
+                .type = InstrType::Sub},
+          Section::Main);
+  // The return value is in %rax, so we can just push it
+  push(Instr{.var=PushInstr{
+    .what="%al",
+    .whatSize=DataSize::Byte // booleans
+  }, .type=InstrType::Push}, Section::Main);
+}
+
+
+void codegen::openExpr(Node::Expr *expr) {
+  OpenExpr *e = static_cast<OpenExpr *>(expr);
+  pushDebug(e->line, expr->file_id, e->pos);
+
+  visitExpr(e->filename);
+  // DEAL WITH THESE LATER (VERY IMPORANT IG)
+  // visitExpr(e->canRead);
+  // visitExpr(e->canWrite);
+  // visitExpr(e->canCreate);
+
+  // Default flags: O_RDWR | O_CREAT | O_TRUNC
+  // values:          2    |   100   |  1000   = 578
+
+  // Create the syscall
+  popToRegister("%rdi");
+  if (e->canRead == nullptr && e->canWrite == nullptr &&
+      e->canCreate == nullptr) {
+    // The user did not specify any arguments. By default, they are Can Read,
+    // Can Write, and Can Create
+    moveRegister("%rsi", "$578", DataSize::Qword, DataSize::Qword);
+  } else {
+    bool canReadLiteral = false;
+    bool canWriteLiteral = false;
+    bool canCreateLiteral = false;
+    if (e->canRead == nullptr)
+      canReadLiteral = true;  // Effectively, you wrote 'true'
+    if (e->canWrite == nullptr)
+      canWriteLiteral = true;
+    if (e->canCreate == nullptr)
+      canCreateLiteral = true;
+
+    if (e->canRead != nullptr)
+      if (e->canRead->kind == ND_BOOL)
+        canReadLiteral = true;
+    if (e->canWrite != nullptr)
+      if (e->canWrite->kind == ND_BOOL)
+        canWriteLiteral = true;
+    if (e->canCreate != nullptr)
+      if (e->canCreate->kind == ND_BOOL)
+        canCreateLiteral = true;
+    if (canReadLiteral && canWriteLiteral && canCreateLiteral) {
+      // We can run these values and evaluate them in comptime
+      bool canReadValue;
+      bool canWriteValue;
+      bool canCreateValue;
+      if (e->canRead == nullptr)
+        canReadValue = true;
+      else
+        canReadValue = static_cast<BoolExpr *>(e->canRead)->value;
+
+      if (e->canWrite == nullptr)
+        canWriteValue = true;
+      else
+        canWriteValue = static_cast<BoolExpr *>(e->canWrite)->value;
+
+      if (e->canCreate == nullptr)
+        canCreateValue = true;
+      else
+        canCreateValue = static_cast<BoolExpr *>(e->canCreate)->value;
+      // read | write | create
+      //  02 |  0100  | 01000
+      const static int canRead = 02;
+      const static int canWrite = 0100;
+      const static int canCreate = 01000;
+      moveRegister("%rsi",
+                   "$" + std::to_string((canReadValue ? canRead : 0) |
+                                        (canWriteValue ? canWrite : 0) |
+                                        (canCreateValue ? canCreate : 0)),
+                   DataSize::Qword, DataSize::Qword);
+    } else {
+      // Some values are literals, some are not
+      // I could personally not care less about what you specify, so how about
+      // we return the default
+      moveRegister("%rsi", "$578", DataSize::Qword, DataSize::Qword);
+    }
+  }
+  // mode_t mode = S_IRUSR | S_IWUSR | S_IROTH
+  // values: total = 388
+
+  // Have you ever wanted to run a shell file but had to run `chmod +x file.sh`
+  // first? This rdx register, 'mode', says who has the permissions (like 'x'
+  // for 'execute') on the file I'm not sure why this is needed, because the
+  // file literally wouldn't be opened if you didn't have permission, but I have
+  // to supply this otherwise the syscall will fail.
+  moveRegister("%rdx", "$388", DataSize::Qword, DataSize::Qword);
+  moveRegister("%rax", "$2", DataSize::Qword, DataSize::Qword);
+  push(Instr{.var = Syscall{.name = "SYS_OPEN"}, .type = InstrType::Syscall},
+       Section::Main);
+  pushRegister("%rax");
+};
+
+void codegen::inputStmt(Node::Stmt *stmt) {
+  InputStmt *s = static_cast<InputStmt *>(stmt);
+
+  push(Instr{.var = Comment{.comment = "input statement"},
+             .type = InstrType::Comment},
+       Section::Main);
+  pushDebug(s->line, stmt->file_id, s->pos);
+
+  // Now that we printed the "prompt", we now have to make the syscall using the
+  // values do in reverse order because one of these may screw up the values of
+  // the registers
+  visitExpr(s->bufferOut); // rsi (should be leaq'd)
+  visitExpr(s->maxBytes);  // rdx
+  visitExpr(s->fd);        // rdi
+  popToRegister("%rdi");   // rdi
+  popToRegister("%rdx");   // rdx
+  popToRegister("%rsi");   // rsi
+  // RAX and RDI are constant in this case- constant syscall number and constant
+  // file descriptor (fd of stdin is 0)
+  push(Instr{.var = XorInstr{.lhs = "%rax", .rhs = "%rax"},
+             .type = InstrType::Xor},
+       Section::Main);
+  push(Instr{.var = Syscall{.name = "SYS_READ"}, .type = InstrType::Syscall},
+       Section::Main);
+}
+
+void codegen::closeStmt(Node::Stmt *stmt) {
+  CloseStmt *s = static_cast<CloseStmt *>(stmt);
+  pushDebug(s->line, stmt->file_id, s->pos);
+
+  // Now that we printed the "prompt", we now have to make the syscall using the
+  // values do in reverse order because one of these may screw up the values of
+  // the registers
+  visitExpr(s->fd);      // rdi
+  popToRegister("%rdi"); // rdi
+  // RAX is constant in this case- constant syscall number
+  // Stupid AI! Rax is not 0...
+  moveRegister("%rax", "$3", DataSize::Qword, DataSize::Qword);
+  push(Instr{.var = Syscall{.name = "SYS_CLOSE"}, .type = InstrType::Syscall},
+       Section::Main);
 }

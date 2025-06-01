@@ -388,14 +388,24 @@ void codegen::handleLiteralDisplay(Node::Expr *fd, Node::Expr *arg) {
          Section::Main);
   };
   if (arg->kind == ND_STRING) {
-    // Probably the most common form of literal being printed.
-    // Hello world users (everyone), you've been lied to.
+    // If the string literal was a newline character, it was likely emitted
+    // by outputln. This fills the rodata section with repetitive garbage.
     StringExpr *stringExpr = static_cast<StringExpr *>(arg);
     stringValue = stringExpr->value.substr(
         1,
         stringExpr->value.size() - 2); // Quotes are included, for some reason.
+    if (stringValue == "\\n") {
+      stringCount--; // Shhhh
+      isUsingNewline = true;
+      push(Instr{.var=LeaInstr{.size=DataSize::Qword, .dest = "%rsi", .src = ".Lstring_newline(%rip)"}, .type=InstrType::Lea}, Section::Main);
+      moveRegister("%rdx", "$1", DataSize::Qword, DataSize::Qword);
+      visitExpr(fd);
+      popToRegister("%rdi");
+      prepareSyscallWrite(); // The end!
+      return;
+    }
     push(
-        Instr{.var = Comment{.comment = "Print string ltieral for some reason"},
+        Instr{.var = Comment{.comment = "Print string literal for some reason"},
               .type = InstrType::Comment},
         Section::Main);
   }

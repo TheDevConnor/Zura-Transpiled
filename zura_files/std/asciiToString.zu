@@ -1,0 +1,106 @@
+const AsciiToString := fn (ctx: char) str {
+    match (ctx) {
+        case @cast<char>(0)  -> { return "";  } # Null character
+        case @cast<char>(10) -> { return "\n"; } # Newline
+        case @cast<char>(32) -> { return " "; }  # Space
+        case @cast<char>(33) -> { return "!"; }  # Exclamation mark
+        case @cast<char>(34) -> { return "'"; }  # Double quote
+        case @cast<char>(35) -> { return "#"; }  # Hash
+        case @cast<char>(36) -> { return "$"; }  # Dollar sign
+        case @cast<char>(37) -> { return "%"; }  # Percent
+        case @cast<char>(38) -> { return "&"; }  # Ampersand
+        case @cast<char>(39) -> { return "'"; }  # Single quote
+        case @cast<char>(40) -> { return "("; }  # Left parenthesis
+        case @cast<char>(41) -> { return ")"; }  # Right parenthesis
+        case @cast<char>(42) -> { return "*"; }  # Asterisk
+        case @cast<char>(43) -> { return "+"; }  # Plus
+        case @cast<char>(44) -> { return ","; }  # Comma
+        case @cast<char>(45) -> { return "-"; }  # Hyphen
+        case @cast<char>(46) -> { return "."; }  # Period
+        case @cast<char>(47) -> { return "/"; }  # Slash
+        case @cast<char>(48) -> { return "0"; }  # Digit 0
+        case @cast<char>(49) -> { return "1"; }  # Digit 1
+        case @cast<char>(50) -> { return "2"; }  # Digit 2
+        case @cast<char>(51) -> { return "3"; }  # Digit 3
+        case @cast<char>(52) -> { return "4"; }  # Digit 4
+        case @cast<char>(53) -> { return "5"; }  # Digit 5
+        case @cast<char>(54) -> { return "6"; }  # Digit 6
+        case @cast<char>(55) -> { return "7"; }  # Digit 7
+        case @cast<char>(56) -> { return "8"; }  # Digit 8
+        case @cast<char>(57) -> { return "9"; }  # Digit 9
+        case @cast<char>(58) -> { return ":"; }  # Colon
+        case @cast<char>(59) -> { return ";"; }  # Semicolon
+        case @cast<char>(60) -> { return "<"; }  # Less than
+        case @cast<char>(61) -> { return "="; }  # Equals
+        case @cast<char>(62) -> { return ">"; }  # Greater than
+        case @cast<char>(63) -> { return "?"; }  # Question mark
+        case @cast<char>(64) -> { return "@"; }  # At sign
+        case @cast<char>(65) -> { return "A"; }  # Uppercase A
+        case @cast<char>(66) -> { return "B"; }  # Uppercase B
+        case @cast<char>(67) -> { return "C"; }  # Uppercase C
+        case @cast<char>(68) -> { return "D"; }  # Uppercase D
+        case @cast<char>(69) -> { return "E"; }  # Uppercase E
+        case @cast<char>(70) -> { return "F"; }  # Uppercase F
+        case @cast<char>(71) -> { return "G"; }  # Uppercase G
+        case @cast<char>(72) -> { return "H"; }  # Uppercase H
+        case @cast<char>(73) -> { return "I"; }  # Uppercase I
+        case @cast<char>(74) -> { return "J"; }  # Uppercase J
+        case @cast<char>(75) -> { return "K"; }  # Uppercase K
+        case @cast<char>(76) -> { return "L"; }  # Uppercase L
+        case @cast<char>(77) -> { return "M"; }  # Uppercase M
+        case @cast<char>(78) -> { return "N"; }  # Uppercase N
+        case @cast<char>(79) -> { return "O"; }  # Uppercase O
+        case @cast<char>(80) -> { return "P"; }  # Uppercase P
+        case @cast<char>(81) -> { return "Q"; }  # Uppercase Q
+        case @cast<char>(82) -> { return "R"; }  # Uppercase R
+        case @cast<char>(83) -> { return "S"; }  # Uppercase S
+        case @cast<char>(84) -> { return "T"; }  # Uppercase T
+        case @cast<char>(85) -> { return "U"; }  # Uppercase U
+        case @cast<char>(86) -> { return "V"; }  # Uppercase V
+        case @cast<char>(87) -> { return "W"; }  # Uppercase W
+        case @cast<char>(88) -> { return "X"; }  # Uppercase X
+        case @cast<char>(89) -> { return "Y"; }  # Uppercase Y
+        case @cast<char>(90) -> { return "Z"; }  # Uppercase Z
+        case @cast<char>(91) -> { return "["; }  # Left square bracket
+        case @cast<char>(92) -> { return "\\"; } # Backslash
+        case @cast<char>(93) -> { return "]"; }  # Right square bracket
+        case @cast<char>(94) -> { return "^"; }  # Caret
+        case @cast<char>(95) -> { return "_"; }  # Underscore
+        case @cast<char>(96) -> { return "`"; }  # Grave accent
+        case @cast<char>(97) -> { return "a"; }  # Lowercase a
+        case @cast<char>(98) -> { return "b"; }  # Lowercase b
+        case @cast<char>(99) -> { return "c"; }  # Lowercase c
+        case @cast<char>(100) -> { return "d"; }  # Lowercase d
+        case @cast<char>(101) -> { return "e"; }  # Lowercase e
+        case @cast<char>(102) -> { return "f"; }  # Lowercase f
+        case @cast<char>(103) -> { return "g"; }  # Lowercase g
+        case @cast<char>(104) -> { return "h"; }  # Lowercase h
+        case @cast<char>(105) -> { return "i"; }  # Lowercase i
+        case @cast<char>(106) -> { return "j"; }  # Lowercase j
+        case @cast<char>(107) -> { return "k"; }  # Lowercase k
+        case @cast<char>(108) -> { return "l"; }  # Lowercase l
+        case @cast<char>(109) -> { return "m"; }  # Lowercase m
+        case @cast<char>(110) -> { return "n"; }  # Lowercase n
+        case @cast<char>(111) -> { return "o"; }  # Lowercase o
+        case @cast<char>(112) -> { return "p"; }  # Lowercase p
+        case @cast<char>(113) -> { return "q"; }  # Lowercase q
+        case @cast<char>(114) -> { return "r"; }  # Lowercase r
+        case @cast<char>(115) -> { return "s"; }  # Lowercase s
+        case @cast<char>(116) -> { return "t"; }  # Lowercase t
+        case @cast<char>(117) -> { return "u"; }  # Lowercase u
+        case @cast<char>(118) -> { return "v"; }  # Lowercase v
+        case @cast<char>(119) -> { return "w"; }  # Lowercase w
+        case @cast<char>(120) -> { return "x"; }  # Lowercase x
+        case @cast<char>(121) -> { return "y"; }  # Lowercase y
+        case @cast<char>(122) -> { return "z"; }  # Lowercase z
+        case @cast<char>(123) -> { return "{"; }  # Left curly brace
+        case @cast<char>(124) -> { return "|"; }  # Vertical bar
+        case @cast<char>(125) -> { return "}"; }  # Right curly brace
+        case @cast<char>(126) -> { return "~"; }  # Tilde
+        default -> {
+            @outputln(1, "Warning: Unhandled ASCII character: ", ctx);
+            return ""; # Return empty string for unhandled characters
+        }
+    }
+    return "";
+};

@@ -1,0 +1,39 @@
+const ERRORS := enum {
+  InvalidArgument,     # 0
+  OutputError,         # 1
+  NoArgumentsProvided, # 2
+  NoPathProvided,      # 3
+  NoActionProvided,    # 4
+  FileOpenFailed,      # 5
+};
+
+const printHelp := fn () int! {
+  @outputln(1, "Usage: zura_files [options] <file>");
+  @outputln(1, "Options:");
+  @outputln(1, "  --help       Show this help message");
+  @outputln(1, "  --version    Show the version of Zura");
+  @outputln(1, "  --license    Show the license of Zura");
+  @outputln(1, "Compiler Flags:");
+  @outputln(1, "  build <file> Build a Zura file");
+  @outputln(1, "  -name <name> Set the name of the output file");
+  @outputln(1, "  -save        Saves the assembly output");
+  @outputln(1, "  -clean       Clean the build files [*.asm, *.o]");
+  @outputln(1, "Zura LSP Flags:");
+  @outputln(1, "  -lsp         Create an LSP connection via stdio.");
+  return 0;
+};
+
+const printVersion := fn () int! {
+  @outputln(1, "Zura version 0.1.0");
+  return 0;
+};
+
+const printLicense := fn () int! {
+  @outputln(1, "Zura is licensed under the MIT License.");
+  return 0;
+};
+
+const printLsp := fn () int! {
+  @outputln(1, "LSP mode is not implemented yet.");
+  return 0;
+};

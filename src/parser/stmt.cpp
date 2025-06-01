@@ -601,6 +601,10 @@ Node::Stmt *Parser::importStmt(PStruct *psr, std::string name) {
   int column = psr->tks[psr->pos].column;
   (void)name; // mark it as unused
 
+  // Declare our file as first. If we are main but the first thing we do is import another file,
+  // this will maintain the first file, as, well, first.
+  (void)codegen::getFileID(psr->current_file);
+
   psr->expect(TokenKind::IMPORT,
               "Expected an IMPORT keyword to start an import stmt");
   std::string current_file = node.current_file;
@@ -609,6 +613,7 @@ Node::Stmt *Parser::importStmt(PStruct *psr, std::string name) {
                   "Expected a STRING as a path in an import stmt")
           .value;
   node.current_file = path;
+  psr->current_file = path;
 
   path = path.substr(1, path.size() - 2); // removes "" from the path
 
@@ -619,7 +624,7 @@ Node::Stmt *Parser::importStmt(PStruct *psr, std::string name) {
   // the absolute path will be /home/user/std/file2
 
   // Check if the path is already absolute
-  if (path.starts_with("file://"))
+  if (path.starts_with("file://") || path.starts_with("/"))
     path = path.substr(7);
   std::filesystem::path absolutePath = path;
   if (absolutePath.is_relative()) {
@@ -639,6 +644,7 @@ Node::Stmt *Parser::importStmt(PStruct *psr, std::string name) {
               "Expected a SEMICOLON at the end of an import stmt");
 
   node.current_file = current_file;
+  psr->current_file = current_file;
 
   return new ImportStmt(line, column, absolutePath, result,
                         codegen::getFileID(psr->current_file));
