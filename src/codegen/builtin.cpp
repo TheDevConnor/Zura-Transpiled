@@ -15,23 +15,22 @@ void codegen::print(Node::Stmt *stmt) {
   for (Node::Expr *arg : print->args) {
     Node::Expr *optimizedArg = CompileOptimizer::optimizeExpr(arg);
     std::string argType = TypeChecker::type_to_string(optimizedArg->asmType);
-
-    if (argType == "str" || argType == "*char") {
-      return handleStrDisplay(print->fd, optimizedArg);
-    } else if (optimizedArg->asmType->kind == ND_POINTER_TYPE) {
-      return handlePtrDisplay(print->fd, arg, print->line, print->pos);
-    } else if (optimizedArg->kind == ND_INT || optimizedArg->kind == ND_BOOL ||
+    if (optimizedArg->kind == ND_INT || optimizedArg->kind == ND_BOOL ||
                optimizedArg->kind == ND_CHAR ||
                optimizedArg->kind == ND_FLOAT ||
                optimizedArg->kind == ND_STRING) {
-      return handleLiteralDisplay(print->fd, optimizedArg);
+      handleLiteralDisplay(print->fd, optimizedArg);
+    } else if (argType == "str" || argType == "*char") {
+      handleStrDisplay(print->fd, optimizedArg);
+    } else if (arg->asmType->kind == ND_POINTER_TYPE) {
+      handlePtrDisplay(print->fd, optimizedArg, print->line, print->pos);
     } else if (TypeChecker::isIntBasedType(arg->asmType)) {
-      return handlePrimitiveDisplay(print->fd, optimizedArg);
+      handlePrimitiveDisplay(print->fd, optimizedArg);
     } else if (argType == "float" || argType == "double") {
-      return handleFloatDisplay(print->fd, optimizedArg, print->line,
+      handleFloatDisplay(print->fd, optimizedArg, print->line,
                                 print->pos);
-    } else if (optimizedArg->asmType->kind == ND_ARRAY_TYPE) {
-      return handleArrayDisplay(print->fd, optimizedArg, print->line,
+    } else if (arg->asmType->kind == ND_ARRAY_TYPE) {
+      handleArrayDisplay(print->fd, optimizedArg, print->line,
                                 print->pos);
     } else {
       handleError(print->line, print->pos,

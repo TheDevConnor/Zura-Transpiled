@@ -392,8 +392,8 @@ void codegen::handleLiteralDisplay(Node::Expr *fd, Node::Expr *arg) {
     // by outputln. This fills the rodata section with repetitive garbage.
     StringExpr *stringExpr = static_cast<StringExpr *>(arg);
     stringValue = stringExpr->value.substr(
-        1,
-        stringExpr->value.size() - 2); // Quotes are included, for some reason.
+      1,
+      stringExpr->value.size() - 2); // Quotes are included, for some reason.
     if (stringValue == "\\n") {
       stringCount--; // Shhhh
       isUsingNewline = true;
