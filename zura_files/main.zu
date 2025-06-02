@@ -8,7 +8,8 @@ const main := fn () int! {
   have size: int! = 2048; # Size of the buffer to read from file
 
   if (argc < 2) {
-    @outputln(1, "No arguments provided. Please provide a string to reverse.");
+    @outputln(1, "No arguments provided, Here are the available options:");
+    printHelp();
     return ERRORS.NoArgumentsProvided; # 2
   }
 

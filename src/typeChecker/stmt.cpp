@@ -482,12 +482,36 @@ void TypeChecker::visitMatch(Node::Stmt *stmt) {
   visitExpr(match_stmt->coverExpr);
 
   for (std::pair<Node::Expr *, Node::Stmt *> &pair : match_stmt->cases) {
-    visitExpr(
-        pair.first); // Implement actual jump tables and math later. For now,
-                     // all return_types for case expressions are allowed.
-    visitStmt(pair.second);
+    Node::Expr *case_expr = pair.first;
+    Node::Stmt *case_stmt = pair.second;
+
+    // Visit the case expression to get its type
+    visitExpr(case_expr);
+
+    // Check if the case expression is of the same type as the cover expression
+    if (!checkTypeMatch(return_type.get(), match_stmt->coverExpr->asmType)) {
+      std::string msg = "Case expression type '" +
+                        type_to_string(return_type.get()) +
+                        "' does not match cover expression type '" +
+                        type_to_string(match_stmt->coverExpr->asmType) + "'";
+      handleError(match_stmt->line, match_stmt->pos, msg, "", "Type Error");
+    }
+
+    // Visit the case statement
+    visitStmt(case_stmt);
   }
 
+  // Check if there is a default case
+  if (match_stmt->defaultCase != nullptr) {
+    // Visit the default case statement
+    visitStmt(match_stmt->defaultCase);
+  } else {
+    std::string msg = "Match statement does not have a default case.";
+    handleError(match_stmt->line, match_stmt->pos, msg, "",
+                "Type Error");
+  }
+
+  // Set the return type to void since match statements do not return a value
   return_type = nullptr;
 }
 

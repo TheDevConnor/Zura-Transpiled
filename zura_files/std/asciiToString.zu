@@ -1,4 +1,4 @@
-const AsciiToString := fn (ctx: char!) str {
+const AsciiToString := fn (ctx: char) str {
     match (ctx) {
         case @cast<char>(0)  -> { return "";  } # Null character
         case @cast<char>(10) -> { return "\n"; } # Newline
@@ -99,8 +99,9 @@ const AsciiToString := fn (ctx: char!) str {
         case @cast<char>(126) -> { return "~"; }  # Tilde
         default -> {
             @outputln(1, "Warning: Unhandled ASCII character: ", ctx);
-            return ""; # Return empty string for unhandled characters
+            return "";  # Return empty string for unhandled characters
         }
     }
-    return "";
+
+    return "";  # Default return for unhandled cases
 };

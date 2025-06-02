@@ -147,7 +147,6 @@ void TypeChecker::visitIdent(Node::Expr *expr) {
   // update the ast-node (IdentExpr) to hold the type of the identifier as a
   // property
   ident->type = res;
-  ident->asmType = res;
   return_type = share(res);
   // TODO: Update this to the new tc system
   if (isLspMode) {
