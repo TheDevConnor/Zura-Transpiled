@@ -11,6 +11,19 @@ const Color := enum {
   Reset,  # Reset color to default
 };
 
-const color := fn (c: Color) str {
-  return ""; # Placeholder for color implementation
+const findColor := fn (c: int!) str {
+  match(c) {
+    case 0 -> { return "\033[31m"; }  # Red
+    case 1 -> { return "\033[32m"; }  # Green
+    case 2 -> { return "\033[34m"; }  # Blue
+    case 3 -> { return "\033[36m"; }  # Cyan
+    case 4 -> { return "\033[35m"; }  # Magenta
+    case 5 -> { return "\033[33m"; }  # Yellow
+    case 6 -> { return "\033[37m"; }  # White
+    case 7 -> { return "\033[30m"; }  # Black
+    case 8 -> { return "\033[90m"; }  # Gray
+    case 9 -> { return "\033[0m"; }   # Reset color
+    default -> { return ""; }                   # Default case, should not happen
+  }
+  return "";  # Default return for unhandled cases
 };

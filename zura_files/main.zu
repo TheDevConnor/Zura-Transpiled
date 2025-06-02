@@ -1,11 +1,14 @@
 @import "std/asciiToString.zu";
 @import "std/readfile.zu";
+@import "std/color.zu";
 @import "helper.zu";
 
 const main := fn () int! {
   have argv: *[]str = @getArgv();
   have argc: int! = @getArgc();
   have size: int! = 2048; # Size of the buffer to read from file
+
+  @outputln(1, "Zura compiler ", findColor(@cast<int!>(Color.Green)), "v0.1.0", findColor(@cast<int!>(Color.Reset)));
 
   if (argc < 2) {
     @outputln(1, "No arguments provided, Here are the available options:");
