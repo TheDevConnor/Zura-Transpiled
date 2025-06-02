@@ -14,11 +14,11 @@ const main := fn () int! {
 
   have filePath: *char = nil;
   loop (i = 0; i < argc) :  (i++) {
-    if (@strcmp(argv&[i], "--help"))    return printHelp();
-    if (@strcmp(argv&[i], "--version")) return printVersion();
-    if (@strcmp(argv&[i], "--license")) return printLicense();
-    if (@strcmp(argv&[i], "--lsp"))     return printLsp();
-    if (@strcmp(argv&[i], "build")) {
+    if (@streq(argv&[i], "--help"))    return printHelp();
+    if (@streq(argv&[i], "--version")) return printVersion();
+    if (@streq(argv&[i], "--license")) return printLicense();
+    if (@streq(argv&[i], "--lsp"))     return printLsp();
+    if (@streq(argv&[i], "build")) {
       # expect the very next argument to be a path, if there IS a next argument
       if (i == argc - 1) {
         @outputln(1, "ERROR: No filepath to build.");

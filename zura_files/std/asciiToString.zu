@@ -62,7 +62,7 @@ const AsciiToString := fn (ctx: char) str {
         case @cast<char>(89) -> { return "Y"; }  # Uppercase Y
         case @cast<char>(90) -> { return "Z"; }  # Uppercase Z
         case @cast<char>(91) -> { return "["; }  # Left square bracket
-        case @cast<char>(92) -> { return "\\"; } # Backslash
+        case @cast<char>(92) -> { return "\\'"; } # Backslash
         case @cast<char>(93) -> { return "]"; }  # Right square bracket
         case @cast<char>(94) -> { return "^"; }  # Caret
         case @cast<char>(95) -> { return "_"; }  # Underscore

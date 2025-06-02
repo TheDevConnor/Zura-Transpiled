@@ -24,7 +24,7 @@ const printHelp := fn () int! {
 };
 
 const printVersion := fn () int! {
-  @outputln(1, "Zura version 0.1.0");
+  @outputln(1, "Zura version ", "0.1.0");
   return 0;
 };
 

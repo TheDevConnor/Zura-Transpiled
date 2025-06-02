@@ -25,7 +25,7 @@ Zura is a statically typed language that blends familiar syntax with modern cons
 Zura uses a unique combination of operators and control structures for defining variables, functions, and loops. All Zura programs must define a `main` function which serves as the entry point.
 
 ```cpp
-const main := fn () int {
+const main := fn () int! {
    return 0;
 };
 ```
@@ -139,8 +139,6 @@ You can access elements of an array using the square bracket operator `[]`.
 ```cpp
 have x: int = arr[0];
 ```
-
-There is more to come like; push, pop, and other array operations.
 
 ## Structures
 

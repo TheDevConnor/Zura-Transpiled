@@ -1,0 +1,16 @@
+const Color := enum {
+  Red,
+  Green,
+  Blue,
+  Cyan,
+  Magenta,
+  Yellow,
+  White,
+  Black,
+  Gray,
+  Reset,  # Reset color to default
+};
+
+const color := fn (c: Color) str {
+  return ""; # Placeholder for color implementation
+};
