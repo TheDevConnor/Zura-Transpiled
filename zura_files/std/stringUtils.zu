@@ -1,0 +1,27 @@
+const strlen := fn (s: *char) int! {
+    have len: int! = 0;
+    loop (s[len] != @cast<char>(0)) {
+        len++;
+    }
+    return len;
+};
+
+const concat := fn (a: *char, b: *char) *char {
+  have lenA: int! = strlen(a);
+  have lenB: int! = strlen(b);
+  have t_len: int! = lenA + lenB + 1; # +1 for null terminator
+
+  have result: *char = @cast<*char>(@alloc(t_len));
+  if (result == nil) {
+    @outputln(1, "Memory allocation failed in concat");
+    return nil;
+  }
+
+  @memcpy(result, a, lenA); # Copy first string
+  have offset: int! = @cast<int!>(result) + lenA;
+  @memcpy(@cast<*char>(offset), b, lenB); # Copy second string
+
+  result[t_len - 1] = @cast<char>(0); # Null-terminate the string
+
+  return result;
+};

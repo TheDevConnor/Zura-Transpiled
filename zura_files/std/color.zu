@@ -1,3 +1,5 @@
+@import "stringUtils.zu";
+
 const Color := enum {
   Red,
   Green,
@@ -26,4 +28,24 @@ const findColor := fn (c: int!) str {
     default -> { return ""; }                   # Default case, should not happen
   }
   return "";  # Default return for unhandled cases
+};
+
+const color := fn (c: int!, msg: *char) *char {
+  have colorCode: *char = @cast<*char>(findColor(c));
+  if (colorCode == nil) {
+    @outputln(1, "ERROR: Invalid color code provided.");
+    return msg;  # Return the original message if color code is invalid
+  }
+
+  have coloredMsg: *char = concat(colorCode, msg);
+  have final: *char = concat(coloredMsg, "\033[0m");
+  
+  @free(coloredMsg, strlen(coloredMsg));  # Free the intermediate string
+  @free(colorCode, strlen(colorCode));     # Free the color code string
+  if (final == nil) {
+    @outputln(1, "ERROR: Memory allocation failed for colored message.");
+    return msg;  # Return the original message if memory allocation fails
+  }
+  @free(msg, strlen(msg));  # Free the original message string
+  return final; 
 };
