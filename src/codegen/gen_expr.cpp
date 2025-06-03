@@ -1024,14 +1024,20 @@ void codegen::assignStructMember(Node::Expr *expr) {
   // This is where you go
   // struct.member = value;
   visitExpr(e->assignee); // This should be a struct. What is being pushed right now is a pointer
-  std::string rhsName = dynamic_cast<IdentExpr *>(e->rhs)->name;
-  auto &thisByteSizes = structByteSizes[getUnderlying(e->assignee->asmType)];
+  std::string structName = getUnderlying(dynamic_cast<MemberExpr*>(e->assignee)->lhs->asmType);
+  std::string rhsName = dynamic_cast<IdentExpr *>(dynamic_cast<MemberExpr*>(e->assignee)->rhs)->name;
+  auto &thisByteSizes = structByteSizes[structName];
   size_t elementIndex = 99999; // This would be a stupid struct to have.
   for (size_t i = 0; i < thisByteSizes.second.size(); i++) {
     if (thisByteSizes.second.at(i).first == rhsName) {
       elementIndex = i;
       break;
     }
+  }
+  if (elementIndex == 99999) {
+    // We didn't find the member, so we will throw an error
+    handleError(e->line, e->pos, "Member '" + rhsName + "' does not exist in struct '" + structName + "'.", "Codegen", true);
+    return;
   }
   // we know that the member exists because the typechecker exists
   // Is the member a new struct?
