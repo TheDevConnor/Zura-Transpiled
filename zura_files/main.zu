@@ -1,5 +1,7 @@
 @import "std/asciiToString.zu";
 @import "std/readfile.zu";
+
+@import "lexer/lexer.zu";
 @import "helper.zu";
 
 const main := fn () int! {

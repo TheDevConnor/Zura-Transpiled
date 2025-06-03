@@ -25,25 +25,22 @@ const TokenKind := enum {
   Dot
 };
 
-const PosInfo := struct {
-  start: *char,
-  end: short!,
-  line: short!,
-  pos: short!,
+const Position := struct {
+  line: int!,
+  pos: int!
 };
 
 const Token := struct {
   kind: TokenKind,
-  value: *char,
+  value: *char
 };
 
-# TODO: Implement the functions below
-const peek := fn (tk: *Token) char {};
-const advance := fn (tk: *Token) char {};
-const isDigit := fn (tk: *Token) bool {};
-const isAlpha := fn (tk: *Token) bool {};
+const Lexer := struct {
+  current: *char,
+  start: *char
+};
 
-const skipWhitespace := fn (tk: *Token) void {};
-
-const makeToken := fn (tk: *Token, kind: TokenKind, value: *char, posInfo: PosInfo) Token {};
-const next_token := fn (tk: *Token) Token {};
+const init_lexer := fn (lx: *Lexer, source: *char) void {
+  lx.current = source;
+  lx.start = source;
+};

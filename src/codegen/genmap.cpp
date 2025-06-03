@@ -56,16 +56,19 @@ void codegen::initMaps() {
       {"<", "setl"},  {"<=", "setle"}, {"||", "lor"}, {"|", "bor"},
       {"&&", "land"},
   };
-  typeSizes = {{"int", 8},
-               {"float", 4},
-               {"enum", 4},
-               {"str", 8},
-               {"char", 1},
-               {"bool", 1},
-               {"void", 0},
-               {"double", 8},
-               {"$", 0}, // Imagine this represents None- an integer literal
-                         // whose size depends on the context.
-               {"long double", 10},
-               {"long", 4}};
+  typeSizes = {
+      {"int", 8},
+      {"float", 4},
+      {"enum", 4},
+      {"str", 8},
+      {"short", 2},
+      {"char", 1},
+      {"bool", 1},
+      {"void", 0},
+      {"double", 8},
+      {"$", 0}, // Imagine this represents None- an integer literal
+                // whose size depends on the context.
+      {"long double", 10},
+      {"long", 4},
+  };
 }
