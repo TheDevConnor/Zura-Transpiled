@@ -25,6 +25,7 @@
 ## Why?
 
 Modern low-level programming often comes with trade-offs between safety, simplicity, and performance. C and C++ are powerful, but notoriously difficult to master safely.
+Zura follows the principle of *“Simple yet powerful.”* It is designed to retain the low-level control of C while reducing complexity 
 
 Zura aims to:
 
