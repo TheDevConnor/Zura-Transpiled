@@ -1,3 +1,5 @@
+@import "../std/asciiToString.zu";
+
 const TokenKind := enum {
   Plus,
   Dash,
@@ -31,16 +33,23 @@ const Position := struct {
 };
 
 const Token := struct {
+  position: Position,
   kind: TokenKind,
   value: *char
 };
 
 const Lexer := struct {
   current: *char,
-  start: *char
+  start: *char,
+  line: int!,
+  pos: int!,
 };
 
-const init_lexer := fn (lx: *Lexer, source: *char) void {
-  lx.current = source;
-  lx.start = source;
+# TODO: Replace this scan function to return an []Tokens 
+# as well as finish the logic for this function as well
+const scan := fn (lx: *Lexer, size: int!) void {
+  loop (i = 0; i < size) : (i++) {
+    if (lx&.current[i] == @cast<char>(0)) break;
+    @outputln(1, lx&.current[i]); 
+  }
 };

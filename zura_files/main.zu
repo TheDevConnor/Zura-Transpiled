@@ -1,4 +1,3 @@
-@import "std/asciiToString.zu";
 @import "std/readfile.zu";
 
 @import "lexer/lexer.zu";
@@ -36,16 +35,18 @@ const main := fn () int! {
   if (filePath == nil) return ERRORS.NoActionProvided; # 4
 
   have fileContents: *char = readFile(filePath, size);
-
   if (fileContents == nil) {
     @outputln(1, "ERROR: Could not open file: ", filePath);
     return ERRORS.FileOpenFailed; # 5
   }
   
-  # LEXER TIME
-  loop (i = 0; i < size) : (i++) {
-    @output(1, AsciiToString(fileContents[i]));
-  }
+  have lx: Lexer = {
+    current: fileContents,
+    start: fileContents,
+    line: 1,
+    pos: 0
+  };
+  scan(&lx, size);
 
   @free(fileContents, size);
   return 0;
