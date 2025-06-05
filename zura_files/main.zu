@@ -39,6 +39,8 @@ const main := fn () int! {
     @outputln(1, "ERROR: Could not open file: ", filePath);
     return ERRORS.FileOpenFailed; # 5
   }
+  # add a null terminator to the end of the file contents
+  fileContents[size - 1] = @cast<char>(0);
   
   have lx: Lexer = {
     current: fileContents,
@@ -46,8 +48,14 @@ const main := fn () int! {
     line: 1,
     pos: 0
   };
-  scan(&lx, size);
 
+  loop (i = 0; i < size) : (i++) {
+    if (lx.current[i] != @cast<char>(0)) scan(&lx);
+    else break; # Stop scanning when we reach the null terminator
+  }
+  
   @free(fileContents, size);
+  @free(lx.current, size);
+  @free(lx.start, size);
   return 0;
 };

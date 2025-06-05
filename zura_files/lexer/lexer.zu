@@ -45,11 +45,60 @@ const Lexer := struct {
   pos: int!,
 };
 
-# TODO: Replace this scan function to return an []Tokens 
-# as well as finish the logic for this function as well
-const scan := fn (lx: *Lexer, size: int!) void {
-  loop (i = 0; i < size) : (i++) {
-    if (lx&.current[i] == @cast<char>(0)) break;
-    @outputln(1, lx&.current[i]); 
+const advance := fn (lx: *Lexer) char {
+  have c: char = lx&.current[lx&.pos];
+
+  lx&.pos++;
+  if (c == @cast<char>(10)) { # newline character
+    lx&.line++;
+    lx&.pos = 0; # Reset position to the start of the line
   }
+
+   return c; # Return the character that was advanced
+};
+
+const current := fn (lx: *Lexer) char {
+  return lx&.current[lx&.pos];
+};
+
+const whitespace := fn (lx: *Lexer) int! {
+  have count: int! = 0;
+
+  loop (i = 0; i < lx&.pos) : (i++) {
+    match(lx&.current[lx&.pos]) {
+      case @cast<char>(10) -> { # newline character
+        advance(lx);
+        break;
+      }
+      case @cast<char>(32) -> { # space character
+        advance(lx);
+        count++;
+        break;
+      }
+      case @cast<char>(13) -> { # carriage return
+        advance(lx);
+        count++;
+        break;
+      }
+      case @cast<char>(9) -> { # tab character
+        advance(lx);
+        count++;
+        break;
+      }
+      default -> { return count; }
+    }
+  }
+
+  return count; # Return the count of whitespace characters skipped
+};
+
+const scan := fn (lx: *Lexer) void {
+  have count: int! = 0;
+  have whitespaceCount: int! = 0;
+
+  whitespaceCount = whitespace(lx);
+  lx&.start = lx&.current;
+
+  # for now just print the current character and its position
+  @outputln(1, "Current character: ", AsciiToString(advance(lx)), " ", current(lx), " at position: ", lx&.pos, " on line: ", lx&.line, " whitespace skipped: ", whitespaceCount);
 };
