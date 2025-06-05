@@ -92,13 +92,19 @@ const whitespace := fn (lx: *Lexer) int! {
   return count; # Return the count of whitespace characters skipped
 };
 
-const scan := fn (lx: *Lexer) void {
+const scan := fn (lx: *Lexer, size: int!) void {
   have count: int! = 0;
   have whitespaceCount: int! = 0;
 
-  whitespaceCount = whitespace(lx);
-  lx&.start = lx&.current;
+  loop (i = 0; i < size) : (i++) {
+    whitespaceCount = whitespace(lx);
+    lx&.start = lx&.current;
 
-  # for now just print the current character and its position
-  @outputln(1, "Current character: ", AsciiToString(advance(lx)), " ", current(lx), " at position: ", lx&.pos, " on line: ", lx&.line, " whitespace skipped: ", whitespaceCount);
+    if (lx&.current[lx&.pos] == @cast<char>(0)) {
+      break; # End of input
+    }
+    
+    # for now just print the current character and its position
+    @outputln(1, "Current character: ", AsciiToString(advance(lx)), " ", current(lx), " at position: ", lx&.pos, " on line: ", lx&.line, " whitespace skipped: ", whitespaceCount);
+  }
 };
