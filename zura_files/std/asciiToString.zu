@@ -1,4 +1,4 @@
-const AsciiToString := fn (ctx: char) str {
+const ascii_to_string := fn (ctx: char) str {
     match (ctx) {
         case @cast<char>(0)  -> { return "";  } # Null character
         case @cast<char>(9)  -> { return "\t"; } # Tab character
@@ -99,6 +99,7 @@ const AsciiToString := fn (ctx: char) str {
         case @cast<char>(124) -> { return "|"; }  # Vertical bar
         case @cast<char>(125) -> { return "}"; }  # Right curly brace
         case @cast<char>(126) -> { return "~"; }  # Tilde
+        case @cast<char>(127) -> { return ""; }  # Delete character (often ignored)
         default -> {
             @outputln(1, "Warning: Unhandled ASCII character: ", ctx);
             return "";  # Return empty string for unhandled characters

@@ -82,7 +82,7 @@ const scan := fn (lx: *Lexer, size: int!) void {
     }
     
     # for now just print the current character and its position
-    @outputln(1, "Current character: ", AsciiToString(lx&.current[lx&.pos]), " ", lx&.current[lx&.pos], " at position: ", lx&.pos, " on line: ", lx&.line, " whitespace skipped: ", whitespaceCount);
+    @outputln(1, "Current character: ", ascii_to_string(lx&.current[lx&.pos]), " ", lx&.current[lx&.pos], " at position: ", lx&.pos, " on line: ", lx&.line, " whitespace skipped: ", whitespaceCount);
 
     advance(lx);
   }
