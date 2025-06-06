@@ -19,14 +19,14 @@ const printHelp := fn () int! {
   @outputln(1, "  ", color(@cast<int!>(Color.Green), "build"), " <file> Build a Zura file");
   @outputln(1, "  ", color(@cast<int!>(Color.Green), "-name"), " <name> Set the name of the output file");
   @outputln(1, "  ", color(@cast<int!>(Color.Green), "-save"), "        Saves the assembly output");
-  @outputln(1, "  ", color(@cast<int!>(Color.Green), "-clean"), "       Clean the build files [*.asm, *.o]");
+  @outputln(1, "  ", color(@cast<int!>(Color.Green), "-clean"), "       Clean the build files [*.asm || *.s, *.o]");
   @outputln(1, "Zura LSP Flags:");
   @outputln(1, "  ", color(@cast<int!>(Color.Green), "-lsp"), "         Create an LSP connection via stdio.");
   return 0;
 };
 
 const printVersion := fn () int! {
-  @outputln(1, "Zura version ", color(2, "0.1.0"));
+  @outputln(1, "Zura version ", color(@cast<int!>(Color.Cyan), "0.1.0"));
   return 0;
 };
 

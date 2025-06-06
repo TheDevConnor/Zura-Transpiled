@@ -223,6 +223,20 @@ void TypeChecker::visitBinary(Node::Expr *expr) {
   } else if (boolOps.find(binary->op) != boolOps.end()) {
     return_type = std::make_shared<SymbolType>("bool");
     expr->asmType = new SymbolType("bool");
+  } else if (logicOps.find(binary->op) != logicOps.end()) {
+    // Logic operations require both sides to be bool
+    if (type_to_string(lhsType) != "bool" || type_to_string(rhsType) != "bool") {
+      std::string msg = "Logic operation '" + binary->op +
+                        "' requires both sides to be 'bool' but got '" +
+                        type_to_string(lhsType) + "' and '" +
+                        type_to_string(rhsType) + "'";
+      handleError(binary->line, binary->pos, msg, "", "Type Error");
+      return_type = std::make_shared<SymbolType>("unknown");
+      expr->asmType = new SymbolType("unknown");
+      return;
+    }
+    return_type = std::make_shared<SymbolType>("bool");
+    expr->asmType = new SymbolType("bool");
   } else {
     std::string msg = "Unsupported binary operator: " + binary->op;
     handleError(binary->line, binary->pos, msg, "", "Type Error");

@@ -1,6 +1,8 @@
 const AsciiToString := fn (ctx: char) str {
     match (ctx) {
         case @cast<char>(0)  -> { return "";  } # Null character
+        case @cast<char>(9)  -> { return "\t"; } # Tab character
+        case @cast<char>(13) -> { return "\r"; } # Carriage return
         case @cast<char>(10) -> { return "\n"; } # Newline
         case @cast<char>(32) -> { return " "; }  # Space
         case @cast<char>(33) -> { return "!"; }  # Exclamation mark

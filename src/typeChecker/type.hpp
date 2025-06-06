@@ -44,7 +44,7 @@ struct LSPIdentifier {
 };
 
 inline std::vector<LSPIdentifier> lsp_idents = {};
-enum class MathOp { Add, Subtract, Multiply, Divide, Modulo, Power };
+enum class MathOp { Add, Subtract, Multiply, Divide, Modulo, Power};
 const std::unordered_map<std::string, MathOp> mathOps = {
     {"+", MathOp::Add},    {"-", MathOp::Subtract}, {"*", MathOp::Multiply},
     {"/", MathOp::Divide}, {"%", MathOp::Modulo},   {"^", MathOp::Power}};
@@ -53,6 +53,9 @@ const std::unordered_map<std::string, BoolOp> boolOps = {
     {">", BoolOp::Greater},       {"<", BoolOp::Less},
     {">=", BoolOp::GreaterEqual}, {"<=", BoolOp::LessEqual},
     {"==", BoolOp::Equal},        {"!=", BoolOp::NotEqual}};
+enum class LogicOp { And, Or };
+const std::unordered_map<std::string, LogicOp> logicOps = {
+    {"&&", LogicOp::And}, {"||", LogicOp::Or}};
 enum class UnaryOP { Negate, Not, Increment, Decrement };
 const std::unordered_map<std::string, UnaryOP> unaryOps = {
     {"-", UnaryOP::Negate},
