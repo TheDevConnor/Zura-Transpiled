@@ -1027,6 +1027,7 @@ void codegen::assignStructMember(Node::Expr *expr) {
   std::string structName = getUnderlying(dynamic_cast<MemberExpr*>(e->assignee)->lhs->asmType);
   std::string rhsName = dynamic_cast<IdentExpr *>(dynamic_cast<MemberExpr*>(e->assignee)->rhs)->name;
   auto &thisByteSizes = structByteSizes[structName];
+  e->debug();
   size_t elementIndex = 99999; // This would be a stupid struct to have.
   for (size_t i = 0; i < thisByteSizes.second.size(); i++) {
     if (thisByteSizes.second.at(i).first == rhsName) {
@@ -1094,6 +1095,31 @@ void codegen::assignStructMember(Node::Expr *expr) {
     // Well, we have to copy the memory manually
     // TODO do later lel
   }
+  // CHECK : Was the member an array?
+  if (e->rhs->asmType->kind == ND_ARRAY_TYPE) {
+    // IGNORE
+    return;
+  }
+  // Hooray! Hopefully ,the size of the new thing is UNDER 16 bytes meaning that we
+  // can simply MOVE THINGS IN THERE!
+  // 1. calculate where we will be popping (ie -8(%rcx) or something)
+  if (e->assignee->asmType->kind == ND_POINTER_TYPE) {
+    popToRegister("%rcx"); // Pop the value into %rcx
+  } else {
+    // Get rid of the previous instruction.
+    PushInstr instr =
+        std::get<PushInstr>(text_section.at(text_section.size() - 1).var);
+    text_section.pop_back();
+  }
+  // 2. calculate the offset of the member in the struct
+  std::string popTo = std::to_string(inStructOffset) + "(%rcx)";
+  // 3. push the value into the struct member
+  visitExpr(e->rhs); // This should push the value we want to assign
+  DataSize size = intDataToSize(getByteSizeOfType(e->rhs->asmType));
+  // 4. pop the value into a register
+  push(Instr{.var=PopInstr{.where=popTo, .whereSize=size},
+             .type=InstrType::Pop},
+       Section::Main);
 };
 
 void codegen::assignDereference(Node::Expr *expr) {

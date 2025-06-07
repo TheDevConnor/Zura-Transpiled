@@ -5,7 +5,7 @@ const Test := struct {
 const main := fn () int! {
     have test: *Test = @cast<*Test>(@alloc(@sizeof(Test)));
 
-    test&.a = 42;
+    test.a = 42;
     @outputln(1, "Test a: ", test&.a);
 
     return 0; 
