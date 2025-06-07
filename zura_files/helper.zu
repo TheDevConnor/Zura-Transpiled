@@ -1,12 +1,13 @@
 @import "std/color.zu";
 
 const ERRORS := enum {
-  InvalidArgument,     # 0
-  OutputError,         # 1
-  NoArgumentsProvided, # 2
-  NoPathProvided,      # 3
-  NoActionProvided,    # 4
-  FileOpenFailed,      # 5
+  InvalidArgument,        # 0
+  OutputError,            # 1
+  NoArgumentsProvided,    # 2
+  NoPathProvided,         # 3
+  NoActionProvided,       # 4
+  FileOpenFailed,         # 5
+  MemoryAllocationFailed, # 6
 };
 
 const printHelp := fn () int! {

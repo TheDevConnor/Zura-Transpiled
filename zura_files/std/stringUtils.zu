@@ -25,3 +25,22 @@ const concat := fn (a: *char, b: *char) *char {
 
   return result;
 };
+
+const copy := fn (src: *char) *char {
+  have len: int! = strlen(src);
+  have dest: *char = @cast<*char>(@alloc(len + 1)); # +1 for null terminator
+  if (dest == nil) {
+    @outputln(1, "Memory allocation failed in copy");
+    return nil;
+  }
+
+  @memcpy(dest, src, len); # Copy the string
+  dest[len] = @cast<char>(0); # Null-terminate the string
+
+  return dest;
+};
+
+const strcmp := fn (a: *char, b: *char) int! {
+  return 0; # Placeholder for string comparison logic
+};
+

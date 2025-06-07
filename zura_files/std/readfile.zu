@@ -1,7 +1,11 @@
 const readFile := fn (path: *char, size: int!) *char {
   have bytes: *char = @cast<*char>(@alloc(size));
+  if (bytes == nil) {
+    @outputln(2, "Memory allocation failed for reading file: ", path);
+    return 6; # Return error code if memory allocation fails
+  }
+  
   have fd: int! = @open(path, true, false, false);
-
   if (fd < 0) {
     @free(bytes, size);
     return nil; # Return nil if the file could not be opened

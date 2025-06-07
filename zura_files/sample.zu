@@ -1,12 +1,23 @@
+@import "std/stringUtils.zu";
+
 const Test := struct {
+    source: *char,
     a: int!,
+    b: int!,
 };
 
 const main := fn () int! {
     have test: *Test = @cast<*Test>(@alloc(@sizeof(Test)));
+    have msg: *char = "Hello, Zura!";
 
     test.a = 42;
-    @outputln(1, "Test a: ", test&.a);
+    test.b = 84; 
 
+    @outputln(1, "Test struct created with a = ", test.a, " and b = ", test.b);
+    @memcpy(test.source, msg, strlen(msg) + 1); # +1 for null terminator
+    @outputln(1, "Test source: ", test.source);
+
+    @free(test, @sizeof(Test));
+    @outputln(1, "Test struct freed successfully.");
     return 0; 
 };
