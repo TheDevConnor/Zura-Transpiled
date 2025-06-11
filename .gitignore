@@ -13,7 +13,12 @@ Thumbs.db
 !*.hpp
 !*.md
 !*/
+*.s
+*.asm
+*.o
 zura
+main
+test
 
 # === Build system caches ===
 .cache/
@@ -22,11 +27,3 @@ zura
 build/
 release/
 debug/
-
-# files that nobody needs to see
-main
-test
-# assembly
-*.s
-*.asm
-*.o
