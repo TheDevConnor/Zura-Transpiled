@@ -1,1 +1,57 @@
-const main := fn () int! { have a: int! = 0; loop(a < 10) { a = a + 1; } return a; };
+@import "std/readfile.zu";
+
+@import "lexer/lexer.zu";
+@import "helper.zu";
+
+const main := fn () int! {
+  have argv: *[]str = @getArgv();
+  have argc: int! = @getArgc();
+  have size: int! = 2048; # Size of the buffer to read from file
+  
+  if (argc < 2) {
+    @outputln(1, "No arguments provided, Here are the available options:");
+    printHelp();
+    return ERRORS.NoArgumentsProvided; # 2
+  }
+
+  have filePath: *char = nil;
+  loop (i = 0; i < argc) :  (i++) {
+    if (@streq(argv&[i], "--help"))    return printHelp();
+    if (@streq(argv&[i], "--version")) return printVersion();
+    if (@streq(argv&[i], "--license")) return printLicense();
+    if (@streq(argv&[i], "--lsp"))     return printLsp();
+    if (@streq(argv&[i], "build")) {
+      # expect the very next argument to be a path, if there IS a next argument
+      if (i == argc - 1) {
+        @outputln(1, "ERROR: No filepath to build.");
+        return ERRORS.NoPathProvided; # 3
+      }
+
+      filePath = @cast<*char>(argv&[i++]);
+      i++;
+    }
+  }
+
+  if (filePath == nil) return ERRORS.NoActionProvided; # 4
+
+  have fileContents: *char = readFile(filePath, size);
+  if (fileContents == nil) {
+    @outputln(1, "ERROR: Could not open file: ", filePath);
+    return ERRORS.FileOpenFailed; # 5
+  }
+  # add a null terminator to the end of the file contents
+  fileContents[size - 1] = @cast<char>(0);
+  
+  have lx: Lexer = {
+    current: fileContents,
+    start: fileContents,
+    line: 1,
+    pos: 0
+  };
+  scan(&lx, size);
+  
+  @free(fileContents, size);
+  @free(lx.current, size);
+  @free(lx.start, size);
+  return 0;
+};

@@ -67,11 +67,9 @@ set(ZURA_SOURCE_FILES
 
     # LSP files
     src/server/lsp.cpp
-    src/server/documents.cpp
-    src/server/methods/init.cpp
-    src/server/methods/hover.cpp
-    src/server/methods/deinit.cpp
-    src/server/methods/completions.cpp
+    src/server/document.cpp
+    src/server/hover.cpp
+    src/server/atFunctions.cpp
 
     # Code Gen Files
     src/codegen/optimizer/optimize.cpp

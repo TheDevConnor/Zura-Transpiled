@@ -1,32 +1,89 @@
-@import "helper.zu";
+@import "../std/asciiToString.zu";
 
 const TokenKind := enum {
-    IDENTIFIER,
-    VARIABLE,
-    EQUALS,
-    SEMICOLON,
+  Plus,
+  Dash,
+  Star,
+  Slash,
+  LParen,
+  RParen,
+  Number,
+  Identifier,
+  String,
+  Comma,
+  Semicolon,
+  Equals,
+  LBrace,
+  RBrace,
+  LBracket,
+  RBracket,
+  Less,
+  Greater,
+  Ampersand,
+  Percent,
+  Bang,
+  Question,
+  Colon,
+  Dot
+};
 
-    EOF,
+const Position := struct {
+  line: int!,
+  pos: int!
 };
 
 const Token := struct {
-    kind: TokenKind;
-    value: []str;
-
-    is_eof := fn (self: *Token) bool {
-        if (self.kind == TokenKind.EOF) return true;
-        return false;
-    };
-
-    is := fn (self: *Token, kind: TokenKind) bool {
-        if (self.kind == kind) return true;
-        return false;
-    };
+  position: Position,
+  kind: TokenKind,
+  value: *char
 };
 
-const main := fn () int {
-    have num: []int = [1, 2, 3, 4, 5, 0]; # 0 is the terminator
-    have l: int = len(num);
-    dis(l, "\n");
-    return 0;
+const Lexer := struct {
+  current: *char,
+  start: *char,
+  line: int!,
+  pos: int!,
+};
+
+const advance := fn (lx: *Lexer) char {
+  return lx&.current[lx&.pos++];
+};
+
+const whitespace := fn (lx: *Lexer) int! {
+  have count: int! = 0;
+
+  loop (i = 0; i < lx&.pos) : (i++) {
+    if (lx&.current[lx&.pos] == @cast<char>(10)) { # Newline 
+      lx&.line++;
+      lx&.pos = 0;
+      advance(lx);
+    } 
+    if (lx&.current[lx&.pos] == @cast<char>(32)) { # Space
+      count++;
+      advance(lx);
+    } else {
+      break; # Stop if we encounter a non-whitespace character
+    }
+  }
+
+  return count; # Return the count of whitespace characters skipped
+};
+
+const scan := fn (lx: *Lexer, size: int!) void {
+  have count: int! = 0;
+  have whitespaceCount: int! = 0;
+
+  loop (i = 0; i < size) : (i++) {
+    whitespaceCount = whitespace(lx);
+    lx&.start = lx&.current;
+
+    if (lx&.current[lx&.pos] == @cast<char>(0)) {
+      break; # End of input
+    }
+    
+    # for now just print the current character and its position
+    @outputln(1, "Current character: ", ascii_to_string(lx&.current[lx&.pos]), " ", lx&.current[lx&.pos], " at position: ", lx&.pos, " on line: ", lx&.line, " whitespace skipped: ", whitespaceCount);
+
+    advance(lx);
+  }
 };

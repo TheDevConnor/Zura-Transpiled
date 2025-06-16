@@ -1,173 +1,159 @@
+#include "error.hpp"
+
 #include <iostream>
 #include <string>
-#include <vector>
 
-#include "../../ast/ast.hpp"
 #include "../../common.hpp"
-#include "../../lexer/lexer.hpp"
-#include "../../parser/parser.hpp"
 #include "../term_color/color.hpp"
-#include "error.hpp"
 
 Color col;
 
-std::string ErrorClass::lineNumber(int line) { return (line < 10) ? "0" : ""; }
-
-std::string ErrorClass::printLine(int line, const char *start) {
-  const char *end = start;
-  while (*end != '\n' && *end != '\0') {
-    end++;
-  }
-  return lineNumber(line) + std::to_string(line) + " | " +
-         std::string(start, end - start) + "\n";
-}
-
-std::string
-ErrorClass::formatLineWithTokens(int line, int pos,
-                                 const std::vector<Lexer::Token> &tokens,
-                                 bool highlightPos = false, bool getLastToken) {
-  std::string formattedLine = lineNumber(line) + std::to_string(line) + " | ";
-  const Lexer::Token *lastToken = nullptr;
-  size_t errorPos = formattedLine.size();
-  ErrorPos = 0;
-
-  for (const Lexer::Token &tk : tokens) {
-    if (tk.line != line) continue;
-
-    if (highlightPos && tk.column == pos) {
-      if (getLastToken && lastToken) {
-        formattedLine += col.color(lastToken->value, Color::RED, false, true) + " ";
-        errorPos += errorPos + lastToken->value.size() + 1;
-      } else {
-        formattedLine += col.color("_", Color::RED, false, true) + col.color(tk.value, Color::RED, false, true) + " ";
-        ErrorPos = errorPos; 
-      }
-    } else {
-      formattedLine += tk.value + " ";
-    }
-
-    lastToken = &tk;
-    errorPos += tk.value.size() + 1;
-  }
-
-  formattedLine += "\n";
-  return formattedLine;
-}
-
-std::string ErrorClass::currentLine(int line, int pos, Lexer &lexer,
-                                    bool isParser, bool isTypeError,
-                                    const std::vector<Lexer::Token> &tokens, bool getLastToken) {
-  if (isParser || isTypeError || getLastToken) {
-    return formatLineWithTokens(line, pos, tokens, isParser, getLastToken);
-  }
-
-  const char *start = lexer.lineStart(line);
-  return printLine(line, start);
-}
-
-std::string ErrorClass::error(int line, int pos, const std::string &msg,
-                              const std::string &note,
-                              const std::string &errorType,
-                              const std::string &filename, Lexer &lexer,
-                              const std::vector<Lexer::Token> &tokens,
-                              bool isParser, bool isWarning, bool isFatal,
-                              bool isMain, bool isTypeError, bool isGeneration) {
-
-  std::string line_error = "[" + std::to_string(line) + "::" + std::to_string(pos) + "] (";
-
-  if (isWarning) {
-    line_error += col.color("Warning", Color::YELLOW, false, true);
-  } else if (isFatal) {
-    line_error += col.color("Fatal", Color::RED, false, true);
+std::string Error::error_head(std::string error_type, int line, int pos,
+                              std::string filepath, bool isWarn) {
+  std::string ln = col.color(std::to_string(line), Color::C::YELLOW, true, false);
+  std::string ps = col.color(std::to_string(pos), Color::C::YELLOW, true, false);
+  std::string error = "";
+  if (isWarn) {
+    error = col.color("warn", Color::C::YELLOW, false, true) + ": ";
   } else {
-    line_error += col.color("Error", Color::RED);
+    error = col.color("error", Color::C::RED, false, true) + ": ";
   }
-
-  line_error += ") (" + filename + ")\n ↳ ";
-  line_error += (errorType.empty() ? col.color("Error", Color::RED, false, true)
-                                   : col.color(errorType, Color::MAGENTA, true, true)) + ": ";
-  // check if the msg begins with 'No value found for key'
-  if (msg.find("No value found for key") != std::string::npos) {
-    // check if fatal and error
-    if (isFatal) {
-      printError();
-      Exit(ExitValue::_ERROR);
-    }
-    return line_error; // no need to print the message
-  } else {
-    line_error += msg + "\n";
-  }
-
-  if (isMain) {
-    line_error += "\t" + col.color("Note", Color::CYAN, false, true) + ": " + note + "\n";
-    errors.push_back(line_error);
-    return line_error;
-  }
-
-  if (isParser) {
-    if (msg.find("Expected a SEMICOLON") == 0) {
-        line_error += currentLine(line - 1, pos, lexer, isParser, isTypeError, tokens, true);
-        line_error += " ↳ " + col.color("NOTE", Color::BLUE) + ": If the line above is empty, it's possible that the error is on the line above.\n";
-        if (!note.empty()) line_error += " ↳ " + col.color("NOTE", Color::BLUE) + ": " + note + "\n";
-    } else {
-        line_error += currentLine(line, pos, lexer, isParser, isTypeError, tokens);
-        line_error += std::string(ErrorPos, ' ') + col.color("^", Color::RED, false, true) + "\n";
-        if (!note.empty()) line_error += " ↳ " + col.color("NOTE", Color::BLUE) + ": " + note + "\n";
-    }
-
-    errors.push_back(line_error); // Add error if not already present
-    return line_error;
-  }
-
-  if (isTypeError) {
-    if (!note.empty()) {
-      line_error += " ↳ " + col.color("NOTE", Color::BLUE) + ": " + note + "\n";
-      errors.push_back(line_error);
-      return line_error;
-    }
-
-    line_error += (line > 0) ? col.color(currentLine(line - 1, pos, lexer, isParser, isTypeError, tokens), Color::GRAY, false, false) : "";
-    line_error += col.color(currentLine(line, pos, lexer, isParser, isTypeError, tokens), Color::WHITE, false, true);
-    line_error += col.color(currentLine(line + 1, pos, lexer, isParser, isTypeError, tokens), Color::GRAY, false, false);
-    errors.push_back(line_error);
-    return line_error;
-  }
-
-  if (isGeneration) {
-    if (!note.empty()) {
-      line_error += " ↳ " + col.color("NOTE", Color::BLUE) + ": " + note + "\n";
-    }
-  }
-
-  if (!(isParser || isTypeError || isGeneration)) {
-    // if we get here, it's a lexer error
-    line_error += currentLine(line, pos, lexer, isParser, isTypeError, tokens);
-    line_error += std::string(pos + 5, ' ') + col.color("^", Color::RED, false, true) + "\n";
-  }
-
-  if (isFatal) {
-    printError();
-    if (isGeneration) Exit(ExitValue::GENERATOR_ERROR);
-    if (isTypeError) Exit(ExitValue::TYPE_ERROR);
-    if (isParser) Exit(ExitValue::PARSER_ERROR); 
-    Exit(ExitValue::LEXER_ERROR); // Process of elimination
-  }
-  return line_error;
+  std::string type = col.color(error_type, Color::C::WHITE, true, true);
+  return error + type + "\n  --> [" + ln + "::" + ps + "](" + filepath + ")\n";
 }
 
-bool ErrorClass::printError() {
-  if (!shouldPrintErrors) return false; // Dont print something to console, it might mess up Literally everything...
-  if (!errors.empty() && errors.size() > 0) {
-    std::cout << "\r\033[2K"; // Clear the line and move to start -- overwrite previous garbage
-    std::cout << "Total number of Errors: "
-              << col.color(std::to_string(errors.size()), Color::RED, true,
-                            false)
-              << std::endl;
-    
-    for (const std::string &error : errors) {
+std::string Error::generate_whitespace(int space) {
+  std::string final;
+  for (int i = 0; i < space; i++)
+    final += " ";
+  return final;
+}
+
+std::string Error::generate_line(const std::vector<Lexer::Token> &tks, int line, int pos, Color::C c) {
+  (void)pos;
+  std::string ln = "";
+
+  // Safety check to handle empty token list
+  if (tks.empty()) {
+    return ln + "\n";
+  }
+
+  try {
+    for (const Lexer::Token &tk : tks) {
+      if (tk.line != line) continue;
+      ln += col.color(generate_whitespace(tk.whitespace) + tk.value, c, false, true);
+    }
+    ln += "\n";
+    return ln;
+  } catch (const std::exception &e) {
+    // If any exception occurs while generating the line, return a safe default
+    return "Error generating line: " + std::string(e.what()) + "\n";
+  }
+}
+
+bool Error::report_error() {
+  if (!shouldPrintErrors) return errors.size() > 0;
+  if (errors.size() > 0) {
+    std::cout << "Total Errors: "
+              << col.color(std::to_string(errors.size()), Color::C::RED) << "\n";
+    for (std::string &error : errors)
       std::cout << error << std::endl;
-    }
     return true;
   }
+  if (warnings.size() > 0) {
+    std::cout << "Total Warnigns: "
+              << col.color(std::to_string(warnings.size()), Color::C::YELLOW) << "\n";
+    for (std::string &warning : warnings)
+      std::cout << warning << std::endl;
+    return false;
+  }
   return false;
+}
+
+void Error::handle_lexer_error(Lexer &lex, std::string error_type,
+                               std::string file_path, std::string msg) {
+  try {
+    const char *start = lex.lineStart(lex.scanner.line);
+    const char *end = start;
+    while (*end != '\n' && *end != '\0')
+      end++;
+
+    std::string error = error_head(error_type, lex.scanner.line, lex.scanner.column, file_path, false);
+    error += col.color("   |\n", Color::C::GRAY);
+    std::string formatted_line =
+        line_number(lex.scanner.line) + std::to_string(lex.scanner.line) + "|";
+    error +=
+        " " + formatted_line + std::string(start, unsigned(end - start)) + "\n";
+    std::string error_space = std::string(static_cast<std::size_t>(std::max(0, lex.scanner.column - 1)), ' ');
+    error += col.color("   |", Color::C::GRAY) + error_space + col.color("^", Color::C::RED, true, true) + "\n";
+    error += col.color("note", Color::C::CYAN) + ": " + msg;
+
+    errors.push_back(error);
+  } catch (const std::exception &e) {
+    // If error formatting fails, make sure we at least report something
+    std::string simpleError = "Error in " + file_path + " at line " +
+                              std::to_string(lex.scanner.line) + ", pos " +
+                              std::to_string(lex.scanner.column) + ": " + msg +
+                              " (Error formatting failed: " + e.what() + ")";
+    errors.push_back(simpleError);
+  }
+}
+
+std::string Error::handle_type_error(const std::vector<Lexer::Token> &tks, int line,
+                                 int pos) {
+  std::string error;
+  
+  std::string formatted_line_before = line_number(line-1) + std::to_string(line-1) + "|";
+  std::string formatted_line = line_number(line) + std::to_string(line) + "|";
+  std::string formatted_line_after = line_number(line+1) + std::to_string(line+1) + "|";
+  
+  error += " " + formatted_line_before + generate_line(tks, line - 1, pos, Color::C::GRAY);
+  error += " " + formatted_line + generate_line(tks, line, pos);
+  error += col.color("   |", Color::C::GRAY) + generate_whitespace(pos - 1) +
+           col.color("^", Color::C::RED, true, true) + "\n";
+  error += " " + formatted_line_after + generate_line(tks, line + 1, pos, Color::C::GRAY);
+  return error;
+}
+
+void Error::handle_error(std::string error_type, std::string file_path,
+                         std::string msg, const std::vector<Lexer::Token> &tks,
+                         int line, int pos, bool isWarn) {
+  if (msg.find("Expected a SEMICOLON") == 0) line = line - 1;
+  try {
+    std::string error = error_head(error_type, line, pos, file_path, isWarn);
+    error += col.color("   |\n", Color::C::GRAY);
+    std::string formatted_line = line_number(line) + std::to_string(line) + "|";
+
+    // Handle the case when we're at the end of the file
+    if (tks.empty()) {
+      error += " " + formatted_line + "\n";
+    } else if (error_type == "Type Error") {
+      error += handle_type_error(tks, line, pos);
+      error += col.color("note", Color::C::CYAN) + ": " + msg;
+      errors.push_back(error);
+      return;
+    } else {
+      error += " " + formatted_line + generate_line(tks, line, pos);
+    }
+
+    // Make sure we don't generate negative spaces
+    int pointer_pos = pos > 0 ? pos - 1 : 0;
+    std::string error_space = std::string(static_cast<std::size_t>(std::max(0, pointer_pos)), '~');
+    error += col.color("   |", Color::C::GRAY) + col.color(error_space, Color::C::RED) + col.color("^", Color::C::RED, true, true) + "\n";
+    error += col.color("note", Color::C::CYAN) + ": " + msg;
+    if (isWarn)
+      warnings.push_back(error);
+    else
+      errors.push_back(error);
+  } catch (const std::exception &e) {
+    // If any exception occurs while formatting the error, fallback to a simple message
+    std::string simpleError = "Error in " + file_path + " at line " +
+                              std::to_string(line) + ", pos " +
+                              std::to_string(pos) + ": " + msg +
+                              " (Error formatting failed: " + e.what() + ")";
+    if (isWarn)
+      warnings.push_back(simpleError);
+    else
+      errors.push_back(simpleError);
+  }
 }

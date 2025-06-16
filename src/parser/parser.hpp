@@ -1,14 +1,10 @@
 #pragma once
 
 #include <functional>
-#include <iostream>
 #include <string>
-#include <unordered_map>
 #include <vector>
-#include <algorithm>
 
 #include "../ast/ast.hpp"
-#include "../helper/error/error.hpp"
 #include "../lexer/lexer.hpp"
 
 namespace Parser {
@@ -41,12 +37,12 @@ struct Parser::PStruct {
   std::string current_file;
   size_t pos = 0;
 
-  Lexer::Token current(PStruct *psr);
-  Lexer::Token advance(PStruct *psr);
-  Lexer::Token peek(PStruct *psr, int offset = 0);
-  Lexer::Token expect(PStruct *psr, TokenKind tk, std::string msg);
+  Lexer::Token current();
+  Lexer::Token advance();
+  Lexer::Token peek(int offset = 0);
+  Lexer::Token expect(TokenKind tk, std::string msg);
 
-  bool hadTokens(PStruct *psr);
+  bool hadTokens();
 };
 
 namespace Parser {
@@ -71,7 +67,8 @@ void createMaps(void);
 Node::Expr *led(PStruct *psr, Node::Expr *left, BindingPower bp);
 BindingPower getBP(TokenKind tk);
 Node::Stmt *stmt(PStruct *psr, std::string name);
-Node::Expr *nud(PStruct *psr);;
+Node::Expr *nud(PStruct *psr);
+;
 
 // Maps for the Pratt Parser for types.
 using TypeNudHandler = std::function<Node::Type *(PStruct *)>;
@@ -96,7 +93,6 @@ Node::Type *type_application(PStruct *psr);
 Node::Type *function_type(PStruct *psr);
 
 // Pratt parser functions.
-PStruct *setupParser(PStruct *psr, Lexer *lex, Lexer::Token tk, std::string current_file);
 Node::Expr *parseExpr(PStruct *psr, BindingPower bp);
 
 // Expr Functions
@@ -115,6 +111,16 @@ Node::Expr *freeExpr(PStruct *psr);
 Node::Expr *sizeofExpr(PStruct *psr);
 Node::Expr *memcpyExpr(PStruct *psr);
 Node::Expr *openExpr(PStruct *psr);
+Node::Expr *getArgc(PStruct *psr);
+Node::Expr *getArgv(PStruct *psr);
+Node::Expr *strcmp(PStruct *psr);
+Node::Expr *socketExpr(PStruct *psr);
+Node::Expr *bindExpr(PStruct *psr);
+Node::Expr *listenExpr(PStruct *psr);
+Node::Expr *acceptExpr(PStruct *psr);
+Node::Expr *recvExpr(PStruct *psr);
+Node::Expr *sendExpr(PStruct *psr);
+
 // Binary Functions
 Node::Expr *_postfix(PStruct *psr, Node::Expr *left, BindingPower bp);
 Node::Expr *binary(PStruct *psr, Node::Expr *left, BindingPower bp);
@@ -140,13 +146,11 @@ Node::Stmt *printlnStmt(PStruct *psr, std::string name);
 Node::Stmt *varStmt(PStruct *psr, std::string name);
 Node::Stmt *funStmt(PStruct *psr, std::string name);
 Node::Stmt *ifStmt(PStruct *psr, std::string name);
-Node::Stmt *templateStmt(PStruct *psr, std::string name);
 Node::Stmt *breakStmt(PStruct *psr, std::string name);
 Node::Stmt *continueStmt(PStruct *psr, std::string name);
 Node::Stmt *linkStmt(PStruct *psr, std::string name);
 Node::Stmt *externStmt(PStruct *psr, std::string name);
 Node::Stmt *inputStmt(PStruct *psr, std::string name);
 Node::Stmt *closeStmt(PStruct *psr, std::string name);
-
 Node::Stmt *exprStmt(PStruct *psr);
 } // namespace Parser

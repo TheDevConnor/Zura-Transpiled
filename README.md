@@ -1,73 +1,95 @@
-# `Zura`: a low-level compiled alternative to `C` and `C++`
+<h1>
+  <img src="assets/zura.png" alt="Zura Logo" width="40" style="vertical-align: middle; margin-right: 10px;">
+    Zura a low-level compiled alternative to C and C++
+</h1>
 
 <p align="center">
-  <a href="#why"> Why? </a> |
-  <a href="#language-goals"> Goals </a> |
-  <a href="#Project-Status"> Status </a> |
-  <a href="#Getting-Started"> Getting Started </a> |
-  <a href="#usage"> Usage </a> |
-  <a href="#join-us"> Join Us </a>
+  <a href="#why">Why?</a> |
+  <a href="#language-goals">Goals</a> |
+  <a href="#Project-Status">Status</a> |
+  <a href="#Getting-Started">Getting Started</a> |
+  <a href="#usage">Usage</a> |
+  <a href="#join-us">Join Us</a>
 </p>
+
+---
 
 ## Introduction
 
-Zura is a statically typed, compiled, low-level programming language. It is designed to be simple and easy to use. It is inspired by C and Go. It is currently in development and is not ready for production use.
+**Zura** is a statically typed, compiled systems programming language inspired by **C** and **Go**. It is designed to offer simplicity, safety, and high performance while remaining close to the metal. Zura is still in early development and not yet ready for production use.
 
-Feel free to go take a look at the documentation to see how to use the language!
-[Documentation](sample/SAMPLE.md)
+[documentation](docs/docs.md) for usage details and language design notes.
 
-## Why
+---
+
+## Why?
+
+Modern low-level programming often comes with trade-offs between safety, simplicity, and performance. C and C++ are powerful, but notoriously difficult to master safely.
+Zura follows the principle of *“Simple yet powerful.”* It is designed to retain the low-level control of C while reducing complexity 
+
+Zura aims to:
+
+- Provide a safer and more modern alternative to C.
+- Keep compilation fast and output highly performant.
+- Reduce boilerplate while preserving control over memory and hardware.
+
+---
 
 ## Language Goals
 
+- **Minimal & Explicit Syntax** – Avoid hidden control flow or magic.
+- **Fast Compilation** – Prioritize developer feedback cycles.
+- **Zero-Cost Abstractions** – Avoid performance penalties for convenience.
+- **Manual Memory Control** – Support fine-grained memory management.
+- **Toolchain Simplicity** – No complex build systems required.
+
+---
+
 ## Project Status
 
-Zura Language is currently an experimental project. There is no working
-compiler or toolchain. The demo interpreter for Zura is coming soon
+Zura is in the early experimental phase. There is **no stable compiler or runtime yet**.
 
-I want to better understand whether I can build a language that meets a
-successor language criteria, and whether the resulting language can gather a
-critical mass of interest within the larger C++ industry and community.
+Current progress:
 
-Currently, I have fleshed out several core aspects of both Zura the project
-and the language:
+- Core language strategy defined
+- Project structure, governance, and evolution process in place
+- Basic compilation pipeline in progress
+- Standard library and tooling ecosystem still under design
 
-- The strategy of the Zura Language and project.
-- An open-source project structure, governance model, and evolution process.
+This project explores the possibility of building a true C/C++ successor that could gain real-world adoption.
+
+---
 
 ## Getting Started
 
-To start make sure you have the following installed:
+You’ll need the following tools installed:
 
-- [cmake](https://cmake.org/)
-- [make](https://www.gnu.org/software/make/)
-- [gcc](https://gcc.gnu.org/)
-- [ninja](https://ninja-build.org/)
+- [Make](https://www.gnu.org/software/make/)
+- [GCC](https://gcc.gnu.org/)
+- [Valgrind](https://valgrind.org/) (optional, for memory debugging)
 
-#### Windows
+---
 
-Commands to install the above packages on Windows:
+### Linux Installation
 
-```powershell
-# Install chocolatey
-> Set-ExecutionPolicy Bypass -Scope Process -Force; `
-  iex ((New-Object System.Net.WebClient).DownloadString('https://chocolatey.org/install.ps1'))
-# Install packages
-> choco install cmake make mingw ninja
+#### Debain / Ubuntu
+```sh
+sudo apt-get install cmake gcc valgrind ninja
 ```
 
-#### Linux
-
-Commands to install the above packages on Ubuntu and Debian:
-
-```console
-sudo apt-get install cmake make gcc ninja-build valgrind
+#### openSUSE / SUSE Linux
+```sh
+sudo zypper install cmake gcc valgrind ninja
 ```
 
-For Arch Linux:
+#### Red Hat / Fedora
+```sh
+sudo dnf install gcc cmake valgrind ninja
+```
 
-```console
-sudo pacman -S cmake make gcc ninja valgrind 
+#### Arch Linux
+```sh
+sudo pacman -S cmake gcc valgrind ninja
 ```
 
 ##### Building
@@ -110,42 +132,24 @@ chmod +x installer.sh
 ./installer.sh
 ```
 
-<!-- sample/SAMPLE.md -->
-Now feel free to go take a look at the documentation to see how to use the language.
-[Documentation](sample/SAMPLE.md)
-
 ## Usage
 
-```console
-./build/zura <filename> -o <output name>
+```sh
+./zura build <filepath> -name <binary>
 ```
 
-if you wish to save the c code to a file, use the `-s` flag:
+if you wish to save the assembly code to a file, use the `-save` flag:
 
-```console
-./build/zura <filename> -o <output name> -s
+```sh
+./zura build <filepath> -name <binary> -save
 ```
 
-if you want to clean up the build directory, use the `-c` flag:
+Then run the binary with:
 
-```console
-./build/zura -c <exactable name>
+```sh
+./<binary>
 ```
-
-Then run the output file with:
-
-```console
-./<output name>
-```
-
-### Command that you can run
-
-```console
-zura --help
-```
-
-This command will show you all of the commands that you can run in the zura compiler.
 
 ## Join Us
 
-[Zura Website](https://zuralang.co/)
+[Zura Website](https://thedevconnor.github.io/Zura-Website/)

@@ -1,3 +1,6 @@
+#include <algorithm>
+
+#include "../helper/error/error.hpp"
 #include "parser.hpp"
 
 /**
@@ -17,12 +20,12 @@
 template <typename T, typename U>
 T Parser::lookup(PStruct *psr, const std::vector<std::pair<U, T>> &lu, U key) {
   typename std::vector<std::pair<U, T>>::const_iterator it = std::find_if(lu.begin(), lu.end(),
-                         [key](const std::pair<U, T> &p) { return p.first == key; });
+                                                                          [key](const std::pair<U, T> &p) { return p.first == key; });
 
   if (it == lu.end()) {
-    ErrorClass::error(0, 0, "No value found for key in Type maps", "",
-                      "Parser Error", node.current_file, lexer, psr->tks,
-                      true, false, true, false, false, false);
+    Error::handle_error("Parser", psr->current_file,
+                      "No value found for key in Type maps", psr->tks,
+                      psr->current().line, psr->current().column);
     // Note: IS FATAL! Do not dereference 'it' if its bad!
   }
 
@@ -43,8 +46,8 @@ void Parser::createTypeMaps() {
   type_nud_lu = {
       {TokenKind::IDENTIFIER, symbol_table},
       {TokenKind::LEFT_BRACKET, array_type},
-      {TokenKind::STAR, pointer_type}, // *
-      {TokenKind::LESS, type_application}, // <
+      {TokenKind::STAR, pointer_type},      // *
+      {TokenKind::LESS, type_application},  // <
 
       // Function types 'fn (args) type'
       {TokenKind::FUN, function_type},
@@ -67,14 +70,13 @@ void Parser::createTypeMaps() {
  * expression.
  */
 Node::Type *Parser::type_led(PStruct *psr, Node::Type *left, BindingPower bp) {
-  Lexer::Token op = psr->current(psr);
+  Lexer::Token op = psr->current();
   try {
     return lookup(psr, type_led_lu, op.kind)(psr, left, bp);
   } catch (std::exception &e) {
-    ErrorClass::error(psr->current(psr).line, psr->current(psr).column,
-                      "Error in type_led: " + std::string(e.what()), "",
-                      "Parser Error", node.current_file, lexer, psr->tks, true,
-                      false, false, false, false, false);
+    Error::handle_error("Parser", psr->current_file,
+                      "Error in type_led: " + std::string(e.what()), psr->tks,
+                      psr->current().line, psr->current().column);
     return nullptr;
   }
   return nullptr;
@@ -92,14 +94,13 @@ Node::Type *Parser::type_led(PStruct *psr, Node::Type *left, BindingPower bp) {
  * expression.
  */
 Node::Type *Parser::type_nud(PStruct *psr) {
-  Lexer::Token op = psr->current(psr);
+  Lexer::Token op = psr->current();
   try {
     return Parser::lookup(psr, type_nud_lu, op.kind)(psr);
-  } catch (std::exception &e) { // Return type is nullptr (aka there is non)
-    ErrorClass::error(psr->current(psr).line, psr->current(psr).column,
-                      "There is no type specified or type is not valid", "",
-                      "Parser Error", psr->current_file, lexer, psr->tks, true,
-                      false, false, false, false, false);
+  } catch (std::exception &e) {  // Return type is nullptr (aka there is non)
+    Error::handle_error("Parser", psr->current_file,
+                      "Error in type_nud: " + std::string(e.what()), psr->tks,
+                      psr->current().line, psr->current().column);
     return nullptr;
   }
   return nullptr;

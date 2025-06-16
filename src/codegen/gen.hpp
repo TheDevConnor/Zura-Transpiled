@@ -1,15 +1,15 @@
 #pragma once
 
+#include <cstdint>
+#include <set>
+#include <string>
+#include <unordered_map>
+#include <vector>
+
 #include "../ast/expr.hpp"
 #include "../ast/stmt.hpp"
 #include "../ast/types.hpp"
 #include "optimizer/optimize.hpp"
-
-#include <string>
-#include <cstdint>
-#include <unordered_map>
-#include <vector>
-#include <set>
 
 namespace codegen {
 
@@ -23,11 +23,11 @@ inline std::unordered_map<std::string, std::string> opMap;
 
 template <typename T, typename U>
 T lookup(const std::unordered_map<U, T> &map, U key) {
-    typename std::unordered_map<U, T>::const_iterator iter = map.find(key);
-    if (iter == map.end()) {
-        return nullptr;
-    }
-    return iter->second;
+  typename std::unordered_map<U, T>::const_iterator iter = map.find(key);
+  if (iter == map.end()) {
+    return nullptr;
+  }
+  return iter->second;
 }
 
 // Map for type sizes
@@ -42,9 +42,11 @@ inline int64_t variableCount = 8;
 
 // String could be register (%rdi, %rdx, ...) or effective address (-8(%rbp), ...)
 inline std::unordered_map<std::string, std::string> variableTable = {};
-inline std::vector<size_t> stackSizesForScopes = {}; // wordy term for "when we start a scope, push its stack size"
+inline std::vector<size_t> stackSizesForScopes = {};  // wordy term for "when we start a scope, push its stack size"
 inline size_t stackSize = 0;
 inline std::string insideStructName = "";
+
+inline bool useArguments = false;  // if calling @getArgc or @getArgv at any point in the program
 
 void visitStmt(Node::Stmt *stmt);
 void visitExpr(Node::Expr *expr);
@@ -92,71 +94,80 @@ void freeExpr(Node::Expr *expr);
 void sizeofExpr(Node::Expr *expr);
 void memcpyExpr(Node::Expr *expr);
 void openExpr(Node::Expr *expr);
+void getArgcExpr(Node::Expr *expr);
+void getArgvExpr(Node::Expr *expr);
+void strcmp(Node::Expr *expr);
 
 void assignStructMember(Node::Expr *expr);
 void assignArray(Node::Expr *expr);
 void assignDereference(Node::Expr *expr);
 void dereferenceStructPtr(Node::Expr *expr, std::string structName, std::string offsetRegister, size_t startOffset);
 void declareStructVariable(Node::Expr *expr, std::string structName, std::string offsetRegister, size_t startOffset);
-void declareArrayVariable(Node::Expr *expr, long long arrayLength, std::string varName);
+void declareArrayVariable(Node::Expr *expr, long long arrayLength);
 
 size_t sizeOfLEB(int64_t value);
-size_t convertFloatToInt(std::string input); // Float input. Crazy, right?
-size_t round(size_t num, size_t multiple=8); // Round a number up to the nearest multiple
+size_t convertFloatToInt(std::string input);    // Float input. Crazy, right?
+size_t round(size_t num, size_t multiple = 8);  // Round a number up to the nearest multiple
 
 // <name, <type, offset>>
 using StructMember = std::pair<std::string, std::pair<Node::Type *, unsigned short int>>;
 // <size, <StructMember>>
 using Struct = std::pair<unsigned short, std::vector<StructMember>>;
 inline std::set<std::string> enumTable = {};
-inline std::unordered_map<std::string, Struct> structByteSizes = {}; // Name of a struct and its size in bytes
+inline std::unordered_map<std::string, Struct> structByteSizes = {};  // Name of a struct and its size in bytes
 
-signed short int getByteSizeOfType(Node::Type *type); // Return the size of a type in bytes, ie pointers are a size_t (os specific macros baby!)
-std::string getUnderlying(Node::Type *type); // Get the underlying type name of a type (ie, int* -> int, []int -> int, int -> int)
+void orderStructFields(std::unordered_map<std::string, Node::Expr *> &fields, std::string &structName, std::vector<std::pair<std::string, Node::Expr *>> *orderedFields);
+long int getByteSizeOfType(Node::Type *type);  // Return the size of a type in bytes, ie pointers are a size_t (os specific macros baby!)
+std::string getUnderlying(Node::Type *type);           // Get the underlying type name of a type (ie, int* -> int, []int -> int, int -> int)
 std::string type_to_diename(Node::Type *type);
+DataSize intDataToSizeFloat(long int data);
+DataSize intDataToSize(long int data);
+long int dataSizeToInt(DataSize data);
 
 inline std::set<std::string> linkedFiles = {};
-inline std::set<std::string> externalNames = {}; // Make sure that when external functions are called, we run "call 'ExternalName'" rather than "call 'usr_FuncName'"/
+inline std::set<std::string> externalNames = {};  // Make sure that when external functions are called, we run "call 'ExternalName'" rather than "call 'usr_FuncName'"/
 
-enum class 
-Section {
-    // section .text
-    Main, // main function
-    Head, // user functions
-    // section .data
-    Data,
-    // section .rodata
-    ReadonlyData,
+enum class
+    Section {
+      // section .text
+      Main,  // main function
+      Head,  // user functions
+      // section .data
+      Data,
+      // section .rodata
+      ReadonlyData,
 
-    DIE, // Dwarf Information Entries - basically, they're little stinkbombs that tell the debugger what variable its looking at
-    DIEString, // String literals referenced by DIE's
-    DIEAbbrev, // Abbreviations for DIE's
-    DIETypes, // this will always be at the end of the regular DIE section
-};
+      DIE,        // Dwarf Information Entries - basically, they're little stinkbombs that tell the debugger what variable its looking at
+      DIEString,  // String literals referenced by DIE's
+      DIEAbbrev,  // Abbreviations for DIE's
+      DIETypes,   // this will always be at the end of the regular DIE section
+    };
 
 enum class NativeASMFunc {
-    strlen,
-    itoa,
-    uitoa,
-    memcpy,
+  strlen_func,
+  itoa,
+  uitoa,
+  memcpy_func,
+  strcmp,
 };
 
 inline std::vector<Instr> text_section = {};
 inline std::vector<Instr> head_section = {};
-inline std::vector<Instr> data_section = {}; // This is only really one of three instructions
-inline std::vector<Instr> rodt_section = {}; // Same as data section
-inline std::vector<Instr> die_section = {}; // Acronym for Dwarf Information Entry
-inline std::vector<Instr> diet_section = {}; // Acronym for Dwarf Information Entry
-inline std::vector<Instr> diea_section = {}; // DIE abbreviation (defines attributes used in DIE's)
-inline std::vector<Instr> dies_section = {}; // Dwarf Information Entries strings, referenced from DIE's
+inline std::vector<Instr> data_section = {};  // This is only really one of three instructions
+inline std::vector<Instr> rodt_section = {};  // Same as data section
+inline std::vector<Instr> die_section = {};   // Acronym for Dwarf Information Entry
+inline std::vector<std::pair<std::string, std::string>> die_arange_section = {}; // DIE address ranges, used for skipping around the CU
+inline std::vector<Instr> diet_section = {};  // Acronym for Dwarf Information Entry
+inline std::vector<Instr> diea_section = {};  // DIE abbreviation (defines attributes used in DIE's)
+inline std::vector<Instr> dies_section = {};  // Dwarf Information Entries strings, referenced from DIE's
 
 inline std::unordered_map<NativeASMFunc, bool> nativeFunctionsUsed = {};
 namespace dwarf {
 enum class DIEAbbrev {
-  Buffer, // 0
+  Buffer,  // 0
   // Compilation unit - always emitted
   // Subprogram (main function should always exist)
-  CompileUnit, // 1
+  CompileUnit,  // 1
 
   // Function types
   FunctionNoParams,
@@ -165,7 +176,7 @@ enum class DIEAbbrev {
   FunctionWithParamsVoid,
 
   // Function parameter
-  FunctionParam, // aka "Formal Parameter" psssh what garbage bro lmao
+  FunctionParam,  // aka "Formal Parameter" psssh what garbage bro lmao
 
   // Variable declaration
   Variable,
@@ -177,13 +188,13 @@ enum class DIEAbbrev {
   StructType,
   StructMember,
 
-  EnumType, // TAG_enumeration_type (encoding, byte size, type)
-  EnumMember, // TAG_enumerator (name, const val)
+  EnumType,    // TAG_enumeration_type (encoding, byte size, type)
+  EnumMember,  // TAG_enumerator (name, const val)
 
   // Types
-  Type, // EX: char
-  PointerType, // EX: char* -> points to a char.
-  ArrayType, // EX: [10]char -> array of 10 chars
+  Type,         // EX: char
+  PointerType,  // EX: char* -> points to a char.
+  ArrayType,    // EX: [10]char -> array of 10 chars
   ArraySubrange,
   // Void type is not included because it will not be included by function declarations
 };
@@ -195,70 +206,71 @@ void useStringP(std::string what);
 inline std::set<std::string> dieNamesUsed = {};
 inline std::set<std::string> dieStringsUsed = {};
 std::string generateAbbreviations(void);
-void emitTypes(void); // create the debug_info entries for the builtin zura types
+void emitTypes(void);  // create the debug_info entries for the builtin zura types
 inline bool nextBlockDIE = true;
 
 inline static const std::unordered_map<std::string, int> argOP_regs = {
-  {"%rax", 0},
-  {"%rdx", 1},
-  {"%rcx", 2},
-  {"%rbx", 3},
-  {"%rsi", 4},
-  {"%rdi", 5},
-  {"%rbp", 6},
-  {"%rsp", 7},
-  {"%r8", 8},
-  {"%r9", 9},
-  {"%r10", 10},
-  {"%r11", 11},
-  {"%r12", 12},
-  {"%r13", 13},
-  {"%r14", 14},
-  {"%r15", 15},
-  {"%rip", 16},
-  // xmmX registers
-  {"%xmm0", 17},
-  {"%xmm1", 18},
-  {"%xmm2", 19},
-  {"%xmm3", 20},
-  {"%xmm4", 21},
-  {"%xmm5", 22},
-  {"%xmm6", 23},
-  {"%xmm7", 24},
-  {"%xmm8", 25},
-  {"%xmm9", 26},
-  {"%xmm10", 27},
-  {"%xmm11", 28},
-  {"%xmm12", 29},
-  {"%xmm13", 30},
-  {"%xmm14", 31},
-  {"%xmm15", 32},
+    {"%rax", 0},
+    {"%rdx", 1},
+    {"%rcx", 2},
+    {"%rbx", 3},
+    {"%rsi", 4},
+    {"%rdi", 5},
+    {"%rbp", 6},
+    {"%rsp", 7},
+    {"%r8", 8},
+    {"%r9", 9},
+    {"%r10", 10},
+    {"%r11", 11},
+    {"%r12", 12},
+    {"%r13", 13},
+    {"%r14", 14},
+    {"%r15", 15},
+    {"%rip", 16},
+    // xmmX registers
+    {"%xmm0", 17},
+    {"%xmm1", 18},
+    {"%xmm2", 19},
+    {"%xmm3", 20},
+    {"%xmm4", 21},
+    {"%xmm5", 22},
+    {"%xmm6", 23},
+    {"%xmm7", 24},
+    {"%xmm8", 25},
+    {"%xmm9", 26},
+    {"%xmm10", 27},
+    {"%xmm11", 28},
+    {"%xmm12", 29},
+    {"%xmm13", 30},
+    {"%xmm14", 31},
+    {"%xmm15", 32},
 };
-}
+}  // namespace dwarf
 // Stack count, Variable count
 inline std::vector<std::pair<size_t, int64_t>> scopes = {};
 
 inline unsigned char loopDepth = 0;
 inline std::vector<std::string> fileIDs = {};
 inline bool isEntryPoint = false;
-inline size_t dieCount = 1; // Labels! Labels galore! Im not counting bytes, man! Let LD do it !!!
+inline size_t dieCount = 1;  // Labels! Labels galore! Im not counting bytes, man! Let LD do it !!!
 inline size_t howBadIsRbp = 0;
 inline size_t conditionalCount = 0;
 inline size_t stringCount = 0;
 inline size_t floatCount = 0;
 inline size_t loopCount = 0;
 inline size_t arrayCount = 0;
+inline bool isUsingNewline = false;
 //                            idx    # ELEM
 inline std::vector<std::pair<size_t, size_t>> arrayCounts = {};
 
-inline size_t funcBlockStart = -1; // Set to "stackSize" on FuncDecl blocks, will be set to crazy value when not used
+inline size_t funcBlockStart = -1;  // Set to "stackSize" on FuncDecl blocks, will be set to crazy value when not used
 void push(Instr instr, Section section = Section::Main);
 void pushLinker(std::string val, Section section);
 
 size_t getFileID(const std::string &file);
-void pushCompAsExpr(void); // assuming compexpr's will already do the "cmp" and "jmp", we will push 0x0 or 0x1 depending on the result
+void pushCompAsExpr(void);  // assuming compexpr's will already do the "cmp" and "jmp", we will push 0x0 or 0x1 depending on the result
 
-inline const char* file_name;
+inline const char *file_name;
 
 inline bool debug = false;
 
@@ -269,7 +281,7 @@ inline static const std::vector<std::string> floatArgOrder = {"%xmm0", "%xmm1", 
 // Helper functions for printing to the console
 void prepareSyscallWrite(void);
 void handlePtrDisplay(Node::Expr *fd, Node::Expr *arg, int line, int pos);
-void handleArrayDisplay(Node::Expr *fd, Node::Expr *arg, int line, int pos); // []char only, realistically
+void handleArrayDisplay(Node::Expr *fd, Node::Expr *arg, int line, int pos);  // []char only, realistically
 void handleFloatDisplay(Node::Expr *fd, Node::Expr *arg, int line, int pos);
 void handleLiteralDisplay(Node::Expr *fd, Node::Expr *arg);
 void handleStrDisplay(Node::Expr *fd, Node::Expr *arg);
@@ -280,6 +292,7 @@ std::string addBackslashes(std::string str);
 void moveRegister(const std::string &dest, const std::string &src, DataSize dest_size, DataSize src_size);
 void popToRegister(const std::string &reg);
 void pushRegister(const std::string &reg);
+void handleBinaryExprs(int lhsDepth, int rhsDepth, std::string lhsReg, std::string rhsReg, Node::Expr *lhs, Node::Expr *rhs);
 void pushDebug(size_t line, size_t file, long column = -1);
 void handleExitSyscall(void);
 void handleInputSyscall(void);
@@ -292,6 +305,6 @@ JumpCondition getOpposite(JumpCondition in);
 JumpCondition getJumpCondition(const std::string &op);
 
 bool execute_command(const std::string &command, const std::string &log_file);
-void gen(Node::Stmt *stmt, bool isSaved, std::string output, const char* filename, bool isDebug);
-void handleError(int line, int pos, std::string msg, std::string typeOfError, bool isFatal = false);
-} // namespace codegen
+void gen(Node::Stmt *stmt, bool isSaved, std::string output, const char *filename, bool isDebug);
+void handleError(int line, int pos, std::string msg, std::string typeOfError = "", bool isFatal = false);
+}  // namespace codegen

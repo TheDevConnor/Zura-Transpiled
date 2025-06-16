@@ -1,18 +1,17 @@
 #include "../ast/stmt.hpp"
-#include "../ast/types.hpp"
-#include "../helper/error/error.hpp"
-#include "type.hpp"
-#include "typeMaps.hpp"
 
+#include <filesystem>
 #include <iostream>
 #include <memory>
 #include <string>
 #include <unordered_map>
 #include <vector>
 
-void TypeChecker::visitStmt(Node::Stmt *stmt) {
-  StmtAstLookup(stmt);
-}
+#include "../ast/types.hpp"
+#include "type.hpp"
+#include "typeMaps.hpp"
+
+void TypeChecker::visitStmt(Node::Stmt *stmt) { StmtAstLookup(stmt); }
 
 void TypeChecker::visitExprStmt(Node::Stmt *stmt) {
   ExprStmt *expr_stmt = static_cast<ExprStmt *>(stmt);
@@ -57,17 +56,29 @@ void TypeChecker::visitFn(Node::Stmt *stmt) {
   context->enterScope(); // Enter function scope
 
   // Declare function in local table
-  context->declareLocal(fn_stmt->name, fn_stmt->returnType); // Declare this first, so that recursion and stuff is possible later
+  context->declareLocal(
+      fn_stmt->name,
+      fn_stmt->returnType); // Declare this first, so that recursion and stuff
+                            // is possible later
+
+  // if the isTemplate bool is true declare T as a type that can be Used
+  if (fn_stmt->isTemplate) {
+    for (std::string t : fn_stmt->typenames) {
+      context->declareLocal(t, new SymbolType(t));
+      context->globalSymbols[t] = new SymbolType(t);
+    }
+  }
 
   // Check function parameters
-  std::unordered_map<std::string, Node::Type *> params;
+  ParamsAndTypes params;
   for (std::pair<std::string, Node::Type *> &param : fn_stmt->params) {
-      if (!param.second) {
-          std::cerr << "Error: Parameter " << param.first << " has nullptr type!" << std::endl;
-          continue;
-      }
-      params[param.first] = param.second;
-      context->declareLocal(param.first, param.second);
+    if (!param.second) {
+      std::cerr << "Error: Parameter " << param.first << " has nullptr type!"
+                << std::endl;
+      continue;
+    }
+    params[param.first] = param.second;
+    context->declareLocal(param.first, param.second);
   }
 
   // Add function to functionTable
@@ -75,22 +86,28 @@ void TypeChecker::visitFn(Node::Stmt *stmt) {
 
   visitStmt(fn_stmt->block);
 
-  // Ensure return type is properly checked
-  if (return_type == nullptr) {
-      handleError(fn_stmt->line, fn_stmt->pos, "Return type is not defined", "", "Type Error");
-  }
+  if (type_to_string(fn_stmt->returnType) != "void") {
+    // Ensure return type is properly checked
+    if (return_type == nullptr) {
+      handleError(fn_stmt->line, fn_stmt->pos, "Return type is not defined", "",
+                  "Type Error");
+    }
 
-  // Check return statement requirements
-  if (!needsReturn && type_to_string(fn_stmt->returnType) != "void") {
-      handleError(fn_stmt->line, fn_stmt->pos, "Function requires a return statement", "", "Type Error");
+    // Check return statement requirements
+    if (!needsReturn) {
+      handleError(fn_stmt->line, fn_stmt->pos,
+                  "Function requires a return statement", "", "Type Error");
       return;
+    }
   }
 
   // Ensure function return type matches expected type
   std::string expectedType = type_to_string(fn_stmt->returnType);
   std::string actualType = type_to_string(return_type.get());
 
-  std::string msg = "Function '" + fn_stmt->name + "' requeries a return type of '" + type_to_string(fn_stmt->returnType) + "' but got '" +
+  std::string msg = "Function '" + fn_stmt->name +
+                    "' requeries a return type of '" +
+                    type_to_string(fn_stmt->returnType) + "' but got '" +
                     type_to_string(return_type.get()) + "' instead.";
   bool check = checkTypeMatch(fn_stmt->returnType, return_type.get());
   if (!check) {
@@ -101,6 +118,14 @@ void TypeChecker::visitFn(Node::Stmt *stmt) {
 
   // Declare function in global scope
   context->declareGlobal(fn_stmt->name, fn_stmt->returnType);
+
+  // Clear the template type from the local table
+  if (fn_stmt->isTemplate) {
+    for (std::string t : fn_stmt->typenames) {
+      context->globalSymbols.erase(t);
+      context->functionTable.erase(t);
+    }
+  }
 
   return_type = nullptr;
   context->exitScope();
@@ -121,16 +146,19 @@ void TypeChecker::visitStruct(Node::Stmt *stmt) {
   context->declareLocal(struct_stmt->name, static_cast<Node::Type *>(type));
   context->declareGlobal(struct_stmt->name, static_cast<Node::Type *>(type));
 
-  context->structTable.insert({struct_stmt->name, {}}); // Declare blank and insert later
+  context->structTable.insert(
+      {struct_stmt->name, {}}); // Declare blank and insert later
 
   // visit the fields Aka the variables
   for (std::pair<std::string, Node::Type *> &field : struct_stmt->fields) {
-    context->structTable.addMember(struct_stmt->name, field.first, field.second);
+    context->structTable.addMember(struct_stmt->name, field.first,
+                                   field.second);
   }
 
   // handle fn stmts in the struct
-  std::unordered_map<std::string, Node::Type *> params;
+  ParamsAndTypes params;
   for (Node::Stmt *stmt : struct_stmt->stmts) {
+    context->enterScope();
     FnStmt *fn_stmt = static_cast<FnStmt *>(stmt);
 
     for (std::pair<std::string, Node::Type *> &param : fn_stmt->params) {
@@ -141,7 +169,8 @@ void TypeChecker::visitStruct(Node::Stmt *stmt) {
 
     // declare_struct_fn(map, {fn_stmt->name, fn_stmt->returnType}, params,
     //                   fn_stmt->line, fn_stmt->pos, struct_stmt->name);
-    context->structTable.addFunction(struct_stmt->name, fn_stmt->name, fn_stmt->returnType, params);
+    context->structTable.addFunction(struct_stmt->name, fn_stmt->name,
+                                     fn_stmt->returnType, params);
 
     visitStmt(fn_stmt->block);
     params.clear();
@@ -171,7 +200,7 @@ void TypeChecker::visitStruct(Node::Stmt *stmt) {
                       "' requires a return type of '" +
                       type_to_string(fn_stmt->returnType) + "' but got '" +
                       type_to_string(return_type.get()) + "' instead.";
-    bool check = checkTypeMatch(fn_stmt->returnType, return_type.get()); 
+    bool check = checkTypeMatch(fn_stmt->returnType, return_type.get());
     if (!check) {
       handleError(fn_stmt->line, fn_stmt->pos, msg, "", "Type Error");
       return_type = std::make_shared<SymbolType>("unknown");
@@ -182,7 +211,7 @@ void TypeChecker::visitStruct(Node::Stmt *stmt) {
     context->declareGlobal(fn_stmt->name, fn_stmt->returnType);
 
     return_type = nullptr;
-    context->exitScope(); // clear the local table for the next function
+    context->exitScope();
   }
 
   return_type = std::make_shared<SymbolType>(struct_stmt->name);
@@ -196,18 +225,21 @@ void TypeChecker::visitEnum(Node::Stmt *stmt) {
   context->declareLocal(enum_stmt->name, static_cast<Node::Type *>(type));
   context->declareGlobal(enum_stmt->name, static_cast<Node::Type *>(type));
 
-  // delcare the enum in the enum table 
+  // delcare the enum in the enum table
   context->enumTable.declare(enum_stmt->name);
 
   if (enum_stmt->fields.empty()) {
-    std::string msg = "Enum '" + enum_stmt->name + "' must have at least one field";
+    std::string msg =
+        "Enum '" + enum_stmt->name + "' must have at least one field";
     handleError(enum_stmt->line, enum_stmt->pos, msg, "", "Type Error");
   }
 
   // visit the fields Aka the variables
   for (size_t i = 0; i < enum_stmt->fields.size(); i++) {
-    context->enumTable.addMember(enum_stmt->name, enum_stmt->fields[i], (long long)i);
-    context->declareLocal(enum_stmt->fields[i], static_cast<Node::Type *>(new SymbolType("int")));
+    context->enumTable.addMember(enum_stmt->name, enum_stmt->fields[i],
+                                 (long long)i);
+    context->declareLocal(enum_stmt->fields[i],
+                          static_cast<Node::Type *>(new SymbolType("int")));
   }
 
   // set return type to the name of the enum
@@ -218,7 +250,8 @@ void TypeChecker::visitIf(Node::Stmt *stmt) {
   IfStmt *if_stmt = static_cast<IfStmt *>(stmt);
   visitExpr(if_stmt->condition);
   if (type_to_string(return_type.get()) != "bool") {
-    std::string msg = "If condition must be a 'bool' but got '" + type_to_string(return_type.get()) + "'";
+    std::string msg = "If condition must be a 'bool' but got '" +
+                      type_to_string(return_type.get()) + "'";
     handleError(if_stmt->line, if_stmt->pos, msg, "", "Type Error");
   }
   visitStmt(if_stmt->thenStmt);
@@ -240,12 +273,14 @@ void TypeChecker::visitVar(Node::Stmt *stmt) {
 
   // Now check if we have a template struct
   if (var_stmt->type->kind == ND_TEMPLATE_STRUCT_TYPE) {
-    TemplateStructType *temp = static_cast<TemplateStructType *>(var_stmt->type);
+    TemplateStructType *temp =
+        static_cast<TemplateStructType *>(var_stmt->type);
 
     // auto res = map->struct_table.find(type_to_string(temp->name));
     auto res = context->structTable.contains(type_to_string(temp->name));
     if (!res) {
-      std::string msg = "Template struct '" + type_to_string(temp->name) + "' is not defined";
+      std::string msg =
+          "Template struct '" + type_to_string(temp->name) + "' is not defined";
       handleError(var_stmt->line, var_stmt->pos, msg, "", "Type Error");
     }
 
@@ -271,8 +306,12 @@ void TypeChecker::visitVar(Node::Stmt *stmt) {
     if (array_type->constSize < 1) {
       // If the array was declared but its type was []
       // we assume the constSize is the size of the array expr
-      var_stmt->type = new ArrayType(array_type->underlying, (long long)array_expr->elements.size());
-    } else if(var_stmt->expr->kind == NodeKind::ND_ARRAY) { // auto filled arrays will always have 1 element (the one to autofill) so do not error in that case
+      var_stmt->type = new ArrayType(array_type->underlying,
+                                     (long long)array_expr->elements.size());
+    } else if (var_stmt->expr->kind ==
+               NodeKind::ND_ARRAY) { // auto filled arrays will always have 1
+                                     // element (the one to autofill) so do not
+                                     // error in that case
       // If the array was declared with a size we need to check if the size
       // of the array expr is the same as the size of the array type
       if ((size_t)array_type->constSize != array_expr->elements.size()) {
@@ -283,9 +322,11 @@ void TypeChecker::visitVar(Node::Stmt *stmt) {
         handleError(var_stmt->line, var_stmt->pos, msg, "", "Type Error");
       }
     }
-    array_expr->type = new ArrayType(array_type->underlying, (long long)array_expr->elements.size());
+    array_expr->type = new ArrayType(array_type->underlying,
+                                     (long long)array_expr->elements.size());
     return_type = share(array_type);
-    visitExpr(var_stmt->expr); // Visit the array, and by extension, its elements
+    visitExpr(
+        var_stmt->expr); // Visit the array, and by extension, its elements
     return_type = share(array_type);
   } else if (var_stmt->type->kind == ND_POINTER_TYPE) {
     PointerType *ptr = static_cast<PointerType *>(var_stmt->type);
@@ -315,12 +356,14 @@ void TypeChecker::visitPrint(Node::Stmt *stmt) {
   visitExpr(print_stmt->fd);
   if (!isIntBasedType(return_type.get())) {
     std::string msg = "Print requires the file descriptor to be of type 'int!' "
-                      "but got '" + type_to_string(return_type.get()) + "'";
+                      "but got '" +
+                      type_to_string(return_type.get()) + "'";
     handleError(print_stmt->line, print_stmt->pos, msg, "", "Type Error");
   }
 
   // check if we are a println statement if so add a new line to the end
-  if (print_stmt->isPrintln) print_stmt->args.push_back(new StringExpr(0, 0, "\"\\n\"", 0));
+  if (print_stmt->isPrintln)
+    print_stmt->args.push_back(new StringExpr(0, 0, "\"\\n\"", 0));
 
   for (size_t i = 0; i < print_stmt->args.size(); i++) {
     visitExpr(print_stmt->args[i]);
@@ -338,22 +381,6 @@ void TypeChecker::visitReturn(Node::Stmt *stmt) {
   needsReturn = true;
 
   visitExpr(return_stmt->expr);
-}
-
-void TypeChecker::visitTemplateStmt(Node::Stmt *stmt) {
-  TemplateStmt *templateStmt = static_cast<TemplateStmt *>(stmt);
-  // template <T>
-  // add to the template table
-  // map->template_table = templateStmt->typenames;
-
-  // // add the template to the global table
-  // for (std::string &name : templateStmt->typenames) {
-  //   SymbolType *type = new SymbolType("any");
-  //   declare(map->global_symbol_table, name, static_cast<Node::Type *>(type),
-  //           templateStmt->line, templateStmt->pos);
-  // }
-  std::cout << "TemplateStmt not implemented yet. Attempted on function named '" << templateStmt->typenames[0] << "'" << std::endl;
-  exit(-1);
 }
 
 void TypeChecker::visitFor(Node::Stmt *stmt) {
@@ -409,7 +436,7 @@ void TypeChecker::visitWhile(Node::Stmt *stmt) {
       handleError(while_stmt->line, while_stmt->pos, msg, "", "Type Error");
     }
   }
-  
+
   if (while_stmt->optional != nullptr) {
     visitExpr(while_stmt->optional);
   }
@@ -425,24 +452,22 @@ void TypeChecker::visitImport(Node::Stmt *stmt) {
 
   // store the current file name
   std::string file_name = node.current_file;
-  node.current_file =
-      import_stmt->name; // set the current file name to the import name
+  // If the path of the import is absolute, we must set the node.current_file to
+  // be the import path relative to the pwd
+  if (std::filesystem::path(import_stmt->name).is_absolute()) {
+    node.current_file =
+        std::filesystem::path(import_stmt->name).relative_path().string();
+  } else {
+    node.current_file = import_stmt->name;
+  }
 
-  // check if the import is already in the global table
-  // std::unordered_map<std::string, Node::Type *>::iterator res = map->global_symbol_table.find(import_stmt->name);
-  // if (res != map->global_symbol_table.end()) {
-  //   std::string msg = "'" + import_stmt->name + "' has already been imported.";
-  //   handleError(import_stmt->line, import_stmt->pos, msg, "", "Type Error");
-  // }
-  std::unordered_map<std::string, Node::Type *>::iterator res = context->globalSymbols.find(import_stmt->name);
+  std::unordered_map<std::string, Node::Type *>::iterator res =
+      context->globalSymbols.find(import_stmt->name);
   if (res != context->globalSymbols.end()) {
     std::string msg = "'" + import_stmt->name + "' has already been imported.";
     handleError(import_stmt->line, import_stmt->pos, msg, "", "Type Error");
   }
 
-  // add the import to the global table
-  // declare(map->global_symbol_table, import_stmt->name, return_type.get(),
-  //         import_stmt->line, import_stmt->pos);
   context->declareGlobal(import_stmt->name, return_type.get());
 
   // type check the import
@@ -457,10 +482,36 @@ void TypeChecker::visitMatch(Node::Stmt *stmt) {
   visitExpr(match_stmt->coverExpr);
 
   for (std::pair<Node::Expr *, Node::Stmt *> &pair : match_stmt->cases) {
-    visitExpr(pair.first); // Implement actual jump tables and math later. For now, all return_types for case expressions are allowed.
-    visitStmt(pair.second);
+    Node::Expr *case_expr = pair.first;
+    Node::Stmt *case_stmt = pair.second;
+
+    // Visit the case expression to get its type
+    visitExpr(case_expr);
+
+    // Check if the case expression is of the same type as the cover expression
+    if (!checkTypeMatch(return_type.get(), match_stmt->coverExpr->asmType)) {
+      std::string msg = "Case expression type '" +
+                        type_to_string(return_type.get()) +
+                        "' does not match cover expression type '" +
+                        type_to_string(match_stmt->coverExpr->asmType) + "'";
+      handleError(match_stmt->line, match_stmt->pos, msg, "", "Type Error");
+    }
+
+    // Visit the case statement
+    visitStmt(case_stmt);
   }
 
+  // Check if there is a default case
+  if (match_stmt->defaultCase != nullptr) {
+    // Visit the default case statement
+    visitStmt(match_stmt->defaultCase);
+  } else {
+    std::string msg = "Match statement does not have a default case.";
+    handleError(match_stmt->line, match_stmt->pos, msg, "",
+                "Type Error");
+  }
+
+  // Set the return type to void since match statements do not return a value
   return_type = nullptr;
 }
 
@@ -497,17 +548,29 @@ void TypeChecker::visitInput(Node::Stmt *stmt) {
   }
 
   visitExpr(input_stmt->bufferOut); // str, char*, char[]
-  bool isStrType = return_type.get()->kind == ND_SYMBOL_TYPE && type_to_string(return_type.get()) == "str";
-  bool isCharPtrType = return_type.get()->kind == ND_POINTER_TYPE && static_cast<SymbolType *>(static_cast<PointerType *>(return_type.get())->underlying)->name == "char";
-  bool isCharArrayType = return_type.get()->kind == ND_ARRAY_TYPE && static_cast<SymbolType *>(static_cast<ArrayType *>(return_type.get())->underlying)->name == "char";
+  bool isStrType = return_type.get()->kind == ND_SYMBOL_TYPE &&
+                   type_to_string(return_type.get()) == "str";
+  bool isCharPtrType =
+      return_type.get()->kind == ND_POINTER_TYPE &&
+      static_cast<SymbolType *>(
+          static_cast<PointerType *>(return_type.get())->underlying)
+              ->name == "char";
+  bool isCharArrayType =
+      return_type.get()->kind == ND_ARRAY_TYPE &&
+      static_cast<SymbolType *>(
+          static_cast<ArrayType *>(return_type.get())->underlying)
+              ->name == "char";
   if (!isStrType && !isCharPtrType && !isCharArrayType) {
-    std::string msg = "Input variable name must be a 'string', 'char*' or 'char[]' but got '" + type_to_string(return_type.get()) + "'";
+    std::string msg = "Input variable name must be a 'string', 'char*' or "
+                      "'char[]' but got '" +
+                      type_to_string(return_type.get()) + "'";
     handleError(input_stmt->line, input_stmt->pos, msg, "", "Type Error");
   }
 
   visitExpr(input_stmt->maxBytes);
   if (!isIntBasedType(return_type.get())) {
-    std::string msg = "Input max bytes must be a 'int' but got '" + type_to_string(return_type.get()) + "'";
+    std::string msg = "Input max bytes must be a 'int' but got '" +
+                      type_to_string(return_type.get()) + "'";
     handleError(input_stmt->line, input_stmt->pos, msg, "", "Type Error");
   }
 
@@ -518,7 +581,8 @@ void TypeChecker::visitClose(Node::Stmt *stmt) {
   CloseStmt *close_stmt = static_cast<CloseStmt *>(stmt);
   visitExpr(close_stmt->fd);
   if (!isIntBasedType(return_type.get())) {
-    std::string msg = "Close system call fd must be a 'int' but got '" + type_to_string(return_type.get()) + "'";
+    std::string msg = "Close system call fd must be a 'int' but got '" +
+                      type_to_string(return_type.get()) + "'";
     handleError(close_stmt->line, close_stmt->pos, msg, "", "Type Error");
   }
   return_type = nullptr;

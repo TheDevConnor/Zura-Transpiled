@@ -1,56 +1,61 @@
+#include <memory>
+#include <unordered_set>
+
 #include "../helper/error/error.hpp"
-#include "../ast/stmt.hpp"
 #include "type.hpp"
 #include "typeMaps.hpp"
-#include <unordered_set>
-#include <memory>
 
 void TypeChecker::handleError(int line, int pos, std::string msg,
-                               std::string note, std::string typeOfError) {
-  Lexer lexer; // dummy lexer
-  if (note != "") {
-    ErrorClass::error(line, pos, msg, note, typeOfError, node.current_file,
-                      lexer, node.tks, false, false, false, false, true, false);
-    return; // don't print the error twice!
-  }
-  ErrorClass::error(line, pos, msg, "", typeOfError, node.current_file, lexer,
-                    node.tks, false, false, false, false, true, false);
+                              std::string note, std::string typeOfError) {
+  if (msg.find("unknown") != std::string::npos)
+    return;  // Do not report this error because it is already handled
+
+   if (note != "")
+    msg += "\nNote: " + note;
+   Error::handle_error(typeOfError, node.current_file, msg,
+                       node.tks, line, pos);
 }
 
 std::string TypeChecker::type_to_string(Node::Type *type) {
   if (type == nullptr)
     return "unknown";
   switch (type->kind) {
-  case NodeKind::ND_SYMBOL_TYPE: {
-    switch (static_cast<SymbolType *>(type)->signedness) {
-      case SymbolType::Signedness::SIGNED:
-        return static_cast<SymbolType *>(type)->name + '?';
-      case SymbolType::Signedness::UNSIGNED:
-        return static_cast<SymbolType *>(type)->name + '!';
-      default:
-      case SymbolType::Signedness::INFER:
-        return static_cast<SymbolType *>(type)->name;
-    };
-  }
-  case NodeKind::ND_ARRAY_TYPE:
-    return "[]" + type_to_string(static_cast<ArrayType *>(type)->underlying);
-  case NodeKind::ND_POINTER_TYPE: 
-    return "*" + type_to_string(static_cast<PointerType *>(type)->underlying);
-  case NodeKind::ND_TEMPLATE_STRUCT_TYPE: {
-    TemplateStructType *temp = static_cast<TemplateStructType *>(type);
-    return type_to_string(temp->name);
-  }
-  case NodeKind::ND_FUNCTION_TYPE:
-    return type_to_string(static_cast<FunctionType *>(type)->ret);
-  default: // Should never happen, but Connor (aka I) wrote this terrible code so anything is possable
-    if (!isLspMode) std::cout << "Nodekind: " << std::to_string((int)type->kind) << std::endl;
-    handleError(0, 0, "Unknown type for type_to_string", "", "Type Error");
-    return_type = std::make_shared<SymbolType>("unknown");
-    return "unknown";
+    case NodeKind::ND_SYMBOL_TYPE: {
+      switch (static_cast<SymbolType *>(type)->signedness) {
+        case SymbolType::Signedness::SIGNED:
+          return static_cast<SymbolType *>(type)->name + '?';
+        case SymbolType::Signedness::UNSIGNED:
+          return static_cast<SymbolType *>(type)->name + '!';
+        default:
+        case SymbolType::Signedness::INFER:
+          return static_cast<SymbolType *>(type)->name;
+      };
+    }
+    case NodeKind::ND_ARRAY_TYPE:
+      return "[]" + type_to_string(static_cast<ArrayType *>(type)->underlying);
+    case NodeKind::ND_POINTER_TYPE:
+      return "*" + type_to_string(static_cast<PointerType *>(type)->underlying);
+    case NodeKind::ND_TEMPLATE_STRUCT_TYPE: {
+      TemplateStructType *temp = static_cast<TemplateStructType *>(type);
+      return type_to_string(temp->name);
+    }
+    case NodeKind::ND_FUNCTION_TYPE:
+      return type_to_string(static_cast<FunctionType *>(type)->ret);
+    default:  // Should never happen, but Connor (aka I) wrote this terrible code so anything is possable
+      if (!isLspMode) std::cout << "Nodekind: " << std::to_string((int)type->kind) << std::endl;
+      handleError(0, 0, "Unknown type for type_to_string", "", "Type Error");
+      return_type = std::make_shared<SymbolType>("unknown");
+      return "unknown";
   }
 }
 
 bool TypeChecker::checkTypeMatch(Node::Type *lhs, Node::Type *rhs) {
+  if (lhs->kind == ND_SYMBOL_TYPE) {
+    // check if the LHS is of type void
+    SymbolType *l = static_cast<SymbolType *>(lhs);
+    if (l->name == "void") return true;
+    // else let it fall through
+  }
   if (lhs == nullptr || rhs == nullptr) {
     return_type = std::make_shared<SymbolType>("unknown");
     return false;
@@ -59,13 +64,13 @@ bool TypeChecker::checkTypeMatch(Node::Type *lhs, Node::Type *rhs) {
     // Check the signedness of both sides
     SymbolType *l = static_cast<SymbolType *>(lhs);
     SymbolType *r = static_cast<SymbolType *>(rhs);
-    if (l->name != r->name) return false; // different sizes; ie int vs char or long vs short
+    if (l->name != r->name) return false;  // different sizes; ie int vs char or long vs short
     // now it is int vs int or stuff liek that
     if (l->signedness == r->signedness) return true;
-    if (l->signedness == SymbolType::Signedness::SIGNED && r->signedness == SymbolType::Signedness::UNSIGNED) return true; // its fine because all unsigned integers can be casted
+    if (l->signedness == SymbolType::Signedness::SIGNED && r->signedness == SymbolType::Signedness::UNSIGNED) return true;  // its fine because all unsigned integers can be casted
     // Check if either side is inferred. Its automatically true
     if (l->signedness == SymbolType::Signedness::INFER || r->signedness == SymbolType::Signedness::INFER) return true;
-    return false; // assign signed to unsigned
+    return false;  // assign signed to unsigned
   }
   if (lhs->kind == ND_POINTER_TYPE && rhs->kind == ND_POINTER_TYPE) {
     PointerType *l = static_cast<PointerType *>(lhs);
@@ -100,37 +105,34 @@ bool TypeChecker::checkTypeMatch(Node::Type *lhs, Node::Type *rhs) {
     return l->name == r->name;
   }
 
-  std::cerr << "helper.cpp:102" << std::endl;
-  std::cerr << "Unknown checkTypeMatch! lhs: " << type_to_string(lhs) << " rhs: " << type_to_string(rhs) << std::endl;
   return false;
 }
 
 std::shared_ptr<Node::Type> TypeChecker::share(Node::Type *type) {
   if (type == nullptr) return std::make_shared<SymbolType>("unknown");
   switch (type->kind) {
-  case NodeKind::ND_SYMBOL_TYPE: {
-    SymbolType *st = static_cast<SymbolType *>(type);
-    return std::make_shared<SymbolType>(st->name, st->signedness);
+    case NodeKind::ND_SYMBOL_TYPE: {
+      SymbolType *st = static_cast<SymbolType *>(type);
+      return std::make_shared<SymbolType>(st->name, st->signedness);
+    }
+    case NodeKind::ND_ARRAY_TYPE: {
+      ArrayType *at = static_cast<ArrayType *>(type);
+      return std::make_shared<ArrayType>(at->underlying, at->constSize);
+    }
+    case NodeKind::ND_POINTER_TYPE:
+      return std::make_shared<PointerType>(static_cast<PointerType *>(type)->underlying);
+    case NodeKind::ND_TEMPLATE_STRUCT_TYPE: {
+      TemplateStructType *temp = static_cast<TemplateStructType *>(type);
+      return std::make_shared<TemplateStructType>(temp->name, temp->underlying);
+    }
+    case NodeKind::ND_FUNCTION_TYPE: {
+      FunctionType *fn = static_cast<FunctionType *>(type);
+      return std::make_shared<FunctionType>(fn->args, fn->ret);
+    }
+    default:
+      handleError(0, 0, "Unknown type for share", "", "Type Error");
+      return std::make_shared<SymbolType>("unknown");
   }
-  case NodeKind::ND_ARRAY_TYPE: {
-    ArrayType *at = static_cast<ArrayType *>(type);
-    return std::make_shared<ArrayType>(at->underlying, at->constSize);
-  }
-  case NodeKind::ND_POINTER_TYPE:
-    return std::make_shared<PointerType>(static_cast<PointerType *>(type)->underlying);
-  case NodeKind::ND_TEMPLATE_STRUCT_TYPE: {
-    TemplateStructType *temp = static_cast<TemplateStructType *>(type);
-    return std::make_shared<TemplateStructType>(temp->name, temp->underlying);
-  }
-  case NodeKind::ND_FUNCTION_TYPE: {
-    FunctionType *fn = static_cast<FunctionType *>(type);
-    return std::make_shared<FunctionType>(fn->args, fn->ret);
-  }
-  default:
-    handleError(0, 0, "Unknown type for share", "", "Type Error");
-    return std::make_shared<SymbolType>("unknown");
-  }
-  
 }
 
 std::string TypeChecker::determineTypeKind(const std::string &type) {
@@ -149,7 +151,7 @@ std::string TypeChecker::determineTypeKind(const std::string &type) {
 void TypeChecker::processStructMember(MemberExpr *member, const std::string &name, std::string lhsType) {
   std::string realType = lhsType;
   if (lhsType.find('*') == 0) {
-    realType = lhsType.substr(1); // We know the type directly under this is a struct (otherwise we wouldnt be here)
+    realType = lhsType.substr(1);  // We know the type directly under this is a struct (otherwise we wouldnt be here)
   }
 
   if (!context->structTable.contains(realType)) {
@@ -170,25 +172,25 @@ void TypeChecker::processStructMember(MemberExpr *member, const std::string &nam
 }
 
 void TypeChecker::processEnumMember(MemberExpr *member, const std::string &lhsType) {
-    std::string name = static_cast<IdentExpr*>(member->lhs)->name;
-    std::string field = static_cast<IdentExpr*>(member->rhs)->name;
+  std::string name = static_cast<IdentExpr *>(member->lhs)->name;
+  std::string field = static_cast<IdentExpr *>(member->rhs)->name;
 
-    long long value = context->enumTable.lookup(name, field);
-    if (value == -1) {
-        std::string msg = "Enum '" + lhsType + "' does not have member '" + field + "'";
-        handleError(member->line, member->pos, msg, "", "Type Error");
-        return_type = std::make_shared<SymbolType>("unknown");
-        return;
-    }
+  long long value = context->enumTable.lookup(name, field);
+  if (value == -1) {
+    std::string msg = "Enum '" + lhsType + "' does not have member '" + field + "'";
+    handleError(member->line, member->pos, msg, "", "Type Error");
+    return_type = std::make_shared<SymbolType>("unknown");
+    return;
+  }
 
-    return_type = std::make_shared<SymbolType>(name);
-    member->asmType = new SymbolType("enum");
+  return_type = std::make_shared<SymbolType>(name);
+  member->asmType = new SymbolType("enum");
 }
 
 void TypeChecker::handleUnknownType(MemberExpr *member, const std::string &lhsType) {
-    std::string msg = "Type '" + lhsType + "' does not have members";
-    handleError(member->line, member->pos, msg, "", "Type Error");
-    return_type = std::make_shared<SymbolType>("unknown");
+  std::string msg = "Type '" + lhsType + "' does not have members";
+  handleError(member->line, member->pos, msg, "", "Type Error");
+  return_type = std::make_shared<SymbolType>("unknown");
 }
 
 void TypeChecker::reportOverloadedFunctionError(CallExpr *call, Node::Expr *callee) {
@@ -225,7 +227,7 @@ bool TypeChecker::validateArgumentTypes(CallExpr *call, Node::Expr *callee, cons
 
     if (!checkTypeMatch(argType, expectedType)) {
       // If int is compared to an unsigned int or something, let it go
-      if (isIntBasedType(argType) && isIntBasedType(expectedType)) continue; // They can effectively be casted to one another
+      if (isIntBasedType(argType) && isIntBasedType(expectedType)) continue;  // They can effectively be casted to one another
       std::string functionName = callee->kind == ND_IDENT ? static_cast<IdentExpr *>(callee)->name : static_cast<IdentExpr *>(static_cast<MemberExpr *>(callee)->lhs)->name;
       std::string msg = "Function '" + functionName + "' requires argument '" + fnParams.begin()->first + "' to be of type '" + type_to_string(expectedType) + "' but got '" + type_to_string(argType) + "'";
       handleError(call->line, call->pos, msg, "", "Type Error");
@@ -236,10 +238,9 @@ bool TypeChecker::validateArgumentTypes(CallExpr *call, Node::Expr *callee, cons
   return true;
 }
 
-
 Node::Type *TypeChecker::createDuplicate(Node::Type *type) {
   if (type == nullptr) return nullptr;
-  switch(type->kind) {
+  switch (type->kind) {
     case NodeKind::ND_SYMBOL_TYPE: {
       SymbolType *sym = static_cast<SymbolType *>(type);
       return new SymbolType(sym->name, sym->signedness);
@@ -266,7 +267,7 @@ Node::Type *TypeChecker::createDuplicate(Node::Type *type) {
 
 bool TypeChecker::isIntBasedType(Node::Type *type) {
   const static std::unordered_set<std::string> intTypes = {
-    "int", "char", "short", "long", "enum", "$", // add more, maybe even a superlong for 128-bit lmao
+      "int", "char", "short", "long", "enum", "$",  // add more, maybe even a superlong for 128-bit lmao
   };
 
   // Do not check for signedness ON PURPOSE

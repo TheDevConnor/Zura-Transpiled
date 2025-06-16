@@ -1,8 +1,10 @@
+#include <algorithm>
 #include <functional>
 #include <string>
 #include <vector>
 
 #include "../ast/ast.hpp"
+#include "../helper/error/error.hpp"
 #include "../lexer/lexer.hpp"
 #include "parser.hpp"
 
@@ -27,12 +29,11 @@ using namespace Parser;
 template <typename T, typename U>
 T Parser::lookup(PStruct *psr, const std::vector<std::pair<U, T>> &lu, U key) {
   typename std::vector<std::pair<U, T>>::const_iterator it = std::find_if(lu.begin(), lu.end(),
-                         [key](const std::pair<U, T> &p) { return p.first == key; });
+                                                                          [key](const std::pair<U, T> &p) { return p.first == key; });
 
   if (it == lu.end()) {
-    ErrorClass::error(0, 0, "No value found for key (" + std::to_string(key) + ") Expr Maps!", "",
-                      "Parser Error", node.current_file, lexer, psr->tks, true,
-                      false, false, false, false, false);
+    std::string msg = "Could not find key (" + std::to_string(key) + ") in lookup table!";
+    Error::handle_error("Parser", psr->current_file, msg, psr->tks, psr->current().line, psr->current().column);
     return nullptr;
   }
 
@@ -49,30 +50,57 @@ T Parser::lookup(PStruct *psr, const std::vector<std::pair<U, T>> &lu, U key) {
  */
 void Parser::createMaps() {
   stmt_lu = {
-      {TokenKind::_CONST, constStmt},     {TokenKind::VAR, varStmt},
-      {TokenKind::LEFT_BRACE, blockStmt}, {TokenKind::FUN, funStmt},
-      {TokenKind::RETURN, returnStmt},    {TokenKind::IF, ifStmt},
-      {TokenKind::STRUCT, structStmt},    {TokenKind::ENUM, enumStmt},
-      {TokenKind::LOOP, loopStmt},        {TokenKind::PRINT, printStmt},
-      {TokenKind::IMPORT, importStmt},    {TokenKind::TEMPLATE, templateStmt},
-      {TokenKind::BREAK, breakStmt},      {TokenKind::CONTINUE, continueStmt},
-      {TokenKind::LINK, linkStmt},        {TokenKind::EXTERN, externStmt},
-      {TokenKind::MATCH, matchStmt},      {TokenKind::INPUT, inputStmt},
-      {TokenKind::CLOSE, closeStmt},      {TokenKind::PRINTLN, printlnStmt},
+      {TokenKind::_CONST, constStmt},
+      {TokenKind::VAR, varStmt},
+      {TokenKind::LEFT_BRACE, blockStmt},
+      {TokenKind::FUN, funStmt},
+      {TokenKind::RETURN, returnStmt},
+      {TokenKind::IF, ifStmt},
+      {TokenKind::STRUCT, structStmt},
+      {TokenKind::ENUM, enumStmt},
+      {TokenKind::LOOP, loopStmt},
+      {TokenKind::PRINT, printStmt},
+      {TokenKind::IMPORT, importStmt},
+      {TokenKind::BREAK, breakStmt},
+      {TokenKind::CONTINUE, continueStmt},
+      {TokenKind::LINK, linkStmt},
+      {TokenKind::EXTERN, externStmt},
+      {TokenKind::MATCH, matchStmt},
+      {TokenKind::INPUT, inputStmt},
+      {TokenKind::CLOSE, closeStmt},
+      {TokenKind::PRINTLN, printlnStmt},
   };
   nud_lu = {
-      {TokenKind::INT, primary},           {TokenKind::FLOAT, primary},
-      {TokenKind::IDENTIFIER, primary},    {TokenKind::STRING, primary},
-      {TokenKind::LEFT_PAREN, group},      {TokenKind::MINUS, unary},
-      {TokenKind::PLUS_PLUS, _prefix},     {TokenKind::BANG, unary},
-      {TokenKind::MINUS_MINUS, _prefix},   {TokenKind::LEFT_BRACKET, array},
-      {TokenKind::TR, boolExpr},          {TokenKind::FAL, boolExpr},
-      {TokenKind::CAST, castExpr},        {TokenKind::CALL, externalCall},
-      {TokenKind::LEFT_BRACE, structExpr}, {TokenKind::LAND, address},
-      {TokenKind::NIL, nullType},         {TokenKind::CHAR, primary},
-      {TokenKind::ALLOC, allocExpr},      {TokenKind::FREE, freeExpr},
-      {TokenKind::SIZEOF, sizeofExpr},    {TokenKind::MEMCPY, memcpyExpr},
+      {TokenKind::INT, primary},
+      {TokenKind::FLOAT, primary},
+      {TokenKind::IDENTIFIER, primary},
+      {TokenKind::STRING, primary},
+      {TokenKind::LEFT_PAREN, group},
+      {TokenKind::MINUS, unary},
+      {TokenKind::PLUS_PLUS, _prefix},
+      {TokenKind::BANG, unary},
+      {TokenKind::MINUS_MINUS, _prefix},
+      {TokenKind::LEFT_BRACKET, array},
+      {TokenKind::TR, boolExpr},
+      {TokenKind::FAL, boolExpr},
+      {TokenKind::CAST, castExpr},
+      {TokenKind::CALL, externalCall},
+      {TokenKind::LEFT_BRACE, structExpr},
+      {TokenKind::LAND, address},
+      {TokenKind::NIL, nullType},
+      {TokenKind::CHAR, primary},
+      {TokenKind::ALLOC, allocExpr},
+      {TokenKind::FREE, freeExpr},
+      {TokenKind::SIZEOF, sizeofExpr},
+      {TokenKind::MEMCPY, memcpyExpr},
       {TokenKind::OPEN, openExpr},
+      {TokenKind::GETARGC, getArgc},
+      {TokenKind::GETARGV, getArgv},
+      {TokenKind::STRCMP, strcmp},
+      {TokenKind::SOCKET, socketExpr},
+      {TokenKind::BIND, bindExpr},
+      {TokenKind::ACCEPT, acceptExpr},
+      {TokenKind::LISTEN, listenExpr},
   };
   led_lu = {
       {TokenKind::PLUS, binary},
@@ -189,19 +217,18 @@ void Parser::createMaps() {
  * @return A pointer to the parsed expression, or nullptr if parsing fails.
  */
 Node::Expr *Parser::nud(PStruct *psr) {
-  Lexer::Token op = psr->current(psr);
+  Lexer::Token op = psr->current();
   try {
     Parser::NudHandler result = lookup(psr, nud_lu, op.kind);
     if (result == nullptr) {
-      psr->advance(psr);
+      psr->advance();
       return nullptr;
     }
     return result(psr);
   } catch (std::runtime_error &e) {
-    ErrorClass::error(psr->current(psr).line, psr->current(psr).column,
-                      "Could not parse expression in NUD!", "", "Parser Error",
-                      node.current_file, lexer, psr->tks, true, false, false,
-                      false, false, false);
+    std::string msg = "Could not parse expression in NUD!";
+    Error::handle_error("Parser", psr->current_file, msg, psr->tks,
+                              psr->current().line, psr->current().column);
     return nullptr;
   }
 }
@@ -216,19 +243,18 @@ Node::Expr *Parser::nud(PStruct *psr) {
  * @return The parsed expression.
  */
 Node::Expr *Parser::led(PStruct *psr, Node::Expr *left, BindingPower bp) {
-  Lexer::Token op = psr->current(psr);
+  Lexer::Token op = psr->current();
   try {
     Parser::LedHandler result = lookup(psr, led_lu, op.kind);
     if (result == nullptr) {
-      psr->advance(psr);
+      psr->advance();
       return left;
     }
     return result(psr, left, bp);
   } catch (std::runtime_error &e) {
-    ErrorClass::error(psr->current(psr).line, psr->current(psr).column,
-                      "Could not parse expression in LED!", "", "Parser Error",
-                      psr->current_file, lexer, psr->tks, true, false, false,
-                      false, false, false);
+    std::string msg = "Could not parse expression in LED!";
+    Error::handle_error("Parser", psr->current_file, msg, psr->tks,
+                              psr->current().line, psr->current().column);
     return nullptr;
   }
 }
@@ -250,7 +276,7 @@ Node::Stmt *Parser::stmt(PStruct *psr, std::string name) {
   std::vector<std::pair<TokenKind, Parser::StmtHandler>>::iterator stmt_it =
       std::find_if(stmt_lu.begin(), stmt_lu.end(),
                    [psr](std::pair<TokenKind, Parser::StmtHandler> &p) {
-                     return p.first == psr->current(psr).kind;
+                     return p.first == psr->current().kind;
                    });
   return stmt_it != stmt_lu.end() ? stmt_it->second(psr, name) : nullptr;
 }

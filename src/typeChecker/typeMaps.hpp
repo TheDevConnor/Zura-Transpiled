@@ -28,9 +28,7 @@ namespace std {
   };
 }
 
-struct ParamAndType {
-  std::unordered_map<std::string, Node::Type *> params;
-};
+typedef std::map<std::string, Node::Type *> ParamsAndTypes;
 
 struct SymbolTable : std::unordered_map<std::string, Node::Type *> {
     int line, pos;
@@ -53,36 +51,38 @@ struct SymbolTable : std::unordered_map<std::string, Node::Type *> {
 };
 
 
-struct FunctionTable : std::unordered_map<NameAndType, ParamAndType> {
+struct FunctionTable : std::unordered_map<std::string, std::pair<Node::Type *, ParamsAndTypes>> {
   int line, pos;
-  bool contains(const NameAndType &nameAndType) {
-    return find(nameAndType) != end();
+  bool contains(const std::string &name) {
+    return find(name) != end();
   }
-  void declare(const std::string &name, std::unordered_map<std::string, Node::Type *> params, Node::Type *returnType) {
+  void declare(const std::string &name, ParamsAndTypes params, Node::Type *returnType) {
     if (!TypeChecker::foundMain) { // Dont bother checking again if, you know, you already found it
-      if (name == "main" && params.size() == 0) {
-        if (returnType->kind == ND_SYMBOL_TYPE) {
+      if ((name == "main" && params.size() == 0) && (returnType->kind == ND_SYMBOL_TYPE)) {
           SymbolType *sym = static_cast<SymbolType *>(returnType);
           if (sym->name == "int" && sym->signedness == SymbolType::Signedness::UNSIGNED) {
             TypeChecker::foundMain = true;
+          } else {
+            std::string msg = "Main must return an unsigned int -> 'int!'";
+            std::string note = "Check to make sure that the return type is 'int!' and that there are no parameters";
+            TypeChecker::handleError(line, pos, msg, note, "Type Error");
           }
-        }
       }
     }
-    if (!contains({name, returnType})) {
-        insert({{name, returnType}, {params}});
+    if (!contains(name)) {
+        insert({name, {returnType, params}});
         return;
     }
     std::string msg = "Function already declared: " + name;
     TypeChecker::handleError(line, pos, msg, "", "Type Error");
   }
 
-  ParamAndType getParams(const std::string &name, Node::Type *type) {
-    return at({name, type});
+  ParamsAndTypes getParams(const std::string &name) {
+    return at(name).second;
   }
 
-  ParamAndType lookup(const std::string &name, Node::Type *type) {
-    return at({name, type});
+  std::pair<Node::Type *, ParamsAndTypes> lookup(const std::string &name) {
+    return at(name);
   }
 
   void clearFunctionScope() {
@@ -90,7 +90,7 @@ struct FunctionTable : std::unordered_map<NameAndType, ParamAndType> {
   }
 };
 
-struct StructTable : std::unordered_map<std::string, std::map<std::string, std::pair<Node::Type *, std::unordered_map<std::string, Node::Type *>>>> {
+struct StructTable : std::unordered_map<std::string, std::map<std::string, std::pair<Node::Type *, std::map<std::string, Node::Type *>>>> {
     int line, pos;
     bool contains(const std::string &name) {
         return find(name) != end();
@@ -108,13 +108,14 @@ struct StructTable : std::unordered_map<std::string, std::map<std::string, std::
     void addMember(const std::string &structName, const std::string &memberName, Node::Type *type) {
         if (contains(structName)) {
             at(structName).insert({memberName, {type, {}}});
+            struct_size++;
             return;
         }
         std::string msg = "Struct not declared: " + structName;
         TypeChecker::handleError(line, pos, msg, "", "Type Error");
     }
 
-    void addFunction(const std::string &structName, const std::string &memberName, Node::Type *type, std::unordered_map<std::string, Node::Type *> params) {
+    void addFunction(const std::string &structName, const std::string &memberName, Node::Type *type, ParamsAndTypes params) {
         // structs[structName].methods.declare(methodName, returnType, params);
         if (contains(structName)) {
             // check if the member is already declared

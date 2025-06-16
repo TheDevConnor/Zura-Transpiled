@@ -10,7 +10,7 @@ def run_test(code: str, expected_exit_code=None, expected_output=None):
     with open("zura_files/main.zu", "w") as f:
         f.write(code)
     
-    subprocess.run(["./release/zura", "build", "zura_files/main.zu", "-name", "main", "-quiet"], check=True)
+    subprocess.run(["./zura", "build", "zura_files/main.zu", "-name", "main", "-quiet"], check=True)
     
     result = subprocess.run("./main", capture_output=True, text=True)
     exit_code = result.returncode
@@ -114,6 +114,20 @@ class TestZuraPrograms(unittest.TestCase):
 
     def test_holy_shit(self):
         run_test("const T:=enum{I,P,N};const K:=struct{k:T,v:str,l:int!,c:int!}; const main:=fn()int!{have t:[4]K=[{k:T.I,v:\"1\",l:1,c:1},{k:T.P,v:\"+\",l:1,c:2},{k:T.I,v:\"2\",l:1,c:3},{k:T.N,v:\"\",l:1,c:5}];have l:int! =t[0].l;have c:int! =t[1].c;return l+c;};", expected_exit_code=3)
+    
+    # testing derefernce and address
+    def test_address(self):
+        run_test("const main := fn () int! { have i: int! = 43; have j: *int! = &i; return j&;};", expected_exit_code=43);
+    
+    def test_dereference(self):
+        run_test("const main := fn () int! { have i: int! = 43; have j: *int! = &i; j& = 3; return j&;};", expected_exit_code=3)
+    
+    def test_small_struct_returns(self):
+        run_test("const s := struct { a: int!, }; const b := fn () s { return { a: 37 }; }; const main := fn () int! { have c: s = b(); return c.a; };", expected_exit_code=37);
+
+    # 16 byte struct returns
+    def test_big_struct_returns(self):
+        run_test("const s := struct { a: int!, b: int! }; const b := fn () s { return { a: 37, b: 12 }; }; const main := fn () int! { have c: s = b(); return c.a + c.b; };", expected_exit_code=49);
 
     # no ! or ? symbol in the underlying type
     def test_inferred_signedness_arrays(self):
@@ -122,6 +136,15 @@ class TestZuraPrograms(unittest.TestCase):
     def test_array_of_structs(self):
         run_test("const a := struct { x: int!, y: int!, }; const main := fn () int! { have b: [2]a = [{ x: 1, y: 2 }, { x: 3, y: 4 }]; return b[1].x; };", expected_exit_code=3)
     
+    def test_array_pointer_index(self):
+        run_test("const main := fn () int! { have a: [5]int! = [4, 6, 19, 192, 184]; have b: *[5]int! = &a; return b&[2]; };", expected_exit_code=19)
+
+    def test_array_pointer_struct_index(self):
+        run_test("const a := struct { x: int!, y: int!, }; const main := fn () int! { have b: [2]a = [{ x: 1, y: 2 }, { x: 3, y: 4 }]; have c: *[2]a = &b; return c&[1].x; };", expected_exit_code=3)
+    
+    def test_array_pointer_big_struct_index(self):
+        run_test("const a := struct { x: int!, y: int!, z: int!, w: int!, }; const main := fn () int! { have b: [2]a = [{ x: 1, y: 2, z: 3, w: 4 }, { x: 5, y: 6, z: 7, w: 8 }]; have c: *[2]a = &b; return c&[1].w; };", expected_exit_code=8)
+
     def test_loop_over_array(self):
         run_test("const main := fn () int! { have a: [5]int! = [1, 2, 3, 4, 5]; have total: int! = 0; loop (i=0; i<5) : (i++) { total = total + a[i]; } return total; };", expected_exit_code=15)
    
@@ -159,11 +182,6 @@ class TestZuraPrograms(unittest.TestCase):
         os.remove(f'test{filename}.txt') # NOTE: If test fails, the program will exit before this line is reached
 
 if __name__ == "__main__":
-    # Run the build.sh script to build the project in release mode
-    if not os.path.exists("./build.sh"):
-        raise FileNotFoundError("Zura build script not found. In the worst case scenario, run the cmake --build command manually.")
-    subprocess.run(["./build.sh", "release"], check=True)
-
-    if not os.path.exists("./release/zura"):
+    if not os.path.exists("./zura"):
         raise FileNotFoundError("Zura executable not found after building. Check the build script output for errors.")
     unittest.main()

@@ -14,13 +14,13 @@ Node::Type *Parser::parseType(PStruct *psr) {
 }
 Node::Type *Parser::symbol_table(PStruct *psr) {
   // check if the next values are a ? or a ! for singed or unsigned
-  std::string name = psr->expect(psr, TokenKind::IDENTIFIER, "Expected an identifier for a symbol table!").value;
-  switch(psr->peek(psr).kind) {
+  std::string name = psr->expect(TokenKind::IDENTIFIER, "Expected an identifier for a symbol table!").value;
+  switch(psr->peek().kind) {
     case TokenKind::BANG:
-      psr->advance(psr);
+      psr->advance();
       return new SymbolType(name, SymbolType::Signedness::UNSIGNED);
     case TokenKind::QUESTION:
-      psr->advance(psr);
+      psr->advance();
       return new SymbolType(name, SymbolType::Signedness::SIGNED);
     default:
       return new SymbolType(name);
@@ -28,23 +28,22 @@ Node::Type *Parser::symbol_table(PStruct *psr) {
 }
 
 Node::Type *Parser::array_type(PStruct *psr) {
-  psr->advance(psr);
+  psr->advance();
   // Check if the next token is an integer (const size)
   size_t size = 0; // 0 is default, uninitialized
-  if (psr->peek(psr).kind == TokenKind::INT) {
+  if (psr->peek().kind == TokenKind::INT) {
     // There will be warnings and possible
     // overflow because stoi returns a 32-bit
     // while size is only 16-bit
-    size = (size_t)std::stoi(psr->advance(psr).value);
+    size = (size_t)std::stoi(psr->advance().value);
   }
-  psr->expect(psr, TokenKind::RIGHT_BRACKET, "Expected a right bracket after an array type!");
+  psr->expect(TokenKind::RIGHT_BRACKET, "Expected a right bracket after an array type!");
 
   // Expect the type of the array
-  if (psr->current(psr).kind != TokenKind::IDENTIFIER) {
+  if (psr->current().kind != TokenKind::IDENTIFIER) {
     std::string msg = "Expected a type for the array!";
-    ErrorClass::error(psr->current(psr).line, psr->current(psr).column, msg, "",
-                        "Parser Error", node.current_file, lexer, psr->tks, true, false,
-                        false, false, false, false);
+    Error::handle_error("Parser", psr->current_file, msg, psr->tks,
+                        psr->current().line, psr->current().column);
     return nullptr;
   }
    
@@ -54,29 +53,29 @@ Node::Type *Parser::array_type(PStruct *psr) {
 }
 
 Node::Type *Parser::pointer_type(PStruct *psr) {
-  psr->advance(psr);
+  psr->advance();
   Node::Type *underlying = parseType(psr);
   return new PointerType(underlying);
 }
 
 Node::Type *Parser::type_application(PStruct *psr) {
-  psr->advance(psr); // Skip the <
+  psr->advance(); // Skip the <
   Node::Type *left = parseType(psr);
-  psr->expect(psr, TokenKind::GREATER, "Expected a greater than symbol after a type application!");
+  psr->expect(TokenKind::GREATER, "Expected a greater than symbol after a type application!");
   Node::Type *right = parseType(psr);
   return new TemplateStructType(right, left);
 }
 
 Node::Type *Parser::function_type(PStruct *psr) {
-  psr->advance(psr); // Skip the function keyword
-  psr->expect(psr, TokenKind::LEFT_PAREN, "Expected a left parenthesis after a function type!");
+  psr->advance(); // Skip the function keyword
+  psr->expect(TokenKind::LEFT_PAREN, "Expected a left parenthesis after a function type!");
   std::vector<Node::Type *> args;
-  while (psr->peek(psr).kind != TokenKind::RIGHT_PAREN) {
+  while (psr->peek().kind != TokenKind::RIGHT_PAREN) {
     args.push_back(parseType(psr));
-    if (psr->peek(psr).kind == TokenKind::RIGHT_PAREN) break;
-    psr->expect(psr, TokenKind::COMMA, "Expected a comma after an argument in a function type!");
+    if (psr->peek().kind == TokenKind::RIGHT_PAREN) break;
+    psr->expect(TokenKind::COMMA, "Expected a comma after an argument in a function type!");
   }
-  psr->expect(psr, TokenKind::RIGHT_PAREN, "Expected a right parenthesis after a function type!");
+  psr->expect(TokenKind::RIGHT_PAREN, "Expected a right parenthesis after a function type!");
   Node::Type *ret = parseType(psr);
   
   return new FunctionType(args, ret);

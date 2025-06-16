@@ -1,19 +1,20 @@
 #pragma once
 
-#include "ast.hpp"
-
 #include <iostream>
 #include <string>
 #include <vector>
 
+#include "ast.hpp"
+
 class ProgramStmt : public Node::Stmt {
 public:
   std::vector<Node::Stmt *> stmt; // vector of stmts - the body
-  std::string inputPath; // yes this is actually useful trust me
+  std::string inputPath;          // yes this is actually useful trust me
 
-  ProgramStmt(std::vector<Node::Stmt *> stmt, std::string path) : stmt(stmt), inputPath(path) {
+  ProgramStmt(std::vector<Node::Stmt *> stmt, std::string path)
+      : stmt(stmt), inputPath(path) {
     kind = NodeKind::ND_PROGRAM;
-    file_id = -1; // This is the main file, no? It would make no sense
+    file_id = 0; // This is the main file, no? It would make no sense
   }
 
   void debug(int indent = 0) const override {
@@ -116,11 +117,16 @@ class BlockStmt : public Node::Stmt {
 public:
   int line, pos;
   std::vector<Node::Stmt *> stmts;
-  std::vector<Node::Type *> varDeclTypes; // If there are 2 int declarations in this scope, this will be 16.
+  std::vector<Node::Type *> varDeclTypes; // If there are 2 int declarations in
+                                          // this scope, this will be 16.
   bool shouldDeclareForward;
 
-  BlockStmt(int line, int pos, std::vector<Node::Stmt *> stmts, bool declareForward, std::vector<Node::Type *> varDeclTypes, size_t file)
-      : line(line), pos(pos), stmts(stmts), varDeclTypes(std::move(varDeclTypes)), shouldDeclareForward(declareForward) {
+  BlockStmt(int line, int pos, std::vector<Node::Stmt *> stmts,
+            bool declareForward, std::vector<Node::Type *> varDeclTypes,
+            size_t file)
+      : line(line), pos(pos), stmts(stmts),
+        varDeclTypes(std::move(varDeclTypes)),
+        shouldDeclareForward(declareForward) {
     file_id = file;
     kind = NodeKind::ND_BLOCK_STMT;
   }
@@ -129,7 +135,8 @@ public:
     Node::printIndent(indent);
     std::cout << "BlockStmt: \n";
     Node::printIndent(indent + 1);
-    std::cout << "ShouldDeclareForward: " << (shouldDeclareForward ? "Yes" : "No") << "\n";
+    std::cout << "ShouldDeclareForward: "
+              << (shouldDeclareForward ? "Yes" : "No") << "\n";
     Node::printIndent(indent + 1);
     std::cout << "VarDeclTypes: \n";
     for (Node::Type *t : varDeclTypes) {
@@ -193,8 +200,10 @@ public:
   std::vector<Node::Expr *> args;
   bool isPrintln = false;
 
-  OutputStmt(int line, int pos, Node::Expr *fd, std::vector<Node::Expr *> args, size_t file, bool isPrintln = false)
-      : line(line), pos(pos), fd(fd), args(std::move(args)), isPrintln(isPrintln) {
+  OutputStmt(int line, int pos, Node::Expr *fd, std::vector<Node::Expr *> args,
+             size_t file, bool isPrintln = false)
+      : line(line), pos(pos), fd(fd), args(std::move(args)),
+        isPrintln(isPrintln) {
     file_id = file;
     kind = NodeKind::ND_PRINT_STMT;
   }
@@ -217,18 +226,22 @@ class FnStmt : public Node::Stmt {
 public:
   int line, pos;
   std::string name;
+  std::vector<std::string> typenames;
   std::vector<std::pair<std::string, Node::Type *>> params;
   Node::Type *returnType;
   Node::Stmt *block;
   bool isMain = false;
   bool isEntry = false;
+  bool isTemplate = false;
 
   FnStmt(int line, int pos, std::string name,
          std::vector<std::pair<std::string, Node::Type *>> params,
-         Node::Type *returnType, Node::Stmt *block, bool isMain = false,
-         bool isEntry = false, size_t file = 0)
-      : line(line), pos(pos), name(name), params(std::move(params)),
-        returnType(returnType), block(block), isMain(isMain), isEntry(isEntry) {
+         Node::Type *returnType, Node::Stmt *block,
+         std::vector<std::string> typenames, bool isMain = false,
+         bool isEntry = false, bool isTemplate = false, size_t file = 0)
+      : line(line), pos(pos), name(name), typenames(typenames),
+        params(std::move(params)), returnType(returnType), block(block),
+        isMain(isMain), isEntry(isEntry), isTemplate(isTemplate) {
     file_id = file;
     kind = NodeKind::ND_FN_STMT;
   }
@@ -238,6 +251,18 @@ public:
     std::cout << "FnStmt: \n";
     Node::printIndent(indent + 1);
     std::cout << "Name: " << name << "\n";
+    Node::printIndent(indent + 1);
+    std::cout << "IsMain: " << (isMain ? "Yes" : "No") << "\n";
+    Node::printIndent(indent + 1);
+    std::cout << "IsEntry: " << (isEntry ? "Yes" : "No") << "\n";
+    Node::printIndent(indent + 1);
+    std::cout << "IsTemplate: " << (isTemplate ? "Yes" : "No") << "\n";
+    Node::printIndent(indent + 1);
+    std::cout << "Typenames: \n";
+    for (std::string t : typenames) {
+      Node::printIndent(indent + 2);
+      std::cout << t << "\n";
+    }
     Node::printIndent(indent + 1);
     std::cout << "Params: \n";
     for (std::pair<std::string, Node::Type *> p : params) {
@@ -322,13 +347,18 @@ class StructStmt : public Node::Stmt {
 public:
   int line, pos;
   std::string name;
+  std::vector<std::string> typenames;
   std::vector<std::pair<std::string, Node::Type *>> fields;
   std::vector<Node::Stmt *> stmts;
+  bool isTemplate = false;
 
   StructStmt(int line, int pos, std::string name,
              std::vector<std::pair<std::string, Node::Type *>> fields,
-             std::vector<Node::Stmt *> stmts, size_t file)
-      : line(line), pos(pos), name(name), fields(fields), stmts(stmts) {
+             std::vector<Node::Stmt *> stmts,
+             std::vector<std::string> typenames, size_t file,
+             bool isTemplate = false)
+      : line(line), pos(pos), name(name), typenames(typenames), fields(fields),
+        stmts(stmts), isTemplate(isTemplate) {
     file_id = file;
     kind = NodeKind::ND_STRUCT_STMT;
   }
@@ -339,6 +369,12 @@ public:
     Node::printIndent(indent + 1);
     std::cout << "Name: " << name << "\n";
     Node::printIndent(indent + 1);
+    std::cout << "Typenames: \n";
+    for (std::string t : typenames) {
+      Node::printIndent(indent + 2);
+      std::cout << t << "\n";
+    }
+    std::cout << "\n";
     std::cout << "Fields: \n";
     for (std::pair<std::string, Node::Type *> f : fields) {
       Node::printIndent(indent + 2);
@@ -368,7 +404,7 @@ public:
   WhileStmt(int line, int pos, Node::Expr *condition, Node::Expr *optional,
             Node::Stmt *block, size_t file)
       : line(line), pos(pos), condition(condition), optional(optional),
-       block(block) {
+        block(block) {
     file_id = file;
     kind = NodeKind::ND_WHILE_STMT;
   }
@@ -402,7 +438,8 @@ public:
   Node::Stmt *block;
 
   ForStmt(int line, int pos, std::string name, Node::Expr *forLoop,
-          Node::Expr *condition, Node::Expr *optional, Node::Stmt *block, size_t file)
+          Node::Expr *condition, Node::Expr *optional, Node::Stmt *block,
+          size_t file)
       : line(line), pos(pos), name(name), forLoop(forLoop),
         condition(condition), optional(optional), block(block) {
     file_id = file;
@@ -437,7 +474,8 @@ public:
   std::string name;
   std::vector<std::string> fields;
 
-  EnumStmt(int line, int pos, std::string name, std::vector<std::string> fields, size_t file)
+  EnumStmt(int line, int pos, std::string name, std::vector<std::string> fields,
+           size_t file)
       : line(line), pos(pos), name(name), fields(fields) {
     file_id = file;
     kind = NodeKind::ND_ENUM_STMT;
@@ -455,31 +493,6 @@ public:
       std::cout << f << "\n";
     }
   }
-};
-
-class TemplateStmt : public Node::Stmt {
-public:
-  std::vector<std::string> typenames;
-  int line, pos;
-
-  TemplateStmt(std::vector<std::string> typenames, int line, int pos, size_t file)
-      : typenames(typenames), line(line), pos(pos) {
-    file_id = file;
-    kind = NodeKind::ND_TEMPLATE_STMT;
-  }
-
-  void debug(int indent = 0) const override {
-    Node::printIndent(indent);
-    std::cout << "TemplateStmt: \n";
-    Node::printIndent(indent + 1);
-    std::cout << "Typenames: \n";
-    for (std::string t : typenames) {
-      Node::printIndent(indent + 2);
-      std::cout << t << "\n";
-    }
-  }
-
-  ~TemplateStmt() = default; // rule of threes
 };
 
 class ImportStmt : public Node::Stmt {
@@ -530,7 +543,8 @@ public:
   std::string name;
   std::vector<std::string> externs;
 
-  ExternStmt(int line, int pos, std::string name, std::vector<std::string> externs, size_t file)
+  ExternStmt(int line, int pos, std::string name,
+             std::vector<std::string> externs, size_t file)
       : line(line), pos(pos), name(name), externs(externs) {
     file_id = file;
     kind = NodeKind::ND_EXTERN_STMT;
@@ -583,13 +597,14 @@ public:
 };
 
 class InputStmt : public Node::Stmt {
-public: 
+public:
   int line, pos;
   Node::Expr *bufferOut;
   Node::Expr *maxBytes;
   Node::Expr *fd;
-  
-  InputStmt(int line, int pos, Node::Expr *fd, Node::Expr *bufferOut, Node::Expr * sysCall, size_t file)
+
+  InputStmt(int line, int pos, Node::Expr *fd, Node::Expr *bufferOut,
+            Node::Expr *sysCall, size_t file)
       : line(line), pos(pos), bufferOut(bufferOut), maxBytes(sysCall), fd(fd) {
     file_id = file;
     kind = NodeKind::ND_INPUT_STMT;

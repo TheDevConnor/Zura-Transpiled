@@ -73,7 +73,8 @@ enum TokenKind {
   _CONST,
   PKG,
   TYPE,
-  EXIT, // Create an exit syscall from anywhere within the program, whether that be the main function or some other crazy place.
+  EXIT, // Create an exit syscall from anywhere within the program, whether that
+        // be the main function or some other crazy place.
   IN,
   STRUCT,
   ENUM,
@@ -83,7 +84,7 @@ enum TokenKind {
   PRIV,
   TEMPLATE,
   TYPEALIAS,
-  BREAK, 
+  BREAK,
   CONTINUE,
   CAST,
   CALL, // Call extern'd functions.
@@ -101,6 +102,15 @@ enum TokenKind {
   SIZEOF,
   OPEN,  // open a file and return a fd from its path
   CLOSE, // close a fd
+  GETARGC,
+  GETARGV,
+  STRCMP,
+  SOCKET, // create a socket
+  BIND,   // bind a socket to an address
+  LISTEN, // listen for connections on a socket
+  ACCEPT, // accept a connection on a socket
+  RECV,   // receive bytes from a connection
+  SEND,   // send bytes to a connection
 
   // Error
   ERROR_,
@@ -116,6 +126,7 @@ public:
     const char *start;
     TokenKind kind;
     std::string value; // This is also know as the lexeme
+    int whitespace;
     int current;
     int column;
     int line;
@@ -133,7 +144,7 @@ public:
   void initLexer(const char *source, std::string file);
 
   Token scanToken(void);
-  Token errorToken(std::string message);
+  Token errorToken(std::string message, int whitespace);
 
   const char *tokenToString(TokenKind kind);
 
@@ -144,9 +155,7 @@ public:
   bool isAtEnd(void);
   char peek(void);
 
-  using WhiteSpaceFunction = std::function<void(Lexer &)>;
-  std::unordered_map<TokenKind, const char *> tokenToStringMap;
-  std::unordered_map<char, WhiteSpaceFunction> whiteSpaceMap;
+  inline static std::unordered_map<TokenKind, const char *> tokenToStringMap;
   std::unordered_map<std::string, TokenKind> at_keywords;
   std::unordered_map<std::string, TokenKind> keywords;
   std::unordered_map<std::string, TokenKind> dcMap;
@@ -157,14 +166,14 @@ public:
 private:
   bool match(char expected);
 
-  Token makeToken(TokenKind kind);
-  Token identifier(void);
-  Token number(void);
-  Token String(void);
-  Token Char(void);
+  Token makeToken(TokenKind kind, int whitespace);
+  Token identifier(int whitespace);
+  Token number(int whitespace);
+  Token String(int whitespace);
+  Token Char(int whitespace);
 
   TokenKind checkIdentMap(std::string identifier);
   TokenKind sc_dc_lookup(char c);
 
-  void skipWhitespace(void);
+  int skipWhitespace(void);
 };

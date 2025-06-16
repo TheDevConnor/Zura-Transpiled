@@ -80,9 +80,9 @@ void FlagConfig::runBuild(int argc, char **argv) {
     // Colored text
     // This was causing bugs because of the unexpected output for the Client. It would have been cool to see though!
     // Color col;
-    // std::cout << col.color("Zura " + ZuraVersion + " LSP", Color::CYAN, false, true) << "\n";
-    // std::cout << col.color("The builtin LSP is made solely for the computers. It is not meant for humans. You have been warned!", Color::RED, false, true) << "\n";
-    lsp::initialize();
+    // std::cout << col.color("Zura " + ZuraVersion + " LSP", Color::C::CYAN, false, true) << "\n";
+    // std::cout << col.color("The builtin LSP is made solely for the computers. It is not meant for humans. You have been warned!", Color::C::RED, false, true) << "\n";
+    lsp::main();
     return;
   }
 

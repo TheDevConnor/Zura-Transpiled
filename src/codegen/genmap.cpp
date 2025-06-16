@@ -12,7 +12,7 @@ void codegen::initMaps() {
       {ND_ENUM_STMT, enumDecl},      {ND_IMPORT_STMT, importDecl},
       {ND_LINK_STMT, linkFile},      {ND_EXTERN_STMT, externName},
       {ND_MATCH_STMT, matchStmt},    {ND_INPUT_STMT, inputStmt},
-      {ND_CLOSE, closeStmt}
+      {ND_CLOSE, closeStmt},
   };
   exprHandlers = {
       {ND_BINARY, binary},
@@ -42,19 +42,33 @@ void codegen::initMaps() {
       {ND_ALLOC_MEMORY, allocExpr},
       {ND_SIZEOF, sizeofExpr},
       {ND_MEMCPY_MEMORY, memcpyExpr},
-      {ND_OPEN, openExpr}
+      {ND_OPEN, openExpr},
+      {ND_GETARGC, getArgcExpr},
+      {ND_GETARGV, getArgvExpr},
+      {ND_STRCMP, strcmp},
   };
-  opMap = {{"+", "add"},   {"-", "sub"},    {"*", "imul"}, {"/", "idiv"},
-           {"%", "mod"}, // mod is div but special
-           {"^", "exp"},   {"~", "not"},    {"<<", "shl"},  {">>", "shr"},
+  opMap = {
+      {"+", "add"},   {"-", "sub"},    {"*", "imul"}, {"/", "idiv"},
+      {"%", "mod"}, // mod is div but special
+      {"^", "exp"},   {"~", "not"},    {"<<", "shl"}, {">>", "shr"},
 
-           {"==", "sete"}, {"!=", "setne"}, {">", "setg"}, {">=", "setge"},
-           {"<", "setl"},  {"<=", "setle"}, {"||", "lor"}, {"|", "bor"},
-           {"&&", "land"}};
+      {"==", "sete"}, {"!=", "setne"}, {">", "setg"}, {">=", "setge"},
+      {"<", "setl"},  {"<=", "setle"}, {"||", "lor"}, {"|", "bor"},
+      {"&&", "land"},
+  };
   typeSizes = {
-      {"int", 8},  {"float", 4}, {"enum", 4}, {"str", 8},
-      {"char", 1}, {"bool", 1},  {"void", 0}, {"double", 8},
-      {"$", 0}, // Imagine this represents None- an integer literal whose size depends on the context.
-      {"long double", 10}, {"long", 4}
+      {"int", 8},
+      {"float", 4},
+      {"enum", 4},
+      {"str", 8},
+      {"short", 2},
+      {"char", 1},
+      {"bool", 1},
+      {"void", 0},
+      {"double", 8},
+      {"$", 0}, // Imagine this represents None- an integer literal
+                // whose size depends on the context.
+      {"long double", 10},
+      {"long", 4},
   };
 }

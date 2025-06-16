@@ -1,0 +1,42 @@
+@import "std/color.zu";
+
+const ERRORS := enum {
+  InvalidArgument,        # 0
+  OutputError,            # 1
+  NoArgumentsProvided,    # 2
+  NoPathProvided,         # 3
+  NoActionProvided,       # 4
+  FileOpenFailed,         # 5
+  MemoryAllocationFailed, # 6
+};
+
+const printHelp := fn () int! {
+  @outputln(1, "Usage: ", color(@cast<int!>(Color.Red), "zura "), color(@cast<int!>(Color.Green), "[options] "), color(@cast<int!>(Color.Blue), "<file>"));
+  @outputln(1, "Options:");
+  @outputln(1, "  ", color(@cast<int!>(Color.Green), "--help"),    "       Show this help message");
+  @outputln(1, "  ", color(@cast<int!>(Color.Green), "--version"), "    Show the version of Zura");
+  @outputln(1, "  ", color(@cast<int!>(Color.Green), "--license"), "    Show the license of Zura");
+  @outputln(1, "Compiler Flags:");
+  @outputln(1, "  ", color(@cast<int!>(Color.Green), "build"), " <file> Build a Zura file");
+  @outputln(1, "  ", color(@cast<int!>(Color.Green), "-name"), " <name> Set the name of the output file");
+  @outputln(1, "  ", color(@cast<int!>(Color.Green), "-save"), "        Saves the assembly output");
+  @outputln(1, "  ", color(@cast<int!>(Color.Green), "-clean"), "       Clean the build files [*.asm || *.s, *.o]");
+  @outputln(1, "Zura LSP Flags:");
+  @outputln(1, "  ", color(@cast<int!>(Color.Green), "-lsp"), "         Create an LSP connection via stdio.");
+  return 0;
+};
+
+const printVersion := fn () int! {
+  @outputln(1, "Zura version ", color(@cast<int!>(Color.Cyan), "0.1.0"));
+  return 0;
+};
+
+const printLicense := fn () int! {
+  @outputln(1, "Zura is licensed under the MIT License.");
+  return 0;
+};
+
+const printLsp := fn () int! {
+  @outputln(1, "LSP mode is not implemented yet.");
+  return 0;
+};

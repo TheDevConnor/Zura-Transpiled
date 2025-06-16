@@ -1,0 +1,51 @@
+@import "stringUtils.zu";
+
+const Color := enum {
+  Red,
+  Green,
+  Blue,
+  Cyan,
+  Magenta,
+  Yellow,
+  White,
+  Black,
+  Gray,
+  Reset,  # Reset color to default
+};
+
+const findColor := fn (c: int!) str {
+  match(c) {
+    case 0 -> { return "\033[31m"; }  # Red
+    case 1 -> { return "\033[32m"; }  # Green
+    case 2 -> { return "\033[34m"; }  # Blue
+    case 3 -> { return "\033[36m"; }  # Cyan
+    case 4 -> { return "\033[35m"; }  # Magenta
+    case 5 -> { return "\033[33m"; }  # Yellow
+    case 6 -> { return "\033[37m"; }  # White
+    case 7 -> { return "\033[30m"; }  # Black
+    case 8 -> { return "\033[90m"; }  # Gray
+    case 9 -> { return "\033[0m"; }   # Reset color
+    default -> { return ""; }                   # Default case, should not happen
+  }
+  return "";  # Default return for unhandled cases
+};
+
+const color := fn (c: int!, msg: *char) *char {
+  have colorCode: *char = @cast<*char>(findColor(c));
+  if (colorCode == nil) {
+    @outputln(1, "ERROR: Invalid color code provided.");
+    return msg;  # Return the original message if color code is invalid
+  }
+
+  have coloredMsg: *char = concat(colorCode, msg);
+  have final: *char = concat(coloredMsg, "\033[0m");
+  
+  @free(coloredMsg, strlen(coloredMsg));  # Free the intermediate string
+  @free(colorCode, strlen(colorCode));     # Free the color code string
+  if (final == nil) {
+    @outputln(1, "ERROR: Memory allocation failed for colored message.");
+    return msg;  # Return the original message if memory allocation fails
+  }
+  @free(msg, strlen(msg));  # Free the original message string
+  return final; 
+};

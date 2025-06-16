@@ -86,6 +86,7 @@ struct CmpInstr {
 
 struct NegInstr {
   std::string what;
+  DataSize size;
 };
 
 struct NotInstr {
@@ -144,6 +145,7 @@ enum class ConvertType {
 };
 
 struct ConvertInstr {
+  DataSize toSize;
   ConvertType convType;
   std::string from;
   std::string to;
@@ -195,8 +197,8 @@ enum class JumpCondition {
   Equal,
   NotEqual,
 
-  Zero,
-  NotZero,
+  Zero,     // Yes (enum value 3)
+  NotZero, // Zura comment moment Wait
 
   Greater,
   GreaterEqual,

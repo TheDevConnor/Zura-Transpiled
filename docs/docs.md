@@ -12,19 +12,20 @@ Zura is a statically typed language that blends familiar syntax with modern cons
 6. [Arrays](#arrays)
 7. [Structures](#structures)
 8. [Enums](#enums)
-9. [Templates](#templates)
-10. [Casting](#casting)
-11. [Pointers](#pointers)
-12. [Alloc and Free](#memory)
+9. [Pointers](#pointers)
+10. [Alloc, Free, Dereference](#memory)
+11. [Templates](#templates)
+12. [Casting](#casting)
 13. [Built-in Functions](#built-in-functions)
-14. [Debugging Zura](#debug-mode)
+14. [Getting CMDLine Args from the user](#Cmd-line-args) 
+15. [Debugging Zura](#debug-mode)
 
 ## Basic Syntax
 
 Zura uses a unique combination of operators and control structures for defining variables, functions, and loops. All Zura programs must define a `main` function which serves as the entry point.
 
 ```cpp
-const main := fn () int {
+const main := fn () int! {
    return 0;
 };
 ```
@@ -33,10 +34,11 @@ const main := fn () int {
 
 Zura supports the following data types:
 
-- `int`: 32-bit signed integer
+- `int?`: 32-bit signed integer
+- `int!`: 32-bit unsigned integer
 - `float`: 32-bit floating-point number
 - `bool`: 8-bit boolean value (Technically 1-bit types cannot exist.)
-- `string`: 64-bit char* (pointer to the first character of the string.)
+- `str`: 64-bit char* (pointer to the first character of the string.)
 - `char`: 8-bit signed integer
 
 ```cpp
@@ -88,13 +90,13 @@ Zura supports the `if`, `else`, `while`, and `for` control structures that you m
 # C for loop
 #    iterator  cond    postfix
 loop (i := 0; i < 10) : (i++) {
-   @output(i, "\n");
+   @output(1, i, "\n");
 }
 
 # C while loop
 #    iterator  cond     (no post-loop operator)
 loop (i := 0; i < 10) {
-   @output(i, "\n");
+   @output(1, i, "\n");
 }
 ```
 
@@ -103,7 +105,7 @@ You are allowed to have a post-loop operator in the loop syntax without the inli
 ```cpp
 have x: int = 0;
 loop (x < 10) : (x++) {
-   @output(x, "\n");
+   @output(1, x, "\n");
 }
 ```
 
@@ -112,9 +114,9 @@ The `if` and `else` statements are similar to other languages.
 ```cpp
 have x: int = 10;
 if (x > 10) {
-   @output("x > 10\n");
+   @output(1, "x > 10\n");
 } else {
-   @output("x <= 10\n");
+   @output(1, "x <= 10\n");
 }
 ```
 
@@ -138,8 +140,6 @@ You can access elements of an array using the square bracket operator `[]`.
 have x: int = arr[0];
 ```
 
-There is more to come like; push, pop, and other array operations.
-
 ## Structures
 
 Zura supports structures which allow you to define custom data types. Similar to C-family languages, structs are simply a way to manage multiple variables in one easy-to-access place.
@@ -155,7 +155,7 @@ have p: Point;
 p.x = 10;
 p.y = 20;
 
-@output("Point: (", p.x, ", ", p.y, ")\n");
+@output(1, "Point: (", p.x, ", ", p.y, ")\n");
 ```
 
 Structs can also be defined in one big expression, rather than defining each member individually like the example above.
@@ -181,83 +181,10 @@ const Color := enum {
 };
 
 have c: Color = Color.Red;
-@output("Color: ", c, "\n");
+@output(1, "Color: ", c, "\n");
 ```
 
-Each member of the enum is treated as the C-like equivalent of a `unsigned long`.
-
-## Templates
-
-Zura supports templates which allow you to define generic functions and data structures.
-These are very similar to C++ templates.
-
-```cpp
-@template <typename T>
-const swap := fn (a: T, b: T) T {
-   have temp: T = a;
-   a = b;
-   b = temp;
-
-   return a;
-};
-```
-
-## Casting
-
-Zura supports casting between different types using the `cast` keyword. This is a "functional" cast rather than a static cast like in C++. This will convert between data types rather than simply changing the type associated with the bytes.
-
-```cpp
-have x: float = 10.5;
-have y: int = @cast<int>(x);
-```
-
-Here is a more complex example:
-
-```cpp
-const calculate_average := fn (a: float, b: float) float {
-   return (a + b) / 2.0;
-};
-
-const main := fn () int { 
-   have x: int = 10;
-   have y: int = 20;
-
-   @output("Integer values: 'x=", x, "' and 'y=", y, "'\n");
-
-   have fx: float = @cast<float>(x);
-   have fy: float = @cast<float>(y);
-
-   @output("Float values: 'fx=", fx, "' and 'fy=", fy, "'\n");
-
-   have avg: float = calculate_average(fx, fy);
-   @output("Average of float values: 'avg=", avg, "'\n");
-
-   return 0;
-};
-```
-
-## Built-in Functions
-
-Zura provides a set of built-in functions that do not require the importing of standard libraries, like the most common ones that handle I/O.
-
-```cpp
-have x: int = 10;
-@output("Value of x: ", x, "\n");
-
-have s: string = "Hello, World!";
-@output("String value: ", s, "\n");
-
-have y: int = @input<int>("Enter a number: ");
-@output("You entered: ", y, "\n");
-
-have x: int = @cast<int>(10.5);
-@output("Casting float to int: ", x, "\n");
-
-have z: []char;
-@output("Enter a string: ");
-@input(z, 10); # z is the value that the input will be stored in; 10 is the maximum number of bytes to write into the buffer
-@output("You entered: ", z, "\n");
-```
+Each member of the enum is treated as the C-like equivalent of a `unsigned long` and is auto-incrementing.
 
 ## Pointers
 
@@ -312,7 +239,123 @@ have r: Ray = {
 
 ## Memory
 
-Docs on `@alloc` and `@free` are coming soon!
+```cpp
+const main := fn () int! {
+  have nums: *int = @alloc(1);
+
+  nums& = 42;
+  @outputln(1, "num: ", nums&);
+
+  @free(nums, 1);
+  return 0;
+};
+```
+Write docs for this.
+
+## Templates
+
+Zura supports templates which allow you to define generic functions and data structures.
+These are very similar to rust style inline generics.
+
+```cpp
+const swap := fn <T> (a: T, b: T) T {
+   have temp: T = a;
+   a = b;
+   b = temp;
+
+   return a;
+};
+```
+
+## Casting
+
+Zura supports casting between different types using the `cast` keyword. This is a "functional" cast rather than a static cast like in C++. This will convert between data types rather than simply changing the type associated with the bytes.
+
+```cpp
+have x: float = 10.5;
+have y: int = @cast<int>(x);
+```
+
+Here is a more complex example:
+
+```cpp
+const calculate_average := fn (a: float, b: float) float {
+   return (a + b) / 2.0;
+};
+
+const main := fn () int { 
+   have x: int = 10;
+   have y: int = 20;
+
+   @output("Integer values: 'x=", x, "' and 'y=", y, "'\n");
+
+   have fx: float = @cast<float>(x);
+   have fy: float = @cast<float>(y);
+
+   @output(1, "Float values: 'fx=", fx, "' and 'fy=", fy, "'\n");
+
+   have avg: float = calculate_average(fx, fy);
+   @output(1, "Average of float values: 'avg=", avg, "'\n");
+
+   return 0;
+};
+```
+
+## Built-in Functions
+
+Zura provides a set of built-in functions that do not require the importing of standard libraries, like the most common ones that handle I/O.
+```cpp
+# Outputing text to a terminal
+have x: int! = 10;
+@output(1, "Value of x: ", x, "\n");
+# Where ouput takes in the file descriptor (1 || 0) then the args that you want to pass in
+# Where 0 is for read in and 1 is for read out.
+# You also have the option of having zura handle the '\0\n' when outputing.
+@outputln(1, "Value of x: ", x);
+```
+
+```cpp
+# Importing a file is pretty straight forward
+@import "path_to_file";
+```
+
+Add in docs for @open, @close, @input
+
+## Cmd-line-args
+Zura provides built-in functions to access command-line arguments passed to the program.
+
+Here is an example of how to retrieve and use them:
+```cpp
+const ArgsList := struct {
+  argv: *[]str,
+  size: int!,
+};
+
+const getCMDArgs := fn () ArgsList {
+  have argc: int! = @getArgc();    # Get the number of args
+  have argv: *[]str = @getArgv();  # Pointer to array of str
+
+  have argsList: ArgsList = {
+    argv: argv, 
+    size: argc, 
+  }; 
+
+  return argsList;
+};
+
+const main := fn () int! {
+  have args: ArgsList = getCMDArgs();
+  
+  @outputln(1, "Number of arguments: ", args.size);
+  loop (i=0; i < args.size) : (i++) {
+    @outputln(1, args.argv&[i]);
+  }
+  
+  return 0;
+};
+```
+This code defines a simple structure ArgsList that stores the pointer to the array of arguments and the argument count. The function `getCMDArgs()` 
+retrieves this information using the built-in `@getArgc()` and `@getArgv()` functions. The main function then prints out the argument count and each argument.
 
 ## Debug mode
 
