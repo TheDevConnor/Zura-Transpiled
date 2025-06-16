@@ -94,19 +94,13 @@ sudo pacman -S make cmake gcc valgrind
 
 ##### Building
 
-Now if you want to build zura for the debug mode do
-
-```console
-cmake -DCMAKE_BUILD_TYPE=Debug -DCMAKE_EXPORT_COMPILE_COMMANDS=1 -B debug -S .
+To build the Zura compiler from source, run:
+```sh
+make BUILD=release -j$(nproc)
 ```
-
-and now the exacutable will be available for you to use to debug with
-
-Or if you want the release version do this
-
-```console
-cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_EXPORT_COMPILE_COMMANDS=1 -B release -S .
-```
+This will compile the Zura compiler and place the executable in the `release/` directory.
+You can also run `make BUILD=debug -j$(nproc)` to build a debug version of the compiler.
+Also the `-j$(nproc)` flag will speed up the build process by using all available CPU cores.
 
 Or you can download the latest release from [here](https://github.com/TheDevConnor/Zura-Transpiled/releases/tag/pre-release) and add either the `zura.exe` (For Windows) or `zura` (For Linux) executable to your path.
 

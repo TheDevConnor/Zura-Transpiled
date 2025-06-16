@@ -2,16 +2,16 @@ include config.mk
 
 all: $(EXEC)
 
+$(OBJ_DIR)/%.o: $(SRC_DIR)/%.cpp
+	@mkdir -p $(dir $@)
+	$(CXX) $(CXXFLAGS) -MMD -MP -c $< -o $@
+
 $(EXEC): $(OBJECTS)
 	@echo "Linking: $@"
 	$(CXX) $(OBJECTS) -o $@ $(LDFLAGS)
 
-$(OBJ_DIR)/%.o: $(SRC_DIR)/%.cpp $(HEADERS)
-	@mkdir -p $(dir $@)
-	$(CXX) $(CXXFLAGS) -c $< -o $@
-
 clean:
-	rm -rf build $(EXEC)
+	rm -rf build debug release
 
 run: $(EXEC)
 	@$(EXEC) build zura_files/main.zu -save $(if $(findstring debug,$(BUILD)),-debug) -name main
@@ -26,5 +26,7 @@ install: $(EXEC)
 
 test: $(EXEC)
 	@python3 run_tests.py
+
+-include $(OBJECTS:.o=.d)
 
 .PHONY: all clean run valgrind install test

@@ -21,10 +21,9 @@ endif
 LDFLAGS := -lstdc++ -Wl,-E
 
 SRC_DIR := src
-OBJ_DIR := build
+OBJ_DIR := $(BUILD_DIR)/obj
 
-EXEC := zura
+EXEC := $(BUILD_DIR)/zura
 
 CPP_FILES := $(shell find $(SRC_DIR) -name '*.cpp')
-
 OBJECTS := $(patsubst $(SRC_DIR)/%.cpp,$(OBJ_DIR)/%.o,$(CPP_FILES))
