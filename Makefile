@@ -1,27 +1,30 @@
-CXX = g++
-CXXFLAGS = -std=c++23 -Wall -Wextra -O2 -MMD -MP
-TARGET = zura
+include config.mk
 
-# Find all source files
+all: $(EXEC)
 
-# This shell command COULD be dangerous but because the file structure of Zura
-# is so out of whack anyways that this command hardly does it lol
-SRC_FILES := $(shell find src -name '*.cpp')
-OBJ_FILES := $(SRC_FILES:.cpp=.o)
-DEP_FILES := $(OBJ_FILES:.o=.d)
+$(EXEC): $(OBJECTS)
+	@echo "Linking: $@"
+	$(CXX) $(OBJECTS) -o $@ $(LDFLAGS)
 
-# Final target
-$(TARGET): $(OBJ_FILES)
-	$(CXX) $(CXXFLAGS) -o $@ $^
-
-# Compile each .cpp to .o for parallelization
-%.o: %.cpp
+$(OBJ_DIR)/%.o: $(SRC_DIR)/%.cpp $(HEADERS)
+	@mkdir -p $(dir $@)
 	$(CXX) $(CXXFLAGS) -c $< -o $@
 
-# Include generated dependency files
--include $(DEP_FILES)
-
-# Clean rule
-.PHONY: clean
 clean:
-	rm -f $(OBJ_FILES) $(DEP_FILES)
+	rm -rf build $(EXEC)
+
+run: $(EXEC)
+	@$(EXEC) build zura_files/main.zu -save $(if $(findstring debug,$(BUILD)),-debug) -name main
+
+valgrind: $(EXEC)
+	valgrind --leak-check=full --show-leak-kinds=all --track-origins=yes \
+		--log-file=valgrind-out.txt $(EXEC) build zura_files/main.zu -name main
+
+install: $(EXEC)
+	@echo "Installing to $(INSTALL_DIR)"
+	@install -Dm755 $(EXEC) $(INSTALL_DIR)/zura
+
+test: $(EXEC)
+	@python3 run_tests.py
+
+.PHONY: all clean run valgrind install test
