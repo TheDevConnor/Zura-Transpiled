@@ -2,6 +2,7 @@
 
 #include <string>
 #include <unordered_map>
+#include "../../common.hpp"
 
 class Color {
 public:
@@ -9,7 +10,7 @@ public:
 
   std::string color(std::string text, C color, bool isUnderline = false,
                     bool isBold = false) {
-    if (terminal_supports_color())
+    if (!terminal_supports_color())
       return text;
     if (isUnderline)
       return colorCode(color) + "\033[4m" + text + "\033[0m";
@@ -33,6 +34,8 @@ private:
 
   // Check to see if the terminal supports color
   bool terminal_supports_color() {
+    // if we have lsp mode, just return false all the time
+    if (!shouldUseColor) return false;
     FILE *pipe = popen("/bin/sh -c 'tput colors'", "r");
     if (!pipe)
       return false;

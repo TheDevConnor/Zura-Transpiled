@@ -18,8 +18,18 @@
 
 class Error {
  public:
-  inline static std::vector<std::string> errors = {};
-  inline static std::vector<std::string> warnings = {};
+  struct ErrorInfo {
+    int line_start;
+    int col_start;
+    int line_end;
+    int col_end;
+    std::string message;
+    std::string simplified_message;
+    std::string file_path;
+  };
+
+  inline static std::vector<ErrorInfo> errors = {};
+  inline static std::vector<ErrorInfo> warnings = {};
   static void handle_lexer_error(Lexer &lex, std::string error_type,
                                  std::string file_path, std::string msg);
   static std::string handle_type_error(const std::vector<Lexer::Token> &tks, int line,

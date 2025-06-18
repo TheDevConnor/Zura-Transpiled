@@ -612,7 +612,9 @@ Node::Stmt *Parser::importStmt(PStruct *psr, std::string name) {
       psr->expect(TokenKind::STRING,
                   "Expected a STRING as a path in an import stmt")
           .value;
+  std::vector<Lexer::Token> backup = psr->tks;
   node.current_file = path;
+  node.tks = psr->tks;  
   psr->current_file = path;
 
   path = path.substr(1, path.size() - 2); // removes "" from the path
@@ -636,7 +638,7 @@ Node::Stmt *Parser::importStmt(PStruct *psr, std::string name) {
   if (result == nullptr) {
     Error::handle_error("Parser", psr->current_file,
                         "Could not parse the imported file '" + path + "'",
-                        psr->tks, line, column);
+                        backup, line, column);
     return nullptr;
   }
 
@@ -645,9 +647,11 @@ Node::Stmt *Parser::importStmt(PStruct *psr, std::string name) {
 
   node.current_file = current_file;
   psr->current_file = current_file;
-
-  return new ImportStmt(line, column, absolutePath, result,
+  ImportStmt *temp = new ImportStmt(line, column, absolutePath, result, node.tks,
                         codegen::getFileID(psr->current_file));
+  psr->tks = backup;
+  node.tks = backup;
+  return temp;
 }
 
 Node::Stmt *Parser::linkStmt(PStruct *psr, std::string name) {

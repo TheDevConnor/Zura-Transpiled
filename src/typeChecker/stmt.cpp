@@ -469,12 +469,13 @@ void TypeChecker::visitImport(Node::Stmt *stmt) {
   }
 
   context->declareGlobal(import_stmt->name, return_type.get());
-
+  std::swap(node.tks, import_stmt->tks); // C++ my beloved
   // type check the import
   visitStmt(import_stmt->stmt);
-
+  
   return_type = nullptr;
   node.current_file = file_name; // reset the current file name
+  std::swap(node.tks, import_stmt->tks);
 }
 
 void TypeChecker::visitMatch(Node::Stmt *stmt) {

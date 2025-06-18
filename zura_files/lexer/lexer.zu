@@ -42,30 +42,42 @@ const Lexer := struct {
   current: *char,
   start: *char,
   line: int!,
-  pos: int!,
+  index: int!, # This is the index in the file of what character we are on; NOT the column
+  col: int!,
 };
 
 const advance := fn (lx: *Lexer) char {
-  return lx&.current[lx&.pos++];
+  lx&.col++;
+  return lx&.current[lx&.index++];
 };
 
-const whitespace := fn (lx: *Lexer) int! {
-  have count: int! = 0;
-
-  loop (i = 0; i < lx&.pos) : (i++) {
-    if (lx&.current[lx&.pos] == @cast<char>(10)) { # Newline 
-      lx&.line++;
-      lx&.pos = 0;
-      advance(lx);
-    } 
-    if (lx&.current[lx&.pos] == @cast<char>(32)) { # Space
-      count++;
-      advance(lx);
-    } else {
-      break; # Stop if we encounter a non-whitespace character
+const whitespace := fn (lx: *Lexer, size: int!) int! {
+  have count: int! = 0; # but we miiiiiight
+  loop (i = 0; i < size) : (i++) {
+    match(lx&.current[lx&.index]) {
+      # '\r'
+      case @cast<char>(13) -> {
+        # No logic here; You even have a normal \n anyways
+      }
+      # '\t'
+      case @cast<char>(9) -> {
+        count += 4;
+        lx&.index += 4;
+      }
+      # '\n'
+      case @cast<char>(10) -> {
+        lx&.line++;
+        lx&.col = 0; # Setting COLUMN to zero; NOT the index!!
+        advance(lx);
+      }
+      # ' '
+      case @cast<char>(32) -> {
+        count++;
+        advance(lx);
+      }
+      default -> { return count; }
     }
   }
-
   return count; # Return the count of whitespace characters skipped
 };
 
@@ -74,16 +86,18 @@ const scan := fn (lx: *Lexer, size: int!) void {
   have whitespaceCount: int! = 0;
 
   loop (i = 0; i < size) : (i++) {
-    whitespaceCount = whitespace(lx);
+    whitespaceCount = whitespace(lx, size);
     lx&.start = lx&.current;
 
     # This check is not required as the loop is a fixed size anyways
-    # if (lx&.current[lx&.pos] == @cast<char>(0)) {
-    #   break; # End of input
-    # }
-    
-    # for now just print the current character and its position
-    @outputln(1, "Current character: ", ascii_to_string(lx&.current[lx&.pos]), " ", lx&.current[lx&.pos], " at position: ", lx&.pos, " on line: ", lx&.line, " whitespace skipped: ", whitespaceCount);
+    if (lx&.current[lx&.index] == @cast<char>(0)) {
+      break; # End of input
+    }
+    # horizontal pos
+    # shoudl we return that in whitespace() or should whitespace() return spaces count
+    # for now just print the current character and its position add an error
+    #! NOTE: INTENTIONAL SEGFUALT/ERROR HERE; POS IS INDEX
+    @outputln(1, "Current character: ", ascii_to_string(lx&.current[lx&.index]), " ", lx&.current[lx&.index], " at INDEX: ", lx&.index, " on line: ", lx&.line, " on col ", lx&.col, " whitespace skipped: ", whitespaceCount);
     # TODO: implement tokenization for single-character tokens
     # TODO: implement tokenization for multi-character tokens (@ functions, identifiers, numbers, and strings)
     advance(lx);
