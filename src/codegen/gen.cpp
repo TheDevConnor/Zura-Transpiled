@@ -51,7 +51,7 @@ void codegen::gen(Node::Stmt *stmt, bool isSaved, std::string output_filename,
           "# "
         << ZuraVersion
         << "\n"
-          "# What's New: Dereferencing structs\n"
+          "# What's New: Hopefully only minor improvements from now on!\n"
         << "\n# Everything beyond this point was generated automatically by the Zura compiler.\n" 
            ".att_syntax\n";
   

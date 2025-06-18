@@ -746,8 +746,14 @@ void codegen::assign(Node::Expr *expr) {
       IdentExpr *lhs = static_cast<IdentExpr *>(e->assignee);
       visitExpr(e->rhs);
       std::string res = variableTable[lhs->name];
-      popToRegister(res);
-      pushRegister(res);  // Expressions return values!
+      push(Instr{.var=PopInstr{.where = res, .whereSize = intDataToSize(getByteSizeOfType(e->rhs->asmType))},
+                 .type = InstrType::Pop},
+           Section::Main);
+      // Assignments are expressions that reutrn things. Chances likely are that this will be ignored
+      // but this is still required
+      push(Instr{.var=PushInstr{.what = res, .whatSize = intDataToSize(getByteSizeOfType(e->rhs->asmType))},
+                 .type = InstrType::Push},
+           Section::Main);
     }
   }
 }

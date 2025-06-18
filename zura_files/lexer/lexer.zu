@@ -77,13 +77,15 @@ const scan := fn (lx: *Lexer, size: int!) void {
     whitespaceCount = whitespace(lx);
     lx&.start = lx&.current;
 
-    if (lx&.current[lx&.pos] == @cast<char>(0)) {
-      break; # End of input
-    }
+    # This check is not required as the loop is a fixed size anyways
+    # if (lx&.current[lx&.pos] == @cast<char>(0)) {
+    #   break; # End of input
+    # }
     
     # for now just print the current character and its position
     @outputln(1, "Current character: ", ascii_to_string(lx&.current[lx&.pos]), " ", lx&.current[lx&.pos], " at position: ", lx&.pos, " on line: ", lx&.line, " whitespace skipped: ", whitespaceCount);
-
+    # TODO: implement tokenization for single-character tokens
+    # TODO: implement tokenization for multi-character tokens (@ functions, identifiers, numbers, and strings)
     advance(lx);
   }
 };
