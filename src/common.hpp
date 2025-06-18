@@ -5,6 +5,7 @@
 
 inline std::string ZuraVersion = "v0.1.45";
 inline bool shouldPrintErrors = true;
+inline bool shouldUseColor = true;
 
 class FlagConfig {
  public:

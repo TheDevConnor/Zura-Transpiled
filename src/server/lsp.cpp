@@ -2,12 +2,14 @@
 #include <unordered_map>
 #include "lsp.hpp"
 #include "../common.hpp"
+#include "../helper/flags.hpp"
 
 using namespace nlohmann;
 lsp::ServerStatus lspStatus = lsp::ServerStatus::Waiting; // Waiting to be initialized
 
 void lsp::main() {
   shouldPrintErrors = false;
+  shouldUseColor = false;
   logFile.open("/tmp/lsp.log", std::ios::out | std::ios::app);
   logFile << "-==-= Starting language server =-==-\n" << std::flush;
   //? Initialization!!!!
@@ -70,6 +72,9 @@ void lsp::handleMethod(const std::string& method, const nlohmann::json& params) 
   } else if (method == "textDocument/hover") {
     logFile << "Handling textDocument/hover method\n" << std::flush;
     handleMethodTextDocumentHover(params);
+  } else if (method == "textDocument/diagnostic") {
+    logFile << "Handling textDocument/diagnostic method\n" << std::flush;
+    execDiagnostic(params["params"]["textDocument"]["uri"]);
   } else if (method == "textDocument/completion") {
     // logFile << "Handling textDocument/completion method\n" << std::flush;
     // handleMethodTextDocumentCompletion(params);
@@ -118,7 +123,25 @@ void lsp::handleMethodInitialize(const nlohmann::json& object) {
           {"resolveProvider", false}
         }},
         {"colorProvider", false},
-        {"foldingRangeProvider", false}
+        {"foldingRangeProvider", false},
+        /*
+        publishDiagnostics: {
+          relatedInformation: true,
+          tagSupport: { valueSet: [1, 2] },
+          versionSupport: true,
+          codeDescriptionSupport: true,
+          dataSupport: true
+        }
+        */
+        {"diagnosticProvider", {
+          {"relatedInformation", false},
+          {"tagSupport", {
+            {"valueSet", {1, 2}} // not really needed here
+          }},
+          {"versionSupport", false},
+          {"codeDescriptionSupport", false},
+          {"dataSupport", false}
+        }}
       }},
       {"serverInfo", {
         {"name", "Zura LSP"},

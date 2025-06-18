@@ -1,4 +1,7 @@
 #include "lsp.hpp"
+#include "../typeChecker/type.hpp"
+#include "../parser/parser.hpp"
+#include "../helper/error/error.hpp"
 
 std::map<lsp::URI, std::string> lsp::documents = {};
 
@@ -49,6 +52,49 @@ void lsp::handleMethodTextDocumentDidChange(const nlohmann::json& params) {
   logFile << "New content:\n" << document << "\n" << std::flush;
 }
 
+void lsp::reportErrors(std::vector<Error::ErrorInfo> errors, lsp::URI uri) {
+  // 0 trust in copilot
+  if (errors.empty()) {
+    nlohmann::json errorResponse = {
+      {"jsonrpc", "2.0"},
+      {"method", "textDocument/publishDiagnostics"},
+      {"params", {
+        {"uri", ""}, // empty quotes means project-wide, I THINK**
+        {"diagnostics", nlohmann::json::array()}
+      }}
+    };
+  }
+  // Great! We have stuff to do....
+  auto diagnostics = nlohmann::json::array();
+  for (const Error::ErrorInfo &error : errors) {
+    diagnostics.push_back(nlohmann::json({
+      {"range", {
+        {"start", {
+          {"line", error.line_start},
+          {"character", error.col_start}
+        }},
+        {"end", {
+          {"line", error.line_end},
+          {"character", error.col_end},
+        }}
+      }}, // </range>
+      {"severity", error.simplified_message.find("warning") != std::string::npos ? DiagnosticSeverity::Warning : DiagnosticSeverity::Error},
+      {"code", error.simplified_message.find("warning") != std::string::npos ? "Warning" : "Error"},
+      {"source", "Zura builtin LSP"},
+      {"message", error.simplified_message},
+      {"filePath", error.file_path}
+    }));
+  }
+  nlohmann::json errorResponse = {
+    {"jsonrpc", "2.0"},
+    {"method", "textDocument/publishDiagnostics"},
+    {"params", {
+      {"uri", uri},
+      {"diagnostics", diagnostics}
+    }}
+  };
+  handleResponse(errorResponse); // Send the response back to the client
+}
 
 void lsp::handleMethodTextDocumentDidClose(const nlohmann::json& params) {
   // This method is called when a text document is closed
@@ -65,6 +111,32 @@ void lsp::handleMethodTextDocumentDidSave(const nlohmann::json& params) {
   // We can log the content of the document if needed
   logFile << "Saved document: " << uri << "\n" << std::flush;
   logFile << "Content: " << documents[uri] << "\n" << std::flush;
+
+  // TypeCheck the entire file
+  // we also know that the file exists because in order to save you would have to have it open
+  std::string content = documents[uri];
+  if (content.empty()) {
+    logFile << "⚠️ Document is empty: " << uri << "\n";
+    return;
+  }
+  logFile << "Type checking document: " << uri << "\n";
+  // run a diagnostic
+
+  execDiagnostic(uri);
+}
+
+void lsp::execDiagnostic(lsp::URI uri) {
+  std::string content = documents[uri];
+  Node::Stmt *result = Parser::parse(content.c_str(), uri.substr(7));
+  bool parserError = Error::errors.size() > 0;
+  // Report those
+  if (parserError) return reportErrors(Error::errors, uri);
+
+  TypeChecker::performCheck(result);
+  bool tcError = Error::errors.size() > 0;
+  // Report those
+  if (tcError) return reportErrors(Error::errors, uri);
+  reportErrors({}, uri); // We are clean!!
 }
 
 size_t lsp::getOffset(const std::string& text, size_t line, size_t character) {

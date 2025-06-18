@@ -2,9 +2,11 @@
 #include <fstream>
 #include <map>
 #include "json.hpp"
+#include "../helper/error/error.hpp"
 
 namespace lsp {
   inline std::ofstream logFile;
+  inline bool active = false;
   void main(); // Initializes the LSP to start listening to stdout
   void handleMethod(const std::string& method, const nlohmann::json& object); // Handles the method received from the client
   void handleResponse(const nlohmann::json& response); // This is what we send back to the client. More often than not, its usually just null
@@ -18,6 +20,8 @@ namespace lsp {
   using URI = std::string;
   extern std::map<URI, std::string> documents;
   size_t getOffset(const std::string& text, size_t line, size_t character); // Calculates the offset in the text based on line and character
+  void reportErrors(std::vector<Error::ErrorInfo> errors, URI uri);
+  void execDiagnostic(URI uri); // Executes diagnostics on the document at the given URI
   void handleMethodTextDocumentDidOpen(const nlohmann::json& params); // Handles the "textDocument/didOpen" method
   void handleMethodTextDocumentDidChange(const nlohmann::json& params); // Handles the "textDocument/didChange" method
   void handleMethodTextDocumentDidClose(const nlohmann::json& params); // Handles the "textDocument/didClose" method
@@ -37,6 +41,18 @@ namespace lsp {
     
     Stopped,
     Exiting,
+  };
+
+  enum class DiagnosticSeverity {
+    Error = 1,
+    Warning = 2,
+    Information = 3,
+    Hint = 4,
+  };
+
+  enum class DiagnosticTag {
+    Unnecessary = 1,
+    Deprecated = 2,
   };
 
   enum class TextDocumentSyncKind {

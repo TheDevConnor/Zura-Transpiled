@@ -523,6 +523,23 @@ std::string lsp::getBuiltinNote(const std::string &builtin) {
             "};\n"
             "```";
   } else
+  if (builtin == "streq") {
+    return "This function will compare two strings and return a boolean for whether or not they match.\n"
+           "It takes in two string arguments and returns a boolean value. Obviously.\n"
+           "> [!NOTE]\n"
+           "> This function will read until it reaches either a difference between the two strings or a null terminator. This means that \"hello\\0 world!\" and \"hello\" would be percieved as equivalent.\n"
+           "> Take caution in removing null terminators or write your own implementation, lol\n" 
+           "Example:\n"
+           "```zura\n"
+           "const main := fn () int! {\n"
+           "\tconst str1: string = \"Hello\";\n"
+           "\tconst str2: string = \"Hello\";\n"
+           "\tconst str3: string = \"World\";\n"
+           "\t@output(1, @streq(str1, str2)); # Will print 'true'\n"
+           "\t@output(1, @streq(str1, str3)); # Will print 'false'\n"
+           "}\n"
+           "```";
+  } else
   {
     return "";
   }

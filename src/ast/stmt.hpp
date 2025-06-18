@@ -5,6 +5,7 @@
 #include <vector>
 
 #include "ast.hpp"
+#include "../lexer/lexer.hpp"
 
 class ProgramStmt : public Node::Stmt {
 public:
@@ -500,9 +501,10 @@ public:
   int line, pos;
   std::string name;
   Node::Stmt *stmt;
+  std::vector<Lexer::Token> tks;
 
-  ImportStmt(int line, int pos, std::string name, Node::Stmt *stmt, size_t file)
-      : line(line), pos(pos), name(name), stmt(stmt) {
+  ImportStmt(int line, int pos, std::string name, Node::Stmt *stmt, std::vector<Lexer::Token> tks, size_t file)
+      : line(line), pos(pos), name(name), stmt(stmt), tks(std::move(tks)) {
     file_id = file;
     kind = NodeKind::ND_IMPORT_STMT;
   }
