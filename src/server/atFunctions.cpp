@@ -318,23 +318,7 @@ std::string lsp::getBuiltinNote(const std::string &builtin) {
            "}\n"
            "```";
   } else
-  if (builtin == "@strcmp") {
-    return "This function will compare two strings and return a boolean for whether or not they match.\n"
-           "It takes in two string arguments and returns a boolean value. Obviously.\n"
-           "> [!NOTE]\n"
-           "> This function will read until it reaches either a difference between the two strings or a null terminator. This means that \"hello\\0 world!\" and \"hello\" would be percieved as equivalent.\n"
-           "Example:\n"
-           "```zura\n"
-           "const main := fn () int! {\n"
-           "\tconst str1: string = \"Hello\";\n"
-           "\tconst str2: string = \"Hello\";\n"
-           "\tconst str3: string = \"World\";\n"
-           "\t@output(1, @strcmp(str1, str2)); # Will print 'true'\n"
-           "\t@output(1, @strcmp(str1, str3)); # Will print 'false'\n"
-           "}\n"
-           "```";
-  } else
-  if (builtin == "recv") {
+  if (builtin == "@recv") {
     return "This function will read data from a socket connection and place it into a buffer.\n"
            "It takes in four arguments: the file descriptor of the socket, a pointer to the buffer, the number of bytes to read, and flags.\n"
            "The function returns the number of bytes read, or -1 on error.\n"
@@ -370,7 +354,7 @@ std::string lsp::getBuiltinNote(const std::string &builtin) {
            "}\n"
            "```";
   } else
-  if (builtin == "send") {
+  if (builtin == "@send") {
     return "This function will write data to a socket connection from a buffer.\n"
            "It takes in four arguments: the file descriptor of the socket, a pointer to the buffer, the number of bytes to write, and flags.\n"
            "The function returns the number of bytes written, or -1 on error.\n"
@@ -407,7 +391,7 @@ std::string lsp::getBuiltinNote(const std::string &builtin) {
            "}\n"
            "```";
   } else
-  if (builtin == "getArgv") {
+  if (builtin == "@getArgv") {
     return "This function will return the command line arguments passed into the program.\n"
            "It returns a *[]str, and you can access elements in it like a normal array.\n"
            "Be careful that the first element is the relative path to the program, then the actual arguments follow.\n"
@@ -422,7 +406,7 @@ std::string lsp::getBuiltinNote(const std::string &builtin) {
             "};\n"
            "```";
   } else
-  if (builtin == "getArgc") {
+  if (builtin == "@getArgc") {
     return "This function will return how many arguments (or elements) are in argv.\n"
            "You need argc in order to determine how many elements there actually are. If you attempt to access an element that is out of bounds, you get a segmentation fault.\n"
            "The function takes in no arguments and returns an `int!` that lists how many arguments there are.\n"
@@ -439,7 +423,7 @@ std::string lsp::getBuiltinNote(const std::string &builtin) {
             "};\n"
             "```";
   } else
-  if (builtin == "extern") {
+  if (builtin == "@extern") {
     return "This function will declare a function exposed by @link as usable by the program.\n"
            "It is used when importing a (static) library and you want to select certain functions to be used.\n"
            "You would NOT, however, use extern when importing a Zura module, as those are compiled on the fly and are not considered static nor external.\n"
@@ -460,7 +444,7 @@ std::string lsp::getBuiltinNote(const std::string &builtin) {
             "};\n"
             "```";
   } else
-  if (builtin == "link") {
+  if (builtin == "@link") {
     return "This function will link a static library to the program.\n"
            "It is used to import a static library and make its functions available for use in the program.\n"
            "The function takes in a string that is the name of the library to link.\n"
@@ -481,7 +465,7 @@ std::string lsp::getBuiltinNote(const std::string &builtin) {
             "};\n"
             "```";
   } else
-  if (builtin == "call") {
+  if (builtin == "@call") {
     return "This function will call an external function that has been declared with @extern.\n"
            "It is used to call functions from static libraries or other external sources.\n"
            "The function takes in a string that is the name of the function to call, as well as any arguments to pass to the function.\n"
@@ -502,7 +486,7 @@ std::string lsp::getBuiltinNote(const std::string &builtin) {
             "};\n"
             "```";
   } 
-  if (builtin == "import") {
+  if (builtin == "@import") {
     return "This function will import another Zura file and make its functions usable in your current one.\n"
            "This could be useful for organization, reusing old code, or importing somebody else's code.\n"
            "It takes in a string for the path (can be relative or absolute) to the new Zura file to import.\n"
@@ -523,7 +507,7 @@ std::string lsp::getBuiltinNote(const std::string &builtin) {
             "};\n"
             "```";
   } else
-  if (builtin == "streq") {
+  if (builtin == "@streq") {
     return "This function will compare two strings and return a boolean for whether or not they match.\n"
            "It takes in two string arguments and returns a boolean value. Obviously.\n"
            "> [!NOTE]\n"
