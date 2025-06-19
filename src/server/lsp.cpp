@@ -76,8 +76,8 @@ void lsp::handleMethod(const std::string& method, const nlohmann::json& params) 
     logFile << "Handling textDocument/diagnostic method\n" << std::flush;
     execDiagnostic(params["params"]["textDocument"]["uri"]);
   } else if (method == "textDocument/completion") {
-    // logFile << "Handling textDocument/completion method\n" << std::flush;
-    // handleMethodTextDocumentCompletion(params);
+    logFile << "Handling textDocument/completion method\n" << std::flush;
+    handleMethodTextDocumentCompletion(params);
   } else {
     logFile << "Unknown method: " << method << "\n" << std::flush;
     // We can send back an error response, but for now we just ignore it
@@ -95,59 +95,58 @@ void lsp::handleResponse(const nlohmann::json& response) {
   logFile << "-==-= Client Request =-==-\n" << std::flush;
 }
 
-void lsp::handleMethodInitialize(const nlohmann::json& object) {
+void lsp::handleMethodInitialize(const nlohmann::json &object) {
   // Here we would typically set up the server, capabilities, etc.
   json response = {
-    {"jsonrpc", "2.0"}, // Not required, but good practice
-    {"id", object["id"]}, // Required to send back
-    {"result", {
-      {"capabilities", {
-        // Be as USELESS as possible!!
-        {"positionEncoding", "utf-16"}, // To make VSCode happy
-        {"hoverProvider", true},
-        {"documentLinkProvider", false},
-        {"definitionProvider", false},
-        {"referencesProvider", false},
-        {"documentSymbolProvider", false},
-        {"workspaceSymbolProvider", false},
-        {"textDocumentSync", TextDocumentSyncKind::Incremental},
-        {"completionProvider", false},
-        {"declarationProvider", false},
-        {"typeDefinitionProvider", false},
-        {"implementationProvider", false},
-        {"renameProvider", false},
-        {"codeActionProvider", false},
-        {"documentFormattingProvider", false},
-        {"documentRangeFormattingProvider", false},
-        {"documentLinkProvider", {
-          {"resolveProvider", false}
-        }},
-        {"colorProvider", false},
-        {"foldingRangeProvider", false},
-        /*
-        publishDiagnostics: {
-          relatedInformation: true,
-          tagSupport: { valueSet: [1, 2] },
-          versionSupport: true,
-          codeDescriptionSupport: true,
-          dataSupport: true
-        }
-        */
-        {"diagnosticProvider", {
-          {"relatedInformation", false},
-          {"tagSupport", {
-            {"valueSet", {1, 2}} // not really needed here
+      {"jsonrpc", "2.0"},   // Not required, but good practice
+      {"id", object["id"]}, // Required to send back
+      {"result",
+       {{"capabilities",
+         {                                // Be as USELESS as possible!!
+          {"positionEncoding", "utf-16"}, // To make VSCode happy
+          {"hoverProvider", true},
+          {"documentLinkProvider", false},
+          {"definitionProvider", false},
+          {"referencesProvider", false},
+          {"documentSymbolProvider", false},
+          {"workspaceSymbolProvider", false},
+          {"textDocumentSync", TextDocumentSyncKind::Incremental},
+          {"completionProvider", {
+            {"resolveProvider", false},
+            {"triggerCharacters", {".", ":"}} // Optional
           }},
-          {"versionSupport", false},
-          {"codeDescriptionSupport", false},
-          {"dataSupport", false}
-        }}
-      }},
-      {"serverInfo", {
-        {"name", "Zura LSP"},
-        {"version", "0.0.1"}
-      }}
-    }} // We're gonna say "We're useless!" because we basically are
+          {"declarationProvider", false},
+          {"typeDefinitionProvider", false},
+          {"implementationProvider", false},
+          {"renameProvider", false},
+          {"codeActionProvider", false},
+          {"documentFormattingProvider", false},
+          {"documentRangeFormattingProvider", false},
+          {"documentLinkProvider", {{"resolveProvider", false}}},
+          {"colorProvider", false},
+          {"foldingRangeProvider", false},
+          /*
+          publishDiagnostics: {
+            relatedInformation: true,
+            tagSupport: { valueSet: [1, 2] },
+            versionSupport: true,
+            codeDescriptionSupport: true,
+            dataSupport: true
+          }
+          */
+          {"diagnosticProvider",
+           {{"relatedInformation", false},
+            {"tagSupport",
+             {
+                 {"valueSet", {1, 2}} // not really needed here
+             }},
+            {"versionSupport", false},
+            {"codeDescriptionSupport", false},
+            {"dataSupport", false}}}}},
+        {"serverInfo",
+         {{"name", "Zura LSP"},
+          {"version", "0.0.1"}}}}} // We're gonna say "We're useless!" because
+                                   // we basically are
   };
   handleResponse(response);
   lspStatus = ServerStatus::Initialized;

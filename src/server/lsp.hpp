@@ -34,7 +34,7 @@ namespace lsp {
   std::string getBuiltinNote(const std::string& builtin); // Returns a note about the builtin function
   bool isTokenCharacter(char c); // Checks if the character is a valid token character (alphanumeric or underscore)
   void handleMethodTextDocumentHover(const nlohmann::json& object); // Handles the "textDocument/hover" method
-  // void handleMethodTextDocumentCompletion(const nlohmann::json& object); // Handles the "textDocument/completion" method
+  void handleMethodTextDocumentCompletion(const nlohmann::json& object); // Handles the "textDocument/completion" method
 
   enum class ServerStatus {
     Unknown,
