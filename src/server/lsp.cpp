@@ -76,8 +76,8 @@ void lsp::handleMethod(const std::string& method, const nlohmann::json& params) 
     logFile << "Handling textDocument/diagnostic method\n" << std::flush;
     execDiagnostic(params["params"]["textDocument"]["uri"]);
   } else if (method == "textDocument/completion") {
-    logFile << "Handling textDocument/completion method\n" << std::flush;
-    handleMethodTextDocumentCompletion(params);
+    // logFile << "Handling textDocument/completion method\n" << std::flush;
+    // handleMethodTextDocumentCompletion(params);
   } else {
     logFile << "Unknown method: " << method << "\n" << std::flush;
     // We can send back an error response, but for now we just ignore it

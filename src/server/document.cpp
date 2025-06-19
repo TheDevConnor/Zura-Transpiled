@@ -92,6 +92,10 @@ void lsp::reportErrors(std::vector<Error::ErrorInfo> errors, lsp::URI uri) {
     // issue where files will start with "home/[xxx]/..." instead of "/home/[xxx]/..."
     // so we need to make sure that the file_path is always a valid URI
     std::string fixedUri = fix_broken_uri(error.file_path);
+    if (!fixedUri.starts_with("file://")) {
+      fixedUri = "file://" + fixedUri;
+    }
+
     if (uriErrors.contains(fixedUri)) {
       uriErrors[fixedUri].push_back(error);
     } else {
