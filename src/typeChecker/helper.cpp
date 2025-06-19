@@ -47,6 +47,7 @@ std::string TypeChecker::type_to_string(Node::Type *type)
     }
     if (!parameters.empty())
       parameters.pop_back(), parameters.pop_back(); // Remove the last comma and space
+    if (parameters.empty()) parameters = "void"; // fn (void), imo, looks better than fn ()
     return "fn (" + parameters + ") " + type_to_string(static_cast<FunctionType *>(type)->ret);
   }
   case NodeKind::ND_TEMPLATE_STRUCT_TYPE:
@@ -215,6 +216,16 @@ void TypeChecker::processStructMember(MemberExpr *member, const std::string &nam
   {
     if (it.first == name)
     {
+      if (isLspMode) {
+        lsp_idents.push_back(LSPIdentifier {
+          .underlying = it.second.first,
+          .type = LSPIdentifierType::StructMember,
+          .ident = it.first,
+          .line = (unsigned long)static_cast<IdentExpr *>(member->rhs)->line,
+          .pos = (unsigned long)static_cast<IdentExpr *>(member->rhs)->pos - name.size(),
+          .fileID = (unsigned long)member->file_id,
+        });
+      }
       return_type = share(it.second.first);
       member->asmType = createDuplicate(return_type.get());
       return;
@@ -244,6 +255,16 @@ void TypeChecker::processEnumMember(MemberExpr *member, const std::string &lhsTy
 
   return_type = std::make_shared<SymbolType>(name);
   member->asmType = new SymbolType("enum");
+  if (isLspMode) {
+    lsp_idents.push_back(LSPIdentifier {
+      .underlying = createDuplicate(return_type.get()),
+      .type = LSPIdentifierType::EnumMember,
+      .ident = field,
+      .line = (unsigned long)static_cast<IdentExpr *>(member->rhs)->line,
+      .pos = (unsigned long)static_cast<IdentExpr *>(member->rhs)->pos - field.size(),
+      .fileID = (unsigned long)member->file_id,
+    });
+  }
 }
 
 void TypeChecker::handleUnknownType(MemberExpr *member, const std::string &lhsType)

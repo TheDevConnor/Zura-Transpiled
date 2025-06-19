@@ -138,9 +138,9 @@ void TypeChecker::visitIdent(Node::Expr *expr) {
         string_distance(context->stackKeys, ident->name, 3);
     std::string msg = (closest.has_value())
                           ? "Undefined variable '" + ident->name +
-                                "' did you mean '" + closest.value() + "'?"
+                                "'. Did you mean '" + closest.value() + "'?"
                           : "Undefined variable '" + ident->name + "'";
-    handleError(ident->line, ident->pos, msg, "", "Type Error");
+    handleError(ident->line, ident->pos - ident->name.size(), msg, "", "Type Error", ident->pos);
     res = new SymbolType("unknown"); // return unknown type
   }
 
@@ -153,15 +153,15 @@ void TypeChecker::visitIdent(Node::Expr *expr) {
     // Check if enum type
     if (context->enumTable.contains(ident->name)) {
       lsp_idents.push_back(LSPIdentifier{res, LSPIdentifierType::Enum,
-                                         ident->name, (size_t)ident->line - 1,
-                                         (size_t)ident->pos, ident->file_id});
+                                         ident->name, (size_t)ident->line,
+                                         (size_t)ident->pos - ident->name.size(), ident->file_id});
       return;
     }
     // check if struct type
     if (context->structTable.contains(ident->name)) {
       lsp_idents.push_back(LSPIdentifier{res, LSPIdentifierType::Struct,
-                                         ident->name, (size_t)ident->line - 1,
-                                         (size_t)ident->pos, ident->file_id});
+                                         ident->name, (size_t)ident->line,
+                                         (size_t)ident->pos - ident->name.size(), ident->file_id});
       return;
     }
     // check if function
@@ -169,14 +169,14 @@ void TypeChecker::visitIdent(Node::Expr *expr) {
     for (auto fn : context->functionTable) {
       if (fn.first == ident->name) {
         lsp_idents.push_back(LSPIdentifier{res, LSPIdentifierType::Function,
-                                           ident->name, (size_t)ident->line - 1,
-                                           (size_t)ident->pos, ident->file_id});
+                                           ident->name, (size_t)ident->line,
+                                           (size_t)ident->pos - ident->name.size(), ident->file_id});
         return;
-      } // my pc is about to explode of battery lol fun lol
+      }
     }
     lsp_idents.push_back(LSPIdentifier{res, LSPIdentifierType::Variable,
-                                       ident->name, (size_t)ident->line - 1,
-                                       (size_t)ident->pos, ident->file_id});
+                                       ident->name, (size_t)ident->line,
+                                       (size_t)ident->pos - ident->name.size(), ident->file_id});
   }
 }
 
@@ -340,6 +340,7 @@ void TypeChecker::visitAssign(Node::Expr *expr) {
 void TypeChecker::visitCall(Node::Expr *expr) {
   CallExpr *call = static_cast<CallExpr *>(expr);
   Node::Expr *name = call->callee;
+  size_t lspIdentCount = lsp_idents.size();
   std::string fnName =
       (name->kind == ND_IDENT)
           ? static_cast<IdentExpr *>(name)->name
@@ -354,7 +355,19 @@ void TypeChecker::visitCall(Node::Expr *expr) {
     expr->asmType = new SymbolType("unknown");
     return;
   }
-
+  LSPIdentifierType type = /* Is member ? Method : Function */ 
+      (name->kind == ND_MEMBER) ? LSPIdentifierType::StructFunction
+                                : LSPIdentifierType::Function;
+  if (isLspMode && type == LSPIdentifierType::Function) {
+    lsp_idents.push_back(LSPIdentifier {
+      .underlying = nullptr,
+      .type = type,
+      .ident = fnName,
+      .line = (size_t)static_cast<IdentExpr *>(call->callee)->line,
+      .pos = (size_t)static_cast<IdentExpr *>(call->callee)->pos - (fnName.size()),
+      .fileID = call->file_id
+    });
+  }
   // loop through each function in the function table and check if the function
   // exists
   ParamsAndTypes fnParams;
@@ -424,7 +437,6 @@ void TypeChecker::visitCall(Node::Expr *expr) {
     }
   }
   expr->asmType = createDuplicate(return_type.get());
-
   // add an ident for the lsp
   if (isLspMode) {
     std::vector<Node::Type *> params;
@@ -438,14 +450,19 @@ void TypeChecker::visitCall(Node::Expr *expr) {
       }
       params.push_back(argType);
     }
-    lsp_idents.push_back(LSPIdentifier {
-      .underlying = new FunctionType(params, expr->asmType),
-      .type = LSPIdentifierType::Function,
-      .ident = fnName,
-      .line = (size_t)static_cast<IdentExpr *>(call->callee)->line,
-      .pos = (size_t)static_cast<IdentExpr *>(call->callee)->pos,
-      .fileID = call->file_id
-    });
+    if (type == LSPIdentifierType::StructFunction) {
+      // The left hand side has been handled, but we must push our new ident ON TOP of THIS
+      lsp_idents.push_back(LSPIdentifier {
+        .underlying = new FunctionType(params, expr->asmType),
+        .type = type,
+        .ident = fnName,
+        .line = (size_t)static_cast<IdentExpr *>(static_cast<MemberExpr *>(name)->rhs)->line,
+        .pos = (size_t)static_cast<IdentExpr *>(static_cast<MemberExpr *>(name)->rhs)->pos-(fnName.size()),
+        .fileID = call->file_id
+      });
+    } else {
+      lsp_idents[lspIdentCount].underlying = new FunctionType(params, expr->asmType);   
+    }
     return_type = share(expr->asmType);
   }
 }

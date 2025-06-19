@@ -23,17 +23,14 @@ void handleError(int line, int pos, std::string msg, std::string note,
 
 enum class LSPIdentifierType { // Types of identifiers that can be looked up
                                // with syntax highlighting
-  Function,
-  Struct,
-  Enum,
-  Variable,
-  Type,
-  Template,
-  Array,
-  EnumMember,
-  StructMember,
-  StructFunction,
-  Unknown
+  Function = 0,
+  Struct = 1,
+  Enum = 2,
+  Variable = 3,
+  EnumMember = 4,
+  StructMember = 5,
+  StructFunction = 6,
+  Type = 7,
 };
 
 struct LSPIdentifier {

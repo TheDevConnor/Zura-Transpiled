@@ -78,12 +78,12 @@ lsp::URI lsp::fix_broken_uri(lsp::URI uri) {
   return uri;
 };
 
-void lsp::reportErrors(std::vector<Error::ErrorInfo> errors, lsp::URI uri) {
+nlohmann::json lsp::reportErrors(std::vector<Error::ErrorInfo> errors, lsp::URI uri, bool sendResponse) {
   (void)uri;
   // 0 trust in copilot
   if (errors.empty()) {
     clearDiagnostics();
-    return;
+    return nlohmann::json::array();
   }
   // Great! We have stuff to do....
   // a way of storing the errors for every given URI (file)
@@ -102,10 +102,10 @@ void lsp::reportErrors(std::vector<Error::ErrorInfo> errors, lsp::URI uri) {
       uriErrors[fixedUri] = {error};
     }
   }
+  auto diagnostics = nlohmann::json::array();
   for (const auto& [fileUri, fileErrors] : uriErrors) {
-    auto diagnostics = nlohmann::json::array();
     for (const auto& error : fileErrors) {
-      diagnostics.push_back(nlohmann::json({
+      nlohmann::json diagnostic = {
         {"range", {
           {"start", {
             {"line", error.line_start - 1}, // lines are 0-based
@@ -120,22 +120,25 @@ void lsp::reportErrors(std::vector<Error::ErrorInfo> errors, lsp::URI uri) {
         {"code", error.simplified_message.find("warning") != std::string::npos ? "Warning" : "Error"},
         {"source", "Zura builtin LSP"},
         {"message", error.simplified_message},
-      }));
+      };
+      diagnostics.push_back(diagnostic);
     }
-    nlohmann::json errorResponse = {
-      {"jsonrpc", "2.0"},
-      {"method", "textDocument/publishDiagnostics"},
-      {"params", {
-        {"uri", fileUri},
-        {"diagnostics", diagnostics}
-      }}
-    };
-    handleResponse(errorResponse); // Send the response back to the client
-    diagnostics.clear();
+    if (sendResponse) {
+      nlohmann::json errorResponse = {
+        {"jsonrpc", "2.0"},
+        {"method", "textDocument/publishDiagnostics"},
+        {"params", {
+          {"uri", fileUri},
+          {"diagnostics", diagnostics}
+        }}
+      };
+      handleResponse(errorResponse); // Send the response back to the client
+      diagnostics.clear();
+    }
   }
   // clear the errors so far
   uriErrors.clear();
-  return;
+  return diagnostics;
 }
 
 void lsp::handleMethodTextDocumentDidClose(const nlohmann::json& params) {
@@ -173,20 +176,13 @@ void lsp::handleMethodTextDocumentDidSave(const nlohmann::json& params) {
   logFile << "Type checking document: " << uri << "\n";
   // run a diagnostic
 
-  execDiagnostic(uri);
+  execDiagnostic(uri, true);
 }
 
-void lsp::execDiagnostic(lsp::URI uri) {
+std::vector<Error::ErrorInfo> lsp::execDiagnostic(lsp::URI uri, bool sendResponse) {
   std::string uriToCompile = uri;
   if (mainFileLink.contains(uri))  {
     uriToCompile = mainFileLink[uri];
-  }
-  logFile << "Coming from file " << uri << ", compiling " << uriToCompile << "\n";
-  for (const auto& file : TypeChecker::importedFiles) {
-    logFile << "Imported file: " << file << "\n";
-  }
-  for (const auto& [key, value] : mainFileLink) {
-    logFile << "Main file link: " << key << " -> " << value << "\n";
   }
   
   std::string content = documents[uriToCompile];
@@ -196,9 +192,12 @@ void lsp::execDiagnostic(lsp::URI uri) {
   bool parserError = !Error::errors.empty();
   // Report those
   if (parserError) {
-    reportErrors(Error::errors, uriToCompile);
+    if (sendResponse)
+      reportErrors(Error::errors, uriToCompile, true);
+    // Return errors that are in the URI
+    std::vector<Error::ErrorInfo> errors = Error::errors;
     Error::errors.clear();
-    return; 
+    return errors;
   }
 
   TypeChecker::performCheck(result, uriToCompile == uri, true);
@@ -216,12 +215,157 @@ void lsp::execDiagnostic(lsp::URI uri) {
   bool tcError = !Error::errors.empty();
   // Only report type checker errors if there were no parser errors
   if (tcError) {
-    reportErrors(Error::errors, uriToCompile);
+    if (sendResponse)
+      reportErrors(Error::errors, uriToCompile, true);
+    std::vector<Error::ErrorInfo> typeErrors = Error::errors;
     Error::errors.clear();
-    return;
+    return typeErrors;
   } else {
     clearDiagnostics(); // globally clear diagnostics since there were none, globally
+    return {}; // Empty
   }
+}
+
+void lsp::handleMethodTextDocumentCodeAction(const nlohmann::json& object) {
+  auto codeActions = nlohmann::json::array();
+  
+  // Run checks on the file
+  URI uri = object["params"]["textDocument"]["uri"];
+  if (!documents.contains(uri)) {
+    logFile << "⚠️ No document found for URI: " << uri << "\n";
+    auto response = nlohmann::json{
+      {"jsonrpc", "2.0"},
+      {"id", object["id"]},
+      {"result", codeActions} // Intentionally empty
+    };
+    handleResponse(response);
+    return;
+  }
+
+  std::vector<Error::ErrorInfo> errors = execDiagnostic(uri, false);
+  if (errors.empty()) {
+    logFile << "No errors found in document: " << uri << "\n";
+    auto response = nlohmann::json{
+      {"jsonrpc", "2.0"},
+      {"id", object["id"]},
+      {"result", codeActions} // Intentionally empty
+    };
+    handleResponse(response);
+    return;
+  }
+  // Uh oh, there were errors.
+  for (const Error::ErrorInfo &error : errors) {
+    nlohmann::json errorJSON = reportErrors({error}, uri, false); // Get the diagnostic version
+    if (error.simplified_message.find("Did you mean") != std::string::npos) {
+      std::string originalText = error.simplified_message.substr(error.simplified_message.find_first_of('\'') + 1);
+      originalText = originalText.substr(0, originalText.find_first_of('\'')); // Get the last word before the first quote
+
+      std::string newText = error.simplified_message.substr(0, error.simplified_message.find_last_of('\''));
+      newText = newText.substr(newText.find_last_of('\'') + 1);
+
+      nlohmann::json codeAction = {
+        {"title", "Change '" + originalText + "' to '" + newText + "'"},
+        {"kind", "quickfix"},
+        {"diagnostics", {errorJSON[0]}},
+        {"edit", {
+          {"changes", {
+            {uri, {
+              {{"range", errorJSON[0]["range"]}, {"newText", newText}} // This is a placeholder, you would replace it with the actual fix
+            }}
+          }}
+        }}
+      };
+      codeActions.push_back(codeAction);
+    }
+  }
+
+  auto response = nlohmann::json{
+    {"jsonrpc", "2.0"},
+    {"id", object["id"]},
+    {"result", codeActions}
+  };
+  handleResponse(response);
+  return;
+}
+
+void lsp::handleMethodTextDocumentSemanticTokensFull(const nlohmann::json& object) {
+  // This method is called to provide semantic tokens for the entire document
+  URI uri = object["params"]["textDocument"]["uri"];
+  if (!documents.contains(uri)) {
+    logFile << "⚠️ No document found for URI: " << uri << "\n";
+    auto response = nlohmann::json{
+      {"jsonrpc", "2.0"},
+      {"id", object["id"]},
+      {"result", {}} // Intentionally empty
+    };
+    handleResponse(response);
+    return;
+  }
+
+  // check what file the uri matches to
+  size_t fileID = fileIDFromURI(uri);
+  // NOTE: this is the point! I guaruntee you don't have 18 quintillion imports.
+  if (fileID == -1) {
+    logFile << "⚠️ No matching file ID found for URI: " << uri << "\n";
+    auto response = nlohmann::json{
+      {"jsonrpc", "2.0"},
+      {"id", object["id"]},
+      {"result", {}} // Intentionally empty
+    };
+    handleResponse(response);
+    return;
+  }
+
+  // Guess what? We have LSP_Identifiers!!! Those can work
+  // The result is a bunch of uints
+  // [ lineChange, characterChange, tokenLength, tokenType, tokenModifiers (always 0 here) ]
+  auto tokens = nlohmann::json::array();
+  std::vector<TypeChecker::LSPIdentifier> lspIdentsInURI = {};
+  for (const auto& ident : TypeChecker::lsp_idents) {
+    if (ident.fileID == fileID) {
+      lspIdentsInURI.push_back(ident);
+    }
+  }
+  size_t prevLine = 0;
+  size_t prevCharacter = 0;
+  // UGHH now we have to actually START
+  for (const auto& ident : lspIdentsInURI) {
+    long lineChange = (ident.line - 1) - prevLine;
+    long characterChange = ident.pos - prevCharacter;
+    if (lineChange != 0) {
+      characterChange = ident.pos;
+    }
+    if (lineChange < 0 || characterChange < 0) {
+      logFile << "stupid token of name " << ident.ident << " on line  " << ident.line << " pos " << ident.pos << " fileID " << ident.fileID << " type " << (int)ident.type << std::endl;
+    }
+    size_t tokenLength = ident.ident.length();
+    size_t tokenType = static_cast<size_t>(ident.type); // Convert enum to size_t
+    size_t tokenModifiers = 0; // No modifiers for now
+    // Add the token to the array
+    tokens.push_back(lineChange);
+    tokens.push_back(characterChange);
+    tokens.push_back(tokenLength);
+    tokens.push_back(tokenType);
+    tokens.push_back(tokenModifiers);
+
+    // Update previous line and character
+    prevLine = ident.line - 1;
+    prevCharacter = ident.pos;
+  }
+  TypeChecker::LSPIdentifier finalIdent = lspIdentsInURI.back();
+  logFile << "Last stupid token with the three red letters: " <<
+    finalIdent.ident << " ln " << finalIdent.line << " pos " << finalIdent.pos << " fileID " << finalIdent.fileID << " type " << (int)finalIdent.type << std::endl;
+  // Now we have the tokens, we can send them back
+  nlohmann::json response = {
+    {"jsonrpc", "2.0"},
+    {"id", object["id"]},
+    {"result", {
+      {"data", tokens},
+      // {"resultId", "0"} // Not really needed, but good practice
+    }}
+  };
+  handleResponse(response);
+  return;
 }
 
 size_t lsp::getOffset(const std::string& text, size_t line, size_t character) {

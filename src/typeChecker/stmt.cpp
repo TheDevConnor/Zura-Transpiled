@@ -251,7 +251,7 @@ void TypeChecker::visitEnum(Node::Stmt *stmt) {
     context->enumTable.addMember(enum_stmt->name, enum_stmt->fields[i],
                                  (long long)i);
     context->declareLocal(enum_stmt->fields[i],
-                          static_cast<Node::Type *>(new SymbolType("int")));
+                                  static_cast<Node::Type *>(new SymbolType("int")));
   }
 
   // set return type to the name of the enum
@@ -288,6 +288,16 @@ void TypeChecker::visitVar(Node::Stmt *stmt) {
   if (context->structTable.contains(type_to_string(var_stmt->type)) ||
       context->enumTable.contains(type_to_string(var_stmt->type))) {
     return_type = share(var_stmt->type);
+  }
+  if (isLspMode) {
+    lsp_idents.push_back(LSPIdentifier {
+      .underlying = var_stmt->type,
+      .type = LSPIdentifierType::Variable,
+      .ident = var_stmt->name,
+      .line = (unsigned long)var_stmt->line,
+      .pos = (unsigned long)var_stmt->pos + 1, // i dont know why you have to add one. it just looked off
+      .fileID = (unsigned long)var_stmt->file_id,
+    });
   }
 
   // Now check if we have a template struct

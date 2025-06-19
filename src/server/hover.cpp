@@ -1,10 +1,41 @@
 #include "lsp.hpp"
+#include "../codegen/gen.hpp"
 #include "../typeChecker/type.hpp"
 
 // And completions!
 bool lsp::isTokenCharacter(char c) {
 
   return std::isalnum(c) || c == '@' || c == '_';
+}
+
+char lsp::getCharUnder(const std::string &text, size_t line, size_t character) {
+  // Returns the character at the given line and character position.
+  size_t currentLine = 0;
+  size_t currentChar = 0;
+  size_t offset = 0;
+
+  // Step 1: Find the byte offset at (line, character)
+  while (offset < text.size() && currentLine < line) {
+    if (text[offset] == '\n') {
+      currentLine++;
+      currentChar = 0;
+    } else {
+      currentChar++;
+    }
+    offset++;
+  }
+
+  // Now walk from the start of the line to the character offset
+  while (offset < text.size() && text[offset] != '\n' && currentChar < character) {
+    offset++;
+    currentChar++;
+  }
+
+  if (offset >= text.size() || text[offset] == '\n') {
+    return '\0'; // No character found
+  }
+
+  return text[offset];
 }
 
 lsp::Word lsp::getWordUnder(const std::string &text, size_t line, size_t character) {
@@ -69,6 +100,19 @@ lsp::Word lsp::getWordUnder(const std::string &text, size_t line, size_t charact
   return { finalText, {startPos, endPos} };
 }
 
+size_t lsp::fileIDFromURI(lsp::URI uri) {
+  size_t fileID = -1;
+  for (size_t i = 0; i < codegen::fileIDs.size(); i++) {
+    // Trace an absolute path from the main file to this file id
+    if ((std::filesystem::path(mainFileLink[uri].substr(7)) / codegen::fileIDs.at(i)).string() == uri.substr(7)) {
+      // Yay! That was the one! We found it!
+      fileID = i;
+      break;
+    }
+  }
+  return fileID;
+};
+
 
 void lsp::handleMethodTextDocumentHover(const nlohmann::json &object)
 {
@@ -112,7 +156,10 @@ void lsp::handleMethodTextDocumentHover(const nlohmann::json &object)
   //! 2. Check for references within the actual codebase
   // there is a lsp_idents vector that contains a bunch of, you guessed it, identifiers
   for (const auto &ident : TypeChecker::lsp_idents) {
-    if (ident.ident == word.text) {
+    if (
+      ident.ident == word.text && 
+      ident.fileID == fileIDFromURI(object["params"]["textDocument"]["uri"]) &&
+      (ident.line - 1) == word.range.start.line) {
       nlohmann::json response = {
         {"jsonrpc", "2.0"},
         {"id", object["id"]},

@@ -4,6 +4,7 @@
 #include <vector>
 
 #include "../ast/ast.hpp"
+#include "../ast/expr.hpp"
 #include "../helper/error/error.hpp"
 #include "../lexer/lexer.hpp"
 #include "parser.hpp"

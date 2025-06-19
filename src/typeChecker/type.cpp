@@ -8,6 +8,7 @@
 
 void TypeChecker::performCheck(Node::Stmt *stmt, bool isMain, bool isLspServer) {
   isLspMode = isLspServer;
+  lsp_idents.clear();
   TypeChecker::importedFiles.clear();
   TypeChecker::foundMain = false;
   // Clear lsp idents that are in the current file
