@@ -1,12 +1,15 @@
 #pragma once
 #include <fstream>
+#include <unordered_map>
 #include <map>
 #include "json.hpp"
 #include "../helper/error/error.hpp"
 
 namespace lsp {
+  using URI = std::string;
   inline std::ofstream logFile;
   inline bool active = false;
+  inline std::unordered_map<URI, URI> mainFileLink {}; // links the URI of a module to the main file that imports it (i.e the file with the main function) 
   void main(); // Initializes the LSP to start listening to stdout
   void handleMethod(const std::string& method, const nlohmann::json& object); // Handles the method received from the client
   void handleResponse(const nlohmann::json& response); // This is what we send back to the client. More often than not, its usually just null
@@ -17,11 +20,12 @@ namespace lsp {
   void handleMethodShutdown(const nlohmann::json& object); // Handles the "shutdown" method
   void handleMethodExit(const nlohmann::json& object); // Handles the "exit" method
   //- METHODS: DOCUMENTS
-  using URI = std::string;
   extern std::map<URI, std::string> documents;
   size_t getOffset(const std::string& text, size_t line, size_t character); // Calculates the offset in the text based on line and character
   void reportErrors(std::vector<Error::ErrorInfo> errors, URI uri);
   void execDiagnostic(URI uri); // Executes diagnostics on the document at the given URI
+  void clearDiagnostics(); // Clears all diagnostics for all documents
+  URI fix_broken_uri(URI uri); // Fixes broken URIs that start with "home/[xxx]/..." instead of "/home/[xxx]/..."
   void handleMethodTextDocumentDidOpen(const nlohmann::json& params); // Handles the "textDocument/didOpen" method
   void handleMethodTextDocumentDidChange(const nlohmann::json& params); // Handles the "textDocument/didChange" method
   void handleMethodTextDocumentDidClose(const nlohmann::json& params); // Handles the "textDocument/didClose" method

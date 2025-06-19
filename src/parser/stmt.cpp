@@ -235,7 +235,7 @@ Node::Stmt *Parser::funStmt(PStruct *psr, std::string name) {
     if (paramType == nullptr)
       Error::handle_error("Parser", psr->current_file,
                           "Expected a type for the parameter", psr->tks,
-                          psr->current().line, psr->current().column);
+                          psr->current().line, psr->current().column, psr->current().column + 1);
     params.push_back({paramName, paramType});
 
     if (psr->current().kind == TokenKind::RIGHT_PAREN)
@@ -250,7 +250,7 @@ Node::Stmt *Parser::funStmt(PStruct *psr, std::string name) {
   if (returnType == nullptr)
     Error::handle_error("Parser", psr->current_file,
                         "Expected a type for the return type", psr->tks,
-                        psr->current().line, psr->current().column);
+                        psr->current().line, psr->current().column, psr->current().column + 1);
 
   Node::Stmt *body = parseStmt(psr, name);
   psr->expect(TokenKind::SEMICOLON,
@@ -364,7 +364,7 @@ Node::Stmt *Parser::structStmt(PStruct *psr, std::string name) {
               "Structs only take in fields, structs, and functions. ";
           msg += "Found unexpected token: " + psr->current().value;
           Error::handle_error("Parser", psr->current_file, msg, psr->tks,
-                              psr->current().line, psr->current().column);
+                              psr->current().line, psr->current().column, psr->current().column + 1);
           break;
         }
         break;
@@ -542,7 +542,7 @@ Node::Stmt *Parser::matchStmt(PStruct *psr, std::string name) {
       std::string msg =
           "Unexpected token in match statement: " + psr->current().value;
       Error::handle_error("Parser", psr->current_file, msg, psr->tks,
-                          psr->current().line, psr->current().column);
+                          psr->current().line, psr->current().column, psr->tks[psr->pos + 1].column);
       psr->advance(); // Consume the bad token
     }
   }
@@ -579,7 +579,7 @@ Node::Stmt *Parser::enumStmt(PStruct *psr, std::string name) {
       if (warnForSemi) {
         Error::handle_error("Parser", psr->current_file,
                             "Semicolons are non-standard for enumerator lists",
-                            psr->tks, semi.line, semi.column);
+                            psr->tks, semi.line, semi.column, semi.column + 1, true); // semi colons are 1 wide
         warnForSemi = false; // only warn once to stop console from filling with
                              // all the same error (especially when the
                              // programmer only made a simple mistake)
@@ -604,10 +604,10 @@ Node::Stmt *Parser::importStmt(PStruct *psr, std::string name) {
   // Declare our file as first. If we are main but the first thing we do is import another file,
   // this will maintain the first file, as, well, first.
   (void)codegen::getFileID(psr->current_file);
+  std::string current_file = psr->current_file;
 
   psr->expect(TokenKind::IMPORT,
               "Expected an IMPORT keyword to start an import stmt");
-  std::string current_file = node.current_file;
   std::string path =
       psr->expect(TokenKind::STRING,
                   "Expected a STRING as a path in an import stmt")
@@ -617,7 +617,7 @@ Node::Stmt *Parser::importStmt(PStruct *psr, std::string name) {
   node.tks = psr->tks;  
   psr->current_file = path;
 
-  path = path.substr(1, path.size() - 2); // removes "" from the path
+  path = path.substr(1, path.size() - 2); // removes surrounding quotes "" from the path
 
   // Make an absolute path to the imported file
   // that is relative to the file that called it
@@ -626,19 +626,19 @@ Node::Stmt *Parser::importStmt(PStruct *psr, std::string name) {
   // the absolute path will be /home/user/std/file2
 
   // Check if the path is already absolute
-  if (path.starts_with("file://") || path.starts_with("/"))
+  if (path.starts_with("file://"))
     path = path.substr(7);
   std::filesystem::path absolutePath = path;
   if (absolutePath.is_relative()) {
     absolutePath = std::filesystem::absolute(
-        std::filesystem::path(current_file).parent_path() / path);
+        std::filesystem::path(current_file).parent_path() / (path));
   }
   char *fileContent = Flags::readFile(absolutePath.string().c_str());
   Node::Stmt *result = parse(fileContent, absolutePath.string().c_str());
   if (result == nullptr) {
     Error::handle_error("Parser", psr->current_file,
                         "Could not parse the imported file '" + path + "'",
-                        backup, line, column);
+                        backup, line, column, psr->tks[psr->pos].column);
     return nullptr;
   }
 
@@ -648,7 +648,7 @@ Node::Stmt *Parser::importStmt(PStruct *psr, std::string name) {
   node.current_file = current_file;
   psr->current_file = current_file;
   ImportStmt *temp = new ImportStmt(line, column, absolutePath, result, node.tks,
-                        codegen::getFileID(psr->current_file));
+                        codegen::getFileID(current_file));
   psr->tks = backup;
   node.tks = backup;
   return temp;

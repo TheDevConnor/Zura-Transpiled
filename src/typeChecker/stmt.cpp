@@ -82,6 +82,13 @@ void TypeChecker::visitFn(Node::Stmt *stmt) {
   }
 
   // Add function to functionTable
+  // check if the function is already declared
+  if (context->functionTable.contains(fn_stmt->name)) {
+    std::string msg = "Function '" + fn_stmt->name + "' already declared";
+    handleError(fn_stmt->line, fn_stmt->pos - 2, msg, "", "Type Error", 
+                fn_stmt->pos);
+    // return;
+  }
   context->functionTable.declare(fn_stmt->name, params, fn_stmt->returnType);
 
   visitStmt(fn_stmt->block);
@@ -224,7 +231,12 @@ void TypeChecker::visitEnum(Node::Stmt *stmt) {
   // add the enum name to the local table and global table
   context->declareLocal(enum_stmt->name, static_cast<Node::Type *>(type));
   context->declareGlobal(enum_stmt->name, static_cast<Node::Type *>(type));
-
+  // check if the enum table has the thing already declared
+  if (context->enumTable.contains(enum_stmt->name)) {
+    std::string msg = "Enum '" + enum_stmt->name + "' is already declared";
+    handleError(enum_stmt->line, enum_stmt->pos, msg, "", "Type Error");
+    return;
+  }
   // delcare the enum in the enum table
   context->enumTable.declare(enum_stmt->name);
 
@@ -262,7 +274,14 @@ void TypeChecker::visitIf(Node::Stmt *stmt) {
 
 void TypeChecker::visitVar(Node::Stmt *stmt) {
   VarStmt *var_stmt = static_cast<VarStmt *>(stmt);
-
+  if (context->globalSymbols.contains(var_stmt->name) ||
+      context->lookup(var_stmt->name)) {
+    // If the variable is already declared in the global or local scope
+    // throw an error
+    std::string msg = "Variable '" + var_stmt->name + "' already declared";
+    TypeChecker::handleError(var_stmt->line, var_stmt->pos, msg, "", "Type Error", var_stmt->pos + var_stmt->name.size());
+    return;
+  }
   context->declareLocal(var_stmt->name, var_stmt->type);
 
   // check if the type is a struct or enum
@@ -449,23 +468,31 @@ void TypeChecker::visitWhile(Node::Stmt *stmt) {
 
 void TypeChecker::visitImport(Node::Stmt *stmt) {
   ImportStmt *import_stmt = static_cast<ImportStmt *>(stmt);
-
+  // Convert the relative path of the import's name to be absolute
+  std::filesystem::path import_path = std::filesystem::absolute(
+      std::filesystem::path(import_stmt->name));
+  if (importedFiles.contains(import_path.string())) {
+    // If the import has already been imported, we do not need to do anything
+    return;
+  }
   // store the current file name
   std::string file_name = node.current_file;
   // If the path of the import is absolute, we must set the node.current_file to
-  // be the import path relative to the pwd
-  if (std::filesystem::path(import_stmt->name).is_absolute()) {
-    node.current_file =
-        std::filesystem::path(import_stmt->name).relative_path().string();
-  } else {
-    node.current_file = import_stmt->name;
-  }
-
+  
   std::unordered_map<std::string, Node::Type *>::iterator res =
       context->globalSymbols.find(import_stmt->name);
   if (res != context->globalSymbols.end()) {
     std::string msg = "'" + import_stmt->name + "' has already been imported.";
     handleError(import_stmt->line, import_stmt->pos, msg, "", "Type Error");
+    return;
+  }
+  
+  // be the import path relative to the cwd
+  if (std::filesystem::path(import_stmt->name).is_absolute()) {
+    node.current_file =
+        std::filesystem::path(import_stmt->name).relative_path().string();
+  } else {
+    node.current_file = import_stmt->name;
   }
 
   context->declareGlobal(import_stmt->name, return_type.get());
@@ -476,6 +503,8 @@ void TypeChecker::visitImport(Node::Stmt *stmt) {
   return_type = nullptr;
   node.current_file = file_name; // reset the current file name
   std::swap(node.tks, import_stmt->tks);
+  // Add the absolute path to the imported files
+  importedFiles.insert(import_path.string());
 }
 
 void TypeChecker::visitMatch(Node::Stmt *stmt) {

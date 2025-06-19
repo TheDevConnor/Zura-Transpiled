@@ -25,7 +25,7 @@ T Parser::lookup(PStruct *psr, const std::vector<std::pair<U, T>> &lu, U key) {
   if (it == lu.end()) {
     Error::handle_error("Parser", psr->current_file,
                       "No value found for key in Type maps", psr->tks,
-                      psr->current().line, psr->current().column);
+                      psr->current().line, psr->current().column, psr->current().column + psr->current().value.size());
     // Note: IS FATAL! Do not dereference 'it' if its bad!
   }
 
@@ -76,7 +76,7 @@ Node::Type *Parser::type_led(PStruct *psr, Node::Type *left, BindingPower bp) {
   } catch (std::exception &e) {
     Error::handle_error("Parser", psr->current_file,
                       "Error in type_led: " + std::string(e.what()), psr->tks,
-                      psr->current().line, psr->current().column);
+                      psr->current().line, psr->current().column, psr->current().column + op.value.size());
     return nullptr;
   }
   return nullptr;
@@ -100,7 +100,7 @@ Node::Type *Parser::type_nud(PStruct *psr) {
   } catch (std::exception &e) {  // Return type is nullptr (aka there is non)
     Error::handle_error("Parser", psr->current_file,
                       "Error in type_nud: " + std::string(e.what()), psr->tks,
-                      psr->current().line, psr->current().column);
+                      psr->current().line, psr->current().column, psr->current().column + op.value.size());
     return nullptr;
   }
   return nullptr;

@@ -89,10 +89,10 @@ void Error::handle_lexer_error(Lexer &lex, std::string error_type,
     error += col.color("   |", Color::C::GRAY) + error_space + col.color("^", Color::C::RED, true, true) + "\n";
     error += col.color("note", Color::C::CYAN) + ": " + msg;
     errors.push_back(ErrorInfo {
-                                .line_start = line_start,
-                                .col_start = col_start,
-                                .line_end = lex.scanner.line,
-                                .col_end = lex.scanner.column,
+                                .line_start = (unsigned long)line_start,
+                                .col_start = (unsigned long)col_start,
+                                .line_end = (unsigned long)lex.scanner.line,
+                                .col_end = (unsigned long)lex.scanner.column,
                                 .message = error, .simplified_message = msg,
                                 .file_path = file_path,
     });
@@ -102,10 +102,10 @@ void Error::handle_lexer_error(Lexer &lex, std::string error_type,
                               std::to_string(lex.scanner.line) + ", pos " +
                               std::to_string(lex.scanner.column) + ": " + msg +
                               " (Error formatting failed: " + e.what() + ")";
-    errors.push_back(ErrorInfo { .line_start = lex.scanner.line,
-                                 .col_start = lex.scanner.column,
-                                 .line_end = lex.scanner.line,
-                                 .col_end = lex.scanner.column,
+    errors.push_back(ErrorInfo { .line_start = (unsigned long)lex.scanner.line,
+                                 .col_start = (unsigned long)lex.scanner.column,
+                                 .line_end = (unsigned long)lex.scanner.line,
+                                 .col_end = (unsigned long)lex.scanner.column,
                                  .message = simpleError, .simplified_message = msg,
                                  .file_path = file_path });
   }
@@ -129,13 +129,21 @@ std::string Error::handle_type_error(const std::vector<Lexer::Token> &tks, int l
 
 void Error::handle_error(std::string error_type, std::string file_path,
                          std::string msg, const std::vector<Lexer::Token> &tks,
-                         int line, int pos, bool isWarn) {
+                         int line, int pos, int endPos, bool isWarn) {
   if (msg.find("Expected a SEMICOLON") == 0) line = line - 1;
   try {
-    ErrorInfo error;
+    ErrorInfo error = {
+      .line_start = (unsigned long)line,
+      .col_start = (unsigned long)pos,
+      .line_end = (unsigned long)line,
+      .col_end = (unsigned long)endPos, // TODO: Adjust this based on the actual error
+      .message = "",
+      .simplified_message = msg,
+      .file_path = file_path,
+    };
+    error.simplified_message = msg;
     error.message += error_head(error_type, line, pos, file_path, isWarn);
     error.message += col.color("   |\n", Color::C::GRAY);
-    error.simplified_message = msg;
     std::string formatted_line = line_number(line) + std::to_string(line) + "|";
 
     // Handle the case when we're at the end of the file
@@ -162,10 +170,10 @@ void Error::handle_error(std::string error_type, std::string file_path,
   } catch (const std::exception &e) {
     // If any exception occurs while formatting the error, fallback to a simple message
     ErrorInfo simpleError = {
-      .line_start = line,
-      .col_start = pos,
-      .line_end = line,
-      .col_end = pos + 1, // TODO
+      .line_start = (unsigned long)line,
+      .col_start = (unsigned long)pos,
+      .line_end = (unsigned long)line,
+      .col_end = (unsigned long)endPos, // TODO
       .message = "Error in " + file_path + " at line " +
       std::to_string(line) + ", pos " +
       std::to_string(pos) + ": " + msg +

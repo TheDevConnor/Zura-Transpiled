@@ -19,10 +19,10 @@
 class Error {
  public:
   struct ErrorInfo {
-    int line_start;
-    int col_start;
-    int line_end;
-    int col_end;
+    unsigned long int line_start;
+    unsigned long int col_start;
+    unsigned long int line_end;
+    unsigned long int col_end;
     std::string message;
     std::string simplified_message;
     std::string file_path;
@@ -35,7 +35,7 @@ class Error {
   static std::string handle_type_error(const std::vector<Lexer::Token> &tks, int line,
   int pos);
   static void handle_error(std::string error_type, std::string file_path,
-                           std::string msg, const std::vector<Lexer::Token> &tks, int line, int pos, bool isWarn = false);
+                           std::string msg, const std::vector<Lexer::Token> &tks, int line, int pos, int endPos, bool isWarn = false);
   static bool report_error();
 
  private:

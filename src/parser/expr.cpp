@@ -55,7 +55,7 @@ Node::Expr *Parser::primary(PStruct *psr) {
     std::string msg =
         "Expected a primary expression, but got: " + psr->current().value;
     Error::handle_error("Parser", psr->current_file, msg, psr->tks, line,
-                        column);
+                        column, psr->current().column + psr->current().value.size());
     return nullptr;
   }
 }
@@ -529,7 +529,7 @@ Node::Expr *Parser::openExpr(PStruct *psr) {
     } else {
       std::string msg = "Expected a maximum of 3 arguments for an open expr!";
       Error::handle_error("Parser", psr->current_file, msg, psr->tks, line,
-                          column);
+                          column, column + 1);
     }
     if (psr->current().kind == TokenKind::RIGHT_PAREN)
       break;

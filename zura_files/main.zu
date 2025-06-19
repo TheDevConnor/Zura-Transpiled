@@ -38,7 +38,7 @@ const main := fn () int! {
 
   if (filePath == nil) {
     @outputln(1, "ERROR: Empty or malformed input; run with --help for available options");
-    return ERRORS.a; # 4
+    return ERRORS.NoActionProvided; # 4
   }
 
   have fileContents: *char = readFile(filePath, size);

@@ -41,12 +41,11 @@ struct SymbolTable : std::unordered_map<std::string, Node::Type *> {
             insert({name, type});
             return;
         }
-        std::string msg = "Variable '" + name + "' already declared";
-        TypeChecker::handleError(line, pos, msg, "", "Type Error");
     }
 
     Node::Type *lookup(const std::string &name) const {
-        return at(name);
+        if (contains(name)) return at(name);
+        return nullptr;
     }
 };
 
@@ -73,8 +72,6 @@ struct FunctionTable : std::unordered_map<std::string, std::pair<Node::Type *, P
         insert({name, {returnType, params}});
         return;
     }
-    std::string msg = "Function already declared: " + name;
-    TypeChecker::handleError(line, pos, msg, "", "Type Error");
   }
 
   ParamsAndTypes getParams(const std::string &name) {
@@ -102,7 +99,7 @@ struct StructTable : std::unordered_map<std::string, std::map<std::string, std::
             return;
         }
         std::string msg = "Struct already declared: " + name;
-        TypeChecker::handleError(line, pos, msg, "", "Type Error");
+        TypeChecker::handleError(line, pos, msg, "", "Type Error", pos + name.size());
     }
 
     void addMember(const std::string &structName, const std::string &memberName, Node::Type *type) {
@@ -121,7 +118,7 @@ struct StructTable : std::unordered_map<std::string, std::map<std::string, std::
             // check if the member is already declared
             if (at(structName).find(memberName) != at(structName).end()) {
                 std::string msg = "Method already declared: " + memberName;
-                TypeChecker::handleError(line, pos, msg, "", "Type Error");
+                TypeChecker::handleError(line, pos, msg, "", "Type Error", pos + memberName.size());
                 return;
             }
             at(structName).insert({memberName, {type, params}});
@@ -158,8 +155,6 @@ struct EnumTable : std::unordered_map<std::string, std::unordered_map<std::strin
             insert({name, {}});
             return;
         }
-        std::string msg = "Enum already declared: " + name;
-        TypeChecker::handleError(line, pos, msg, "", "Type Error");
     }
 
     void addMember(const std::string &enumName, const std::string &memberName, long long position) {
@@ -177,8 +172,8 @@ struct EnumTable : std::unordered_map<std::string, std::unordered_map<std::strin
             if (it != at(enumName).end()) {
                 return it->second;
             }
-            std::string msg = "Member not found: " + memberName;
-            TypeChecker::handleError(line, pos, msg, "", "Type Error");
+            // Error handling is handled, obviously, where the lookup function is used;
+            // it is NOT our responsibility to handle it here
             return -1;
         }
         std::string msg = "Enum not declared: " + enumName;

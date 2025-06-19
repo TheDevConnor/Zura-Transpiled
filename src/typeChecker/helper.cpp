@@ -6,7 +6,7 @@
 #include "typeMaps.hpp"
 
 void TypeChecker::handleError(int line, int pos, std::string msg,
-                              std::string note, std::string typeOfError)
+                              std::string note, std::string typeOfError, int endPos)
 {
   if (msg.find("unknown") != std::string::npos)
     return; // Do not report this error because it is already handled
@@ -14,7 +14,7 @@ void TypeChecker::handleError(int line, int pos, std::string msg,
   if (note != "")
     msg += "\nNote: " + note;
   Error::handle_error(typeOfError, node.current_file, msg,
-                      node.tks, line, pos);
+                      node.tks, line, pos, endPos > 0 ? endPos : pos + 1);
 }
 
 std::string TypeChecker::type_to_string(Node::Type *type)
@@ -199,7 +199,7 @@ void TypeChecker::processStructMember(MemberExpr *member, const std::string &nam
   {
     // if we got this far, it probably exists, but its worth checking for anyway
     std::string msg = "Type '" + lhsType + "' does not have members";
-    handleError(member->line, member->pos, msg, "", "Type Error");
+    handleError(member->line, member->pos, msg, "", "Type Error", member->pos + dynamic_cast<IdentExpr*>(member->rhs)->name.size());
     return_type = std::make_shared<SymbolType>("unknown");
     return;
   }
@@ -215,7 +215,7 @@ void TypeChecker::processStructMember(MemberExpr *member, const std::string &nam
   }
   // If we got here, that means that the loop never reaached a member that exists; in other words, the member does not exist
   std::string msg = "Struct '" + realType + "' does not have member '" + name + "'";
-  handleError(member->line, member->pos, msg, "", "Type Error");
+  handleError(member->line, member->pos, msg, "", "Type Error", dynamic_cast<IdentExpr *>(member->rhs)->name.size() + member->pos);
   return_type = std::make_shared<SymbolType>("unknown");
   return;
 }
@@ -230,7 +230,7 @@ void TypeChecker::processEnumMember(MemberExpr *member, const std::string &lhsTy
   if (value == -1)
   {
     std::string msg = "Enum '" + name + "' does not have member '" + field + "'";
-    handleError(member->line, member->pos, msg, "", "Type Error");
+    handleError(member->line, member->pos, msg, "", "Type Error", member->pos + field.size());
     return_type = std::make_shared<SymbolType>("unknown");
     return;
   }
@@ -242,7 +242,7 @@ void TypeChecker::processEnumMember(MemberExpr *member, const std::string &lhsTy
 void TypeChecker::handleUnknownType(MemberExpr *member, const std::string &lhsType)
 {
   std::string msg = "Type '" + lhsType + "' does not have members";
-  handleError(member->line, member->pos, msg, "", "Type Error");
+  handleError(member->line, member->pos, msg, "", "Type Error", member->pos + dynamic_cast<IdentExpr *>(member->rhs)->name.size());
   return_type = std::make_shared<SymbolType>("unknown");
 }
 

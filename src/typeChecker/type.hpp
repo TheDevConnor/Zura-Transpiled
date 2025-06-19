@@ -5,6 +5,7 @@
 #include <string>
 #include <unordered_map>
 #include <vector>
+#include <set>
 
 #include "../ast/ast.hpp"
 #include "../ast/expr.hpp"
@@ -15,9 +16,10 @@ inline size_t struct_size;
 namespace TypeChecker {
 extern std::string struct_name;
 extern bool isType;
+inline std::set<std::string> importedFiles;
 
 void handleError(int line, int pos, std::string msg, std::string note,
-                 std::string typeOfError);
+                 std::string typeOfError, int endPos = 0);
 
 enum class LSPIdentifierType { // Types of identifiers that can be looked up
                                // with syntax highlighting
