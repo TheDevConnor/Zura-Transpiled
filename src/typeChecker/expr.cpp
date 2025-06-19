@@ -427,10 +427,26 @@ void TypeChecker::visitCall(Node::Expr *expr) {
 
   // add an ident for the lsp
   if (isLspMode) {
-    lsp_idents.push_back(LSPIdentifier{
-        return_type.get(), LSPIdentifierType::Function, fnName,
-        (size_t)static_cast<IdentExpr *>(call->callee)->line,
-        (size_t)static_cast<IdentExpr *>(call->callee)->pos, call->file_id});
+    std::vector<Node::Type *> params;
+    for (const auto& arg : call->args) {
+      visitExpr(arg);
+      Node::Type *argType = createDuplicate(return_type.get());
+      if (argType == nullptr) {
+        return_type = std::make_shared<SymbolType>("unknown");
+        expr->asmType = new SymbolType("unknown");
+        return;
+      }
+      params.push_back(argType);
+    }
+    lsp_idents.push_back(LSPIdentifier {
+      .underlying = new FunctionType(params, expr->asmType),
+      .type = LSPIdentifierType::Function,
+      .ident = fnName,
+      .line = (size_t)static_cast<IdentExpr *>(call->callee)->line,
+      .pos = (size_t)static_cast<IdentExpr *>(call->callee)->pos,
+      .fileID = call->file_id
+    });
+    return_type = share(expr->asmType);
   }
 }
 

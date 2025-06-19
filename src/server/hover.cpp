@@ -1,4 +1,5 @@
 #include "lsp.hpp"
+#include "../typeChecker/type.hpp"
 
 // And completions!
 bool lsp::isTokenCharacter(char c) {
@@ -109,12 +110,31 @@ void lsp::handleMethodTextDocumentHover(const nlohmann::json &object)
   }
 
   //! 2. Check for references within the actual codebase
-  // We will not handle this. I'm FAR too lazy.
-  nlohmann::json response = {
+  // there is a lsp_idents vector that contains a bunch of, you guessed it, identifiers
+  for (const auto &ident : TypeChecker::lsp_idents) {
+    if (ident.ident == word.text) {
+      nlohmann::json response = {
+        {"jsonrpc", "2.0"},
+        {"id", object["id"]},
+        {"result", {
+          {"contents", {
+            {"kind", "markdown"},
+            {"value", "```zura\n" + ident.ident + ": " + TypeChecker::type_to_string(ident.underlying) + "\n```"}
+          }},
+          {"range", {
+            {"start", {{"line", word.range.start.line}, {"character", word.range.start.character}}},
+            {"end", {{"line", word.range.end.line}, {"character", word.range.end.character}}}
+          }}
+        }}
+      };
+      handleResponse(response);
+      return;
+    }
+  }
+  handleResponse({
     {"jsonrpc", "2.0"},
     {"id", object["id"]},
-    {"result", nullptr} // No hover information found
-  };
-  handleResponse(response);
+    {"result", nullptr} // No identifier found
+  });
   return;
 }

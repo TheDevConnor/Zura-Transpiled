@@ -136,7 +136,7 @@ void Error::handle_error(std::string error_type, std::string file_path,
       .line_start = (unsigned long)line,
       .col_start = (unsigned long)pos,
       .line_end = (unsigned long)line,
-      .col_end = (unsigned long)endPos, // TODO: Adjust this based on the actual error
+      .col_end = (unsigned long)endPos,
       .message = "",
       .simplified_message = msg,
       .file_path = file_path,
