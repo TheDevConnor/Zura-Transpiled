@@ -4,6 +4,7 @@
 #include "../helper/error/error.hpp"
 #include "type.hpp"
 #include "typeMaps.hpp"
+#include "../helper/math/math.hpp"
 
 void TypeChecker::handleError(int line, int pos, std::string msg,
                               std::string note, std::string typeOfError, int endPos)
@@ -231,6 +232,19 @@ void TypeChecker::processStructMember(MemberExpr *member, const std::string &nam
       return;
     }
   }
+  std::vector<std::string> known;
+  for (const auto &it : context->structTable.at(realType))
+  {
+    known.push_back(it.first);
+  }
+  std::optional<std::string> suggestion = string_distance(known, name, 3);
+  if (suggestion.has_value())
+  {
+    std::string msg = "Struct '" + realType + "' does not have member '" + name + "'; Did you mean '" + suggestion.value() + "'?";
+    handleError(member->line, member->pos, msg, "", "Type Error", dynamic_cast<IdentExpr *>(member->rhs)->name.size() + member->pos);
+    return_type = std::make_shared<SymbolType>("unknown");
+    return;
+  }
   // If we got here, that means that the loop never reaached a member that exists; in other words, the member does not exist
   std::string msg = "Struct '" + realType + "' does not have member '" + name + "'";
   handleError(member->line, member->pos, msg, "", "Type Error", dynamic_cast<IdentExpr *>(member->rhs)->name.size() + member->pos);
@@ -247,6 +261,21 @@ void TypeChecker::processEnumMember(MemberExpr *member, const std::string &lhsTy
   long long value = context->enumTable.lookup(name, field);
   if (value == -1)
   {
+    // Let's add a "Did you mean: ?"
+    // string_distance(vector<string> known, string unknown, size_t limit);
+    std::vector<std::string> known;
+    for (const auto &it : context->enumTable.at(name))
+    {
+      known.push_back(it.first);
+    }
+    std::optional<std::string> suggestion = string_distance(known, field, 3);
+    if (suggestion.has_value())
+    {
+      std::string msg = "Enum '" + name + "' does not have member '" + field + "'; Did you mean '" + suggestion.value() + "'?";
+      handleError(member->line, member->pos, msg, "", "Type Error", member->pos + field.size());
+      return_type = std::make_shared<SymbolType>("unknown");
+      return;
+    }
     std::string msg = "Enum '" + name + "' does not have member '" + field + "'";
     handleError(member->line, member->pos, msg, "", "Type Error", member->pos + field.size());
     return_type = std::make_shared<SymbolType>("unknown");

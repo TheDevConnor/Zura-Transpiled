@@ -257,11 +257,13 @@ void lsp::handleMethodTextDocumentCodeAction(const nlohmann::json& object) {
   for (const Error::ErrorInfo &error : errors) {
     nlohmann::json errorJSON = reportErrors({error}, uri, false); // Get the diagnostic version
     if (error.simplified_message.find("Did you mean") != std::string::npos) {
-      std::string originalText = error.simplified_message.substr(error.simplified_message.find_first_of('\'') + 1);
-      originalText = originalText.substr(0, originalText.find_first_of('\'')); // Get the last word before the first quote
-
       std::string newText = error.simplified_message.substr(0, error.simplified_message.find_last_of('\''));
       newText = newText.substr(newText.find_last_of('\'') + 1);
+      std::string textWithNewTextRemoved = error.simplified_message.substr(0, error.simplified_message.find("Did you mean"));
+
+      std::string originalText = textWithNewTextRemoved.substr(0, textWithNewTextRemoved.find_last_of('\''));
+      originalText = originalText.substr(originalText.find_last_of('\'') + 1);
+      
 
       nlohmann::json codeAction = {
         {"title", "Change '" + originalText + "' to '" + newText + "'"},
