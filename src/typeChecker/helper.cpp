@@ -2,6 +2,7 @@
 #include <unordered_set>
 
 #include "../helper/error/error.hpp"
+#include "../codegen/gen.hpp"
 #include "type.hpp"
 #include "typeMaps.hpp"
 #include "../helper/math/math.hpp"
@@ -255,8 +256,25 @@ void TypeChecker::processStructMember(MemberExpr *member, const std::string &nam
 void TypeChecker::processEnumMember(MemberExpr *member, const std::string &lhsType)
 {
   (void)lhsType;
-  std::string name = static_cast<IdentExpr *>(member->lhs)->name;
   std::string field = static_cast<IdentExpr *>(member->rhs)->name;
+  std::string name = "";
+  if (member->lhs->kind == ND_IDENT) {
+    name = static_cast<IdentExpr *>(member->lhs)->name;
+  } else {
+    visitExpr(member->lhs);
+    name = type_to_string(return_type.get());
+    // You can chain an enum for some reason like this: Enum.a.a.a.a.a.a.a.a.a ....
+    // Because the typechecker keeps returning "Well, the member looks like an 'Enum' so lets just return that"
+    if (name != "enum")
+    {
+      std::string msg = "'" + name + "." + field + "' is a member of an enum, and has no fields.";
+      handleError(static_cast<IdentExpr *>(member->rhs)->line,
+          static_cast<IdentExpr *>(member->rhs)->pos - field.size(),
+          msg, "", "Type Error",
+          static_cast<IdentExpr *>(member->rhs)->pos); // -1 leads us to the dot
+      return;
+    }
+  }
 
   long long value = context->enumTable.lookup(name, field);
   if (value == -1)

@@ -379,9 +379,10 @@ void TypeChecker::visitCall(Node::Expr *expr) {
     std::string type = type_to_string(return_type.get());
     if (!context->structTable.contains(type)) {
       std::string msg =
-          "Member access requires the left hand side to be a struct but got '" +
+          "Member function calls requires the left hand side to be a struct but got '" +
           type + "'";
-      handleError(member->line, member->pos, msg, "", "Type Error");
+      IdentExpr *callIdent = static_cast<IdentExpr *>(member->rhs);
+      handleError(callIdent->line, callIdent->pos - callIdent->name.size(), msg, "", "Type Error", callIdent->pos);
       return_type = std::make_shared<SymbolType>("unknown");
       expr->asmType = new SymbolType("unknown");
       return;
@@ -389,10 +390,29 @@ void TypeChecker::visitCall(Node::Expr *expr) {
     // Now, we have to look through each of the members of the struct to see if
     // there are any functions with that name
     std::string memberName = static_cast<IdentExpr *>(member->rhs)->name;
-    if (!context->structTable.contains(type)) {
-      std::string msg = "No member function '" + memberName +
-                        "' found in container '" + type + "'";
-      handleError(member->line, member->pos, msg, "", "Type Error");
+    if (!context->structTable.at(type).contains(memberName)) {
+      std::vector<std::string> members;
+      for (const auto& field : context->structTable.at(type)) {
+        members.push_back(field.first);
+      }
+      std::optional<std::string> didYouMean = string_distance(
+          members, memberName, 3);
+      if (didYouMean.has_value()) {
+        std::string msg = "Container '" + type +
+                          "' has no member function '" + memberName +
+                          "'. Did you mean '" + didYouMean.value() + "'?";
+        handleError(
+          static_cast<IdentExpr *>(member->rhs)->line,
+          static_cast<IdentExpr *>(member->rhs)->pos,
+          msg, "", "Type Error");      } else {
+        // No close match found
+        std::string msg = "No member function '" + memberName +
+                          "' found in container '" + type + "'";
+        handleError(
+          static_cast<IdentExpr *>(member->rhs)->line,
+          static_cast<IdentExpr *>(member->rhs)->pos,
+          msg, "", "Type Error");
+      }
       return_type = std::make_shared<SymbolType>("unknown");
       expr->asmType = new SymbolType("unknown");
       return;
@@ -469,7 +489,15 @@ void TypeChecker::visitCall(Node::Expr *expr) {
 
 void TypeChecker::visitMember(Node::Expr *expr) {
   MemberExpr *member = static_cast<MemberExpr *>(expr);
-
+  // Throw an error if the rhs is not an identifier
+  if (member->rhs->kind != ND_IDENT) {
+    std::string msg = "Member access requires the right hand side to be an "
+                      "identifier";
+    handleError(member->line, member->pos, msg, "", "Type Error");
+    return_type = std::make_shared<SymbolType>("unknown");
+    expr->asmType = new SymbolType("unknown");
+    return;
+  }
   std::string rhs = static_cast<IdentExpr *>(member->rhs)->name;
   std::string note = "";
 

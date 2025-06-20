@@ -291,6 +291,17 @@ void lsp::handleMethodTextDocumentCodeAction(const nlohmann::json& object) {
 }
 
 void lsp::handleMethodTextDocumentSemanticTokensFull(const nlohmann::json& object) {
+  // STEP 1 PRECAUTION: Make sure we have LSP identifiers in the first place
+  if (TypeChecker::lsp_idents.empty()) {
+    logFile << "⚠️ No LSP identifiers found, cannot provide semantic tokens.\n";
+    auto response = nlohmann::json{
+      {"jsonrpc", "2.0"},
+      {"id", object["id"]},
+      {"result", {}} // Intentionally empty
+    };
+    handleResponse(response);
+    return;
+  }
   // This method is called to provide semantic tokens for the entire document
   URI uri = object["params"]["textDocument"]["uri"];
   if (!documents.contains(uri)) {
