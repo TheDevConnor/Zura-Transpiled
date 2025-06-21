@@ -247,7 +247,7 @@ void codegen::funcDecl(Node::Stmt *stmt) {
       moveRegister(where, intArgOrder[intArgCount++], DataSize::Qword,
                    DataSize::Qword);
 
-    variableTable.insert({s->params.at(i).first, where});
+    variableTable.insert({s->params.at(i).first->name, where});
     variableCount += getByteSizeOfType(s->params.at(i).second);
 
     if (debug) {
@@ -304,7 +304,7 @@ void codegen::funcDecl(Node::Stmt *stmt) {
        Section::Main);
   // Remove the function variables from the variable table
   for (size_t i = 0; i < s->params.size(); i++) {
-    variableTable.erase(s->params.at(i).first);
+    variableTable.erase(s->params.at(i).first->name);
   }
 };
 
@@ -559,30 +559,30 @@ void codegen::enumDecl(Node::Stmt *stmt) {
   }
   int fieldCount = 0;
   enumTable.emplace(s->name);
-  for (std::string &field : s->fields) {
+  for (IdentExpr *field : s->fields) {
     // Turn the enum field into an assembler constant
     push(Instr{.var = LinkerDirective{.value = ".set enum_" + s->name + "_" +
-                                               field + ", " +
+                                               field->name + ", " +
                                                std::to_string(fieldCount++) +
                                                "\n"},
                .type = InstrType::Linker},
          Section::ReadonlyData);
 
     // Add the enum field to the global table
-    variableTable.insert({field, field});
+    variableTable.insert({field->name, field->name});
 
     if (debug) {
       // Push the enum member DIE
       pushLinker(
           ".uleb128 " + std::to_string((int)dwarf::DIEAbbrev::EnumMember) +
-              "\n.long .L" + field +
+              "\n.long .L" + field->name +
               "_string"
               "\n.byte " +
               std::to_string(fieldCount - 1) + // Value of the enum member
               "\n",
           Section::DIE);
       // Push the name of the enum member
-      dwarf::useStringP(field);
+      dwarf::useStringP(field->name);
     }
   }
 
@@ -601,7 +601,7 @@ void codegen::structDecl(Node::Stmt *stmt) {
   //! pushDebug(s->line, stmt->file_id, s->pos);
   long size = 0;
   std::vector<StructMember> members = {};
-  for (std::pair<std::string, Node::Type *> field : s->fields) {
+  for (std::pair<IdentExpr *, Node::Type *> field : s->fields) {
     long fieldSize = getByteSizeOfType(field.second);
     size += fieldSize; // Yes, even calculates the size of nested structs.
   }
@@ -615,7 +615,7 @@ void codegen::structDecl(Node::Stmt *stmt) {
 
     // In both cases, the last element is stored at 0
     members.push_back(
-      {s->fields.at(i).first, {s->fields.at(i).second, subSize}});
+      {s->fields.at(i).first->name, {s->fields.at(i).second, subSize}});
 
     // add the size of the NEXTT field
     if (i > 0)
@@ -664,7 +664,7 @@ void codegen::structDecl(Node::Stmt *stmt) {
       dwarf::useType(field.second);
       pushLinker(".uleb128 " +
                      std::to_string((int)dwarf::DIEAbbrev::StructMember) +
-                     "\n.long .L" + field.first +
+                     "\n.long .L" + field.first->name +
                      "_string"
                      "\n.long .L" +
                      type_to_diename(field.second) +
@@ -675,7 +675,7 @@ void codegen::structDecl(Node::Stmt *stmt) {
                      "\n",
                  Section::DIE);
       // push name in string
-      dwarf::useStringP(field.first);
+      dwarf::useStringP(field.first->name);
 
       // Add the byte size of the field
       currentByte += getByteSizeOfType(field.second);
@@ -1198,7 +1198,12 @@ void codegen::declareStructVariable(Node::Expr *expr, std::string structName,
   StructExpr *s = static_cast<StructExpr *>(expr);
   // Order the fields of the variable struct by the actual order of the declarad one
   std::vector<std::pair<std::string, Node::Expr *>> orderedFields = {};
-  orderStructFields(s->values, structName, &orderedFields);
+  std::unordered_map<std::string, Node::Expr *> fields = {};
+  for (auto &field : s->values) {
+    // We need to get the type of the field, so we can order it
+    fields.emplace(field.first->name, field.second);
+  }
+  orderStructFields(fields, structName, &orderedFields);
   // Now we can actually get to the fun part, where we evaluate each member
   for (long i = (signed)orderedFields.size() - 1; i >= 0; i--) {
   // for (size_t i = 0; i < orderedFields.size(); i++) {

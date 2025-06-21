@@ -105,8 +105,11 @@ Node::Expr *CompileOptimizer::optimizeMember(MemberExpr *expr) {
     if (rhs->kind == ND_IDENT) {
       IdentExpr *rhsIdent = static_cast<IdentExpr *>(rhs);
       // We can return the expression!!!!
-      if (lhsStruct->values.find(rhsIdent->name) != lhsStruct->values.end()) {
-        return lhsStruct->values[rhsIdent->name];
+      auto it = std::find_if(lhsStruct->values.begin(), lhsStruct->values.end(), [rhsIdent](const auto &pair) {
+        return pair.first->name == rhsIdent->name;
+      });
+      if (it != lhsStruct->values.end()) {
+        return it->second;
       }
     }
   }

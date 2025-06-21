@@ -48,6 +48,27 @@ void TypeChecker::visitProgram(Node::Stmt *stmt) {
 
 void TypeChecker::visitConst(Node::Stmt *stmt) {
   ConstStmt *const_stmt = static_cast<ConstStmt *>(stmt);
+  if (isLspMode) {
+    LSPIdentifierType type = LSPIdentifierType::Type;
+    if (const_stmt->value->kind == NodeKind::ND_FN_STMT) {
+      type = LSPIdentifierType::Function;
+    } else if (const_stmt->value->kind == NodeKind::ND_STRUCT_STMT) {
+      type = LSPIdentifierType::Struct;
+    } else if (const_stmt->value->kind == NodeKind::ND_ENUM_STMT) {
+      type = LSPIdentifierType::Enum;
+    } else if (const_stmt->value->kind == NodeKind::ND_VAR_STMT) {
+      type = LSPIdentifierType::Variable;
+    }
+    lsp_idents.push_back(LSPIdentifier{
+        .underlying = new SymbolType("you gotta be joking, right", SymbolType::Signedness::SIGNED),
+        .type = type,
+        .ident = const_stmt->name,
+        .scope = "",
+        .line = (size_t)const_stmt->line,
+        .pos = (size_t)const_stmt->pos + 1,
+        .fileID = (size_t)const_stmt->file_id,
+    });
+  }
   visitStmt(const_stmt->value);
 }
 
@@ -60,6 +81,8 @@ void TypeChecker::visitFn(Node::Stmt *stmt) {
       fn_stmt->name,
       fn_stmt->returnType); // Declare this first, so that recursion and stuff
                             // is possible later
+  
+  function_name = fn_stmt->name;
 
   // if the isTemplate bool is true declare T as a type that can be Used
   if (fn_stmt->isTemplate) {
@@ -71,14 +94,14 @@ void TypeChecker::visitFn(Node::Stmt *stmt) {
 
   // Check function parameters
   ParamsAndTypes params;
-  for (std::pair<std::string, Node::Type *> &param : fn_stmt->params) {
+  for (std::pair<IdentExpr *, Node::Type *> &param : fn_stmt->params) {
     if (!param.second) {
       std::cerr << "Error: Parameter " << param.first << " has nullptr type!"
                 << std::endl;
       continue;
     }
-    params[param.first] = param.second;
-    context->declareLocal(param.first, param.second);
+    params[param.first->name] = param.second;
+    context->declareLocal(param.first->name, param.second);
   }
 
   // Add function to functionTable
@@ -134,6 +157,7 @@ void TypeChecker::visitFn(Node::Stmt *stmt) {
     }
   }
 
+  function_name = "";
   return_type = nullptr;
   context->exitScope();
 }
@@ -157,9 +181,20 @@ void TypeChecker::visitStruct(Node::Stmt *stmt) {
       {struct_stmt->name, {}}); // Declare blank and insert later
 
   // visit the fields Aka the variables
-  for (std::pair<std::string, Node::Type *> &field : struct_stmt->fields) {
-    context->structTable.addMember(struct_stmt->name, field.first,
+  for (std::pair<IdentExpr *, Node::Type *> &field : struct_stmt->fields) {
+    context->structTable.addMember(struct_stmt->name, field.first->name,
                                    field.second);
+    if (isLspMode) {
+      lsp_idents.push_back(LSPIdentifier{
+          .underlying = field.second,
+          .type = LSPIdentifierType::StructMember,
+          .ident = field.first->name,
+          .scope = struct_stmt->name,
+          .line = (size_t)field.first->line,
+          .pos = (size_t)field.first->pos - field.first->name.size(),
+          .fileID = (size_t)field.first->file_id,
+      });
+    }
   }
 
   // handle fn stmts in the struct
@@ -168,10 +203,10 @@ void TypeChecker::visitStruct(Node::Stmt *stmt) {
     context->enterScope();
     FnStmt *fn_stmt = static_cast<FnStmt *>(stmt);
 
-    for (std::pair<std::string, Node::Type *> &param : fn_stmt->params) {
+    for (std::pair<IdentExpr *, Node::Type *> &param : fn_stmt->params) {
       // add the params to the local table
-      params[param.first] = param.second;
-      context->declareLocal(param.first, param.second);
+      params[param.first->name] = param.second;
+      context->declareLocal(param.first->name, param.second);
     }
 
     // declare_struct_fn(map, {fn_stmt->name, fn_stmt->returnType}, params,
@@ -248,10 +283,21 @@ void TypeChecker::visitEnum(Node::Stmt *stmt) {
 
   // visit the fields Aka the variables
   for (size_t i = 0; i < enum_stmt->fields.size(); i++) {
-    context->enumTable.addMember(enum_stmt->name, enum_stmt->fields[i],
+    context->enumTable.addMember(enum_stmt->name, enum_stmt->fields[i]->name,
                                  (long long)i);
-    context->declareLocal(enum_stmt->fields[i],
+    context->declareLocal(enum_stmt->fields[i]->name,
                                   static_cast<Node::Type *>(new SymbolType("int")));
+    if (isLspMode) {
+      lsp_idents.push_back(LSPIdentifier{
+          .underlying = new SymbolType(enum_stmt->name),
+          .type = LSPIdentifierType::EnumMember,
+          .ident = enum_stmt->fields[i]->name,
+          .scope = enum_stmt->name,
+          .line = (size_t)enum_stmt->fields[i]->line,
+          .pos = (size_t)enum_stmt->fields[i]->pos - enum_stmt->fields[i]->name.size(),
+          .fileID = (size_t)enum_stmt->file_id,
+      });
+    }
   }
 
   // set return type to the name of the enum
@@ -279,7 +325,7 @@ void TypeChecker::visitVar(Node::Stmt *stmt) {
     // If the variable is already declared in the global or local scope
     // throw an error
     std::string msg = "Variable '" + var_stmt->name + "' already declared";
-    TypeChecker::handleError(var_stmt->line, var_stmt->pos, msg, "", "Type Error", var_stmt->pos + var_stmt->name.size());
+    TypeChecker::handleError(var_stmt->line, var_stmt->pos, msg, "", "Type Error", (int)(var_stmt->pos + var_stmt->name.size()));
     return;
   }
   context->declareLocal(var_stmt->name, var_stmt->type);
@@ -294,6 +340,7 @@ void TypeChecker::visitVar(Node::Stmt *stmt) {
       .underlying = var_stmt->type,
       .type = LSPIdentifierType::Variable,
       .ident = var_stmt->name,
+      .scope = function_name,
       .line = (unsigned long)var_stmt->line,
       .pos = (unsigned long)var_stmt->pos + 1, // i dont know why you have to add one. it just looked off
       .fileID = (unsigned long)var_stmt->file_id,

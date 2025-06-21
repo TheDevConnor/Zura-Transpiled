@@ -36,4 +36,14 @@ void TypeChecker::performCheck(Node::Stmt *stmt, bool isMain, bool isLspServer) 
     std::string note = "Try adding this function: \n\tconst main := fn() int { \n\t  return 0\n\t}";
     handleError(1, 0, msg, note, "Type Error");
   }
+
+  // Sort the lsp idents by the line, then the column
+  std::sort(lsp_idents.begin(), lsp_idents.end(),
+    [](const LSPIdentifier &a, const LSPIdentifier &b) {
+      if (a.line == b.line) {
+        return a.pos < b.pos;
+      }
+      return a.line < b.line;
+    }
+  );
 }

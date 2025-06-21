@@ -15,6 +15,7 @@ inline size_t struct_size;
 
 namespace TypeChecker {
 extern std::string struct_name;
+inline std::string function_name;
 extern bool isType;
 inline std::set<std::string> importedFiles;
 
@@ -37,6 +38,7 @@ struct LSPIdentifier {
   Node::Type *underlying;
   LSPIdentifierType type;
   std::string ident;
+  std::string scope; // Typically, this is the name of the function we are in. If a struct function, then the struct_function
   size_t line;
   size_t pos;
   size_t fileID;

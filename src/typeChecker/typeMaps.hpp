@@ -12,7 +12,7 @@ struct NameAndType {
   Node::Type* type;
 
   bool operator==(const NameAndType& other) const {
-      return name == other.name && type == other.type;
+      return name == other.name && type == other.type; // todo: better `type==type` check
   }
 };
 
@@ -99,7 +99,7 @@ struct StructTable : std::unordered_map<std::string, std::map<std::string, std::
             return;
         }
         std::string msg = "Struct already declared: " + name;
-        TypeChecker::handleError(line, pos, msg, "", "Type Error", pos + name.size());
+        TypeChecker::handleError(line, pos, msg, "", "Type Error", (int)(pos + name.size()));
     }
 
     void addMember(const std::string &structName, const std::string &memberName, Node::Type *type) {
@@ -118,7 +118,7 @@ struct StructTable : std::unordered_map<std::string, std::map<std::string, std::
             // check if the member is already declared
             if (at(structName).find(memberName) != at(structName).end()) {
                 std::string msg = "Method already declared: " + memberName;
-                TypeChecker::handleError(line, pos, msg, "", "Type Error", pos + memberName.size());
+                TypeChecker::handleError(line, pos, msg, "", "Type Error", (int)(pos + memberName.size()));
                 return;
             }
             at(structName).insert({memberName, {type, params}});

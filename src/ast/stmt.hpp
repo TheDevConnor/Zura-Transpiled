@@ -6,6 +6,7 @@
 
 #include "ast.hpp"
 #include "../lexer/lexer.hpp"
+#include "expr.hpp"
 
 class ProgramStmt : public Node::Stmt {
 public:
@@ -228,7 +229,7 @@ public:
   int line, pos;
   std::string name;
   std::vector<std::string> typenames;
-  std::vector<std::pair<std::string, Node::Type *>> params;
+  std::vector<std::pair<IdentExpr *, Node::Type *>> params;
   Node::Type *returnType;
   Node::Stmt *block;
   bool isMain = false;
@@ -236,7 +237,7 @@ public:
   bool isTemplate = false;
 
   FnStmt(int line, int pos, std::string name,
-         std::vector<std::pair<std::string, Node::Type *>> params,
+         std::vector<std::pair<IdentExpr *, Node::Type *>> params,
          Node::Type *returnType, Node::Stmt *block,
          std::vector<std::string> typenames, bool isMain = false,
          bool isEntry = false, bool isTemplate = false, size_t file = 0)
@@ -266,9 +267,9 @@ public:
     }
     Node::printIndent(indent + 1);
     std::cout << "Params: \n";
-    for (std::pair<std::string, Node::Type *> p : params) {
+    for (std::pair<IdentExpr *, Node::Type *> p : params) {
       Node::printIndent(indent + 2);
-      std::cout << "Name: " << p.first << "\n";
+      std::cout << "Name: " << p.first->name << "\n";
       Node::printIndent(indent + 3);
       std::cout << "Type: \n";
       Node::printIndent(indent + 4);
@@ -349,12 +350,12 @@ public:
   int line, pos;
   std::string name;
   std::vector<std::string> typenames;
-  std::vector<std::pair<std::string, Node::Type *>> fields;
+  std::vector<std::pair<IdentExpr *, Node::Type *>> fields;
   std::vector<Node::Stmt *> stmts;
   bool isTemplate = false;
 
   StructStmt(int line, int pos, std::string name,
-             std::vector<std::pair<std::string, Node::Type *>> fields,
+             std::vector<std::pair<IdentExpr *, Node::Type *>> fields,
              std::vector<Node::Stmt *> stmts,
              std::vector<std::string> typenames, size_t file,
              bool isTemplate = false)
@@ -377,9 +378,9 @@ public:
     }
     std::cout << "\n";
     std::cout << "Fields: \n";
-    for (std::pair<std::string, Node::Type *> f : fields) {
+    for (std::pair<IdentExpr *, Node::Type *> f : fields) {
       Node::printIndent(indent + 2);
-      std::cout << "Name: " << f.first << ", \n";
+      std::cout << "Name: " << f.first->name << ", \n";
       f.second->debug(indent + 2);
       std::cout << "\n";
     }
@@ -473,9 +474,9 @@ class EnumStmt : public Node::Stmt {
 public:
   int line, pos;
   std::string name;
-  std::vector<std::string> fields;
+  std::vector<IdentExpr *> fields;
 
-  EnumStmt(int line, int pos, std::string name, std::vector<std::string> fields,
+  EnumStmt(int line, int pos, std::string name, std::vector<IdentExpr *> fields,
            size_t file)
       : line(line), pos(pos), name(name), fields(fields) {
     file_id = file;
@@ -489,9 +490,9 @@ public:
     std::cout << "Name: " << name << "\n";
     Node::printIndent(indent + 1);
     std::cout << "Fields: \n";
-    for (std::string f : fields) {
+    for (IdentExpr * f : fields) {
       Node::printIndent(indent + 2);
-      std::cout << f << "\n";
+      std::cout << f->name << "\n";
     }
   }
 };

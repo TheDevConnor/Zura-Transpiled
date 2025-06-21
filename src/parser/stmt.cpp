@@ -222,13 +222,17 @@ Node::Stmt *Parser::funStmt(PStruct *psr, std::string name) {
   psr->expect(TokenKind::LEFT_PAREN,
               "Expected a L_PAREN to start a function stmt");
 
-  std::vector<std::pair<std::string, Node::Type *>> params;
+  std::vector<std::pair<IdentExpr *, Node::Type *>> params;
   while (psr->current().kind != TokenKind::RIGHT_PAREN) {
-    std::string paramName =
-        psr->expect(
-               TokenKind::IDENTIFIER,
-               "Expected an IDENTIFIER as a parameter name in a function stmt")
-            .value;
+    Node::Expr *paramNameExpr = parseExpr(psr, BindingPower::defaultValue);
+    if (paramNameExpr->kind != NodeKind::ND_IDENT) {
+      Error::handle_error("Parser", psr->current_file,
+                          "Expected an IDENTIFIER as a parameter name in a "
+                          "function stmt",
+                          psr->tks, psr->current().line, psr->current().column,
+                          psr->current().column + 1);
+    }
+    IdentExpr *paramName = static_cast<IdentExpr *>(paramNameExpr);
     psr->expect(TokenKind::COLON,
                 "Expected a COLON after the parameter name in a function stmt");
     Node::Type *paramType = parseType(psr);
@@ -338,7 +342,7 @@ Node::Stmt *Parser::structStmt(PStruct *psr, std::string name) {
   psr->expect(TokenKind::LEFT_BRACE,
               "Expected a L_BRACE to start a struct stmt");
 
-  std::vector<std::pair<std::string, Node::Type *>> fields;
+  std::vector<std::pair<IdentExpr *, Node::Type *>> fields;
   std::vector<Node::Stmt *> stmts;
   bool warnForSemi = true;
 
@@ -346,18 +350,22 @@ Node::Stmt *Parser::structStmt(PStruct *psr, std::string name) {
     TokenKind tokenKind = psr->current().kind;
     switch (tokenKind) {
     case TokenKind::IDENTIFIER: {
-      std::string fieldName =
-          psr->expect(TokenKind::IDENTIFIER,
-                      "Expected an IDENTIFIER as a field name in a struct stmt")
-              .value;
-
+      Node::Expr *ident = parseExpr(psr, BindingPower::defaultValue);
+      if (ident->kind != NodeKind::ND_IDENT) {
+        std::string msg = "Expected an IDENTIFIER as a field name in a struct stmt, ";
+        msg += "instead got: " + psr->current().value;
+        Error::handle_error("Parser", psr->current_file, msg, psr->tks,
+                            psr->current().line, psr->current().column, psr->current().column + 1);
+        return nullptr;
+      }
+      IdentExpr *fieldName = dynamic_cast<IdentExpr *>(ident);
       // Check if the field is a fn, enum, struct, or union
       if (psr->current().kind == TokenKind::WALRUS) {
         // Parse as if it is an actual function
         psr->advance(); // Consume detected :=
         switch (psr->current().kind) {
         case TokenKind::FUN:
-          stmts.push_back(funStmt(psr, fieldName));
+          stmts.push_back(funStmt(psr, fieldName->name));
           break;
         default:
           std::string msg =
@@ -561,15 +569,20 @@ Node::Stmt *Parser::enumStmt(PStruct *psr, std::string name) {
   psr->expect(TokenKind::LEFT_BRACE,
               "Expected a L_BRACE to start an enum stmt");
 
-  std::vector<std::string> fields;
+  std::vector<IdentExpr *> fields;
   bool warnForSemi = true;
   while (psr->current().kind != TokenKind::RIGHT_BRACE) {
-    Lexer::Token ident =
-        psr->expect(TokenKind::IDENTIFIER,
-                    "Expected an IDENTIFIER as a field name in an enum stmt");
-    if (ident.kind != TokenKind::IDENTIFIER)
-      break; // empty the error accumulator
-    fields.push_back(ident.value);
+    Node::Expr *ident = parseExpr(psr, BindingPower::defaultValue);
+    if (ident->kind != ND_IDENT) {
+      Error::handle_error("Parser", psr->current_file,
+                          "Expected an IDENTIFIER as a field name in an enum stmt",
+                          psr->tks, psr->current().line, psr->current().column,
+                          psr->current().column + 1);
+      // If the identifier is not an identifier, we can't continue parsing
+      // the enum statement, so we break out of the loop
+      return nullptr;
+    }
+    fields.push_back(dynamic_cast<IdentExpr *>(ident));
     // Check if next character is brace - comma not REQUIRED there
     if (psr->current().kind == TokenKind::RIGHT_BRACE)
       break;

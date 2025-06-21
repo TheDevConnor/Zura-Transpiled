@@ -69,26 +69,22 @@ void lsp::handleMethodTextDocumentCompletion(const nlohmann::json &object)
 
   nlohmann::json completions = nlohmann::json::array();
 
-  for (const auto &item : globalCompletions)
-  {
+  for (const auto &item : globalCompletions) {
     // If activationCharacter is "@", only show items starting with '@'
-    if (activationCharacter == "@")
-    {
+    if (activationCharacter == "@") {
       if (item.label[0] != '@')
         continue;
     }
     // If activationCharacter is ".", only show items NOT starting with '@'
-    else if (activationCharacter == ".")
-    {
-      if (item.label[0] == '@')
-        continue;
+    else if (activationCharacter == ".") {
+      continue;
     }
     // Otherwise, if the character under the cursor matches the first char of label, show only those
-    else if (activationCharacter.empty() || params["context"]["triggerKind"] == 1)
-    {
+    else if (activationCharacter.empty() || params["context"]["triggerKind"] == 1) {
       size_t line = params["position"]["line"];
       size_t character = params["position"]["character"];
-      if (getCharUnder(documents[uri], line, character - 1) != item.label[0])
+      if (getCharUnder(documents[uri], line, character - 1) != item.label[0]
+          && !std::isspace(getCharUnder(documents[uri], line, character - 1)))
         continue;
       // Yay! We can move on!
       activationCharacter = item.label[0]; // Set the activation character to the first character of the label
@@ -148,6 +144,7 @@ void lsp::handleMethodTextDocumentCompletion(const nlohmann::json &object)
       closestLSPIdent.line = 18000000000000000;
       for (const auto &ident : TypeChecker::lsp_idents)
       {
+        if (ident.line == (size_t)-1) continue;
         if (ident.ident == identifier && ident.fileID == fileIDFromURI(uri))
         {
           // Thats good! We just have to go deeper now...
@@ -197,6 +194,123 @@ void lsp::handleMethodTextDocumentCompletion(const nlohmann::json &object)
             completions.push_back(entry);
           }
         }
+      }
+    }
+  }
+  // Jeez! Just for a dot!
+  // Now its time to see the local variables and list those out
+  else if (params["context"]["triggerKind"] == 1) {
+    // See the closest LSP identifier to the current pos
+    logFile << "NOT an at sign.." << std::endl;
+    TypeChecker::LSPIdentifier closestLSPIdent;
+    closestLSPIdent.line = 18000000000000000;
+    for (const auto &ident : TypeChecker::lsp_idents)
+    {
+      if (ident.fileID == fileIDFromURI(uri) && ident.line <= line)
+      {
+        // Thats good! We just have to go deeper now...
+        if (closestLSPIdent.line == 18000000000000000) {
+          closestLSPIdent = ident;
+          continue;
+        }
+
+        // We have to check if the line of the current ident is closer to the line of the dot
+        if (line - ident.line < line - closestLSPIdent.line ||
+            (line - ident.line == line - closestLSPIdent.line && (character - ident.pos) < (character - closestLSPIdent.pos))) {
+          closestLSPIdent = ident;
+        }
+      }
+    }
+    // The lsp ident contains the type of the identifier. Let's see now!
+    if (closestLSPIdent.line != 18000000000000000) {
+      // We found AN identifier. Now we have to see the scope of that identifire
+      std::string scope = closestLSPIdent.scope;
+      if (context->structTable.contains(scope)) {
+        // Handle this like a struct instead
+        completions.clear();
+        for (const auto &member : context->structTable.at(scope))
+        {
+          nlohmann::json entry = {
+              {"label", member.first},
+              {"kind", static_cast<int>(CompletionItemKind::Field)},
+              {"documentation", "Struct member"},
+              {"insertText", member.first},
+              {"sortText", "2_" + member.first}
+          };
+          completions.push_back(entry);
+        }
+        nlohmann::json response = {
+            {"jsonrpc", "2.0"},
+            {"id", object["id"]},
+            {"result", {{"isIncomplete", false}, {"items", completions}}}};
+
+        handleResponse(response);
+        return;
+      } else if (context->enumTable.contains(scope) || scope == "enum") {
+        // Handle this like an enum instead
+        completions.clear();
+        for (const auto &member : context->enumTable.at(scope=="enum"?closestLSPIdent.ident:scope))
+        {
+          nlohmann::json entry = {
+              {"label", member.first},
+              {"kind", static_cast<int>(CompletionItemKind::EnumMember)},
+              {"documentation", "Enum member"},
+              {"insertText", member.first},
+              {"sortText", "2_" + std::to_string(member.second) + "_" + member.first}
+          };
+          completions.push_back(entry);
+        }
+        nlohmann::json response = {
+            {"jsonrpc", "2.0"},
+            {"id", object["id"]},
+            {"result", {{"isIncomplete", false}, {"items", completions}}}};
+
+        handleResponse(response);
+        return;
+      }
+      logFile << "Found closest LSP identifier: " << closestLSPIdent.ident << " with scope: " << scope << std::endl;
+      // Now we have to loop through all the identifiers AGAIN and tally all the ones that match
+      std::map<std::string, TypeChecker::LSPIdentifier> localIdents = {};
+      for (const auto &ident : TypeChecker::lsp_idents) {
+        if ((ident.fileID == fileIDFromURI(uri) && ident.scope == scope) || ident.scope == "") {
+          // Thats good! We just have to go deeper now...
+          if (localIdents.contains(ident.ident)) {
+            // If we already have an ident with the same name, we can skip it
+            continue;
+          }
+          localIdents[ident.ident] = ident;
+        }
+      }
+      // Go through that list and add them to the JSON
+      for (const auto &ident : localIdents) {
+        nlohmann::json entry = {
+            {"label", ident.first},
+            {"kind", static_cast<int>(ident.second.type)},
+            {"documentation", "Local variable"},
+            {"insertText", ident.first},
+            {"sortText", "1_" + ident.first}
+        };
+        if (ident.second.type == TypeChecker::LSPIdentifierType::Variable) {
+          entry["kind"] = static_cast<int>(CompletionItemKind::Variable);
+          entry["sortText"] = "1_" + ident.first; // Variables are sorted first
+        } else if (ident.second.type == TypeChecker::LSPIdentifierType::Function) {
+          entry["kind"] = static_cast<int>(CompletionItemKind::Function);
+          entry["sortText"] = "2_" + ident.first; // Variables are sorted first
+        } else if (ident.second.type == TypeChecker::LSPIdentifierType::Enum) {
+          entry["kind"] = static_cast<int>(CompletionItemKind::Enum);
+          entry["sortText"] = "3_" + ident.first; // Variables are sorted first
+        } else if (ident.second.type == TypeChecker::LSPIdentifierType::Struct) {
+          entry["kind"] = static_cast<int>(CompletionItemKind::Struct);
+          entry["sortText"] = "4_" + ident.first; // Variables are sorted first
+        } else if (ident.second.type == TypeChecker::LSPIdentifierType::StructFunction) {
+          entry["kind"] = static_cast<int>(CompletionItemKind::Method);
+          entry["sortText"] = "5_" + ident.first; // Variables are sorted first
+        } else if (ident.second.type == TypeChecker::LSPIdentifierType::EnumMember) {
+          continue; // No! Those are scoped even MORE locally
+        } else if (ident.second.type == TypeChecker::LSPIdentifierType::StructMember) {
+          continue;
+        }
+        completions.push_back(entry);
       }
     }
   }

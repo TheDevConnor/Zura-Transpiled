@@ -704,10 +704,10 @@ public:
 class StructExpr : public Node::Expr {
 public:
   int line, pos;
-  std::unordered_map<std::string, Node::Expr *> values;
+  std::unordered_map<IdentExpr *, Node::Expr *> values;
 
   StructExpr(int line, int pos,
-             std::unordered_map<std::string, Node::Expr *> values, size_t file)
+             std::unordered_map<IdentExpr *, Node::Expr *> values, size_t file)
       : line(line), pos(pos), values(std::move(values)) {
     file_id = file;
     kind = NodeKind::ND_STRUCT;
@@ -718,7 +718,7 @@ public:
     Node::printIndent(indent);
     std::cout << "StructExpr: \n";
     for (size_t i = 0; i < values.size(); i++) {
-      std::pair<std::string, Node::Expr *> pair =
+      std::pair<IdentExpr *, Node::Expr *> pair =
           *std::next(values.begin(), i); // :sob:
       Node::printIndent(indent + 1);
       std::cout << "Field #" + std::to_string(i) + ": \n";

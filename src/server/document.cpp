@@ -1,5 +1,6 @@
 #include <filesystem>
 #include "lsp.hpp"
+#include "../codegen/gen.hpp"
 #include "../typeChecker/type.hpp"
 #include "../typeChecker/typeMaps.hpp"
 #include "../parser/parser.hpp"
@@ -292,6 +293,7 @@ void lsp::handleMethodTextDocumentCodeAction(const nlohmann::json& object) {
 
 void lsp::handleMethodTextDocumentSemanticTokensFull(const nlohmann::json& object) {
   // STEP 1 PRECAUTION: Make sure we have LSP identifiers in the first place
+  logFile << "Semantic tokens called" << std::endl;
   if (TypeChecker::lsp_idents.empty()) {
     logFile << "⚠️ No LSP identifiers found, cannot provide semantic tokens.\n";
     auto response = nlohmann::json{
@@ -302,6 +304,7 @@ void lsp::handleMethodTextDocumentSemanticTokensFull(const nlohmann::json& objec
     handleResponse(response);
     return;
   }
+  logFile << "Found idents" << std::endl;
   // This method is called to provide semantic tokens for the entire document
   URI uri = object["params"]["textDocument"]["uri"];
   if (!documents.contains(uri)) {
@@ -314,11 +317,13 @@ void lsp::handleMethodTextDocumentSemanticTokensFull(const nlohmann::json& objec
     handleResponse(response);
     return;
   }
-
+  logFile << "Found URI" << std::endl;
+  
   // check what file the uri matches to
   size_t fileID = fileIDFromURI(uri);
+  logFile << "ran the file id from uri function" << std::endl;
   // NOTE: this is the point! I guaruntee you don't have 18 quintillion imports.
-  if (fileID == -1) {
+  if (fileID == (size_t)-1) {
     logFile << "⚠️ No matching file ID found for URI: " << uri << "\n";
     auto response = nlohmann::json{
       {"jsonrpc", "2.0"},
@@ -326,8 +331,30 @@ void lsp::handleMethodTextDocumentSemanticTokensFull(const nlohmann::json& objec
       {"result", {}} // Intentionally empty
     };
     handleResponse(response);
+    if (mainFileLink.contains(uri)) return;
+    // Create a diagnostic for "Please open the main file that imports this one"
+    nlohmann::json diagnostic = {
+      {"range", {
+        {"start", {{"line", 0}, {"character", 0}}},
+        {"end", {{"line", 0}, {"character", 1}}}
+      }},
+      {"severity", DiagnosticSeverity::Information},
+      {"code", "Error"},
+      {"source", "Zura LSP"},
+      {"message", "Open the source file that contains the main function to enable various features (like disabling this error!)"}
+    };
+    nlohmann::json errorResponse = {
+      {"jsonrpc", "2.0"},
+      {"method", "textDocument/publishDiagnostics"},
+      {"params", {
+        {"uri", uri},
+        {"diagnostics", nlohmann::json::array({diagnostic})}
+      }}
+    };
+    handleResponse(errorResponse); // Send the response back to the client
     return;
   }
+  logFile << "Found file id" << std::endl;
 
   // Guess what? We have LSP_Identifiers!!! Those can work
   // The result is a bunch of uints
@@ -343,6 +370,8 @@ void lsp::handleMethodTextDocumentSemanticTokensFull(const nlohmann::json& objec
   size_t prevCharacter = 0;
   // UGHH now we have to actually START
   for (const auto& ident : lspIdentsInURI) {
+    if (ident.line == (size_t)-1) continue;
+    if (ident.ident.empty()) continue;
     long lineChange = (ident.line - 1) - prevLine;
     long characterChange = ident.pos - prevCharacter;
     if (lineChange != 0) {
@@ -365,9 +394,8 @@ void lsp::handleMethodTextDocumentSemanticTokensFull(const nlohmann::json& objec
     prevLine = ident.line - 1;
     prevCharacter = ident.pos;
   }
+  logFile << "Done" << std::endl;
   TypeChecker::LSPIdentifier finalIdent = lspIdentsInURI.back();
-  logFile << "Last stupid token with the three red letters: " <<
-    finalIdent.ident << " ln " << finalIdent.line << " pos " << finalIdent.pos << " fileID " << finalIdent.fileID << " type " << (int)finalIdent.type << std::endl;
   // Now we have the tokens, we can send them back
   nlohmann::json response = {
     {"jsonrpc", "2.0"},
@@ -378,6 +406,80 @@ void lsp::handleMethodTextDocumentSemanticTokensFull(const nlohmann::json& objec
     }}
   };
   handleResponse(response);
+  return;
+}
+
+void lsp::handleMethodTextDocumentReferences(const nlohmann::json& object) {
+  // This method is called to find references to a symbol in the document
+  URI uri = object["params"]["textDocument"]["uri"];
+  size_t line = object["params"]["position"]["line"];
+  size_t character = object["params"]["position"]["character"];
+  
+  if (!documents.contains(uri)) {
+    logFile << "⚠️ No document found for URI: " << uri << "\n";
+    auto response = nlohmann::json{
+      {"jsonrpc", "2.0"},
+      {"id", object["id"]},
+      {"result", nlohmann::json::array()} // Intentionally empty
+    };
+    handleResponse(response);
+    return;
+  }
+
+  size_t fileID = fileIDFromURI(uri);
+  if (fileID == (size_t)-1) {
+    logFile << "⚠️ No matching file ID found for URI: " << uri << "\n";
+    auto response = nlohmann::json{
+      {"jsonrpc", "2.0"},
+      {"id", object["id"]},
+      {"result", nlohmann::json::array()} // Intentionally empty
+    };
+    handleResponse(response);
+    return;
+  }
+
+  Word word = getWordUnder(documents[uri], line, character);
+  if (word.text.empty()) {
+    logFile << "⚠️ No word found at position (" << line << ", " << character << ") in document: " << uri << "\n";
+    auto response = nlohmann::json{
+      {"jsonrpc", "2.0"},
+      {"id", object["id"]},
+      {"result", nlohmann::json::array()} // Intentionally empty
+    };
+    handleResponse(response);
+    return;
+  }
+  // Check if, under the position you clicked, there is an LSP identifier there
+  TypeChecker::LSPIdentifier found;
+  found.line = (size_t)-1;
+  found.scope = "\0";
+  for (const auto& ident : TypeChecker::lsp_idents) {
+    if (ident.ident == word.text && ident.fileID == fileID && ident.line - 1 == line
+        && ident.pos == word.range.start.character) {
+      found = ident;
+      break;
+    }
+  }
+  auto locations = nlohmann::json::array();
+  for (const auto& ident : TypeChecker::lsp_idents) {
+    if (ident.ident == word.text && ((ident.scope == found.scope || ident.scope == "" || found.scope == "") || found.line == (size_t)-1)) { // If there was no found token, then ignore
+      nlohmann::json location = {
+        // get the uri of the file id
+        {"uri", "file://" + (std::filesystem::path(codegen::fileIDs[0]) / codegen::fileIDs.at(ident.fileID)).string()},
+        {"range", {
+          {"start", {{"line", ident.line - 1}, {"character", ident.pos}}},
+          {"end", {{"line", ident.line - 1}, {"character", ident.pos + word.text.length()}}}
+        }}
+      };
+      locations.push_back(location);
+    }
+  }
+
+  handleResponse({
+    {"jsonrpc", "2.0"},
+    {"id", object["id"]},
+    {"result", locations}
+  });
   return;
 }
 
