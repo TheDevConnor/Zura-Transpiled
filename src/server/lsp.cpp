@@ -92,6 +92,8 @@ void lsp::handleMethod(const std::string& method, const nlohmann::json& params) 
     handleResponse(response);
   } else if (method == "textDocument/references") {
     handleMethodTextDocumentReferences(params);
+  } else if (method == "textDocument/definition") {
+    handleMethodTextDocumentDefinition(params);
   } else {
     logFile << "Unknown method: " << method << "\n" << std::flush;
     // We can send back an error response, but for now we just ignore it
@@ -120,7 +122,7 @@ void lsp::handleMethodInitialize(const nlohmann::json &object) {
           {"positionEncoding", "utf-16"}, // To make VSCode happy
           {"hoverProvider", true},
           {"documentLinkProvider", false},
-          {"definitionProvider", false},
+          {"definitionProvider", true},
           {"referencesProvider", true},
           {"documentSymbolProvider", false},
           {"workspaceSymbolProvider", false},

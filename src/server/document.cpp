@@ -483,6 +483,103 @@ void lsp::handleMethodTextDocumentReferences(const nlohmann::json& object) {
   return;
 }
 
+void lsp::handleMethodTextDocumentDefinition(const nlohmann::json& object) {
+  // CHeck if the document exists
+  URI uri = object["params"]["textDocument"]["uri"];
+  if (!documents.contains(uri)) {
+    logFile << "⚠️ No document found for URI: " << uri << "\n";
+    auto response = nlohmann::json{
+      {"jsonrpc", "2.0"},
+      {"id", object["id"]},
+      {"result", nullptr} // Intentionally null
+    };
+    handleResponse(response);
+    return;
+  }
+
+  size_t line = object["params"]["position"]["line"];
+  size_t character = object["params"]["position"]["character"];
+  size_t fileID = fileIDFromURI(uri);
+  if (fileID == (size_t)-1) {
+    logFile << "⚠️ No matching file ID found for URI: " << uri << "\n";
+    auto response = nlohmann::json{
+      {"jsonrpc", "2.0"},
+      {"id", object["id"]},
+      {"result", nullptr} // Intentionally null
+    };
+    handleResponse(response);
+    return;
+  }
+  Word word = getWordUnder(documents[uri], line, character);
+  if (word.text.empty()) {
+    logFile << "⚠️ No word found at position (" << line << ", " << character << ") in document: " << uri << "\n";
+    auto response = nlohmann::json{
+      {"jsonrpc", "2.0"},
+      {"id", object["id"]},
+      {"result", nullptr} // Intentionally null
+    };
+    handleResponse(response);
+    return;
+  }
+  // Check the token under the word;
+  TypeChecker::LSPIdentifier found;
+  found.line = (size_t)-1;
+  found.scope = "\0";
+  found.isDefinition = false;
+
+  for (const auto& ident : TypeChecker::lsp_idents) {
+    if (ident.ident == word.text && ident.fileID == fileID && ident.line - 1 == line
+        && ident.pos == word.range.start.character) {
+      found = ident;
+      break;
+    }
+  }
+  if (found.isDefinition) {
+    // You already clicked on the defnitiion!
+    nlohmann::json result = {
+      {"uri", "file://" + (std::filesystem::path(codegen::fileIDs[0]) / codegen::fileIDs.at(found.fileID)).string()},
+      {"range", {
+        {"start", {{"line", word.range.start.line}, {"character", word.range.start.character}}},
+        {"end", {{"line", word.range.end.line}, {"character", word.range.end.character}}}
+      }}
+    };
+    handleResponse({
+      {"jsonrpc", "2.0"},
+      {"id", object["id"]},
+      {"result", result}
+    });
+    return;
+  }
+  // check each token to see if the isDefinition is true
+  for (const auto &ident : TypeChecker::lsp_idents) {
+    if (ident.ident == word.text && ident.isDefinition && (ident.scope == "" || found.scope == "" || ident.scope == found.scope)) {
+      // We found the definition, now we can return it
+      nlohmann::json result = {
+        {"uri", "file://" + (std::filesystem::path(codegen::fileIDs[0]) / codegen::fileIDs.at(ident.fileID)).string()},
+        {"range", {
+          {"start", {{"line", ident.line - 1}, {"character", ident.pos}}},
+          {"end", {{"line", ident.line - 1}, {"character", ident.pos + word.text.length()}}}
+        }}
+      };
+      handleResponse({
+        {"jsonrpc", "2.0"},
+        {"id", object["id"]},
+        {"result", result}
+      });
+      return;
+    }
+  }
+  // if we reach here then there was no definition it was bad
+  logFile << "⚠️ No definition found for word: " << word.text << " at position (" << line << ", " << character << ") in document: " << uri << "\n";
+  auto response = nlohmann::json{
+    {"jsonrpc", "2.0"},
+    {"id", object["id"]},
+    {"result", nullptr} // Intentionally null
+  };
+  handleResponse(response);
+  return;
+};
+
 size_t lsp::getOffset(const std::string& text, size_t line, size_t character) {
   size_t offset = 0;
   std::istringstream stream(text);

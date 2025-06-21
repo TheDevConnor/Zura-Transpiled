@@ -228,6 +228,15 @@ void TypeChecker::processStructMember(MemberExpr *member, const std::string &nam
           .pos = (unsigned long)static_cast<IdentExpr *>(member->rhs)->pos - name.size(),
           .fileID = (unsigned long)member->file_id,
         });
+        lsp_idents.push_back(LSPIdentifier {
+          .underlying = nullptr,
+          .type = LSPIdentifierType::Type,
+          .ident = "",
+          .scope = function_name,
+          .line = (unsigned long)static_cast<IdentExpr *>(member->rhs)->line,
+          .pos = (unsigned long)(static_cast<IdentExpr *>(member->rhs)->pos - name.size()) + 1,
+          .fileID = (unsigned long)member->file_id,
+        });
       }
       return_type = share(it.second.first);
       member->asmType = createDuplicate(return_type.get());

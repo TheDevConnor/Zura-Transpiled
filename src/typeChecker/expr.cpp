@@ -153,14 +153,14 @@ void TypeChecker::visitIdent(Node::Expr *expr) {
     // Check if enum type
     if (context->enumTable.contains(ident->name)) {
       lsp_idents.push_back(LSPIdentifier{res, LSPIdentifierType::Enum,
-                                         ident->name, function_name, (size_t)ident->line,
+                                         ident->name, function_name, false, (size_t)ident->line,
                                          (size_t)ident->pos - ident->name.size(), ident->file_id});
       return;
     }
     // check if struct type
     if (context->structTable.contains(ident->name)) {
       lsp_idents.push_back(LSPIdentifier{res, LSPIdentifierType::Struct,
-                                         ident->name, function_name, (size_t)ident->line,
+                                         ident->name, function_name, false, (size_t)ident->line,
                                          (size_t)ident->pos - ident->name.size(), ident->file_id});
       return;
     }
@@ -169,13 +169,13 @@ void TypeChecker::visitIdent(Node::Expr *expr) {
     for (auto fn : context->functionTable) {
       if (fn.first == ident->name) {
         lsp_idents.push_back(LSPIdentifier{res, LSPIdentifierType::Function,
-                                           ident->name, function_name, (size_t)ident->line,
+                                           ident->name, function_name, false, (size_t)ident->line,
                                            (size_t)ident->pos - ident->name.size(), ident->file_id});
         return;
       }
     }
     lsp_idents.push_back(LSPIdentifier{res, LSPIdentifierType::Variable,
-                                       ident->name, function_name, (size_t)ident->line,
+                                       ident->name, function_name, false, (size_t)ident->line,
                                        (size_t)ident->pos - ident->name.size(), ident->file_id});
   }
 }

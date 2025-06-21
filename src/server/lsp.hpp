@@ -34,6 +34,7 @@ namespace lsp {
   void handleMethodTextDocumentCodeAction(const nlohmann::json& object); // Handles the "textDocument/codeAction" method
   void handleMethodTextDocumentSemanticTokensFull(const nlohmann::json& object); // Handles the "textDocument/semanticTokens/full" method
   void handleMethodTextDocumentReferences(const nlohmann::json& object); // Handles the "textDocument/references" method
+  void handleMethodTextDocumentDefinition(const nlohmann::json& object); // Handles the "textDocument/references" method
   //- METHODS: HOVERS & COMPLETIONS
   std::string getBuiltinNote(const std::string& builtin); // Returns a note about the builtin function
   bool isTokenCharacter(char c); // Checks if the character is a valid token character (alphanumeric or underscore)

@@ -39,6 +39,7 @@ struct LSPIdentifier {
   LSPIdentifierType type;
   std::string ident;
   std::string scope; // Typically, this is the name of the function we are in. If a struct function, then the struct_function
+  bool isDefinition = false;
   size_t line;
   size_t pos;
   size_t fileID;
