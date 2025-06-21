@@ -75,111 +75,68 @@ void codegen::funcDecl(Node::Stmt *stmt) {
             ".uleb128 " +
                 std::to_string((int)dwarf::DIEAbbrev::FunctionWithParamsVoid) +
                 "\n.byte 1" // External - This means "is it a public function?"
-                "\n.long .L" +
-                funcName +
-                "_string\n"
-                ".byte " +
-                std::to_string(s->file_id) + // File ID
-                "\n.byte " + std::to_string(s->line) +
-                "\n" // Line number
-                ".byte " +
-                std::to_string(s->pos) +
-                "\n" // Line column
-                ".quad " +
-                dieLabel +
-                "_debug_start\n" // Low pc
-                ".quad " +
-                dieLabel + "_debug_end - " + dieLabel +
-                "_debug_start\n"  // high pc
-                ".uleb128 0x01\n" // 1 byte is gonna follow
-                ".byte 0x9c\n",
+                "\n.long .L" + funcName + "_string"
+                "\n.byte " + std::to_string(s->file_id) + // File ID
+                "\n.long " + std::to_string(s->line) + // Line
+                "\n.long " + std::to_string(s->pos) + // column
+                "\n.quad " + dieLabel + "_debug_start" // Low pc
+                "\n.quad " + dieLabel + "_debug_end - " + dieLabel + "_debug_start"  // high pc
+                "\n.uleb128 0x01" // 1 byte is gonna follow
+                "\n.byte 0x9c"
+                "\n",
             Section::DIE);
       } else {
         dwarf::useAbbrev(dwarf::DIEAbbrev::Type);
         dwarf::useAbbrev(dwarf::DIEAbbrev::FunctionWithParams);
         dwarf::useType(s->returnType);
         pushLinker(
-            ".uleb128 " +
-                std::to_string((int)dwarf::DIEAbbrev::FunctionWithParams) +
-                "\n.byte 1" // External - This means "is it a public function?"
-                "\n.long .L" +
-                funcName +
-                "_string\n"
-                ".byte " +
-                std::to_string(s->file_id) + // File ID
-                "\n.byte " + std::to_string(s->line) +
-                "\n" // Line number
-                ".byte " +
-                std::to_string(s->pos) +
-                "\n" // Line column
-                ".long .L" +
-                type_to_diename(s->returnType) +
-                "_debug_type\n" // Return type (DW_AT_type)
-                ".quad " +
-                dieLabel +
-                "_debug_start\n" // Low pc
-                ".quad " +
-                dieLabel + "_debug_end - " + dieLabel +
-                "_debug_start\n"  // high pc
-                ".uleb128 0x01\n" // 1 byte is gonna follow
-                ".byte 0x9c\n",
+            ".uleb128 " + std::to_string((int)dwarf::DIEAbbrev::FunctionWithParams) +
+            "\n.byte 1" // External - This means "is it a public function?"
+            "\n.long .L" + funcName + "_string"
+            "\n.byte " + std::to_string(s->file_id) + // File ID
+            "\n.long " + std::to_string(s->line) +
+            "\n.long " + std::to_string(s->pos) +
+            "\n.long .L" + type_to_diename(s->returnType) + "_debug_type" // Return type (DW_AT_type)
+            "\n.quad " + dieLabel + "_debug_start" // Low pc
+            "\n.quad " + dieLabel + "_debug_end - " + dieLabel + "_debug_start"  // high pc
+            "\n.uleb128 0x01" // 1 byte is gonna follow
+            "\n.byte 0x9c"
+            "\n",
             Section::DIE);
       }
     } else {
       if (isVoid) {
         dwarf::useAbbrev(dwarf::DIEAbbrev::FunctionNoParamsVoid);
         pushLinker(
-            ".uleb128 " +
-                std::to_string((int)dwarf::DIEAbbrev::FunctionNoParamsVoid) +
-                "\n.byte 1"
-                "\n.long .L" +
-                funcName +
-                "_string\n"
-                ".byte " +
-                std::to_string(s->file_id) + // File ID
-                "\n.byte " + std::to_string(s->line) +
-                "\n" // Line number
-                ".byte " +
-                std::to_string(s->pos) +
-                "\n" // Line column
-                ".quad " +
-                dieLabel +
-                "_debug_start\n" // Low pc
-                ".quad " +
-                dieLabel + "_debug_end - " + dieLabel +
-                "_debug_start\n"  // high pc
-                ".uleb128 0x01\n" // 1 byte is gonna follow
-                ".byte 0x9c\n",
+            ".uleb128 " + std::to_string((int)dwarf::DIEAbbrev::FunctionNoParamsVoid) +
+            "\n.byte 1"
+            "\n.long .L" + funcName + "_string"
+            "\n.byte " + std::to_string(s->file_id) + // File ID
+            "\n.long " + std::to_string(s->line) +
+            "\n.long " + std::to_string(s->pos) +
+            "\n.quad " + dieLabel + "_debug_start" // Low pc
+            "\n.quad " + dieLabel + "_debug_end - " + dieLabel + "_debug_start"  // high pc
+            "\n.uleb128 0x01" // 1 byte is gonna follow
+            "\n.byte 0x9c"
+            "\n",
             Section::DIE);
       } else {
         dwarf::useAbbrev(dwarf::DIEAbbrev::Type);
         dwarf::useAbbrev(dwarf::DIEAbbrev::FunctionNoParams);
         dwarf::useType(s->returnType);
-        pushLinker(".uleb128 " +
-                       std::to_string((int)dwarf::DIEAbbrev::FunctionNoParams) +
-                       "\n.byte 1"
-                       "\n.long .L" +
-                       funcName +
-                       "_string\n"
-                       ".byte " +
-                       std::to_string(s->file_id) + // File ID
-                       "\n.byte " + std::to_string(s->line) +
-                       "\n" // Line number
-                       ".byte " +
-                       std::to_string(s->pos) +
-                       "\n" // Line column
-                       ".long .L" +
-                       type_to_diename(s->returnType) +
-                       "_debug_type\n" // Return type (DW_AT_type)
-                       ".quad " +
-                       dieLabel +
-                       "_debug_start\n" // Low pc
-                       ".quad " +
-                       dieLabel + "_debug_end - " + dieLabel +
-                       "_debug_start\n"  // high pc
-                       ".uleb128 0x01\n" // 1 byte is gonna follow
-                       ".byte 0x9c\n",
-                   Section::DIE);
+        pushLinker(".uleb128 " + std::to_string((int)dwarf::DIEAbbrev::FunctionNoParams) +
+                  "\n.byte 1"
+                  "\n.long .L" + funcName + "_string"
+                  "\n.byte " + std::to_string(s->file_id) + // File ID
+                  "\n.long " + std::to_string(s->line) +
+                  "\n.long " + std::to_string(s->pos) +
+                  "\n.long .L" + type_to_diename(s->returnType) + "_debug_type" // Return type (DW_AT_type)
+                  "\n.quad " + dieLabel + "_debug_start" // Low pc
+                  "\n.quad " + dieLabel + "_debug_end - " + dieLabel + "_debug_start"  // high pc
+                  "\n.uleb128 0x01" // 1 byte is gonna follow
+                  "\n.byte 0x9c"
+                  "\n",
+              Section::DIE);
       }
     }
 
@@ -254,8 +211,6 @@ void codegen::funcDecl(Node::Stmt *stmt) {
       // Use the parameter type
       pushLinker(
           "\n.uleb128 " + std::to_string((int)dwarf::DIEAbbrev::FunctionParam) +
-              "\n.byte " + std::to_string(s->file_id) + "\n.byte " +
-              std::to_string(s->line) + "\n.byte " + std::to_string(s->pos) +
               "\n.long .L" + type_to_diename(s->params.at(i).second) +
               "_debug_type\n" +
               "\n.uleb128 0x1" // 1 byte is gonna follow
@@ -415,10 +370,10 @@ void codegen::varDecl(Node::Stmt *stmt) {
           ".byte " +
           std::to_string(s->file_id) +
           "\n" // File index
-          ".byte " +
+          ".long " +
           std::to_string(s->line) +
           "\n   " // Line number
-          ".byte " +
+          ".long " +
           std::to_string(s->pos) +
           "\n" // Line column
           ".long .L" +
@@ -462,8 +417,8 @@ void codegen::block(Node::Stmt *stmt) {
     pushLinker(".uleb128 " +
                    std::to_string((int)dwarf::DIEAbbrev::LexicalBlock) +
                    "\n.byte " + std::to_string(s->file_id) + // File ID
-                   "\n.byte " + std::to_string(s->line) +    // Line number
-                   "\n.byte " + std::to_string(s->pos) +     // Column number
+                   "\n.long " + std::to_string(s->line) +    // Line number
+                   "\n.long " + std::to_string(s->pos) +     // Column number
                    "\n.quad .Ldie" + std::to_string(thisDieCount) +
                    "_begin" // Low pc
                    "\n.quad .Ldie" +
@@ -548,8 +503,8 @@ void codegen::enumDecl(Node::Stmt *stmt) {
                    "_string"
                    "\n.byte " +
                    std::to_string(s->file_id) +           // File ID
-                   "\n.byte " + std::to_string(s->line) + // Line number
-                   "\n.byte " + std::to_string(s->pos) +  // Line column
+                   "\n.long " + std::to_string(s->line) + // Line number
+                   "\n.long " + std::to_string(s->pos) +  // Line column
                    "\n.byte 4" // each enum member is 4 bytes
                    "\n.byte 7" // encoding - DW_ATE_signed is 7
                    "\n.long .Llong_u_debug_type\n" // And yes, for some reason,
@@ -580,6 +535,8 @@ void codegen::enumDecl(Node::Stmt *stmt) {
               "_string"
               "\n.byte " +
               std::to_string(fieldCount - 1) + // Value of the enum member
+              "\n.long " + std::to_string(field->line) +
+              "\n.long " + std::to_string(field->pos) +
               "\n",
           Section::DIE);
       // Push the name of the enum member
@@ -650,8 +607,8 @@ void codegen::structDecl(Node::Stmt *stmt) {
                    "_string\n"
                    ".byte " +
                    std::to_string(s->file_id) +           // File ID
-                   "\n.byte " + std::to_string(s->line) + // Line number
-                   "\n.byte " + std::to_string(s->pos) +  // Line column
+                   "\n.long " + std::to_string(s->line) + // Line number
+                   "\n.long " + std::to_string(s->pos) +  // Line column
                    "\n.short " + std::to_string(size) +   // Size of struct
                    "\n",
                Section::DIE);
@@ -673,6 +630,8 @@ void codegen::structDecl(Node::Stmt *stmt) {
                      //  "\n.byte " + std::to_string(sizeOfLEB(-currentByte)) +
                      "\n.sleb128 " +
                      std::to_string(currentByte) + // Offset in struct
+                     "\n.long " + std::to_string(field.first->line) +
+                     "\n.long " + std::to_string(field.first->pos) +
                      "\n",
                  Section::DIE);
       // push name in string
@@ -866,8 +825,8 @@ void codegen::forLoop(Node::Stmt *stmt) {
     push(Instr{.var=Label{.name=".Ldie_loop" + std::to_string(loopCount) + "_begin"}, .type=InstrType::Label},Section::Main);
     pushLinker(".uleb128 " + std::to_string((int)dwarf::DIEAbbrev::LexicalBlock) +
                "\n.byte " + std::to_string(s->file_id) +
-               "\n.byte " + std::to_string(dynamic_cast<BlockStmt *>(s->block)->line) +
-               "\n.byte " + std::to_string(dynamic_cast<BlockStmt *>(s->block)->pos) +
+               "\n.long " + std::to_string(dynamic_cast<BlockStmt *>(s->block)->line) +
+               "\n.long " + std::to_string(dynamic_cast<BlockStmt *>(s->block)->pos) +
                // Low pc (the address of the start of the block- thats RIGHT NOW!)
                "\n.quad .Ldie_loop" + std::to_string(loopCount) + "_begin"
                "\n.quad .Ldie_loop" + std::to_string(loopCount) + "_end-.Ldie_loop" + std::to_string(loopCount) + "_begin\n",
@@ -878,8 +837,8 @@ void codegen::forLoop(Node::Stmt *stmt) {
                    "_string\n"
                    "\n.byte " +
                    std::to_string(s->file_id) +           // File ID
-                   "\n.byte " + std::to_string(s->line) + // Line number
-                   "\n.byte " + std::to_string(s->pos) +  // Line column
+                   "\n.long " + std::to_string(s->line) + // Line number
+                   "\n.long " + std::to_string(s->pos) +  // Line column
                    "\n.long .L" + type_to_diename(assignee->asmType) +
                    "_debug_type\n" // Type - point to the DIE of
                                    // the DW_TAG_base_type
