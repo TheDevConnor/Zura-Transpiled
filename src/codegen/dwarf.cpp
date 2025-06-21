@@ -306,9 +306,9 @@ std::string codegen::dwarf::generateAbbreviations() {
         abbreviations += "ERROR HERE! UNIMPLEMENTED ABBREV: " + std::to_string((int)a) + "\n";
         break;
     };
-    abbreviations += "\n.byte 0\n.byte 0\n"; // Add padding
+    abbreviations += "\n.byte 0 # ABBREV PADDING\n.byte 0 # ABBREV PADDING 2\n"; // Add padding
   }
-  abbreviations += ".byte 0\n.byte 0\n"; // End of all children of CU, end of all tags, yata yata shut up its the end of the abbevations.
+  abbreviations += ".byte 0 # ABBREV OVERALL PADDING\n.byte 0 # ABBREV OVERALL PADDING 2\n"; // End of all children of CU, end of all tags, yata yata shut up its the end of the abbevations.
   return abbreviations;
 };
 
@@ -359,7 +359,7 @@ void codegen::dwarf::useType(Node::Type *type) {
     pushLinker(".uleb128 " + std::to_string((int)DIEAbbrev::ArraySubrange) +
                "\n.long .Lint_u_debug_type" // This is gonna be the type of the index used in arrays - arr[1] - 1 is an int 
                "\n.short " + (a->constSize <= 0 ? std::to_string(std::numeric_limits<short signed int>::max()) : std::to_string(a->constSize - 1)) +
-               "\n.byte 0\n" // end of the arrayType
+               "\n.byte 0 # </ARRAY TYPE>\n" // end of the arrayType
                , Section::DIETypes);
   } else {
     // Nothing can be done if it is a basic type.

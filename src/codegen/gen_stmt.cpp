@@ -292,7 +292,7 @@ void codegen::funcDecl(Node::Stmt *stmt) {
   // Function ends with ret so we can't really push any other instructions.
   if (debug) {
     pushLinker(dieLabel + "_debug_end:\n", Section::Main);
-    pushLinker(".byte 0\n", Section::DIE); // End of children
+    pushLinker(".byte 0 # </ " + funcName + " >\n", Section::DIE); // End of children
   }
 
   push(Instr{.var = LinkerDirective{.value = ".cfi_endproc\n"},
@@ -451,7 +451,8 @@ void codegen::block(Node::Stmt *stmt) {
   // gotta love the ++i operator bro :D
   // if this was i++, we'd be fucking dead!!!!!!! YIPEEEE
   size_t thisDieCount = dieCount++;
-  if (dwarf::nextBlockDIE) {
+  bool originalNextBlockDie = dwarf::nextBlockDIE;
+  if (originalNextBlockDie) {
     if (debug)
       push(Instr{.var = Label{.name = ".Ldie" + std::to_string(thisDieCount) +
                                       "_begin"},
@@ -474,8 +475,8 @@ void codegen::block(Node::Stmt *stmt) {
   for (Node::Stmt *stm : s->stmts) {
     codegen::visitStmt(stm);
   }
-  if (dwarf::nextBlockDIE) {
-    pushLinker(".byte 0\n", Section::DIE); // End of children nodes of the scope
+  if (originalNextBlockDie) {
+    pushLinker(".byte 0 # </ LEXICAL BLOCK STARTING ON LINE " + std::to_string(s->line) + ", FILE " + (fileIDs.at(s->file_id)) + ">\n", Section::DIE); // End of children nodes of the scope
     if (debug)
       push(Instr{.var = Label{.name = ".Ldie" + std::to_string(thisDieCount) +
                                       "_end"},
@@ -587,7 +588,7 @@ void codegen::enumDecl(Node::Stmt *stmt) {
   }
 
   if (debug)
-    pushLinker("\n.byte 0\n", Section::DIE); // End of children
+    pushLinker("\n.byte 0 # </ENUM " + s->name + ">\n", Section::DIE); // End of children
 
   // Add the enum to the global table
   variableTable.insert(
@@ -682,7 +683,7 @@ void codegen::structDecl(Node::Stmt *stmt) {
     }
 
     // Push end of children
-    pushLinker(".byte 0\n", Section::DIE);
+    pushLinker(".byte 0 # </STRUCT " + s->name + ">\n", Section::DIE);
   }
 }
 
@@ -835,7 +836,7 @@ void codegen::_return(Node::Stmt *stmt) {
 
 void codegen::forLoop(Node::Stmt *stmt) {
   ForStmt *s = static_cast<ForStmt *>(stmt);
-
+  dwarf::nextBlockDIE = false;
   std::string preconCount = std::to_string(conditionalCount++);
 
   push(Instr{.var = Comment{.comment = "for loop"}, .type = InstrType::Comment},
@@ -906,7 +907,6 @@ void codegen::forLoop(Node::Stmt *stmt) {
        Section::Main);
 
   // Execute the loop body (if condition is true)
-  if (debug) dwarf::nextBlockDIE = false;
   visitStmt(s->block); // Visit the statements inside the loop body
 
   // Evaluate the loop increment (e.g., i++)
@@ -926,9 +926,9 @@ void codegen::forLoop(Node::Stmt *stmt) {
        Section::Main);
   if (debug) {
     push(Instr{.var=Label{.name=".Ldie_loop" + std::to_string(loopCount) + "_end"},.type=InstrType::Label},Section::Main);
-    pushLinker(".byte 0\n", Section::DIE); // Explain that the LexicalBlock is over!
+    pushLinker(".byte 0 # </FOR BLOCK>\n", Section::DIE); // Explain that the LexicalBlock is over!
   }
-
+  dwarf::nextBlockDIE = true;
   // Pop the loop variable from the stack
   variableTable.erase(assignee->name);
   variableCount -= 8; // We now have room for another variable!

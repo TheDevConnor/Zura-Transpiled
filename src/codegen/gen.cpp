@@ -277,7 +277,7 @@ void codegen::gen(Node::Stmt *stmt, bool isSaved, std::string output_filename,
     file << Stringifier::stringifyInstrs(diet_section) << "\n"; // types, both builtin and user-defined
     // If they are INSIDE the compile unit (before the byte 0 above here),
     // then they are not visible to other CU's (other files)
-    file << ".byte 0\n"; // End of compile unit's children -- THIS ACTUALLY NEEDS TO GO HERE!
+    file << ".byte 0 # </COMPILE UNIT>\n"; // End of compile unit's children -- THIS ACTUALLY NEEDS TO GO HERE!
     file << ".Ldebug_end:\n";
     file << "# DEBUG ABBREVIATIONS: use readelf --debug-dump=a to print the actual information stored here\n";
     file << ".section .debug_abbrev,\"\",@progbits\n";
