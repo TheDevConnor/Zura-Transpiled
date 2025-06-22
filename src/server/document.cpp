@@ -395,7 +395,6 @@ void lsp::handleMethodTextDocumentSemanticTokensFull(const nlohmann::json& objec
     prevCharacter = ident.pos;
   }
   logFile << "Done" << std::endl;
-  TypeChecker::LSPIdentifier finalIdent = lspIdentsInURI.back();
   // Now we have the tokens, we can send them back
   nlohmann::json response = {
     {"jsonrpc", "2.0"},

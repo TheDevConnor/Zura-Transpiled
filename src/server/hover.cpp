@@ -159,7 +159,8 @@ void lsp::handleMethodTextDocumentHover(const nlohmann::json &object)
     if (
       ident.ident == word.text && 
       ident.fileID == fileIDFromURI(object["params"]["textDocument"]["uri"]) &&
-      (ident.line - 1) == word.range.start.line) {
+      (ident.line - 1) == word.range.start.line
+      && !ident.ident.empty()) {
       nlohmann::json response = {
         {"jsonrpc", "2.0"},
         {"id", object["id"]},

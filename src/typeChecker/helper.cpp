@@ -322,6 +322,15 @@ void TypeChecker::processEnumMember(MemberExpr *member, const std::string &lhsTy
       .pos = (unsigned long)static_cast<IdentExpr *>(member->rhs)->pos - field.size(),
       .fileID = (unsigned long)member->file_id,
     });
+    lsp_idents.push_back(LSPIdentifier {
+      .underlying = nullptr,
+      .type = LSPIdentifierType::Type,
+      .ident = "",
+      .scope = function_name,
+      .line = (unsigned long)static_cast<IdentExpr *>(member->rhs)->line,
+      .pos = (unsigned long)(static_cast<IdentExpr *>(member->rhs)->pos - field.size()) + 1,
+      .fileID = (unsigned long)member->file_id,
+    });
   }
 }
 

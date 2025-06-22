@@ -80,6 +80,10 @@ Lexer::Token Lexer::String(int whitespace) {
   while (peek() != '"' && !isAtEnd()) {
     if (peek() == '\n')
       token.line++;
+    if (peek() == '\\')
+      if (*(scanner.current+1) == '"') {
+        advance();
+      }
     advance();
   }
   if (isAtEnd())
