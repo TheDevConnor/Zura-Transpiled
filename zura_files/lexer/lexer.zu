@@ -38,68 +38,55 @@ const Token := struct {
   value: *char
 };
 
-const Lexer := struct {
-  current: *char,
-  start: *char,
-  line: int!,
-  index: int!, # This is the index in the file of what character we are on; NOT the column
-  col: int!,
-};
+# const make_token := fn (ln: int!, col: int!, k: TokenKind, v: *char) Token {
+#   have pos: Position = { line: ln, pos: col };
+#   have token: Token = {
+#     position: pos,
+#     kind: k,
+#     value: v,
+#   };
+#   return token;
+# };
 
-const advance := fn (lx: *Lexer) char {
-  lx&.col++;
-  return lx&.current[lx&.index++];
-};
-
-const whitespace := fn (lx: *Lexer, size: int!) int! {
-  have count: int! = 0; # but we miiiiiight
-  loop (i = 0; i < size) : (i++) {
-    match(lx&.current[lx&.index]) {
-      # '\r'
-      case @cast<char>(13) -> {
-        # No logic here; You even have a normal \n anyways
-      }
-      # '\t'
-      case @cast<char>(9) -> {
-        count += 4;
-        lx&.index += 4;
-      }
-      # '\n'
-      case @cast<char>(10) -> {
-        lx&.line++;
-        lx&.col = 0; # Setting COLUMN to zero; NOT the index!!
-        advance(lx);
-      }
-      # ' '
-      case @cast<char>(32) -> {
-        count++;
-        advance(lx);
-      }
-      default -> { return count; }
+const is_digit := fn (c: char) int {
+  if (c >= @cast<char>(48)) { # '0'
+    if (c <= @cast<char>(57)) { # '9'
+      return 1; # true
     }
+    return 0; # false
   }
-  return count; # Return the count of whitespace characters skipped
+  return 0; # false
 };
 
-const scan := fn (lx: *Lexer, size: int!) void {
-  have count: int! = 0;
+const is_letter := fn (c: char) int {
+  if (c >= @cast<char>(97)) { if (c <= @cast<char>(122)) return 1; } # a to z
+  if (c >= @cast<char>(65)) { if (c <= @cast<char>(90)) return 1; } # A to Z
+  if (c == @cast<char>(95)) return 1; # true
+  return 0; # false
+};
+
+const scan := fn (source: *char, size: int!) void {
   have whitespaceCount: int! = 0;
+  have generate: bool! = true; # Flag to control token generation
+  have col: int! = 0;
+  have line: int! = 1;
 
   loop (i = 0; i < size) : (i++) {
-    whitespaceCount = whitespace(lx, size);
-    lx&.start = lx&.current;
+    whitespaceCount = 0; # reset whitespace count for each character
 
-    # This check is not required as the loop is a fixed size anyways
-    if (lx&.current[lx&.index] == @cast<char>(0)) {
-      break; # End of input
+    # Check the whitespace [\n, \t, space]
+    if (source[i] == @cast<char>(32)) { # space
+      whitespaceCount++;
+      col++; 
     }
-    # horizontal pos
-    # shoudl we return that in whitespace() or should whitespace() return spaces count
-    # for now just print the current character and its position add an error
-    #! NOTE: INTENTIONAL SEGFUALT/ERROR HERE; POS IS INDEX
-    @outputln(1, "Current character: ", ascii_to_string(lx&.current[lx&.index]), " ", lx&.current[lx&.index], " at INDEX: ", lx&.index, " on line: ", lx&.line, " on col ", lx&.col, " whitespace skipped: ", whitespaceCount);
-    # TODO: implement tokenization for single-character tokens
-    # TODO: implement tokenization for multi-character tokens (@ functions, identifiers, numbers, and strings)
-    advance(lx);
+    if (source[i] == @cast<char>(10)) { # newline
+      whitespaceCount = 0;
+      col = 0; # reset column count on newline
+      line++; # increment line count
+    } else {
+      col++; # increment column count for non-whitespace characters
+    }
+
+    @outputln(0, "Character: ", ascii_to_string(source[i]), " (", source[i], ") at line: ", line, " col: ", col);
   }
 };

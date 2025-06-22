@@ -6,7 +6,7 @@
 const main := fn () int! {
   have argv: *[]str = @getArgv();
   have argc: int! = @getArgc();
-  have size: int! = 2048; # Size of the buffer to read from file
+  have size: int! = 6048; # Size of the buffer to read from file
   
   if (argc < 2) {
     @outputln(1, "No arguments provided, Here are the available options:");
@@ -60,14 +60,7 @@ const main := fn () int! {
   # add a null terminator to the end of the file contents
   fileContents[realSize - 1] = @cast<char>(0);
   
-  have lx: Lexer = {
-    current: fileContents,
-    start: fileContents,
-    line: 1,
-    index: 0,
-    col: 0,
-  };
-  scan(&lx, realSize); # TODO: Fix null terminators filling console, very annoying
+  scan(fileContents, realSize); # TODO: Fix null terminators filling console, very annoying
   
   @free(fileContents, size); # My computer is gonna explode nooo!!
   # @free(lx.current, size);
