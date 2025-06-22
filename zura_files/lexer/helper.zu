@@ -1,0 +1,42 @@
+const is_digit := fn (c: char) int {
+  if (c >= @cast<char>(48)) { # '0'
+    if (c <= @cast<char>(57)) { # '9'
+      return 1;
+    }
+  }
+  return 0;
+};
+
+const is_letter := fn (c: *char, index: *int!) int! {
+  if (c[index&] >= @cast<char>(97)) {
+    if (c[index&] <= @cast<char>(122)) {
+      return 1;
+    } 
+  } # a to z
+
+  if (c[index&] >= @cast<char>(65)) {
+    if (c[index&] <= @cast<char>(90)) {
+      return 1;
+    } 
+  } # A to Z
+
+  if (c[index&] == @cast<char>(95)) { 
+    return 1;
+  } # _
+  return 0;
+};
+
+const check_whitespace := fn (c: *char, index: *int!, line: *int!, col: *int!, size: int!) int! {
+  if (c[index&] == @cast<char>(32)) {
+    col&++; # increment column count
+    return 1; # space
+  }
+
+  if (c[index&] == @cast<char>(10)) {
+    col& = 0; # reset column count on newline
+    line&++; # increment line count
+    return 1; # newline
+  }
+
+  return 0;
+};
