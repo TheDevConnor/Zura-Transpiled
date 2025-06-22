@@ -1,4 +1,5 @@
 // library for log2 function (you will see where this is used)
+#include <algorithm>
 #include <cmath>
 #include "compiler.hpp"
 #include "../gen.hpp"
