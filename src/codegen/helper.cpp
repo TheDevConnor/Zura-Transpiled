@@ -228,7 +228,7 @@ void codegen::handleExitSyscall() {
 
 void codegen::handleReturnCleanup() {
   popToRegister("%rbp");
-  pushLinker(".cfi_def_cfa 7, 8\n\t", Section::Main);
+  pushLinker(".cfi_def_cfa %rsp, 8\n\t", Section::Main);
   push(Instr{.var = Ret{}, .type = InstrType::Ret}, Section::Main);
 }
 
