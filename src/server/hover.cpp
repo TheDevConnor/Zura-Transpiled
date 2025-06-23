@@ -101,14 +101,8 @@ lsp::Word lsp::getWordUnder(const std::string &text, size_t line, size_t charact
 }
 
 size_t lsp::fileIDFromURI(lsp::URI uri) {
-  if (!mainFileLink.contains(uri)) return (size_t)-1; // No main file link for this URI
   for (size_t i = 0; i < codegen::fileIDs.size(); i++) {
-    // Trace an absolute path from the main file to this file id
-    if (i >= codegen::fileIDs.size()) return (size_t)-1; // Out of bounds, no such file ID
-    if ((std::filesystem::path(mainFileLink[uri].substr(7)) / codegen::fileIDs.at(i)).string() == uri.substr(7)) {
-      // Yay! That was the one! We found it!
-      return i;
-    }
+    if (codegen::fileIDs[i] == uri.substr(7)) return i;
   }
   return (size_t)-1;
 };

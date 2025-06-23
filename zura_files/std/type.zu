@@ -1,28 +1,28 @@
-const digit := fn (c: *char, index: *int!) int {
-  if (c[index&] >= @cast<char>(48)) { # '0'
+const digit := fn (c: *char, index: *int!) bool {
+  if (c[index&] >= @cast<char>(48)) {   # '0'
     if (c[index&] <= @cast<char>(57)) { # '9'
-      return 1;
+      return true;
     }
   }
-  return 0;
+  return false;
 };
 
-const alpha := fn (c: *char, index: *int!) int! {
-  if (c[index&] >= @cast<char>(97)) {
-    if (c[index&] <= @cast<char>(122)) {
-      return 1;
+const alpha := fn (c: *char, index: *int!) bool {
+  if (c[index&] >= @cast<char>(97)) {    # 'a'
+    if (c[index&] <= @cast<char>(122)) { # 'z'
+      return true;
     } 
-  } # a to z
+  }
 
-  if (c[index&] >= @cast<char>(65)) {
-    if (c[index&] <= @cast<char>(90)) {
-      return 1;
+  if (c[index&] >= @cast<char>(65)) {   # 'A'
+    if (c[index&] <= @cast<char>(90)) { # 'Z'
+      return true;
     } 
-  } # A to Z
+  }
 
-  if (c[index&] == @cast<char>(95)) { 
-    return 1;
-  } # _
-  return 0;
+  if (c[index&] == @cast<char>(95)) { # '_'
+    return true;
+  }
+  return false;
 };
 

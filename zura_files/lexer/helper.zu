@@ -57,20 +57,22 @@ const check_whitespace := fn (c: *char, index: *int!, line: *int!, col: *int!, s
 };
 
 const number := fn (c: *char, index: *int!) *char {
-  have check: int! = digit(c, index); # This is the first check
-  if (check != 1) return "";
+  have check: bool = digit(c, index); # This is the first check
+  if (check == false) {
+    return "";
+  }
 
   loop (i = index&; i < 100000000) : (i++) {
-    have ch: int! = digit(c, &i);
-    if (ch != 1) break;
+    have ch: bool = digit(c, &i);
+    if (ch == false) break;
     index&++;
   }
 
   if (c[index&] == @cast<char>(46)) {
     index&++;
     loop (i = index&; i < 100000000) : (i++) {
-      have ch: int! = digit(c, &i);
-      if (ch != 1) break;
+      have ch: bool = digit(c, &i);
+      if (ch == false) break;
       index&++;
     }
     return @cast<*char>("FLOAT"); # Floating point number
@@ -79,11 +81,7 @@ const number := fn (c: *char, index: *int!) *char {
   return @cast<*char>("INT"); # Integer number
 };
 
-const ident := fn (c: *char, index: *int!) int! {
-  have check: int! = alpha(c, index);
-  if (check != 1) return 0;
-
-  @outputln(1, "Identifier found: ", ascii_to_string(c[index&]));
-
-  return 1;
+const ident := fn (c: *char, index: *int!) bool {
+  have check: bool = alpha(c, index);
+  return check;
 };

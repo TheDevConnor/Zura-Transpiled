@@ -86,6 +86,13 @@ Node::Stmt *Parser::varStmt(PStruct *psr, std::string name) {
 
   psr->expect(TokenKind::COLON, "Expected a COLON after the variable name in a "
                                 "var stmt to define the type of the variable");
+  // stop in this case if the next character is equals
+  if (psr->current().kind == TokenKind::EQUAL) {
+    psr->expect(TokenKind::EQUAL,
+                "Expected a type after the type of the variable in a var stmt");
+    return new VarStmt(line, column, isConst, name, nullptr, nullptr,
+                       codegen::getFileID(psr->current_file));
+  }
   Node::Type *varType = parseType(psr);
 
   if (psr->current().kind == TokenKind::SEMICOLON) {

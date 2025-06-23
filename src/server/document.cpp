@@ -464,7 +464,7 @@ void lsp::handleMethodTextDocumentReferences(const nlohmann::json& object) {
     if (ident.ident == word.text && ((ident.scope == found.scope || ident.scope == "" || found.scope == "") || found.line == (size_t)-1)) { // If there was no found token, then ignore
       nlohmann::json location = {
         // get the uri of the file id
-        {"uri", "file://" + (std::filesystem::path(codegen::fileIDs[0]) / codegen::fileIDs.at(ident.fileID)).string()},
+        {"uri", "file://" + codegen::fileIDs.at(ident.fileID)},
         {"range", {
           {"start", {{"line", ident.line - 1}, {"character", ident.pos}}},
           {"end", {{"line", ident.line - 1}, {"character", ident.pos + word.text.length()}}}
@@ -536,7 +536,7 @@ void lsp::handleMethodTextDocumentDefinition(const nlohmann::json& object) {
   if (found.isDefinition) {
     // You already clicked on the defnitiion!
     nlohmann::json result = {
-      {"uri", "file://" + (std::filesystem::path(codegen::fileIDs[0]) / codegen::fileIDs.at(found.fileID)).string()},
+      {"uri", "file://" + codegen::fileIDs.at(found.fileID)},
       {"range", {
         {"start", {{"line", word.range.start.line}, {"character", word.range.start.character}}},
         {"end", {{"line", word.range.end.line}, {"character", word.range.end.character}}}
@@ -554,7 +554,7 @@ void lsp::handleMethodTextDocumentDefinition(const nlohmann::json& object) {
     if (ident.ident == word.text && ident.isDefinition && (ident.scope == "" || found.scope == "" || ident.scope == found.scope)) {
       // We found the definition, now we can return it
       nlohmann::json result = {
-        {"uri", "file://" + (std::filesystem::path(codegen::fileIDs[0]) / codegen::fileIDs.at(ident.fileID)).string()},
+        {"uri", "file://" + codegen::fileIDs.at(ident.fileID)},
         {"range", {
           {"start", {{"line", ident.line - 1}, {"character", ident.pos}}},
           {"end", {{"line", ident.line - 1}, {"character", ident.pos + word.text.length()}}}

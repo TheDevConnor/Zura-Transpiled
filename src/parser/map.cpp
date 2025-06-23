@@ -152,6 +152,7 @@ void Parser::createMaps() {
       {TokenKind::OR, BindingPower::logicalOr},
       {TokenKind::AND, BindingPower::logicalAnd},
 
+
       {TokenKind::BANG, BindingPower::prefix},
       {TokenKind::EQUAL_EQUAL, BindingPower::comparison},
       {TokenKind::BANG_EQUAL, BindingPower::comparison},

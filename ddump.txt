@@ -1,0 +1,1753 @@
+
+.debug_info
+
+COMPILE_UNIT<header overall offset = 0x00000000>:
+< 0><0x0000000c>  DW_TAG_compile_unit
+                    DW_AT_producer              Zura compiler v0.1.46
+                    DW_AT_language              <Unknown LANG value 0x8042>
+                    DW_AT_name                  main.zu
+                    DW_AT_comp_dir              /home/sovietpancakes/Desktop/Code/zura/zura_files
+                    DW_AT_low_pc                0x00001000
+                    DW_AT_high_pc               <offset-from-lowpc> 8362 <highpc: 0x000030aa>
+                    DW_AT_stmt_list             0x00000000
+
+LOCAL_SYMBOLS:
+< 1><0x0000002f>    DW_TAG_subprogram
+                      DW_AT_external              yes(1)
+                      DW_AT_name                  readFile
+                      DW_AT_prototyped            yes(1)
+                      DW_AT_decl_file             0x00000001 /home/sovietpancakes/Desktop/Code/zura/zura_files/std/readfile.zu
+                      DW_AT_decl_line             0x00000001
+                      DW_AT_decl_column           0x00000014
+                      DW_AT_type                  <0x00001754>
+                      DW_AT_low_pc                0x00001028
+                      DW_AT_high_pc               <offset-from-lowpc> 311 <highpc: 0x0000115f>
+                      DW_AT_frame_base            len 0x0001: 0x9c: 
+                          DW_OP_call_frame_cfa
+                      DW_AT_call_all_calls        yes(1)
+< 2><0x00000054>      DW_TAG_formal_parameter
+                        DW_AT_type                  <0x00001754>
+                        DW_AT_location              len 0x0002: 0x9168: 
+                            DW_OP_fbreg -24
+                        DW_AT_name                  path
+< 2><0x00000060>      DW_TAG_formal_parameter
+                        DW_AT_type                  <0x00001783>
+                        DW_AT_location              len 0x0002: 0x9160: 
+                            DW_OP_fbreg -32
+                        DW_AT_name                  size
+< 2><0x0000006c>      DW_TAG_variable
+                        DW_AT_name                  bytes
+                        DW_AT_decl_file             0x00000001 /home/sovietpancakes/Desktop/Code/zura/zura_files/std/readfile.zu
+                        DW_AT_decl_line             0x00000002
+                        DW_AT_decl_column           0x00000006
+                        DW_AT_type                  <0x00001754>
+                        DW_AT_location              len 0x0002: 0x9158: 
+                            DW_OP_fbreg -40
+< 2><0x00000081>      DW_TAG_variable
+                        DW_AT_name                  fd
+                        DW_AT_decl_file             0x00000001 /home/sovietpancakes/Desktop/Code/zura/zura_files/std/readfile.zu
+                        DW_AT_decl_line             0x00000008
+                        DW_AT_decl_column           0x00000006
+                        DW_AT_type                  <0x00001783>
+                        DW_AT_location              len 0x0002: 0x9150: 
+                            DW_OP_fbreg -48
+< 1><0x00000097>    DW_TAG_subprogram
+                      DW_AT_external              yes(1)
+                      DW_AT_name                  ascii_to_string
+                      DW_AT_prototyped            yes(1)
+                      DW_AT_decl_file             0x00000003 /home/sovietpancakes/Desktop/Code/zura/zura_files/lexer/../std/asciiToString.zu
+                      DW_AT_decl_line             0x00000001
+                      DW_AT_decl_column           0x0000001b
+                      DW_AT_type                  <0x000017ae>
+                      DW_AT_low_pc                0x0000115f
+                      DW_AT_high_pc               <offset-from-lowpc> 2069 <highpc: 0x00001974>
+                      DW_AT_frame_base            len 0x0001: 0x9c: 
+                          DW_OP_call_frame_cfa
+                      DW_AT_call_all_calls        yes(1)
+< 2><0x000000bc>      DW_TAG_formal_parameter
+                        DW_AT_type                  <0x0000179c>
+                        DW_AT_location              len 0x0002: 0x916f: 
+                            DW_OP_fbreg -17
+                        DW_AT_name                  ctx
+< 2><0x000000c8>      DW_TAG_lexical_block
+                        DW_AT_decl_file             0x00000003 /home/sovietpancakes/Desktop/Code/zura/zura_files/lexer/../std/asciiToString.zu
+                        DW_AT_decl_line             0x00000003
+                        DW_AT_decl_column           0x00000021
+                        DW_AT_low_pc                0x00001567
+                        DW_AT_high_pc               <offset-from-lowpc> 9 <highpc: 0x00001570>
+< 2><0x000000e3>      DW_TAG_lexical_block
+                        DW_AT_decl_file             0x00000003 /home/sovietpancakes/Desktop/Code/zura/zura_files/lexer/../std/asciiToString.zu
+                        DW_AT_decl_line             0x00000004
+                        DW_AT_decl_column           0x00000021
+                        DW_AT_low_pc                0x00001570
+                        DW_AT_high_pc               <offset-from-lowpc> 9 <highpc: 0x00001579>
+< 2><0x000000fe>      DW_TAG_lexical_block
+                        DW_AT_decl_file             0x00000003 /home/sovietpancakes/Desktop/Code/zura/zura_files/lexer/../std/asciiToString.zu
+                        DW_AT_decl_line             0x00000005
+                        DW_AT_decl_column           0x00000021
+                        DW_AT_low_pc                0x00001579
+                        DW_AT_high_pc               <offset-from-lowpc> 9 <highpc: 0x00001582>
+< 2><0x00000119>      DW_TAG_lexical_block
+                        DW_AT_decl_file             0x00000003 /home/sovietpancakes/Desktop/Code/zura/zura_files/lexer/../std/asciiToString.zu
+                        DW_AT_decl_line             0x00000006
+                        DW_AT_decl_column           0x00000021
+                        DW_AT_low_pc                0x00001582
+                        DW_AT_high_pc               <offset-from-lowpc> 9 <highpc: 0x0000158b>
+< 2><0x00000134>      DW_TAG_lexical_block
+                        DW_AT_decl_file             0x00000003 /home/sovietpancakes/Desktop/Code/zura/zura_files/lexer/../std/asciiToString.zu
+                        DW_AT_decl_line             0x00000007
+                        DW_AT_decl_column           0x00000021
+                        DW_AT_low_pc                0x0000158b
+                        DW_AT_high_pc               <offset-from-lowpc> 9 <highpc: 0x00001594>
+< 2><0x0000014f>      DW_TAG_lexical_block
+                        DW_AT_decl_file             0x00000003 /home/sovietpancakes/Desktop/Code/zura/zura_files/lexer/../std/asciiToString.zu
+                        DW_AT_decl_line             0x00000008
+                        DW_AT_decl_column           0x00000021
+                        DW_AT_low_pc                0x00001594
+                        DW_AT_high_pc               <offset-from-lowpc> 9 <highpc: 0x0000159d>
+< 2><0x0000016a>      DW_TAG_lexical_block
+                        DW_AT_decl_file             0x00000003 /home/sovietpancakes/Desktop/Code/zura/zura_files/lexer/../std/asciiToString.zu
+                        DW_AT_decl_line             0x00000009
+                        DW_AT_decl_column           0x00000021
+                        DW_AT_low_pc                0x0000159d
+                        DW_AT_high_pc               <offset-from-lowpc> 9 <highpc: 0x000015a6>
+< 2><0x00000185>      DW_TAG_lexical_block
+                        DW_AT_decl_file             0x00000003 /home/sovietpancakes/Desktop/Code/zura/zura_files/lexer/../std/asciiToString.zu
+                        DW_AT_decl_line             0x0000000a
+                        DW_AT_decl_column           0x00000021
+                        DW_AT_low_pc                0x000015a6
+                        DW_AT_high_pc               <offset-from-lowpc> 9 <highpc: 0x000015af>
+< 2><0x000001a0>      DW_TAG_lexical_block
+                        DW_AT_decl_file             0x00000003 /home/sovietpancakes/Desktop/Code/zura/zura_files/lexer/../std/asciiToString.zu
+                        DW_AT_decl_line             0x0000000b
+                        DW_AT_decl_column           0x00000021
+                        DW_AT_low_pc                0x000015af
+                        DW_AT_high_pc               <offset-from-lowpc> 9 <highpc: 0x000015b8>
+< 2><0x000001bb>      DW_TAG_lexical_block
+                        DW_AT_decl_file             0x00000003 /home/sovietpancakes/Desktop/Code/zura/zura_files/lexer/../std/asciiToString.zu
+                        DW_AT_decl_line             0x0000000c
+                        DW_AT_decl_column           0x00000021
+                        DW_AT_low_pc                0x000015b8
+                        DW_AT_high_pc               <offset-from-lowpc> 9 <highpc: 0x000015c1>
+< 2><0x000001d6>      DW_TAG_lexical_block
+                        DW_AT_decl_file             0x00000003 /home/sovietpancakes/Desktop/Code/zura/zura_files/lexer/../std/asciiToString.zu
+                        DW_AT_decl_line             0x0000000d
+                        DW_AT_decl_column           0x00000021
+                        DW_AT_low_pc                0x000015c1
+                        DW_AT_high_pc               <offset-from-lowpc> 9 <highpc: 0x000015ca>
+< 2><0x000001f1>      DW_TAG_lexical_block
+                        DW_AT_decl_file             0x00000003 /home/sovietpancakes/Desktop/Code/zura/zura_files/lexer/../std/asciiToString.zu
+                        DW_AT_decl_line             0x0000000e
+                        DW_AT_decl_column           0x00000021
+                        DW_AT_low_pc                0x000015ca
+                        DW_AT_high_pc               <offset-from-lowpc> 9 <highpc: 0x000015d3>
+< 2><0x0000020c>      DW_TAG_lexical_block
+                        DW_AT_decl_file             0x00000003 /home/sovietpancakes/Desktop/Code/zura/zura_files/lexer/../std/asciiToString.zu
+                        DW_AT_decl_line             0x0000000f
+                        DW_AT_decl_column           0x00000021
+                        DW_AT_low_pc                0x000015d3
+                        DW_AT_high_pc               <offset-from-lowpc> 9 <highpc: 0x000015dc>
+< 2><0x00000227>      DW_TAG_lexical_block
+                        DW_AT_decl_file             0x00000003 /home/sovietpancakes/Desktop/Code/zura/zura_files/lexer/../std/asciiToString.zu
+                        DW_AT_decl_line             0x00000010
+                        DW_AT_decl_column           0x00000021
+                        DW_AT_low_pc                0x000015dc
+                        DW_AT_high_pc               <offset-from-lowpc> 9 <highpc: 0x000015e5>
+< 2><0x00000242>      DW_TAG_lexical_block
+                        DW_AT_decl_file             0x00000003 /home/sovietpancakes/Desktop/Code/zura/zura_files/lexer/../std/asciiToString.zu
+                        DW_AT_decl_line             0x00000011
+                        DW_AT_decl_column           0x00000021
+                        DW_AT_low_pc                0x000015e5
+                        DW_AT_high_pc               <offset-from-lowpc> 9 <highpc: 0x000015ee>
+< 2><0x0000025d>      DW_TAG_lexical_block
+                        DW_AT_decl_file             0x00000003 /home/sovietpancakes/Desktop/Code/zura/zura_files/lexer/../std/asciiToString.zu
+                        DW_AT_decl_line             0x00000012
+                        DW_AT_decl_column           0x00000021
+                        DW_AT_low_pc                0x000015ee
+                        DW_AT_high_pc               <offset-from-lowpc> 9 <highpc: 0x000015f7>
+< 2><0x00000278>      DW_TAG_lexical_block
+                        DW_AT_decl_file             0x00000003 /home/sovietpancakes/Desktop/Code/zura/zura_files/lexer/../std/asciiToString.zu
+                        DW_AT_decl_line             0x00000013
+                        DW_AT_decl_column           0x00000021
+                        DW_AT_low_pc                0x000015f7
+                        DW_AT_high_pc               <offset-from-lowpc> 9 <highpc: 0x00001600>
+< 2><0x00000293>      DW_TAG_lexical_block
+                        DW_AT_decl_file             0x00000003 /home/sovietpancakes/Desktop/Code/zura/zura_files/lexer/../std/asciiToString.zu
+                        DW_AT_decl_line             0x00000014
+                        DW_AT_decl_column           0x00000021
+                        DW_AT_low_pc                0x00001600
+                        DW_AT_high_pc               <offset-from-lowpc> 9 <highpc: 0x00001609>
+< 2><0x000002ae>      DW_TAG_lexical_block
+                        DW_AT_decl_file             0x00000003 /home/sovietpancakes/Desktop/Code/zura/zura_files/lexer/../std/asciiToString.zu
+                        DW_AT_decl_line             0x00000015
+                        DW_AT_decl_column           0x00000021
+                        DW_AT_low_pc                0x00001609
+                        DW_AT_high_pc               <offset-from-lowpc> 9 <highpc: 0x00001612>
+< 2><0x000002c9>      DW_TAG_lexical_block
+                        DW_AT_decl_file             0x00000003 /home/sovietpancakes/Desktop/Code/zura/zura_files/lexer/../std/asciiToString.zu
+                        DW_AT_decl_line             0x00000016
+                        DW_AT_decl_column           0x00000021
+                        DW_AT_low_pc                0x00001612
+                        DW_AT_high_pc               <offset-from-lowpc> 9 <highpc: 0x0000161b>
+< 2><0x000002e4>      DW_TAG_lexical_block
+                        DW_AT_decl_file             0x00000003 /home/sovietpancakes/Desktop/Code/zura/zura_files/lexer/../std/asciiToString.zu
+                        DW_AT_decl_line             0x00000017
+                        DW_AT_decl_column           0x00000021
+                        DW_AT_low_pc                0x0000161b
+                        DW_AT_high_pc               <offset-from-lowpc> 9 <highpc: 0x00001624>
+< 2><0x000002ff>      DW_TAG_lexical_block
+                        DW_AT_decl_file             0x00000003 /home/sovietpancakes/Desktop/Code/zura/zura_files/lexer/../std/asciiToString.zu
+                        DW_AT_decl_line             0x00000018
+                        DW_AT_decl_column           0x00000021
+                        DW_AT_low_pc                0x00001624
+                        DW_AT_high_pc               <offset-from-lowpc> 9 <highpc: 0x0000162d>
+< 2><0x0000031a>      DW_TAG_lexical_block
+                        DW_AT_decl_file             0x00000003 /home/sovietpancakes/Desktop/Code/zura/zura_files/lexer/../std/asciiToString.zu
+                        DW_AT_decl_line             0x00000019
+                        DW_AT_decl_column           0x00000021
+                        DW_AT_low_pc                0x0000162d
+                        DW_AT_high_pc               <offset-from-lowpc> 9 <highpc: 0x00001636>
+< 2><0x00000335>      DW_TAG_lexical_block
+                        DW_AT_decl_file             0x00000003 /home/sovietpancakes/Desktop/Code/zura/zura_files/lexer/../std/asciiToString.zu
+                        DW_AT_decl_line             0x0000001a
+                        DW_AT_decl_column           0x00000021
+                        DW_AT_low_pc                0x00001636
+                        DW_AT_high_pc               <offset-from-lowpc> 9 <highpc: 0x0000163f>
+< 2><0x00000350>      DW_TAG_lexical_block
+                        DW_AT_decl_file             0x00000003 /home/sovietpancakes/Desktop/Code/zura/zura_files/lexer/../std/asciiToString.zu
+                        DW_AT_decl_line             0x0000001b
+                        DW_AT_decl_column           0x00000021
+                        DW_AT_low_pc                0x0000163f
+                        DW_AT_high_pc               <offset-from-lowpc> 9 <highpc: 0x00001648>
+< 2><0x0000036b>      DW_TAG_lexical_block
+                        DW_AT_decl_file             0x00000003 /home/sovietpancakes/Desktop/Code/zura/zura_files/lexer/../std/asciiToString.zu
+                        DW_AT_decl_line             0x0000001c
+                        DW_AT_decl_column           0x00000021
+                        DW_AT_low_pc                0x00001648
+                        DW_AT_high_pc               <offset-from-lowpc> 9 <highpc: 0x00001651>
+< 2><0x00000386>      DW_TAG_lexical_block
+                        DW_AT_decl_file             0x00000003 /home/sovietpancakes/Desktop/Code/zura/zura_files/lexer/../std/asciiToString.zu
+                        DW_AT_decl_line             0x0000001d
+                        DW_AT_decl_column           0x00000021
+                        DW_AT_low_pc                0x00001651
+                        DW_AT_high_pc               <offset-from-lowpc> 9 <highpc: 0x0000165a>
+< 2><0x000003a1>      DW_TAG_lexical_block
+                        DW_AT_decl_file             0x00000003 /home/sovietpancakes/Desktop/Code/zura/zura_files/lexer/../std/asciiToString.zu
+                        DW_AT_decl_line             0x0000001e
+                        DW_AT_decl_column           0x00000021
+                        DW_AT_low_pc                0x0000165a
+                        DW_AT_high_pc               <offset-from-lowpc> 9 <highpc: 0x00001663>
+< 2><0x000003bc>      DW_TAG_lexical_block
+                        DW_AT_decl_file             0x00000003 /home/sovietpancakes/Desktop/Code/zura/zura_files/lexer/../std/asciiToString.zu
+                        DW_AT_decl_line             0x0000001f
+                        DW_AT_decl_column           0x00000021
+                        DW_AT_low_pc                0x00001663
+                        DW_AT_high_pc               <offset-from-lowpc> 9 <highpc: 0x0000166c>
+< 2><0x000003d7>      DW_TAG_lexical_block
+                        DW_AT_decl_file             0x00000003 /home/sovietpancakes/Desktop/Code/zura/zura_files/lexer/../std/asciiToString.zu
+                        DW_AT_decl_line             0x00000020
+                        DW_AT_decl_column           0x00000021
+                        DW_AT_low_pc                0x0000166c
+                        DW_AT_high_pc               <offset-from-lowpc> 9 <highpc: 0x00001675>
+< 2><0x000003f2>      DW_TAG_lexical_block
+                        DW_AT_decl_file             0x00000003 /home/sovietpancakes/Desktop/Code/zura/zura_files/lexer/../std/asciiToString.zu
+                        DW_AT_decl_line             0x00000021
+                        DW_AT_decl_column           0x00000021
+                        DW_AT_low_pc                0x00001675
+                        DW_AT_high_pc               <offset-from-lowpc> 9 <highpc: 0x0000167e>
+< 2><0x0000040d>      DW_TAG_lexical_block
+                        DW_AT_decl_file             0x00000003 /home/sovietpancakes/Desktop/Code/zura/zura_files/lexer/../std/asciiToString.zu
+                        DW_AT_decl_line             0x00000022
+                        DW_AT_decl_column           0x00000021
+                        DW_AT_low_pc                0x0000167e
+                        DW_AT_high_pc               <offset-from-lowpc> 9 <highpc: 0x00001687>
+< 2><0x00000428>      DW_TAG_lexical_block
+                        DW_AT_decl_file             0x00000003 /home/sovietpancakes/Desktop/Code/zura/zura_files/lexer/../std/asciiToString.zu
+                        DW_AT_decl_line             0x00000023
+                        DW_AT_decl_column           0x00000021
+                        DW_AT_low_pc                0x00001687
+                        DW_AT_high_pc               <offset-from-lowpc> 9 <highpc: 0x00001690>
+< 2><0x00000443>      DW_TAG_lexical_block
+                        DW_AT_decl_file             0x00000003 /home/sovietpancakes/Desktop/Code/zura/zura_files/lexer/../std/asciiToString.zu
+                        DW_AT_decl_line             0x00000024
+                        DW_AT_decl_column           0x00000021
+                        DW_AT_low_pc                0x00001690
+                        DW_AT_high_pc               <offset-from-lowpc> 9 <highpc: 0x00001699>
+< 2><0x0000045e>      DW_TAG_lexical_block
+                        DW_AT_decl_file             0x00000003 /home/sovietpancakes/Desktop/Code/zura/zura_files/lexer/../std/asciiToString.zu
+                        DW_AT_decl_line             0x00000025
+                        DW_AT_decl_column           0x00000021
+                        DW_AT_low_pc                0x00001699
+                        DW_AT_high_pc               <offset-from-lowpc> 9 <highpc: 0x000016a2>
+< 2><0x00000479>      DW_TAG_lexical_block
+                        DW_AT_decl_file             0x00000003 /home/sovietpancakes/Desktop/Code/zura/zura_files/lexer/../std/asciiToString.zu
+                        DW_AT_decl_line             0x00000026
+                        DW_AT_decl_column           0x00000021
+                        DW_AT_low_pc                0x000016a2
+                        DW_AT_high_pc               <offset-from-lowpc> 9 <highpc: 0x000016ab>
+< 2><0x00000494>      DW_TAG_lexical_block
+                        DW_AT_decl_file             0x00000003 /home/sovietpancakes/Desktop/Code/zura/zura_files/lexer/../std/asciiToString.zu
+                        DW_AT_decl_line             0x00000027
+                        DW_AT_decl_column           0x00000021
+                        DW_AT_low_pc                0x000016ab
+                        DW_AT_high_pc               <offset-from-lowpc> 9 <highpc: 0x000016b4>
+< 2><0x000004af>      DW_TAG_lexical_block
+                        DW_AT_decl_file             0x00000003 /home/sovietpancakes/Desktop/Code/zura/zura_files/lexer/../std/asciiToString.zu
+                        DW_AT_decl_line             0x00000028
+                        DW_AT_decl_column           0x00000021
+                        DW_AT_low_pc                0x000016b4
+                        DW_AT_high_pc               <offset-from-lowpc> 9 <highpc: 0x000016bd>
+< 2><0x000004ca>      DW_TAG_lexical_block
+                        DW_AT_decl_file             0x00000003 /home/sovietpancakes/Desktop/Code/zura/zura_files/lexer/../std/asciiToString.zu
+                        DW_AT_decl_line             0x00000029
+                        DW_AT_decl_column           0x00000021
+                        DW_AT_low_pc                0x000016bd
+                        DW_AT_high_pc               <offset-from-lowpc> 9 <highpc: 0x000016c6>
+< 2><0x000004e5>      DW_TAG_lexical_block
+                        DW_AT_decl_file             0x00000003 /home/sovietpancakes/Desktop/Code/zura/zura_files/lexer/../std/asciiToString.zu
+                        DW_AT_decl_line             0x0000002a
+                        DW_AT_decl_column           0x00000021
+                        DW_AT_low_pc                0x000016c6
+                        DW_AT_high_pc               <offset-from-lowpc> 9 <highpc: 0x000016cf>
+< 2><0x00000500>      DW_TAG_lexical_block
+                        DW_AT_decl_file             0x00000003 /home/sovietpancakes/Desktop/Code/zura/zura_files/lexer/../std/asciiToString.zu
+                        DW_AT_decl_line             0x0000002b
+                        DW_AT_decl_column           0x00000021
+                        DW_AT_low_pc                0x000016cf
+                        DW_AT_high_pc               <offset-from-lowpc> 9 <highpc: 0x000016d8>
+< 2><0x0000051b>      DW_TAG_lexical_block
+                        DW_AT_decl_file             0x00000003 /home/sovietpancakes/Desktop/Code/zura/zura_files/lexer/../std/asciiToString.zu
+                        DW_AT_decl_line             0x0000002c
+                        DW_AT_decl_column           0x00000021
+                        DW_AT_low_pc                0x000016d8
+                        DW_AT_high_pc               <offset-from-lowpc> 9 <highpc: 0x000016e1>
+< 2><0x00000536>      DW_TAG_lexical_block
+                        DW_AT_decl_file             0x00000003 /home/sovietpancakes/Desktop/Code/zura/zura_files/lexer/../std/asciiToString.zu
+                        DW_AT_decl_line             0x0000002d
+                        DW_AT_decl_column           0x00000021
+                        DW_AT_low_pc                0x000016e1
+                        DW_AT_high_pc               <offset-from-lowpc> 9 <highpc: 0x000016ea>
+< 2><0x00000551>      DW_TAG_lexical_block
+                        DW_AT_decl_file             0x00000003 /home/sovietpancakes/Desktop/Code/zura/zura_files/lexer/../std/asciiToString.zu
+                        DW_AT_decl_line             0x0000002e
+                        DW_AT_decl_column           0x00000021
+                        DW_AT_low_pc                0x000016ea
+                        DW_AT_high_pc               <offset-from-lowpc> 9 <highpc: 0x000016f3>
+< 2><0x0000056c>      DW_TAG_lexical_block
+                        DW_AT_decl_file             0x00000003 /home/sovietpancakes/Desktop/Code/zura/zura_files/lexer/../std/asciiToString.zu
+                        DW_AT_decl_line             0x0000002f
+                        DW_AT_decl_column           0x00000021
+                        DW_AT_low_pc                0x000016f3
+                        DW_AT_high_pc               <offset-from-lowpc> 9 <highpc: 0x000016fc>
+< 2><0x00000587>      DW_TAG_lexical_block
+                        DW_AT_decl_file             0x00000003 /home/sovietpancakes/Desktop/Code/zura/zura_files/lexer/../std/asciiToString.zu
+                        DW_AT_decl_line             0x00000030
+                        DW_AT_decl_column           0x00000021
+                        DW_AT_low_pc                0x000016fc
+                        DW_AT_high_pc               <offset-from-lowpc> 9 <highpc: 0x00001705>
+< 2><0x000005a2>      DW_TAG_lexical_block
+                        DW_AT_decl_file             0x00000003 /home/sovietpancakes/Desktop/Code/zura/zura_files/lexer/../std/asciiToString.zu
+                        DW_AT_decl_line             0x00000031
+                        DW_AT_decl_column           0x00000021
+                        DW_AT_low_pc                0x00001705
+                        DW_AT_high_pc               <offset-from-lowpc> 9 <highpc: 0x0000170e>
+< 2><0x000005bd>      DW_TAG_lexical_block
+                        DW_AT_decl_file             0x00000003 /home/sovietpancakes/Desktop/Code/zura/zura_files/lexer/../std/asciiToString.zu
+                        DW_AT_decl_line             0x00000032
+                        DW_AT_decl_column           0x00000021
+                        DW_AT_low_pc                0x0000170e
+                        DW_AT_high_pc               <offset-from-lowpc> 9 <highpc: 0x00001717>
+< 2><0x000005d8>      DW_TAG_lexical_block
+                        DW_AT_decl_file             0x00000003 /home/sovietpancakes/Desktop/Code/zura/zura_files/lexer/../std/asciiToString.zu
+                        DW_AT_decl_line             0x00000033
+                        DW_AT_decl_column           0x00000021
+                        DW_AT_low_pc                0x00001717
+                        DW_AT_high_pc               <offset-from-lowpc> 9 <highpc: 0x00001720>
+< 2><0x000005f3>      DW_TAG_lexical_block
+                        DW_AT_decl_file             0x00000003 /home/sovietpancakes/Desktop/Code/zura/zura_files/lexer/../std/asciiToString.zu
+                        DW_AT_decl_line             0x00000034
+                        DW_AT_decl_column           0x00000021
+                        DW_AT_low_pc                0x00001720
+                        DW_AT_high_pc               <offset-from-lowpc> 9 <highpc: 0x00001729>
+< 2><0x0000060e>      DW_TAG_lexical_block
+                        DW_AT_decl_file             0x00000003 /home/sovietpancakes/Desktop/Code/zura/zura_files/lexer/../std/asciiToString.zu
+                        DW_AT_decl_line             0x00000035
+                        DW_AT_decl_column           0x00000021
+                        DW_AT_low_pc                0x00001729
+                        DW_AT_high_pc               <offset-from-lowpc> 9 <highpc: 0x00001732>
+< 2><0x00000629>      DW_TAG_lexical_block
+                        DW_AT_decl_file             0x00000003 /home/sovietpancakes/Desktop/Code/zura/zura_files/lexer/../std/asciiToString.zu
+                        DW_AT_decl_line             0x00000036
+                        DW_AT_decl_column           0x00000021
+                        DW_AT_low_pc                0x00001732
+                        DW_AT_high_pc               <offset-from-lowpc> 9 <highpc: 0x0000173b>
+< 2><0x00000644>      DW_TAG_lexical_block
+                        DW_AT_decl_file             0x00000003 /home/sovietpancakes/Desktop/Code/zura/zura_files/lexer/../std/asciiToString.zu
+                        DW_AT_decl_line             0x00000037
+                        DW_AT_decl_column           0x00000021
+                        DW_AT_low_pc                0x0000173b
+                        DW_AT_high_pc               <offset-from-lowpc> 9 <highpc: 0x00001744>
+< 2><0x0000065f>      DW_TAG_lexical_block
+                        DW_AT_decl_file             0x00000003 /home/sovietpancakes/Desktop/Code/zura/zura_files/lexer/../std/asciiToString.zu
+                        DW_AT_decl_line             0x00000038
+                        DW_AT_decl_column           0x00000021
+                        DW_AT_low_pc                0x00001744
+                        DW_AT_high_pc               <offset-from-lowpc> 9 <highpc: 0x0000174d>
+< 2><0x0000067a>      DW_TAG_lexical_block
+                        DW_AT_decl_file             0x00000003 /home/sovietpancakes/Desktop/Code/zura/zura_files/lexer/../std/asciiToString.zu
+                        DW_AT_decl_line             0x00000039
+                        DW_AT_decl_column           0x00000021
+                        DW_AT_low_pc                0x0000174d
+                        DW_AT_high_pc               <offset-from-lowpc> 9 <highpc: 0x00001756>
+< 2><0x00000695>      DW_TAG_lexical_block
+                        DW_AT_decl_file             0x00000003 /home/sovietpancakes/Desktop/Code/zura/zura_files/lexer/../std/asciiToString.zu
+                        DW_AT_decl_line             0x0000003a
+                        DW_AT_decl_column           0x00000021
+                        DW_AT_low_pc                0x00001756
+                        DW_AT_high_pc               <offset-from-lowpc> 9 <highpc: 0x0000175f>
+< 2><0x000006b0>      DW_TAG_lexical_block
+                        DW_AT_decl_file             0x00000003 /home/sovietpancakes/Desktop/Code/zura/zura_files/lexer/../std/asciiToString.zu
+                        DW_AT_decl_line             0x0000003b
+                        DW_AT_decl_column           0x00000021
+                        DW_AT_low_pc                0x0000175f
+                        DW_AT_high_pc               <offset-from-lowpc> 9 <highpc: 0x00001768>
+< 2><0x000006cb>      DW_TAG_lexical_block
+                        DW_AT_decl_file             0x00000003 /home/sovietpancakes/Desktop/Code/zura/zura_files/lexer/../std/asciiToString.zu
+                        DW_AT_decl_line             0x0000003c
+                        DW_AT_decl_column           0x00000021
+                        DW_AT_low_pc                0x00001768
+                        DW_AT_high_pc               <offset-from-lowpc> 9 <highpc: 0x00001771>
+< 2><0x000006e6>      DW_TAG_lexical_block
+                        DW_AT_decl_file             0x00000003 /home/sovietpancakes/Desktop/Code/zura/zura_files/lexer/../std/asciiToString.zu
+                        DW_AT_decl_line             0x0000003d
+                        DW_AT_decl_column           0x00000021
+                        DW_AT_low_pc                0x00001771
+                        DW_AT_high_pc               <offset-from-lowpc> 9 <highpc: 0x0000177a>
+< 2><0x00000701>      DW_TAG_lexical_block
+                        DW_AT_decl_file             0x00000003 /home/sovietpancakes/Desktop/Code/zura/zura_files/lexer/../std/asciiToString.zu
+                        DW_AT_decl_line             0x0000003e
+                        DW_AT_decl_column           0x00000021
+                        DW_AT_low_pc                0x0000177a
+                        DW_AT_high_pc               <offset-from-lowpc> 9 <highpc: 0x00001783>
+< 2><0x0000071c>      DW_TAG_lexical_block
+                        DW_AT_decl_file             0x00000003 /home/sovietpancakes/Desktop/Code/zura/zura_files/lexer/../std/asciiToString.zu
+                        DW_AT_decl_line             0x0000003f
+                        DW_AT_decl_column           0x00000021
+                        DW_AT_low_pc                0x00001783
+                        DW_AT_high_pc               <offset-from-lowpc> 9 <highpc: 0x0000178c>
+< 2><0x00000737>      DW_TAG_lexical_block
+                        DW_AT_decl_file             0x00000003 /home/sovietpancakes/Desktop/Code/zura/zura_files/lexer/../std/asciiToString.zu
+                        DW_AT_decl_line             0x00000040
+                        DW_AT_decl_column           0x00000021
+                        DW_AT_low_pc                0x0000178c
+                        DW_AT_high_pc               <offset-from-lowpc> 9 <highpc: 0x00001795>
+< 2><0x00000752>      DW_TAG_lexical_block
+                        DW_AT_decl_file             0x00000003 /home/sovietpancakes/Desktop/Code/zura/zura_files/lexer/../std/asciiToString.zu
+                        DW_AT_decl_line             0x00000041
+                        DW_AT_decl_column           0x00000021
+                        DW_AT_low_pc                0x00001795
+                        DW_AT_high_pc               <offset-from-lowpc> 9 <highpc: 0x0000179e>
+< 2><0x0000076d>      DW_TAG_lexical_block
+                        DW_AT_decl_file             0x00000003 /home/sovietpancakes/Desktop/Code/zura/zura_files/lexer/../std/asciiToString.zu
+                        DW_AT_decl_line             0x00000042
+                        DW_AT_decl_column           0x00000021
+                        DW_AT_low_pc                0x0000179e
+                        DW_AT_high_pc               <offset-from-lowpc> 9 <highpc: 0x000017a7>
+< 2><0x00000788>      DW_TAG_lexical_block
+                        DW_AT_decl_file             0x00000003 /home/sovietpancakes/Desktop/Code/zura/zura_files/lexer/../std/asciiToString.zu
+                        DW_AT_decl_line             0x00000043
+                        DW_AT_decl_column           0x00000021
+                        DW_AT_low_pc                0x000017a7
+                        DW_AT_high_pc               <offset-from-lowpc> 9 <highpc: 0x000017b0>
+< 2><0x000007a3>      DW_TAG_lexical_block
+                        DW_AT_decl_file             0x00000003 /home/sovietpancakes/Desktop/Code/zura/zura_files/lexer/../std/asciiToString.zu
+                        DW_AT_decl_line             0x00000044
+                        DW_AT_decl_column           0x00000021
+                        DW_AT_low_pc                0x000017b0
+                        DW_AT_high_pc               <offset-from-lowpc> 9 <highpc: 0x000017b9>
+< 2><0x000007be>      DW_TAG_lexical_block
+                        DW_AT_decl_file             0x00000003 /home/sovietpancakes/Desktop/Code/zura/zura_files/lexer/../std/asciiToString.zu
+                        DW_AT_decl_line             0x00000045
+                        DW_AT_decl_column           0x00000021
+                        DW_AT_low_pc                0x000017b9
+                        DW_AT_high_pc               <offset-from-lowpc> 9 <highpc: 0x000017c2>
+< 2><0x000007d9>      DW_TAG_lexical_block
+                        DW_AT_decl_file             0x00000003 /home/sovietpancakes/Desktop/Code/zura/zura_files/lexer/../std/asciiToString.zu
+                        DW_AT_decl_line             0x00000046
+                        DW_AT_decl_column           0x00000021
+                        DW_AT_low_pc                0x000017c2
+                        DW_AT_high_pc               <offset-from-lowpc> 9 <highpc: 0x000017cb>
+< 2><0x000007f4>      DW_TAG_lexical_block
+                        DW_AT_decl_file             0x00000003 /home/sovietpancakes/Desktop/Code/zura/zura_files/lexer/../std/asciiToString.zu
+                        DW_AT_decl_line             0x00000047
+                        DW_AT_decl_column           0x00000021
+                        DW_AT_low_pc                0x000017cb
+                        DW_AT_high_pc               <offset-from-lowpc> 9 <highpc: 0x000017d4>
+< 2><0x0000080f>      DW_TAG_lexical_block
+                        DW_AT_decl_file             0x00000003 /home/sovietpancakes/Desktop/Code/zura/zura_files/lexer/../std/asciiToString.zu
+                        DW_AT_decl_line             0x00000048
+                        DW_AT_decl_column           0x00000021
+                        DW_AT_low_pc                0x000017d4
+                        DW_AT_high_pc               <offset-from-lowpc> 9 <highpc: 0x000017dd>
+< 2><0x0000082a>      DW_TAG_lexical_block
+                        DW_AT_decl_file             0x00000003 /home/sovietpancakes/Desktop/Code/zura/zura_files/lexer/../std/asciiToString.zu
+                        DW_AT_decl_line             0x00000049
+                        DW_AT_decl_column           0x00000021
+                        DW_AT_low_pc                0x000017dd
+                        DW_AT_high_pc               <offset-from-lowpc> 9 <highpc: 0x000017e6>
+< 2><0x00000845>      DW_TAG_lexical_block
+                        DW_AT_decl_file             0x00000003 /home/sovietpancakes/Desktop/Code/zura/zura_files/lexer/../std/asciiToString.zu
+                        DW_AT_decl_line             0x0000004a
+                        DW_AT_decl_column           0x00000021
+                        DW_AT_low_pc                0x000017e6
+                        DW_AT_high_pc               <offset-from-lowpc> 9 <highpc: 0x000017ef>
+< 2><0x00000860>      DW_TAG_lexical_block
+                        DW_AT_decl_file             0x00000003 /home/sovietpancakes/Desktop/Code/zura/zura_files/lexer/../std/asciiToString.zu
+                        DW_AT_decl_line             0x0000004b
+                        DW_AT_decl_column           0x00000021
+                        DW_AT_low_pc                0x000017ef
+                        DW_AT_high_pc               <offset-from-lowpc> 9 <highpc: 0x000017f8>
+< 2><0x0000087b>      DW_TAG_lexical_block
+                        DW_AT_decl_file             0x00000003 /home/sovietpancakes/Desktop/Code/zura/zura_files/lexer/../std/asciiToString.zu
+                        DW_AT_decl_line             0x0000004c
+                        DW_AT_decl_column           0x00000022
+                        DW_AT_low_pc                0x000017f8
+                        DW_AT_high_pc               <offset-from-lowpc> 9 <highpc: 0x00001801>
+< 2><0x00000896>      DW_TAG_lexical_block
+                        DW_AT_decl_file             0x00000003 /home/sovietpancakes/Desktop/Code/zura/zura_files/lexer/../std/asciiToString.zu
+                        DW_AT_decl_line             0x0000004d
+                        DW_AT_decl_column           0x00000022
+                        DW_AT_low_pc                0x00001801
+                        DW_AT_high_pc               <offset-from-lowpc> 9 <highpc: 0x0000180a>
+< 2><0x000008b1>      DW_TAG_lexical_block
+                        DW_AT_decl_file             0x00000003 /home/sovietpancakes/Desktop/Code/zura/zura_files/lexer/../std/asciiToString.zu
+                        DW_AT_decl_line             0x0000004e
+                        DW_AT_decl_column           0x00000022
+                        DW_AT_low_pc                0x0000180a
+                        DW_AT_high_pc               <offset-from-lowpc> 9 <highpc: 0x00001813>
+< 2><0x000008cc>      DW_TAG_lexical_block
+                        DW_AT_decl_file             0x00000003 /home/sovietpancakes/Desktop/Code/zura/zura_files/lexer/../std/asciiToString.zu
+                        DW_AT_decl_line             0x0000004f
+                        DW_AT_decl_column           0x00000022
+                        DW_AT_low_pc                0x00001813
+                        DW_AT_high_pc               <offset-from-lowpc> 9 <highpc: 0x0000181c>
+< 2><0x000008e7>      DW_TAG_lexical_block
+                        DW_AT_decl_file             0x00000003 /home/sovietpancakes/Desktop/Code/zura/zura_files/lexer/../std/asciiToString.zu
+                        DW_AT_decl_line             0x00000050
+                        DW_AT_decl_column           0x00000022
+                        DW_AT_low_pc                0x0000181c
+                        DW_AT_high_pc               <offset-from-lowpc> 9 <highpc: 0x00001825>
+< 2><0x00000902>      DW_TAG_lexical_block
+                        DW_AT_decl_file             0x00000003 /home/sovietpancakes/Desktop/Code/zura/zura_files/lexer/../std/asciiToString.zu
+                        DW_AT_decl_line             0x00000051
+                        DW_AT_decl_column           0x00000022
+                        DW_AT_low_pc                0x00001825
+                        DW_AT_high_pc               <offset-from-lowpc> 9 <highpc: 0x0000182e>
+< 2><0x0000091d>      DW_TAG_lexical_block
+                        DW_AT_decl_file             0x00000003 /home/sovietpancakes/Desktop/Code/zura/zura_files/lexer/../std/asciiToString.zu
+                        DW_AT_decl_line             0x00000052
+                        DW_AT_decl_column           0x00000022
+                        DW_AT_low_pc                0x0000182e
+                        DW_AT_high_pc               <offset-from-lowpc> 9 <highpc: 0x00001837>
+< 2><0x00000938>      DW_TAG_lexical_block
+                        DW_AT_decl_file             0x00000003 /home/sovietpancakes/Desktop/Code/zura/zura_files/lexer/../std/asciiToString.zu
+                        DW_AT_decl_line             0x00000053
+                        DW_AT_decl_column           0x00000022
+                        DW_AT_low_pc                0x00001837
+                        DW_AT_high_pc               <offset-from-lowpc> 9 <highpc: 0x00001840>
+< 2><0x00000953>      DW_TAG_lexical_block
+                        DW_AT_decl_file             0x00000003 /home/sovietpancakes/Desktop/Code/zura/zura_files/lexer/../std/asciiToString.zu
+                        DW_AT_decl_line             0x00000054
+                        DW_AT_decl_column           0x00000022
+                        DW_AT_low_pc                0x00001840
+                        DW_AT_high_pc               <offset-from-lowpc> 9 <highpc: 0x00001849>
+< 2><0x0000096e>      DW_TAG_lexical_block
+                        DW_AT_decl_file             0x00000003 /home/sovietpancakes/Desktop/Code/zura/zura_files/lexer/../std/asciiToString.zu
+                        DW_AT_decl_line             0x00000055
+                        DW_AT_decl_column           0x00000022
+                        DW_AT_low_pc                0x00001849
+                        DW_AT_high_pc               <offset-from-lowpc> 9 <highpc: 0x00001852>
+< 2><0x00000989>      DW_TAG_lexical_block
+                        DW_AT_decl_file             0x00000003 /home/sovietpancakes/Desktop/Code/zura/zura_files/lexer/../std/asciiToString.zu
+                        DW_AT_decl_line             0x00000056
+                        DW_AT_decl_column           0x00000022
+                        DW_AT_low_pc                0x00001852
+                        DW_AT_high_pc               <offset-from-lowpc> 9 <highpc: 0x0000185b>
+< 2><0x000009a4>      DW_TAG_lexical_block
+                        DW_AT_decl_file             0x00000003 /home/sovietpancakes/Desktop/Code/zura/zura_files/lexer/../std/asciiToString.zu
+                        DW_AT_decl_line             0x00000057
+                        DW_AT_decl_column           0x00000022
+                        DW_AT_low_pc                0x0000185b
+                        DW_AT_high_pc               <offset-from-lowpc> 9 <highpc: 0x00001864>
+< 2><0x000009bf>      DW_TAG_lexical_block
+                        DW_AT_decl_file             0x00000003 /home/sovietpancakes/Desktop/Code/zura/zura_files/lexer/../std/asciiToString.zu
+                        DW_AT_decl_line             0x00000058
+                        DW_AT_decl_column           0x00000022
+                        DW_AT_low_pc                0x00001864
+                        DW_AT_high_pc               <offset-from-lowpc> 9 <highpc: 0x0000186d>
+< 2><0x000009da>      DW_TAG_lexical_block
+                        DW_AT_decl_file             0x00000003 /home/sovietpancakes/Desktop/Code/zura/zura_files/lexer/../std/asciiToString.zu
+                        DW_AT_decl_line             0x00000059
+                        DW_AT_decl_column           0x00000022
+                        DW_AT_low_pc                0x0000186d
+                        DW_AT_high_pc               <offset-from-lowpc> 9 <highpc: 0x00001876>
+< 2><0x000009f5>      DW_TAG_lexical_block
+                        DW_AT_decl_file             0x00000003 /home/sovietpancakes/Desktop/Code/zura/zura_files/lexer/../std/asciiToString.zu
+                        DW_AT_decl_line             0x0000005a
+                        DW_AT_decl_column           0x00000022
+                        DW_AT_low_pc                0x00001876
+                        DW_AT_high_pc               <offset-from-lowpc> 9 <highpc: 0x0000187f>
+< 2><0x00000a10>      DW_TAG_lexical_block
+                        DW_AT_decl_file             0x00000003 /home/sovietpancakes/Desktop/Code/zura/zura_files/lexer/../std/asciiToString.zu
+                        DW_AT_decl_line             0x0000005b
+                        DW_AT_decl_column           0x00000022
+                        DW_AT_low_pc                0x0000187f
+                        DW_AT_high_pc               <offset-from-lowpc> 9 <highpc: 0x00001888>
+< 2><0x00000a2b>      DW_TAG_lexical_block
+                        DW_AT_decl_file             0x00000003 /home/sovietpancakes/Desktop/Code/zura/zura_files/lexer/../std/asciiToString.zu
+                        DW_AT_decl_line             0x0000005c
+                        DW_AT_decl_column           0x00000022
+                        DW_AT_low_pc                0x00001888
+                        DW_AT_high_pc               <offset-from-lowpc> 9 <highpc: 0x00001891>
+< 2><0x00000a46>      DW_TAG_lexical_block
+                        DW_AT_decl_file             0x00000003 /home/sovietpancakes/Desktop/Code/zura/zura_files/lexer/../std/asciiToString.zu
+                        DW_AT_decl_line             0x0000005d
+                        DW_AT_decl_column           0x00000022
+                        DW_AT_low_pc                0x00001891
+                        DW_AT_high_pc               <offset-from-lowpc> 9 <highpc: 0x0000189a>
+< 2><0x00000a61>      DW_TAG_lexical_block
+                        DW_AT_decl_file             0x00000003 /home/sovietpancakes/Desktop/Code/zura/zura_files/lexer/../std/asciiToString.zu
+                        DW_AT_decl_line             0x0000005e
+                        DW_AT_decl_column           0x00000022
+                        DW_AT_low_pc                0x0000189a
+                        DW_AT_high_pc               <offset-from-lowpc> 9 <highpc: 0x000018a3>
+< 2><0x00000a7c>      DW_TAG_lexical_block
+                        DW_AT_decl_file             0x00000003 /home/sovietpancakes/Desktop/Code/zura/zura_files/lexer/../std/asciiToString.zu
+                        DW_AT_decl_line             0x0000005f
+                        DW_AT_decl_column           0x00000022
+                        DW_AT_low_pc                0x000018a3
+                        DW_AT_high_pc               <offset-from-lowpc> 9 <highpc: 0x000018ac>
+< 2><0x00000a97>      DW_TAG_lexical_block
+                        DW_AT_decl_file             0x00000003 /home/sovietpancakes/Desktop/Code/zura/zura_files/lexer/../std/asciiToString.zu
+                        DW_AT_decl_line             0x00000060
+                        DW_AT_decl_column           0x00000022
+                        DW_AT_low_pc                0x000018ac
+                        DW_AT_high_pc               <offset-from-lowpc> 9 <highpc: 0x000018b5>
+< 2><0x00000ab2>      DW_TAG_lexical_block
+                        DW_AT_decl_file             0x00000003 /home/sovietpancakes/Desktop/Code/zura/zura_files/lexer/../std/asciiToString.zu
+                        DW_AT_decl_line             0x00000061
+                        DW_AT_decl_column           0x00000022
+                        DW_AT_low_pc                0x000018b5
+                        DW_AT_high_pc               <offset-from-lowpc> 9 <highpc: 0x000018be>
+< 2><0x00000acd>      DW_TAG_lexical_block
+                        DW_AT_decl_file             0x00000003 /home/sovietpancakes/Desktop/Code/zura/zura_files/lexer/../std/asciiToString.zu
+                        DW_AT_decl_line             0x00000062
+                        DW_AT_decl_column           0x00000022
+                        DW_AT_low_pc                0x000018be
+                        DW_AT_high_pc               <offset-from-lowpc> 9 <highpc: 0x000018c7>
+< 2><0x00000ae8>      DW_TAG_lexical_block
+                        DW_AT_decl_file             0x00000003 /home/sovietpancakes/Desktop/Code/zura/zura_files/lexer/../std/asciiToString.zu
+                        DW_AT_decl_line             0x00000063
+                        DW_AT_decl_column           0x00000022
+                        DW_AT_low_pc                0x000018c7
+                        DW_AT_high_pc               <offset-from-lowpc> 9 <highpc: 0x000018d0>
+< 2><0x00000b03>      DW_TAG_lexical_block
+                        DW_AT_decl_file             0x00000003 /home/sovietpancakes/Desktop/Code/zura/zura_files/lexer/../std/asciiToString.zu
+                        DW_AT_decl_line             0x00000064
+                        DW_AT_decl_column           0x00000022
+                        DW_AT_low_pc                0x000018d0
+                        DW_AT_high_pc               <offset-from-lowpc> 9 <highpc: 0x000018d9>
+< 2><0x00000b1e>      DW_TAG_lexical_block
+                        DW_AT_decl_file             0x00000003 /home/sovietpancakes/Desktop/Code/zura/zura_files/lexer/../std/asciiToString.zu
+                        DW_AT_decl_line             0x00000065
+                        DW_AT_decl_column           0x00000022
+                        DW_AT_low_pc                0x000018d9
+                        DW_AT_high_pc               <offset-from-lowpc> 9 <highpc: 0x000018e2>
+< 2><0x00000b39>      DW_TAG_lexical_block
+                        DW_AT_decl_file             0x00000003 /home/sovietpancakes/Desktop/Code/zura/zura_files/lexer/../std/asciiToString.zu
+                        DW_AT_decl_line             0x00000066
+                        DW_AT_decl_column           0x00000022
+                        DW_AT_low_pc                0x000018e2
+                        DW_AT_high_pc               <offset-from-lowpc> 9 <highpc: 0x000018eb>
+< 2><0x00000b54>      DW_TAG_lexical_block
+                        DW_AT_decl_file             0x00000003 /home/sovietpancakes/Desktop/Code/zura/zura_files/lexer/../std/asciiToString.zu
+                        DW_AT_decl_line             0x00000067
+                        DW_AT_decl_column           0x00000022
+                        DW_AT_low_pc                0x000018eb
+                        DW_AT_high_pc               <offset-from-lowpc> 9 <highpc: 0x000018f4>
+< 2><0x00000b6f>      DW_TAG_lexical_block
+                        DW_AT_decl_file             0x00000003 /home/sovietpancakes/Desktop/Code/zura/zura_files/lexer/../std/asciiToString.zu
+                        DW_AT_decl_line             0x00000068
+                        DW_AT_decl_column           0x00000014
+                        DW_AT_low_pc                0x000018f4
+                        DW_AT_high_pc               <offset-from-lowpc> 119 <highpc: 0x0000196b>
+< 1><0x00000b8b>    DW_TAG_subprogram
+                      DW_AT_external              yes(1)
+                      DW_AT_name                  digit
+                      DW_AT_prototyped            yes(1)
+                      DW_AT_decl_file             0x00000005 /home/sovietpancakes/Desktop/Code/zura/zura_files/lexer/../std/type.zu
+                      DW_AT_decl_line             0x00000001
+                      DW_AT_decl_column           0x00000011
+                      DW_AT_type                  <0x000017b8>
+                      DW_AT_low_pc                0x00001974
+                      DW_AT_high_pc               <offset-from-lowpc> 78 <highpc: 0x000019c2>
+                      DW_AT_frame_base            len 0x0001: 0x9c: 
+                          DW_OP_call_frame_cfa
+                      DW_AT_call_all_calls        yes(1)
+< 2><0x00000bb0>      DW_TAG_formal_parameter
+                        DW_AT_type                  <0x00001754>
+                        DW_AT_location              len 0x0002: 0x9168: 
+                            DW_OP_fbreg -24
+                        DW_AT_name                  c
+< 2><0x00000bbc>      DW_TAG_formal_parameter
+                        DW_AT_type                  <0x0000175e>
+                        DW_AT_location              len 0x0002: 0x9160: 
+                            DW_OP_fbreg -32
+                        DW_AT_name                  index
+< 1><0x00000bc9>    DW_TAG_subprogram
+                      DW_AT_external              yes(1)
+                      DW_AT_name                  alpha
+                      DW_AT_prototyped            yes(1)
+                      DW_AT_decl_file             0x00000005 /home/sovietpancakes/Desktop/Code/zura/zura_files/lexer/../std/type.zu
+                      DW_AT_decl_line             0x0000000a
+                      DW_AT_decl_column           0x00000011
+                      DW_AT_type                  <0x000017b8>
+                      DW_AT_low_pc                0x000019c2
+                      DW_AT_high_pc               <offset-from-lowpc> 167 <highpc: 0x00001a69>
+                      DW_AT_frame_base            len 0x0001: 0x9c: 
+                          DW_OP_call_frame_cfa
+                      DW_AT_call_all_calls        yes(1)
+< 2><0x00000bee>      DW_TAG_formal_parameter
+                        DW_AT_type                  <0x00001754>
+                        DW_AT_location              len 0x0002: 0x9168: 
+                            DW_OP_fbreg -24
+                        DW_AT_name                  c
+< 2><0x00000bfa>      DW_TAG_formal_parameter
+                        DW_AT_type                  <0x0000175e>
+                        DW_AT_location              len 0x0002: 0x9160: 
+                            DW_OP_fbreg -32
+                        DW_AT_name                  index
+< 1><0x00000c07>    DW_TAG_enumeration_type
+                      DW_AT_name                  TokenKind
+                      DW_AT_decl_file             0x00000004 /home/sovietpancakes/Desktop/Code/zura/zura_files/lexer/helper.zu
+                      DW_AT_decl_line             0x00000003
+                      DW_AT_decl_column           0x00000017
+                      DW_AT_byte_size             0x00000004
+                      DW_AT_encoding              DW_ATE_unsigned
+                      DW_AT_type                  <0x000017a5>
+< 2><0x00000c1b>      DW_TAG_enumerator
+                        DW_AT_name                  Plus
+                        DW_AT_const_value           0
+                        DW_AT_decl_line             0x00000004
+                        DW_AT_decl_column           0x00000006
+< 2><0x00000c29>      DW_TAG_enumerator
+                        DW_AT_name                  Dash
+                        DW_AT_const_value           1
+                        DW_AT_decl_line             0x00000005
+                        DW_AT_decl_column           0x00000006
+< 2><0x00000c37>      DW_TAG_enumerator
+                        DW_AT_name                  Star
+                        DW_AT_const_value           2
+                        DW_AT_decl_line             0x00000006
+                        DW_AT_decl_column           0x00000006
+< 2><0x00000c45>      DW_TAG_enumerator
+                        DW_AT_name                  Slash
+                        DW_AT_const_value           3
+                        DW_AT_decl_line             0x00000007
+                        DW_AT_decl_column           0x00000007
+< 2><0x00000c53>      DW_TAG_enumerator
+                        DW_AT_name                  LParen
+                        DW_AT_const_value           4
+                        DW_AT_decl_line             0x00000008
+                        DW_AT_decl_column           0x00000008
+< 2><0x00000c61>      DW_TAG_enumerator
+                        DW_AT_name                  RParen
+                        DW_AT_const_value           5
+                        DW_AT_decl_line             0x00000009
+                        DW_AT_decl_column           0x00000008
+< 2><0x00000c6f>      DW_TAG_enumerator
+                        DW_AT_name                  Number
+                        DW_AT_const_value           6
+                        DW_AT_decl_line             0x0000000a
+                        DW_AT_decl_column           0x00000008
+< 2><0x00000c7d>      DW_TAG_enumerator
+                        DW_AT_name                  Identifier
+                        DW_AT_const_value           7
+                        DW_AT_decl_line             0x0000000b
+                        DW_AT_decl_column           0x0000000c
+< 2><0x00000c8b>      DW_TAG_enumerator
+                        DW_AT_name                  String
+                        DW_AT_const_value           8
+                        DW_AT_decl_line             0x0000000c
+                        DW_AT_decl_column           0x00000008
+< 2><0x00000c99>      DW_TAG_enumerator
+                        DW_AT_name                  Comma
+                        DW_AT_const_value           9
+                        DW_AT_decl_line             0x0000000d
+                        DW_AT_decl_column           0x00000007
+< 2><0x00000ca7>      DW_TAG_enumerator
+                        DW_AT_name                  Semicolon
+                        DW_AT_const_value           10
+                        DW_AT_decl_line             0x0000000e
+                        DW_AT_decl_column           0x0000000b
+< 2><0x00000cb5>      DW_TAG_enumerator
+                        DW_AT_name                  Equals
+                        DW_AT_const_value           11
+                        DW_AT_decl_line             0x0000000f
+                        DW_AT_decl_column           0x00000008
+< 2><0x00000cc3>      DW_TAG_enumerator
+                        DW_AT_name                  LBrace
+                        DW_AT_const_value           12
+                        DW_AT_decl_line             0x00000010
+                        DW_AT_decl_column           0x00000008
+< 2><0x00000cd1>      DW_TAG_enumerator
+                        DW_AT_name                  RBrace
+                        DW_AT_const_value           13
+                        DW_AT_decl_line             0x00000011
+                        DW_AT_decl_column           0x00000008
+< 2><0x00000cdf>      DW_TAG_enumerator
+                        DW_AT_name                  LBracket
+                        DW_AT_const_value           14
+                        DW_AT_decl_line             0x00000012
+                        DW_AT_decl_column           0x0000000a
+< 2><0x00000ced>      DW_TAG_enumerator
+                        DW_AT_name                  RBracket
+                        DW_AT_const_value           15
+                        DW_AT_decl_line             0x00000013
+                        DW_AT_decl_column           0x0000000a
+< 2><0x00000cfb>      DW_TAG_enumerator
+                        DW_AT_name                  Less
+                        DW_AT_const_value           16
+                        DW_AT_decl_line             0x00000014
+                        DW_AT_decl_column           0x00000006
+< 2><0x00000d09>      DW_TAG_enumerator
+                        DW_AT_name                  Greater
+                        DW_AT_const_value           17
+                        DW_AT_decl_line             0x00000015
+                        DW_AT_decl_column           0x00000009
+< 2><0x00000d17>      DW_TAG_enumerator
+                        DW_AT_name                  Ampersand
+                        DW_AT_const_value           18
+                        DW_AT_decl_line             0x00000016
+                        DW_AT_decl_column           0x0000000b
+< 2><0x00000d25>      DW_TAG_enumerator
+                        DW_AT_name                  Percent
+                        DW_AT_const_value           19
+                        DW_AT_decl_line             0x00000017
+                        DW_AT_decl_column           0x00000009
+< 2><0x00000d33>      DW_TAG_enumerator
+                        DW_AT_name                  Bang
+                        DW_AT_const_value           20
+                        DW_AT_decl_line             0x00000018
+                        DW_AT_decl_column           0x00000006
+< 2><0x00000d41>      DW_TAG_enumerator
+                        DW_AT_name                  Question
+                        DW_AT_const_value           21
+                        DW_AT_decl_line             0x00000019
+                        DW_AT_decl_column           0x0000000a
+< 2><0x00000d4f>      DW_TAG_enumerator
+                        DW_AT_name                  Colon
+                        DW_AT_const_value           22
+                        DW_AT_decl_line             0x0000001a
+                        DW_AT_decl_column           0x00000007
+< 2><0x00000d5d>      DW_TAG_enumerator
+                        DW_AT_name                  Dot
+                        DW_AT_const_value           23
+                        DW_AT_decl_line             0x0000001b
+                        DW_AT_decl_column           0x00000005
+< 1><0x00000d6c>    DW_TAG_structure_type
+                      DW_AT_name                  Position
+                      DW_AT_decl_file             0x00000004 /home/sovietpancakes/Desktop/Code/zura/zura_files/lexer/helper.zu
+                      DW_AT_decl_line             0x0000001e
+                      DW_AT_decl_column           0x00000018
+                      DW_AT_byte_size             0x00000010
+< 2><0x00000d7c>      DW_TAG_member
+                        DW_AT_name                  line
+                        DW_AT_type                  <0x00001783>
+                        DW_AT_data_member_location  0
+                        DW_AT_decl_line             0x0000001f
+                        DW_AT_decl_column           0x00000006
+< 2><0x00000d8e>      DW_TAG_member
+                        DW_AT_name                  pos
+                        DW_AT_type                  <0x00001783>
+                        DW_AT_data_member_location  8
+                        DW_AT_decl_line             0x00000020
+                        DW_AT_decl_column           0x00000005
+< 1><0x00000da1>    DW_TAG_structure_type
+                      DW_AT_name                  Token
+                      DW_AT_decl_file             0x00000004 /home/sovietpancakes/Desktop/Code/zura/zura_files/lexer/helper.zu
+                      DW_AT_decl_line             0x00000023
+                      DW_AT_decl_column           0x00000015
+                      DW_AT_byte_size             0x0000000c
+< 2><0x00000db1>      DW_TAG_member
+                        DW_AT_name                  kind
+                        DW_AT_type                  <0x00000c07>
+                        DW_AT_data_member_location  0
+                        DW_AT_decl_line             0x00000024
+                        DW_AT_decl_column           0x00000006
+< 2><0x00000dc3>      DW_TAG_member
+                        DW_AT_name                  value
+                        DW_AT_type                  <0x00001754>
+                        DW_AT_data_member_location  4
+                        DW_AT_decl_line             0x00000025
+                        DW_AT_decl_column           0x00000007
+< 1><0x00000dd6>    DW_TAG_subprogram
+                      DW_AT_external              yes(1)
+                      DW_AT_name                  default_function
+                      DW_AT_prototyped            yes(1)
+                      DW_AT_decl_file             0x00000004 /home/sovietpancakes/Desktop/Code/zura/zura_files/lexer/helper.zu
+                      DW_AT_decl_line             0x00000028
+                      DW_AT_decl_column           0x0000001c
+                      DW_AT_type                  <0x00001783>
+                      DW_AT_low_pc                0x00001a69
+                      DW_AT_high_pc               <offset-from-lowpc> 21 <highpc: 0x00001a7e>
+                      DW_AT_frame_base            len 0x0001: 0x9c: 
+                          DW_OP_call_frame_cfa
+                      DW_AT_call_all_calls        yes(1)
+< 2><0x00000dfb>      DW_TAG_formal_parameter
+                        DW_AT_type                  <0x00001754>
+                        DW_AT_location              len 0x0002: 0x9168: 
+                            DW_OP_fbreg -24
+                        DW_AT_name                  c
+< 2><0x00000e07>      DW_TAG_formal_parameter
+                        DW_AT_type                  <0x0000175e>
+                        DW_AT_location              len 0x0002: 0x9160: 
+                            DW_OP_fbreg -32
+                        DW_AT_name                  index
+< 1><0x00000e14>    DW_TAG_subprogram
+                      DW_AT_external              yes(1)
+                      DW_AT_name                  check_whitespace
+                      DW_AT_prototyped            yes(1)
+                      DW_AT_decl_file             0x00000004 /home/sovietpancakes/Desktop/Code/zura/zura_files/lexer/helper.zu
+                      DW_AT_decl_line             0x0000002c
+                      DW_AT_decl_column           0x0000001c
+                      DW_AT_type                  <0x00001783>
+                      DW_AT_low_pc                0x00001a7e
+                      DW_AT_high_pc               <offset-from-lowpc> 119 <highpc: 0x00001af5>
+                      DW_AT_frame_base            len 0x0001: 0x9c: 
+                          DW_OP_call_frame_cfa
+                      DW_AT_call_all_calls        yes(1)
+< 2><0x00000e39>      DW_TAG_formal_parameter
+                        DW_AT_type                  <0x00001754>
+                        DW_AT_location              len 0x0002: 0x9168: 
+                            DW_OP_fbreg -24
+                        DW_AT_name                  c
+< 2><0x00000e45>      DW_TAG_formal_parameter
+                        DW_AT_type                  <0x0000175e>
+                        DW_AT_location              len 0x0002: 0x9160: 
+                            DW_OP_fbreg -32
+                        DW_AT_name                  index
+< 2><0x00000e51>      DW_TAG_formal_parameter
+                        DW_AT_type                  <0x0000175e>
+                        DW_AT_location              len 0x0002: 0x9158: 
+                            DW_OP_fbreg -40
+                        DW_AT_name                  line
+< 2><0x00000e5d>      DW_TAG_formal_parameter
+                        DW_AT_type                  <0x0000175e>
+                        DW_AT_location              len 0x0002: 0x9150: 
+                            DW_OP_fbreg -48
+                        DW_AT_name                  col
+< 2><0x00000e69>      DW_TAG_formal_parameter
+                        DW_AT_type                  <0x00001783>
+                        DW_AT_location              len 0x0002: 0x9148: 
+                            DW_OP_fbreg -56
+                        DW_AT_name                  size
+< 1><0x00000e76>    DW_TAG_subprogram
+                      DW_AT_external              yes(1)
+                      DW_AT_name                  number
+                      DW_AT_prototyped            yes(1)
+                      DW_AT_decl_file             0x00000004 /home/sovietpancakes/Desktop/Code/zura/zura_files/lexer/helper.zu
+                      DW_AT_decl_line             0x0000003b
+                      DW_AT_decl_column           0x00000012
+                      DW_AT_type                  <0x00001754>
+                      DW_AT_low_pc                0x00001af5
+                      DW_AT_high_pc               <offset-from-lowpc> 291 <highpc: 0x00001c18>
+                      DW_AT_frame_base            len 0x0001: 0x9c: 
+                          DW_OP_call_frame_cfa
+                      DW_AT_call_all_calls        yes(1)
+< 2><0x00000e9b>      DW_TAG_formal_parameter
+                        DW_AT_type                  <0x00001754>
+                        DW_AT_location              len 0x0002: 0x9168: 
+                            DW_OP_fbreg -24
+                        DW_AT_name                  c
+< 2><0x00000ea7>      DW_TAG_formal_parameter
+                        DW_AT_type                  <0x0000175e>
+                        DW_AT_location              len 0x0002: 0x9160: 
+                            DW_OP_fbreg -32
+                        DW_AT_name                  index
+< 2><0x00000eb3>      DW_TAG_variable
+                        DW_AT_name                  check
+                        DW_AT_decl_file             0x00000004 /home/sovietpancakes/Desktop/Code/zura/zura_files/lexer/helper.zu
+                        DW_AT_decl_line             0x0000003c
+                        DW_AT_decl_column           0x00000006
+                        DW_AT_type                  <0x000017b8>
+                        DW_AT_location              len 0x0002: 0x9158: 
+                            DW_OP_fbreg -40
+< 2><0x00000ec8>      DW_TAG_lexical_block
+                        DW_AT_decl_file             0x00000004 /home/sovietpancakes/Desktop/Code/zura/zura_files/lexer/helper.zu
+                        DW_AT_decl_line             0x00000041
+                        DW_AT_decl_column           0x0000002c
+                        DW_AT_low_pc                0x00001b36
+                        DW_AT_high_pc               <offset-from-lowpc> 87 <highpc: 0x00001b8d>
+< 3><0x00000ee2>        DW_TAG_variable
+                          DW_AT_name                  i
+                          DW_AT_decl_file             0x00000004 /home/sovietpancakes/Desktop/Code/zura/zura_files/lexer/helper.zu
+                          DW_AT_decl_line             0x00000041
+                          DW_AT_decl_column           0x00000006
+                          DW_AT_type                  <0x0000178b>
+                          DW_AT_location              len 0x0002: 0x9157: 
+                              DW_OP_fbreg -41
+< 3><0x00000ef7>        DW_TAG_variable
+                          DW_AT_name                  ch
+                          DW_AT_decl_file             0x00000004 /home/sovietpancakes/Desktop/Code/zura/zura_files/lexer/helper.zu
+                          DW_AT_decl_line             0x00000042
+                          DW_AT_decl_column           0x00000008
+                          DW_AT_type                  <0x000017b8>
+                          DW_AT_location              len 0x0002: 0x914f: 
+                              DW_OP_fbreg -49
+< 2><0x00000f0d>      DW_TAG_lexical_block
+                        DW_AT_decl_file             0x00000004 /home/sovietpancakes/Desktop/Code/zura/zura_files/lexer/helper.zu
+                        DW_AT_decl_line             0x00000047
+                        DW_AT_decl_column           0x00000025
+                        DW_AT_low_pc                0x00001ba6
+                        DW_AT_high_pc               <offset-from-lowpc> 103 <highpc: 0x00001c0d>
+< 3><0x00000f27>        DW_TAG_lexical_block
+                          DW_AT_decl_file             0x00000004 /home/sovietpancakes/Desktop/Code/zura/zura_files/lexer/helper.zu
+                          DW_AT_decl_line             0x00000049
+                          DW_AT_decl_column           0x0000002e
+                          DW_AT_low_pc                0x00001bad
+                          DW_AT_high_pc               <offset-from-lowpc> 87 <highpc: 0x00001c04>
+< 4><0x00000f41>          DW_TAG_variable
+                            DW_AT_name                  i
+                            DW_AT_decl_file             0x00000004 /home/sovietpancakes/Desktop/Code/zura/zura_files/lexer/helper.zu
+                            DW_AT_decl_line             0x00000049
+                            DW_AT_decl_column           0x00000008
+                            DW_AT_type                  <0x0000178b>
+                            DW_AT_location              len 0x0002: 0x9157: 
+                                DW_OP_fbreg -41
+< 4><0x00000f56>          DW_TAG_variable
+                            DW_AT_name                  ch
+                            DW_AT_decl_file             0x00000004 /home/sovietpancakes/Desktop/Code/zura/zura_files/lexer/helper.zu
+                            DW_AT_decl_line             0x0000004a
+                            DW_AT_decl_column           0x0000000a
+                            DW_AT_type                  <0x000017b8>
+                            DW_AT_location              len 0x0002: 0x914f: 
+                                DW_OP_fbreg -49
+< 1><0x00000f6e>    DW_TAG_subprogram
+                      DW_AT_external              yes(1)
+                      DW_AT_name                  ident
+                      DW_AT_prototyped            yes(1)
+                      DW_AT_decl_file             0x00000004 /home/sovietpancakes/Desktop/Code/zura/zura_files/lexer/helper.zu
+                      DW_AT_decl_line             0x00000054
+                      DW_AT_decl_column           0x00000011
+                      DW_AT_type                  <0x000017b8>
+                      DW_AT_low_pc                0x00001c18
+                      DW_AT_high_pc               <offset-from-lowpc> 45 <highpc: 0x00001c45>
+                      DW_AT_frame_base            len 0x0001: 0x9c: 
+                          DW_OP_call_frame_cfa
+                      DW_AT_call_all_calls        yes(1)
+< 2><0x00000f93>      DW_TAG_formal_parameter
+                        DW_AT_type                  <0x00001754>
+                        DW_AT_location              len 0x0002: 0x9168: 
+                            DW_OP_fbreg -24
+                        DW_AT_name                  c
+< 2><0x00000f9f>      DW_TAG_formal_parameter
+                        DW_AT_type                  <0x0000175e>
+                        DW_AT_location              len 0x0002: 0x9160: 
+                            DW_OP_fbreg -32
+                        DW_AT_name                  index
+< 2><0x00000fab>      DW_TAG_variable
+                        DW_AT_name                  check
+                        DW_AT_decl_file             0x00000004 /home/sovietpancakes/Desktop/Code/zura/zura_files/lexer/helper.zu
+                        DW_AT_decl_line             0x00000055
+                        DW_AT_decl_column           0x00000006
+                        DW_AT_type                  <0x000017b8>
+                        DW_AT_location              len 0x0002: 0x9158: 
+                            DW_OP_fbreg -40
+< 1><0x00000fc1>    DW_TAG_subprogram
+                      DW_AT_external              yes(1)
+                      DW_AT_name                  scan
+                      DW_AT_prototyped            yes(1)
+                      DW_AT_decl_file             0x00000002 /home/sovietpancakes/Desktop/Code/zura/zura_files/lexer/lexer.zu
+                      DW_AT_decl_line             0x0000000c
+                      DW_AT_decl_column           0x00000010
+                      DW_AT_low_pc                0x00001c45
+                      DW_AT_high_pc               <offset-from-lowpc> 485 <highpc: 0x00001e2a>
+                      DW_AT_frame_base            len 0x0001: 0x9c: 
+                          DW_OP_call_frame_cfa
+                      DW_AT_call_all_calls        yes(1)
+< 2><0x00000fe2>      DW_TAG_formal_parameter
+                        DW_AT_type                  <0x00001754>
+                        DW_AT_location              len 0x0002: 0x9168: 
+                            DW_OP_fbreg -24
+                        DW_AT_name                  source
+< 2><0x00000fee>      DW_TAG_formal_parameter
+                        DW_AT_type                  <0x00001783>
+                        DW_AT_location              len 0x0002: 0x9160: 
+                            DW_OP_fbreg -32
+                        DW_AT_name                  size
+< 2><0x00000ffa>      DW_TAG_variable
+                        DW_AT_name                  whitespaceCount
+                        DW_AT_decl_file             0x00000002 /home/sovietpancakes/Desktop/Code/zura/zura_files/lexer/lexer.zu
+                        DW_AT_decl_line             0x0000000d
+                        DW_AT_decl_column           0x00000006
+                        DW_AT_type                  <0x00001783>
+                        DW_AT_location              len 0x0002: 0x9158: 
+                            DW_OP_fbreg -40
+< 2><0x0000100f>      DW_TAG_variable
+                        DW_AT_name                  generate
+                        DW_AT_decl_file             0x00000002 /home/sovietpancakes/Desktop/Code/zura/zura_files/lexer/lexer.zu
+                        DW_AT_decl_line             0x0000000e
+                        DW_AT_decl_column           0x00000006
+                        DW_AT_type                  <0x000017b8>
+                        DW_AT_location              len 0x0002: 0x9150: 
+                            DW_OP_fbreg -48
+< 2><0x00001024>      DW_TAG_variable
+                        DW_AT_name                  col
+                        DW_AT_decl_file             0x00000002 /home/sovietpancakes/Desktop/Code/zura/zura_files/lexer/lexer.zu
+                        DW_AT_decl_line             0x0000000f
+                        DW_AT_decl_column           0x00000006
+                        DW_AT_type                  <0x00001783>
+                        DW_AT_location              len 0x0002: 0x914f: 
+                            DW_OP_fbreg -49
+< 2><0x00001039>      DW_TAG_variable
+                        DW_AT_name                  line
+                        DW_AT_decl_file             0x00000002 /home/sovietpancakes/Desktop/Code/zura/zura_files/lexer/lexer.zu
+                        DW_AT_decl_line             0x00000010
+                        DW_AT_decl_column           0x00000006
+                        DW_AT_type                  <0x00001783>
+                        DW_AT_location              len 0x0002: 0x9147: 
+                            DW_OP_fbreg -57
+< 2><0x0000104e>      DW_TAG_lexical_block
+                        DW_AT_decl_file             0x00000002 /home/sovietpancakes/Desktop/Code/zura/zura_files/lexer/lexer.zu
+                        DW_AT_decl_line             0x00000012
+                        DW_AT_decl_column           0x00000022
+                        DW_AT_low_pc                0x00001c71
+                        DW_AT_high_pc               <offset-from-lowpc> 439 <highpc: 0x00001e28>
+< 3><0x00001068>        DW_TAG_variable
+                          DW_AT_name                  i
+                          DW_AT_decl_file             0x00000002 /home/sovietpancakes/Desktop/Code/zura/zura_files/lexer/lexer.zu
+                          DW_AT_decl_line             0x00000012
+                          DW_AT_decl_column           0x00000006
+                          DW_AT_type                  <0x0000178b>
+                          DW_AT_location              len 0x0003: 0x91bf7f: 
+                              DW_OP_fbreg -65
+< 3><0x0000107e>        DW_TAG_variable
+                          DW_AT_name                  whitespace
+                          DW_AT_decl_file             0x00000002 /home/sovietpancakes/Desktop/Code/zura/zura_files/lexer/lexer.zu
+                          DW_AT_decl_line             0x00000015
+                          DW_AT_decl_column           0x00000008
+                          DW_AT_type                  <0x00001783>
+                          DW_AT_location              len 0x0003: 0x91b77f: 
+                              DW_OP_fbreg -73
+< 3><0x00001094>        DW_TAG_variable
+                          DW_AT_name                  is_alpha
+                          DW_AT_decl_file             0x00000002 /home/sovietpancakes/Desktop/Code/zura/zura_files/lexer/lexer.zu
+                          DW_AT_decl_line             0x0000001d
+                          DW_AT_decl_column           0x00000008
+                          DW_AT_type                  <0x000017b8>
+                          DW_AT_location              len 0x0003: 0x91af7f: 
+                              DW_OP_fbreg -81
+< 3><0x000010aa>        DW_TAG_variable
+                          DW_AT_name                  is_digit
+                          DW_AT_decl_file             0x00000002 /home/sovietpancakes/Desktop/Code/zura/zura_files/lexer/lexer.zu
+                          DW_AT_decl_line             0x00000024
+                          DW_AT_decl_column           0x00000008
+                          DW_AT_type                  <0x00001754>
+                          DW_AT_location              len 0x0003: 0x91ae7f: 
+                              DW_OP_fbreg -82
+< 1><0x000010c2>    DW_TAG_subprogram
+                      DW_AT_external              yes(1)
+                      DW_AT_name                  strlen
+                      DW_AT_prototyped            yes(1)
+                      DW_AT_decl_file             0x00000008 /home/sovietpancakes/Desktop/Code/zura/zura_files/std/stringUtils.zu
+                      DW_AT_decl_line             0x00000001
+                      DW_AT_decl_column           0x00000012
+                      DW_AT_type                  <0x00001783>
+                      DW_AT_low_pc                0x00001e2a
+                      DW_AT_high_pc               <offset-from-lowpc> 54 <highpc: 0x00001e60>
+                      DW_AT_frame_base            len 0x0001: 0x9c: 
+                          DW_OP_call_frame_cfa
+                      DW_AT_call_all_calls        yes(1)
+< 2><0x000010e7>      DW_TAG_formal_parameter
+                        DW_AT_type                  <0x00001754>
+                        DW_AT_location              len 0x0002: 0x9168: 
+                            DW_OP_fbreg -24
+                        DW_AT_name                  s
+< 2><0x000010f3>      DW_TAG_variable
+                        DW_AT_name                  len
+                        DW_AT_decl_file             0x00000008 /home/sovietpancakes/Desktop/Code/zura/zura_files/std/stringUtils.zu
+                        DW_AT_decl_line             0x00000002
+                        DW_AT_decl_column           0x00000008
+                        DW_AT_type                  <0x00001783>
+                        DW_AT_location              len 0x0002: 0x9160: 
+                            DW_OP_fbreg -32
+< 2><0x00001108>      DW_TAG_lexical_block
+                        DW_AT_decl_file             0x00000008 /home/sovietpancakes/Desktop/Code/zura/zura_files/std/stringUtils.zu
+                        DW_AT_decl_line             0x00000003
+                        DW_AT_decl_column           0x00000025
+                        DW_AT_low_pc                0x00001e54
+                        DW_AT_high_pc               <offset-from-lowpc> 4 <highpc: 0x00001e58>
+< 1><0x00001124>    DW_TAG_subprogram
+                      DW_AT_external              yes(1)
+                      DW_AT_name                  concat
+                      DW_AT_prototyped            yes(1)
+                      DW_AT_decl_file             0x00000008 /home/sovietpancakes/Desktop/Code/zura/zura_files/std/stringUtils.zu
+                      DW_AT_decl_line             0x00000009
+                      DW_AT_decl_column           0x00000012
+                      DW_AT_type                  <0x00001754>
+                      DW_AT_low_pc                0x00001e60
+                      DW_AT_high_pc               <offset-from-lowpc> 316 <highpc: 0x00001f9c>
+                      DW_AT_frame_base            len 0x0001: 0x9c: 
+                          DW_OP_call_frame_cfa
+                      DW_AT_call_all_calls        yes(1)
+< 2><0x00001149>      DW_TAG_formal_parameter
+                        DW_AT_type                  <0x00001754>
+                        DW_AT_location              len 0x0002: 0x9168: 
+                            DW_OP_fbreg -24
+                        DW_AT_name                  a
+< 2><0x00001155>      DW_TAG_formal_parameter
+                        DW_AT_type                  <0x00001754>
+                        DW_AT_location              len 0x0002: 0x9160: 
+                            DW_OP_fbreg -32
+                        DW_AT_name                  b
+< 2><0x00001161>      DW_TAG_variable
+                        DW_AT_name                  lenA
+                        DW_AT_decl_file             0x00000008 /home/sovietpancakes/Desktop/Code/zura/zura_files/std/stringUtils.zu
+                        DW_AT_decl_line             0x0000000a
+                        DW_AT_decl_column           0x00000006
+                        DW_AT_type                  <0x00001783>
+                        DW_AT_location              len 0x0002: 0x9158: 
+                            DW_OP_fbreg -40
+< 2><0x00001176>      DW_TAG_variable
+                        DW_AT_name                  lenB
+                        DW_AT_decl_file             0x00000008 /home/sovietpancakes/Desktop/Code/zura/zura_files/std/stringUtils.zu
+                        DW_AT_decl_line             0x0000000b
+                        DW_AT_decl_column           0x00000006
+                        DW_AT_type                  <0x00001783>
+                        DW_AT_location              len 0x0002: 0x9150: 
+                            DW_OP_fbreg -48
+< 2><0x0000118b>      DW_TAG_variable
+                        DW_AT_name                  t_len
+                        DW_AT_decl_file             0x00000008 /home/sovietpancakes/Desktop/Code/zura/zura_files/std/stringUtils.zu
+                        DW_AT_decl_line             0x0000000c
+                        DW_AT_decl_column           0x00000006
+                        DW_AT_type                  <0x00001783>
+                        DW_AT_location              len 0x0002: 0x9148: 
+                            DW_OP_fbreg -56
+< 2><0x000011a0>      DW_TAG_variable
+                        DW_AT_name                  result
+                        DW_AT_decl_file             0x00000008 /home/sovietpancakes/Desktop/Code/zura/zura_files/std/stringUtils.zu
+                        DW_AT_decl_line             0x0000000e
+                        DW_AT_decl_column           0x00000006
+                        DW_AT_type                  <0x00001754>
+                        DW_AT_location              len 0x0002: 0x9140: 
+                            DW_OP_fbreg -64
+< 2><0x000011b5>      DW_TAG_variable
+                        DW_AT_name                  offset
+                        DW_AT_decl_file             0x00000008 /home/sovietpancakes/Desktop/Code/zura/zura_files/std/stringUtils.zu
+                        DW_AT_decl_line             0x00000016
+                        DW_AT_decl_column           0x00000006
+                        DW_AT_type                  <0x00001783>
+                        DW_AT_location              len 0x0003: 0x91b87f: 
+                            DW_OP_fbreg -72
+< 1><0x000011cc>    DW_TAG_subprogram
+                      DW_AT_external              yes(1)
+                      DW_AT_name                  copy
+                      DW_AT_prototyped            yes(1)
+                      DW_AT_decl_file             0x00000008 /home/sovietpancakes/Desktop/Code/zura/zura_files/std/stringUtils.zu
+                      DW_AT_decl_line             0x0000001e
+                      DW_AT_decl_column           0x00000010
+                      DW_AT_type                  <0x00001754>
+                      DW_AT_low_pc                0x00001f9c
+                      DW_AT_high_pc               <offset-from-lowpc> 249 <highpc: 0x00002095>
+                      DW_AT_frame_base            len 0x0001: 0x9c: 
+                          DW_OP_call_frame_cfa
+                      DW_AT_call_all_calls        yes(1)
+< 2><0x000011f1>      DW_TAG_formal_parameter
+                        DW_AT_type                  <0x00001754>
+                        DW_AT_location              len 0x0002: 0x9168: 
+                            DW_OP_fbreg -24
+                        DW_AT_name                  src
+< 2><0x000011fd>      DW_TAG_variable
+                        DW_AT_name                  len
+                        DW_AT_decl_file             0x00000008 /home/sovietpancakes/Desktop/Code/zura/zura_files/std/stringUtils.zu
+                        DW_AT_decl_line             0x0000001f
+                        DW_AT_decl_column           0x00000006
+                        DW_AT_type                  <0x00001783>
+                        DW_AT_location              len 0x0002: 0x9160: 
+                            DW_OP_fbreg -32
+< 2><0x00001212>      DW_TAG_variable
+                        DW_AT_name                  dest
+                        DW_AT_decl_file             0x00000008 /home/sovietpancakes/Desktop/Code/zura/zura_files/std/stringUtils.zu
+                        DW_AT_decl_line             0x00000020
+                        DW_AT_decl_column           0x00000006
+                        DW_AT_type                  <0x00001754>
+                        DW_AT_location              len 0x0002: 0x9158: 
+                            DW_OP_fbreg -40
+< 1><0x00001228>    DW_TAG_subprogram
+                      DW_AT_external              yes(1)
+                      DW_AT_name                  strcmp
+                      DW_AT_prototyped            yes(1)
+                      DW_AT_decl_file             0x00000008 /home/sovietpancakes/Desktop/Code/zura/zura_files/std/stringUtils.zu
+                      DW_AT_decl_line             0x0000002f
+                      DW_AT_decl_column           0x00000012
+                      DW_AT_type                  <0x00001783>
+                      DW_AT_low_pc                0x00002095
+                      DW_AT_high_pc               <offset-from-lowpc> 81 <highpc: 0x000020e6>
+                      DW_AT_frame_base            len 0x0001: 0x9c: 
+                          DW_OP_call_frame_cfa
+                      DW_AT_call_all_calls        yes(1)
+< 2><0x0000124d>      DW_TAG_formal_parameter
+                        DW_AT_type                  <0x00001754>
+                        DW_AT_location              len 0x0002: 0x9168: 
+                            DW_OP_fbreg -24
+                        DW_AT_name                  a
+< 2><0x00001259>      DW_TAG_formal_parameter
+                        DW_AT_type                  <0x00001754>
+                        DW_AT_location              len 0x0002: 0x9160: 
+                            DW_OP_fbreg -32
+                        DW_AT_name                  b
+< 1><0x00001266>    DW_TAG_enumeration_type
+                      DW_AT_name                  Color
+                      DW_AT_decl_file             0x00000007 /home/sovietpancakes/Desktop/Code/zura/zura_files/std/color.zu
+                      DW_AT_decl_line             0x00000003
+                      DW_AT_decl_column           0x00000013
+                      DW_AT_byte_size             0x00000004
+                      DW_AT_encoding              DW_ATE_unsigned
+                      DW_AT_type                  <0x000017a5>
+< 2><0x0000127a>      DW_TAG_enumerator
+                        DW_AT_name                  Red
+                        DW_AT_const_value           0
+                        DW_AT_decl_line             0x00000004
+                        DW_AT_decl_column           0x00000005
+< 2><0x00001288>      DW_TAG_enumerator
+                        DW_AT_name                  Green
+                        DW_AT_const_value           1
+                        DW_AT_decl_line             0x00000005
+                        DW_AT_decl_column           0x00000007
+< 2><0x00001296>      DW_TAG_enumerator
+                        DW_AT_name                  Blue
+                        DW_AT_const_value           2
+                        DW_AT_decl_line             0x00000006
+                        DW_AT_decl_column           0x00000006
+< 2><0x000012a4>      DW_TAG_enumerator
+                        DW_AT_name                  Cyan
+                        DW_AT_const_value           3
+                        DW_AT_decl_line             0x00000007
+                        DW_AT_decl_column           0x00000006
+< 2><0x000012b2>      DW_TAG_enumerator
+                        DW_AT_name                  Magenta
+                        DW_AT_const_value           4
+                        DW_AT_decl_line             0x00000008
+                        DW_AT_decl_column           0x00000009
+< 2><0x000012c0>      DW_TAG_enumerator
+                        DW_AT_name                  Yellow
+                        DW_AT_const_value           5
+                        DW_AT_decl_line             0x00000009
+                        DW_AT_decl_column           0x00000008
+< 2><0x000012ce>      DW_TAG_enumerator
+                        DW_AT_name                  White
+                        DW_AT_const_value           6
+                        DW_AT_decl_line             0x0000000a
+                        DW_AT_decl_column           0x00000007
+< 2><0x000012dc>      DW_TAG_enumerator
+                        DW_AT_name                  Black
+                        DW_AT_const_value           7
+                        DW_AT_decl_line             0x0000000b
+                        DW_AT_decl_column           0x00000007
+< 2><0x000012ea>      DW_TAG_enumerator
+                        DW_AT_name                  Gray
+                        DW_AT_const_value           8
+                        DW_AT_decl_line             0x0000000c
+                        DW_AT_decl_column           0x00000006
+< 2><0x000012f8>      DW_TAG_enumerator
+                        DW_AT_name                  Reset
+                        DW_AT_const_value           9
+                        DW_AT_decl_line             0x0000000d
+                        DW_AT_decl_column           0x00000007
+< 1><0x00001307>    DW_TAG_subprogram
+                      DW_AT_external              yes(1)
+                      DW_AT_name                  findColor
+                      DW_AT_prototyped            yes(1)
+                      DW_AT_decl_file             0x00000007 /home/sovietpancakes/Desktop/Code/zura/zura_files/std/color.zu
+                      DW_AT_decl_line             0x00000010
+                      DW_AT_decl_column           0x00000015
+                      DW_AT_type                  <0x000017ae>
+                      DW_AT_low_pc                0x000020e6
+                      DW_AT_high_pc               <offset-from-lowpc> 186 <highpc: 0x000021a0>
+                      DW_AT_frame_base            len 0x0001: 0x9c: 
+                          DW_OP_call_frame_cfa
+                      DW_AT_call_all_calls        yes(1)
+< 2><0x0000132c>      DW_TAG_formal_parameter
+                        DW_AT_type                  <0x00001783>
+                        DW_AT_location              len 0x0002: 0x9168: 
+                            DW_OP_fbreg -24
+                        DW_AT_name                  c
+< 2><0x00001338>      DW_TAG_lexical_block
+                        DW_AT_decl_file             0x00000007 /home/sovietpancakes/Desktop/Code/zura/zura_files/std/color.zu
+                        DW_AT_decl_line             0x00000012
+                        DW_AT_decl_column           0x0000000f
+                        DW_AT_low_pc                0x00002134
+                        DW_AT_high_pc               <offset-from-lowpc> 9 <highpc: 0x0000213d>
+< 2><0x00001353>      DW_TAG_lexical_block
+                        DW_AT_decl_file             0x00000007 /home/sovietpancakes/Desktop/Code/zura/zura_files/std/color.zu
+                        DW_AT_decl_line             0x00000013
+                        DW_AT_decl_column           0x0000000f
+                        DW_AT_low_pc                0x0000213d
+                        DW_AT_high_pc               <offset-from-lowpc> 9 <highpc: 0x00002146>
+< 2><0x0000136e>      DW_TAG_lexical_block
+                        DW_AT_decl_file             0x00000007 /home/sovietpancakes/Desktop/Code/zura/zura_files/std/color.zu
+                        DW_AT_decl_line             0x00000014
+                        DW_AT_decl_column           0x0000000f
+                        DW_AT_low_pc                0x00002146
+                        DW_AT_high_pc               <offset-from-lowpc> 9 <highpc: 0x0000214f>
+< 2><0x00001389>      DW_TAG_lexical_block
+                        DW_AT_decl_file             0x00000007 /home/sovietpancakes/Desktop/Code/zura/zura_files/std/color.zu
+                        DW_AT_decl_line             0x00000015
+                        DW_AT_decl_column           0x0000000f
+                        DW_AT_low_pc                0x0000214f
+                        DW_AT_high_pc               <offset-from-lowpc> 9 <highpc: 0x00002158>
+< 2><0x000013a4>      DW_TAG_lexical_block
+                        DW_AT_decl_file             0x00000007 /home/sovietpancakes/Desktop/Code/zura/zura_files/std/color.zu
+                        DW_AT_decl_line             0x00000016
+                        DW_AT_decl_column           0x0000000f
+                        DW_AT_low_pc                0x00002158
+                        DW_AT_high_pc               <offset-from-lowpc> 9 <highpc: 0x00002161>
+< 2><0x000013bf>      DW_TAG_lexical_block
+                        DW_AT_decl_file             0x00000007 /home/sovietpancakes/Desktop/Code/zura/zura_files/std/color.zu
+                        DW_AT_decl_line             0x00000017
+                        DW_AT_decl_column           0x0000000f
+                        DW_AT_low_pc                0x00002161
+                        DW_AT_high_pc               <offset-from-lowpc> 9 <highpc: 0x0000216a>
+< 2><0x000013da>      DW_TAG_lexical_block
+                        DW_AT_decl_file             0x00000007 /home/sovietpancakes/Desktop/Code/zura/zura_files/std/color.zu
+                        DW_AT_decl_line             0x00000018
+                        DW_AT_decl_column           0x0000000f
+                        DW_AT_low_pc                0x0000216a
+                        DW_AT_high_pc               <offset-from-lowpc> 9 <highpc: 0x00002173>
+< 2><0x000013f5>      DW_TAG_lexical_block
+                        DW_AT_decl_file             0x00000007 /home/sovietpancakes/Desktop/Code/zura/zura_files/std/color.zu
+                        DW_AT_decl_line             0x00000019
+                        DW_AT_decl_column           0x0000000f
+                        DW_AT_low_pc                0x00002173
+                        DW_AT_high_pc               <offset-from-lowpc> 9 <highpc: 0x0000217c>
+< 2><0x00001410>      DW_TAG_lexical_block
+                        DW_AT_decl_file             0x00000007 /home/sovietpancakes/Desktop/Code/zura/zura_files/std/color.zu
+                        DW_AT_decl_line             0x0000001a
+                        DW_AT_decl_column           0x0000000f
+                        DW_AT_low_pc                0x0000217c
+                        DW_AT_high_pc               <offset-from-lowpc> 9 <highpc: 0x00002185>
+< 2><0x0000142b>      DW_TAG_lexical_block
+                        DW_AT_decl_file             0x00000007 /home/sovietpancakes/Desktop/Code/zura/zura_files/std/color.zu
+                        DW_AT_decl_line             0x0000001b
+                        DW_AT_decl_column           0x0000000f
+                        DW_AT_low_pc                0x00002185
+                        DW_AT_high_pc               <offset-from-lowpc> 9 <highpc: 0x0000218e>
+< 2><0x00001446>      DW_TAG_lexical_block
+                        DW_AT_decl_file             0x00000007 /home/sovietpancakes/Desktop/Code/zura/zura_files/std/color.zu
+                        DW_AT_decl_line             0x0000001c
+                        DW_AT_decl_column           0x00000010
+                        DW_AT_low_pc                0x0000218e
+                        DW_AT_high_pc               <offset-from-lowpc> 9 <highpc: 0x00002197>
+< 1><0x00001462>    DW_TAG_subprogram
+                      DW_AT_external              yes(1)
+                      DW_AT_name                  color
+                      DW_AT_prototyped            yes(1)
+                      DW_AT_decl_file             0x00000007 /home/sovietpancakes/Desktop/Code/zura/zura_files/std/color.zu
+                      DW_AT_decl_line             0x00000021
+                      DW_AT_decl_column           0x00000011
+                      DW_AT_type                  <0x00001754>
+                      DW_AT_low_pc                0x000021a0
+                      DW_AT_high_pc               <offset-from-lowpc> 373 <highpc: 0x00002315>
+                      DW_AT_frame_base            len 0x0001: 0x9c: 
+                          DW_OP_call_frame_cfa
+                      DW_AT_call_all_calls        yes(1)
+< 2><0x00001487>      DW_TAG_formal_parameter
+                        DW_AT_type                  <0x00001783>
+                        DW_AT_location              len 0x0002: 0x9168: 
+                            DW_OP_fbreg -24
+                        DW_AT_name                  c
+< 2><0x00001493>      DW_TAG_formal_parameter
+                        DW_AT_type                  <0x00001754>
+                        DW_AT_location              len 0x0002: 0x9160: 
+                            DW_OP_fbreg -32
+                        DW_AT_name                  msg
+< 2><0x0000149f>      DW_TAG_variable
+                        DW_AT_name                  colorCode
+                        DW_AT_decl_file             0x00000007 /home/sovietpancakes/Desktop/Code/zura/zura_files/std/color.zu
+                        DW_AT_decl_line             0x00000022
+                        DW_AT_decl_column           0x00000006
+                        DW_AT_type                  <0x00001754>
+                        DW_AT_location              len 0x0002: 0x9158: 
+                            DW_OP_fbreg -40
+< 2><0x000014b4>      DW_TAG_variable
+                        DW_AT_name                  coloredMsg
+                        DW_AT_decl_file             0x00000007 /home/sovietpancakes/Desktop/Code/zura/zura_files/std/color.zu
+                        DW_AT_decl_line             0x00000028
+                        DW_AT_decl_column           0x00000006
+                        DW_AT_type                  <0x00001754>
+                        DW_AT_location              len 0x0002: 0x9150: 
+                            DW_OP_fbreg -48
+< 2><0x000014c9>      DW_TAG_variable
+                        DW_AT_name                  final
+                        DW_AT_decl_file             0x00000007 /home/sovietpancakes/Desktop/Code/zura/zura_files/std/color.zu
+                        DW_AT_decl_line             0x00000029
+                        DW_AT_decl_column           0x00000006
+                        DW_AT_type                  <0x00001754>
+                        DW_AT_location              len 0x0002: 0x9148: 
+                            DW_OP_fbreg -56
+< 1><0x000014df>    DW_TAG_enumeration_type
+                      DW_AT_name                  ERRORS
+                      DW_AT_decl_file             0x00000006 /home/sovietpancakes/Desktop/Code/zura/zura_files/helper.zu
+                      DW_AT_decl_line             0x00000003
+                      DW_AT_decl_column           0x00000014
+                      DW_AT_byte_size             0x00000004
+                      DW_AT_encoding              DW_ATE_unsigned
+                      DW_AT_type                  <0x000017a5>
+< 2><0x000014f3>      DW_TAG_enumerator
+                        DW_AT_name                  InvalidArgument
+                        DW_AT_const_value           0
+                        DW_AT_decl_line             0x00000004
+                        DW_AT_decl_column           0x00000011
+< 2><0x00001501>      DW_TAG_enumerator
+                        DW_AT_name                  OutputError
+                        DW_AT_const_value           1
+                        DW_AT_decl_line             0x00000005
+                        DW_AT_decl_column           0x0000000d
+< 2><0x0000150f>      DW_TAG_enumerator
+                        DW_AT_name                  NoArgumentsProvided
+                        DW_AT_const_value           2
+                        DW_AT_decl_line             0x00000006
+                        DW_AT_decl_column           0x00000015
+< 2><0x0000151d>      DW_TAG_enumerator
+                        DW_AT_name                  NoPathProvided
+                        DW_AT_const_value           3
+                        DW_AT_decl_line             0x00000007
+                        DW_AT_decl_column           0x00000010
+< 2><0x0000152b>      DW_TAG_enumerator
+                        DW_AT_name                  NoActionProvided
+                        DW_AT_const_value           4
+                        DW_AT_decl_line             0x00000008
+                        DW_AT_decl_column           0x00000012
+< 2><0x00001539>      DW_TAG_enumerator
+                        DW_AT_name                  FileOpenFailed
+                        DW_AT_const_value           5
+                        DW_AT_decl_line             0x00000009
+                        DW_AT_decl_column           0x00000010
+< 2><0x00001547>      DW_TAG_enumerator
+                        DW_AT_name                  MemoryAllocationFailed
+                        DW_AT_const_value           6
+                        DW_AT_decl_line             0x0000000a
+                        DW_AT_decl_column           0x00000018
+< 1><0x00001556>    DW_TAG_subprogram
+                      DW_AT_external              yes(1)
+                      DW_AT_name                  printHelp
+                      DW_AT_decl_file             0x00000006 /home/sovietpancakes/Desktop/Code/zura/zura_files/helper.zu
+                      DW_AT_decl_line             0x0000000d
+                      DW_AT_decl_column           0x00000015
+                      DW_AT_type                  <0x00001783>
+                      DW_AT_low_pc                0x00002315
+                      DW_AT_high_pc               <offset-from-lowpc> 1907 <highpc: 0x00002a88>
+                      DW_AT_frame_base            len 0x0001: 0x9c: 
+                          DW_OP_call_frame_cfa
+                      DW_AT_call_all_calls        yes(1)
+< 1><0x0000157c>    DW_TAG_subprogram
+                      DW_AT_external              yes(1)
+                      DW_AT_name                  printVersion
+                      DW_AT_decl_file             0x00000006 /home/sovietpancakes/Desktop/Code/zura/zura_files/helper.zu
+                      DW_AT_decl_line             0x0000001f
+                      DW_AT_decl_column           0x00000018
+                      DW_AT_type                  <0x00001783>
+                      DW_AT_low_pc                0x00002a88
+                      DW_AT_high_pc               <offset-from-lowpc> 131 <highpc: 0x00002b0b>
+                      DW_AT_frame_base            len 0x0001: 0x9c: 
+                          DW_OP_call_frame_cfa
+                      DW_AT_call_all_calls        yes(1)
+< 1><0x000015a2>    DW_TAG_subprogram
+                      DW_AT_external              yes(1)
+                      DW_AT_name                  printLicense
+                      DW_AT_decl_file             0x00000006 /home/sovietpancakes/Desktop/Code/zura/zura_files/helper.zu
+                      DW_AT_decl_line             0x00000024
+                      DW_AT_decl_column           0x00000018
+                      DW_AT_type                  <0x00001783>
+                      DW_AT_low_pc                0x00002b0b
+                      DW_AT_high_pc               <offset-from-lowpc> 73 <highpc: 0x00002b54>
+                      DW_AT_frame_base            len 0x0001: 0x9c: 
+                          DW_OP_call_frame_cfa
+                      DW_AT_call_all_calls        yes(1)
+< 1><0x000015c8>    DW_TAG_subprogram
+                      DW_AT_external              yes(1)
+                      DW_AT_name                  printLsp
+                      DW_AT_decl_file             0x00000006 /home/sovietpancakes/Desktop/Code/zura/zura_files/helper.zu
+                      DW_AT_decl_line             0x00000029
+                      DW_AT_decl_column           0x00000014
+                      DW_AT_type                  <0x00001783>
+                      DW_AT_low_pc                0x00002b54
+                      DW_AT_high_pc               <offset-from-lowpc> 73 <highpc: 0x00002b9d>
+                      DW_AT_frame_base            len 0x0001: 0x9c: 
+                          DW_OP_call_frame_cfa
+                      DW_AT_call_all_calls        yes(1)
+< 1><0x000015ee>    DW_TAG_subprogram
+                      DW_AT_external              yes(1)
+                      DW_AT_name                  main
+                      DW_AT_decl_file             0x00000000 /home/sovietpancakes/Desktop/Code/zura/zura_files/main.zu
+                      DW_AT_decl_line             0x00000006
+                      DW_AT_decl_column           0x00000010
+                      DW_AT_type                  <0x00001783>
+                      DW_AT_low_pc                0x00002b9d
+                      DW_AT_high_pc               <offset-from-lowpc> 1153 <highpc: 0x0000301e>
+                      DW_AT_frame_base            len 0x0001: 0x9c: 
+                          DW_OP_call_frame_cfa
+                      DW_AT_call_all_calls        yes(1)
+< 2><0x00001613>      DW_TAG_variable
+                        DW_AT_name                  argv
+                        DW_AT_decl_file             0x00000000 /home/sovietpancakes/Desktop/Code/zura/zura_files/main.zu
+                        DW_AT_decl_line             0x00000007
+                        DW_AT_decl_column           0x00000006
+                        DW_AT_type                  <0x00001779>
+                        DW_AT_location              len 0x0002: 0x9168: 
+                            DW_OP_fbreg -24
+< 2><0x00001628>      DW_TAG_variable
+                        DW_AT_name                  argc
+                        DW_AT_decl_file             0x00000000 /home/sovietpancakes/Desktop/Code/zura/zura_files/main.zu
+                        DW_AT_decl_line             0x00000008
+                        DW_AT_decl_column           0x00000006
+                        DW_AT_type                  <0x00001783>
+                        DW_AT_location              len 0x0002: 0x9160: 
+                            DW_OP_fbreg -32
+< 2><0x0000163d>      DW_TAG_variable
+                        DW_AT_name                  size
+                        DW_AT_decl_file             0x00000000 /home/sovietpancakes/Desktop/Code/zura/zura_files/main.zu
+                        DW_AT_decl_line             0x00000009
+                        DW_AT_decl_column           0x00000006
+                        DW_AT_type                  <0x00001783>
+                        DW_AT_location              len 0x0002: 0x9158: 
+                            DW_OP_fbreg -40
+< 2><0x00001652>      DW_TAG_variable
+                        DW_AT_name                  filePath
+                        DW_AT_decl_file             0x00000000 /home/sovietpancakes/Desktop/Code/zura/zura_files/main.zu
+                        DW_AT_decl_line             0x00000011
+                        DW_AT_decl_column           0x00000006
+                        DW_AT_type                  <0x00001754>
+                        DW_AT_location              len 0x0002: 0x9150: 
+                            DW_OP_fbreg -48
+< 2><0x00001667>      DW_TAG_variable
+                        DW_AT_name                  quietMode
+                        DW_AT_decl_file             0x00000000 /home/sovietpancakes/Desktop/Code/zura/zura_files/main.zu
+                        DW_AT_decl_line             0x00000012
+                        DW_AT_decl_column           0x00000006
+                        DW_AT_type                  <0x000017b8>
+                        DW_AT_location              len 0x0002: 0x9148: 
+                            DW_OP_fbreg -56
+< 2><0x0000167c>      DW_TAG_variable
+                        DW_AT_name                  debugMode
+                        DW_AT_decl_file             0x00000000 /home/sovietpancakes/Desktop/Code/zura/zura_files/main.zu
+                        DW_AT_decl_line             0x00000013
+                        DW_AT_decl_column           0x00000006
+                        DW_AT_type                  <0x000017b8>
+                        DW_AT_location              len 0x0002: 0x9147: 
+                            DW_OP_fbreg -57
+< 2><0x00001691>      DW_TAG_lexical_block
+                        DW_AT_decl_file             0x00000000 /home/sovietpancakes/Desktop/Code/zura/zura_files/main.zu
+                        DW_AT_decl_line             0x00000014
+                        DW_AT_decl_column           0x00000023
+                        DW_AT_low_pc                0x00002c41
+                        DW_AT_high_pc               <offset-from-lowpc> 591 <highpc: 0x00002e90>
+< 3><0x000016ab>        DW_TAG_variable
+                          DW_AT_name                  i
+                          DW_AT_decl_file             0x00000000 /home/sovietpancakes/Desktop/Code/zura/zura_files/main.zu
+                          DW_AT_decl_line             0x00000014
+                          DW_AT_decl_column           0x00000006
+                          DW_AT_type                  <0x0000178b>
+                          DW_AT_location              len 0x0002: 0x9146: 
+                              DW_OP_fbreg -58
+< 2><0x000016c1>      DW_TAG_lexical_block
+                        DW_AT_decl_file             0x00000000 /home/sovietpancakes/Desktop/Code/zura/zura_files/main.zu
+                        DW_AT_decl_line             0x00000027
+                        DW_AT_decl_column           0x00000018
+                        DW_AT_low_pc                0x00002ea5
+                        DW_AT_high_pc               <offset-from-lowpc> 74 <highpc: 0x00002eef>
+< 2><0x000016dc>      DW_TAG_variable
+                        DW_AT_name                  fileContents
+                        DW_AT_decl_file             0x00000000 /home/sovietpancakes/Desktop/Code/zura/zura_files/main.zu
+                        DW_AT_decl_line             0x0000002c
+                        DW_AT_decl_column           0x00000006
+                        DW_AT_type                  <0x00001754>
+                        DW_AT_location              len 0x0002: 0x9146: 
+                            DW_OP_fbreg -58
+< 2><0x000016f1>      DW_TAG_lexical_block
+                        DW_AT_decl_file             0x00000000 /home/sovietpancakes/Desktop/Code/zura/zura_files/main.zu
+                        DW_AT_decl_line             0x0000002d
+                        DW_AT_decl_column           0x0000001c
+                        DW_AT_low_pc                0x00002f1f
+                        DW_AT_high_pc               <offset-from-lowpc> 113 <highpc: 0x00002f90>
+< 2><0x0000170c>      DW_TAG_variable
+                        DW_AT_name                  realSize
+                        DW_AT_decl_file             0x00000000 /home/sovietpancakes/Desktop/Code/zura/zura_files/main.zu
+                        DW_AT_decl_line             0x00000032
+                        DW_AT_decl_column           0x00000006
+                        DW_AT_type                  <0x00001783>
+                        DW_AT_location              len 0x0003: 0x91be7f: 
+                            DW_OP_fbreg -66
+< 2><0x00001722>      DW_TAG_lexical_block
+                        DW_AT_decl_file             0x00000000 /home/sovietpancakes/Desktop/Code/zura/zura_files/main.zu
+                        DW_AT_decl_line             0x00000035
+                        DW_AT_decl_column           0x00000027
+                        DW_AT_low_pc                0x00002f9a
+                        DW_AT_high_pc               <offset-from-lowpc> 80 <highpc: 0x00002fea>
+< 3><0x0000173c>        DW_TAG_variable
+                          DW_AT_name                  i
+                          DW_AT_decl_file             0x00000000 /home/sovietpancakes/Desktop/Code/zura/zura_files/main.zu
+                          DW_AT_decl_line             0x00000035
+                          DW_AT_decl_column           0x00000006
+                          DW_AT_type                  <0x0000178b>
+                          DW_AT_location              len 0x0003: 0x91b67f: 
+                              DW_OP_fbreg -74
+< 1><0x00001754>    DW_TAG_pointer_type
+                      DW_AT_byte_size             0x00000008
+                      DW_AT_name                  *char
+                      DW_AT_type                  <0x0000179c>
+< 1><0x0000175e>    DW_TAG_pointer_type
+                      DW_AT_byte_size             0x00000008
+                      DW_AT_name                  *int!
+                      DW_AT_type                  <0x00001783>
+< 1><0x00001768>    DW_TAG_array_type
+                      DW_AT_name                  []str
+                      DW_AT_type                  <0x000017ae>
+< 2><0x00001771>      DW_TAG_subrange_type
+                        DW_AT_type                  <0x00001783>
+                        DW_AT_upper_bound           32767
+< 1><0x00001779>    DW_TAG_pointer_type
+                      DW_AT_byte_size             0x00000008
+                      DW_AT_name                  *[]str
+                      DW_AT_type                  <0x00001768>
+< 1><0x00001783>    DW_TAG_base_type
+                      DW_AT_byte_size             0x00000008
+                      DW_AT_encoding              DW_ATE_unsigned
+                      DW_AT_name                  int!
+< 1><0x0000178b>    DW_TAG_base_type
+                      DW_AT_byte_size             0x00000008
+                      DW_AT_encoding              DW_ATE_signed
+                      DW_AT_name                  int?
+< 1><0x00001793>    DW_TAG_base_type
+                      DW_AT_byte_size             0x00000001
+                      DW_AT_encoding              DW_ATE_unsigned_char
+                      DW_AT_name                  char!
+< 1><0x0000179c>    DW_TAG_base_type
+                      DW_AT_byte_size             0x00000001
+                      DW_AT_encoding              DW_ATE_signed_char
+                      DW_AT_name                  char?
+< 1><0x000017a5>    DW_TAG_base_type
+                      DW_AT_byte_size             0x00000004
+                      DW_AT_encoding              DW_ATE_unsigned
+                      DW_AT_name                  long!
+< 1><0x000017ae>    DW_TAG_pointer_type
+                      DW_AT_byte_size             0x00000008
+                      DW_AT_name                  str
+                      DW_AT_type                  <0x00001793>
+< 1><0x000017b8>    DW_TAG_base_type
+                      DW_AT_byte_size             0x00000001
+                      DW_AT_encoding              DW_ATE_boolean
+                      DW_AT_name                  bool
+

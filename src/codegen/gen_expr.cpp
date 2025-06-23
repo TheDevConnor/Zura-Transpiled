@@ -412,6 +412,17 @@ void codegen::unary(Node::Expr *expr) {
       .what = whatWasPushed,
       .whatSize = size     
     }, .type=InstrType::Push},Section::Main);
+  } else if (e->op == "!") {
+    // The rhs should be a bool
+    push(Instr{.var = PopInstr{.where = "%al", .whereSize = DataSize::Byte},
+                 .type = InstrType::Pop},
+         Section::Main);
+    // Perform the operation
+    pushLinker("not %al\n\t", Section::Main);
+    // Push the result
+    push(Instr{.var = PushInstr{.what = "%al", .whatSize = DataSize::Byte},
+                 .type = InstrType::Push},
+         Section::Main);
   }
 }
 

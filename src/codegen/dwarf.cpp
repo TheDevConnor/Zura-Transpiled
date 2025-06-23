@@ -186,6 +186,8 @@ std::string codegen::dwarf::generateAbbreviations() {
                          "\n.byte 0x13 # FORM_ref4"
                          "\n.byte 0x2 # AT_location"
                          "\n.byte 0x18 # FORM_exprloc"
+                         "\n.uleb128 0x3 # AT_name"
+                         "\n.uleb128 0xe # FORM_strp"
                          "\n";
 
         break;
@@ -477,15 +479,6 @@ void codegen::dwarf::emitTypes(void) {
                "\n.long .Lchar_u_debug_type # FORM_ref4"
                , Section::DIETypes);
   }
-  // bool (no signedness)
-  if (dieNamesUsed.find("bool_i") != dieNamesUsed.end()) {
-    push(Instr{.var = Label{.name = ".Lbool_i_debug_type"}, .type = InstrType::Label}, Section::DIETypes);
-    pushLinker(".uleb128 " + std::to_string((int)DIEAbbrev::Type) +
-               "\n.byte 1 # AT_byte_size"
-               "\n.uleb128 0x2 # AT_encoding = ATE_boolean"
-               "\n.string \"bool\"\n"
-    , Section::DIETypes);
-  }
   // float
   if (dieNamesUsed.find("float_i") != dieNamesUsed.end()) {
     push(Instr{.var = Label{.name = ".Lfloat_i_debug_type"}, .type = InstrType::Label}, Section::DIETypes);
@@ -502,6 +495,20 @@ void codegen::dwarf::emitTypes(void) {
                "\n.byte 8 # AT_byte_size"
                "\n.uleb128 0x4 # AT_encoding = ATE_float"
                "\n.string \"double\"\n"
+    , Section::DIETypes);
+  }
+
+  // bool
+  if (dieNamesUsed.contains("bool_i") ||
+      dieNamesUsed.contains("bool_u") ||
+      dieNamesUsed.contains("bool_s")) {
+    push(Instr{.var=Label{.name=".Lbool_s_debug_type"}, .type=InstrType::Label}, Section::DIETypes);
+    push(Instr{.var=Label{.name=".Lbool_u_debug_type"}, .type=InstrType::Label}, Section::DIETypes);
+    push(Instr{.var=Label{.name=".Lbool_i_debug_type"}, .type=InstrType::Label}, Section::DIETypes);
+    pushLinker(".uleb128 " + std::to_string((int)DIEAbbrev::Type) +
+               "\n.byte 1 # AT_byte_size"
+               "\n.uleb128 0x2 # AT_encoding = ATE_boolean"
+               "\n.string \"bool\"\n"
     , Section::DIETypes);
   }
 

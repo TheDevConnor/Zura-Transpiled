@@ -140,7 +140,10 @@ void codegen::funcDecl(Node::Stmt *stmt) {
       }
     }
 
-    dwarf::useStringP(funcName);
+    push(Instr{.var = Label{.name = ".L" + funcName + "_string"},
+               .type = InstrType::Label},
+         Section::DIEString);
+    pushLinker(".string \"" + s->name + "\"\n", Section::DIEString);
     push(Instr{.var = Label{.name = dieLabel + "_debug_start"},
                .type = InstrType::Label},
          Section::Main);
@@ -209,23 +212,19 @@ void codegen::funcDecl(Node::Stmt *stmt) {
 
     if (debug) {
       // Use the parameter type
+      dwarf::useType(s->params.at(i).second);
+      // parameters are kinda like variables so we will use DW_OP_fbreg
       pushLinker(
           "\n.uleb128 " + std::to_string((int)dwarf::DIEAbbrev::FunctionParam) +
-              "\n.long .L" + type_to_diename(s->params.at(i).second) +
-              "_debug_type\n" +
-              "\n.uleb128 0x1" // 1 byte is gonna follow
-              "\n.byte " +
-              std::to_string(dwarf::argOP_regs.at(intArgOrder.at(i)) + 80) +
-              "\n"
-              "\n",
+          "\n.long .L" + type_to_diename(s->params.at(i).second) + "_debug_type\n" +
+          "\n.uleb128 " + std::to_string(1 + sizeOfLEB(-(long long)variableCount - 8)) + // length of location expression
+          "\n.byte 0x91" // DW_OP_fbreg
+          "\n.sleb128 " + std::to_string(-(long long)variableCount - 8) +
+          "\n.long .L" + s->params.at(i).first->name + "_string"
+          "\n",
           Section::DIE);
+      dwarf::useStringP(s->params.at(i).first->name);
     }
-  }
-  for (size_t i = 0; i < s->params.size(); i++) {
-    // Types have to be declared after for 2 reasons:
-    // 1. The type will be declared as a member of the function
-    // 2. It looks nice and probably works better anyways
-    dwarf::useType(s->params.at(i).second);
   }
 
   // Do not push the lexical block to the dwarf stack

@@ -26,14 +26,15 @@ const scan := fn (source: *char, size: int!) void {
       col++; # increment column count
     }
 
-    have is_alpha: int! = ident(source, &i);
-
+    have is_alpha: bool = ident(source, &i);
+    if (is_alpha) {
+      @outputln(1, "identifier found at ", ascii_to_string(source[i]));
+    }
     # Anything that is prexed with '@' is a special token
     # have is_default: int! = default_function(source, &i);
 
     have is_digit: *char = number(source, &i);
-    if (@streq(@cast<str>(is_digit), "")) {}
-    else {
+    if (@streq(@cast<str>(is_digit), "")) {} else {
       @outputln(1, is_digit);
     }
 
