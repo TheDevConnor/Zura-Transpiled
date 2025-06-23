@@ -1,47 +1,8 @@
 @import "../std/asciiToString.zu";
 @import "helper.zu";
 
-const TokenKind := enum {
-  Plus,
-  Dash,
-  Star,
-  Slash,
-  LParen,
-  RParen,
-  Number,
-  Identifier,
-  String,
-  Comma,
-  Semicolon,
-  Equals,
-  LBrace,
-  RBrace,
-  LBracket,
-  RBracket,
-  Less,
-  Greater,
-  Ampersand,
-  Percent,
-  Bang,
-  Question,
-  Colon,
-  Dot
-};
-
-const Position := struct {
-  line: int!,
-  pos: int!
-};
-
-const Token := struct {
-  kind: TokenKind,
-  value: *char
-};
-
-# const make_token := fn (ln: *int!, col: *int!, k: TokenKind, v: *char) Token {
-#   have pos: Position = { line: ln&, pos: col& };
+# const make_token := fn (k: TokenKind, v: *char) Token {
 #   have token: Token = {
-#     position: pos,
 #     kind: k,
 #     value: v,
 #   };
@@ -59,19 +20,21 @@ const scan := fn (source: *char, size: int!) void {
 
     have whitespace: int! = check_whitespace(source, &i, &line, &col, size);
     if (whitespace == 1) {
+      if (source[i] == @cast<char>(10)) col = 0;
       whitespaceCount++;
     } else {
       col++; # increment column count
     }
 
-    have letter: int! = is_letter(source, &i);
-    if (letter == 1) {
-      @outputln(1, "Found a letter '", ascii_to_string(source[i]), "' at line: ", line, " col: ", col);
-    }
+    have is_alpha: int! = ident(source, &i);
 
-    have digit: int! = is_digit(source[i]);
-    if (digit == 1) {
-      @outputln(1, "Found a digit '", ascii_to_string(source[i]), "' at line: ", line, " col: ", col);
+    # Anything that is prexed with '@' is a special token
+    # have is_default: int! = default_function(source, &i);
+
+    have is_digit: *char = number(source, &i);
+    if (@streq(@cast<str>(is_digit), "")) {}
+    else {
+      @outputln(1, is_digit);
     }
 
     # TODO: Implement check for single-character tokens and multi-character tokens

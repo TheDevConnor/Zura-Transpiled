@@ -1,28 +1,43 @@
-const is_digit := fn (c: char) int {
-  if (c >= @cast<char>(48)) { # '0'
-    if (c <= @cast<char>(57)) { # '9'
-      return 1;
-    }
-  }
-  return 0;
+@import "../std/type.zu";
+
+const TokenKind := enum {
+  Plus,
+  Dash,
+  Star,
+  Slash,
+  LParen,
+  RParen,
+  Number,
+  Identifier,
+  String,
+  Comma,
+  Semicolon,
+  Equals,
+  LBrace,
+  RBrace,
+  LBracket,
+  RBracket,
+  Less,
+  Greater,
+  Ampersand,
+  Percent,
+  Bang,
+  Question,
+  Colon,
+  Dot
 };
 
-const is_letter := fn (c: *char, index: *int!) int! {
-  if (c[index&] >= @cast<char>(97)) {
-    if (c[index&] <= @cast<char>(122)) {
-      return 1;
-    } 
-  } # a to z
+const Position := struct {
+  line: int!,
+  pos: int!
+};
 
-  if (c[index&] >= @cast<char>(65)) {
-    if (c[index&] <= @cast<char>(90)) {
-      return 1;
-    } 
-  } # A to Z
+const Token := struct {
+  kind: TokenKind,
+  value: *char
+};
 
-  if (c[index&] == @cast<char>(95)) { 
-    return 1;
-  } # _
+const default_function := fn (c: *char, index: *int!) int! {
   return 0;
 };
 
@@ -33,10 +48,42 @@ const check_whitespace := fn (c: *char, index: *int!, line: *int!, col: *int!, s
   }
 
   if (c[index&] == @cast<char>(10)) {
-    col& = 0; # reset column count on newline
     line&++; # increment line count
+    # col& = 0; # reset column count #?Note: assign on deref is not working
     return 1; # newline
   }
 
   return 0;
+};
+
+const number := fn (c: *char, index: *int!) *char {
+  have check: int! = digit(c, index); # This is the first check
+  if (check != 1) return "";
+
+  loop (i = index&; i < 100000000) : (i++) {
+    have ch: int! = digit(c, &i);
+    if (ch != 1) break;
+    index&++;
+  }
+
+  if (c[index&] == @cast<char>(46)) {
+    index&++;
+    loop (i = index&; i < 100000000) : (i++) {
+      have ch: int! = digit(c, &i);
+      if (ch != 1) break;
+      index&++;
+    }
+    return @cast<*char>("FLOAT"); # Floating point number
+  }
+
+  return @cast<*char>("INT"); # Integer number
+};
+
+const ident := fn (c: *char, index: *int!) int! {
+  have check: int! = alpha(c, index);
+  if (check != 1) return 0;
+
+  @outputln(1, "Identifier found: ", ascii_to_string(c[index&]));
+
+  return 1;
 };
