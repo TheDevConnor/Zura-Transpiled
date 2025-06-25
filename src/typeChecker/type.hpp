@@ -5,6 +5,7 @@
 #include <string>
 #include <unordered_map>
 #include <vector>
+#include <set>
 
 #include "../ast/ast.hpp"
 #include "../ast/expr.hpp"
@@ -14,30 +15,31 @@ inline size_t struct_size;
 
 namespace TypeChecker {
 extern std::string struct_name;
+inline std::string function_name;
 extern bool isType;
+inline std::set<std::string> importedFiles;
 
 void handleError(int line, int pos, std::string msg, std::string note,
-                 std::string typeOfError);
+                 std::string typeOfError, int endPos = 0);
 
 enum class LSPIdentifierType { // Types of identifiers that can be looked up
                                // with syntax highlighting
-  Function,
-  Struct,
-  Enum,
-  Variable,
-  Type,
-  Template,
-  Array,
-  EnumMember,
-  StructMember,
-  StructFunction,
-  Unknown
+  Function = 0,
+  Struct = 1,
+  Enum = 2,
+  Variable = 3,
+  EnumMember = 4,
+  StructMember = 5,
+  StructFunction = 6,
+  Type = 7,
 };
 
 struct LSPIdentifier {
   Node::Type *underlying;
   LSPIdentifierType type;
   std::string ident;
+  std::string scope; // Typically, this is the name of the function we are in. If a struct function, then the struct_function
+  bool isDefinition = false;
   size_t line;
   size_t pos;
   size_t fileID;

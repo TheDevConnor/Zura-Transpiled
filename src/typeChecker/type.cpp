@@ -1,5 +1,6 @@
 #include "type.hpp"
 
+#include <algorithm>
 #include <filesystem>
 #include <memory>
 
@@ -8,6 +9,9 @@
 
 void TypeChecker::performCheck(Node::Stmt *stmt, bool isMain, bool isLspServer) {
   isLspMode = isLspServer;
+  lsp_idents.clear();
+  TypeChecker::importedFiles.clear();
+  TypeChecker::foundMain = false;
   // Clear lsp idents that are in the current file
   for (auto it = lsp_idents.begin(); it != lsp_idents.end();) {
     if (std::filesystem::path(static_cast<ProgramStmt *>(stmt)->inputPath).relative_path().string() == node.current_file) {
@@ -17,6 +21,7 @@ void TypeChecker::performCheck(Node::Stmt *stmt, bool isMain, bool isLspServer) 
     }
   }
 
+  context.reset(); // Thank you C++ lords
   initMaps();  // Initialize the maps
 
   if (!context) {
@@ -30,6 +35,16 @@ void TypeChecker::performCheck(Node::Stmt *stmt, bool isMain, bool isLspServer) 
   if (!foundMain && isMain) {
     std::string msg = "No main function found";
     std::string note = "Try adding this function: \n\tconst main := fn() int { \n\t  return 0\n\t}";
-    handleError(0, 0, msg, note, "Type Error");
+    handleError(1, 0, msg, note, "Type Error");
   }
+
+  // Sort the lsp idents by the line, then the column
+  std::sort(lsp_idents.begin(), lsp_idents.end(),
+    [](const LSPIdentifier &a, const LSPIdentifier &b) {
+      if (a.line == b.line) {
+        return a.pos < b.pos;
+      }
+      return a.line < b.line;
+    }
+  );
 }

@@ -48,6 +48,28 @@ void TypeChecker::visitProgram(Node::Stmt *stmt) {
 
 void TypeChecker::visitConst(Node::Stmt *stmt) {
   ConstStmt *const_stmt = static_cast<ConstStmt *>(stmt);
+  if (isLspMode) {
+    LSPIdentifierType type = LSPIdentifierType::Type;
+    if (const_stmt->value->kind == NodeKind::ND_FN_STMT) {
+      type = LSPIdentifierType::Function;
+    } else if (const_stmt->value->kind == NodeKind::ND_STRUCT_STMT) {
+      type = LSPIdentifierType::Struct;
+    } else if (const_stmt->value->kind == NodeKind::ND_ENUM_STMT) {
+      type = LSPIdentifierType::Enum;
+    } else if (const_stmt->value->kind == NodeKind::ND_VAR_STMT) {
+      type = LSPIdentifierType::Variable;
+    }
+    lsp_idents.push_back(LSPIdentifier{
+        .underlying = new SymbolType("you gotta be joking, right", SymbolType::Signedness::SIGNED),
+        .type = type,
+        .ident = const_stmt->name,
+        .scope = "",
+        .isDefinition = true,
+        .line = (size_t)const_stmt->line,
+        .pos = (size_t)const_stmt->pos + 1,
+        .fileID = (size_t)const_stmt->file_id,
+    });
+  }
   visitStmt(const_stmt->value);
 }
 
@@ -60,6 +82,8 @@ void TypeChecker::visitFn(Node::Stmt *stmt) {
       fn_stmt->name,
       fn_stmt->returnType); // Declare this first, so that recursion and stuff
                             // is possible later
+  
+  function_name = fn_stmt->name;
 
   // if the isTemplate bool is true declare T as a type that can be Used
   if (fn_stmt->isTemplate) {
@@ -71,17 +95,24 @@ void TypeChecker::visitFn(Node::Stmt *stmt) {
 
   // Check function parameters
   ParamsAndTypes params;
-  for (std::pair<std::string, Node::Type *> &param : fn_stmt->params) {
+  for (std::pair<IdentExpr *, Node::Type *> &param : fn_stmt->params) {
     if (!param.second) {
       std::cerr << "Error: Parameter " << param.first << " has nullptr type!"
                 << std::endl;
       continue;
     }
-    params[param.first] = param.second;
-    context->declareLocal(param.first, param.second);
+    params[param.first->name] = param.second;
+    context->declareLocal(param.first->name, param.second);
   }
 
   // Add function to functionTable
+  // check if the function is already declared
+  if (context->functionTable.contains(fn_stmt->name)) {
+    std::string msg = "Function '" + fn_stmt->name + "' already declared";
+    handleError(fn_stmt->line, fn_stmt->pos - 2, msg, "", "Type Error", 
+                fn_stmt->pos);
+    // return;
+  }
   context->functionTable.declare(fn_stmt->name, params, fn_stmt->returnType);
 
   visitStmt(fn_stmt->block);
@@ -127,6 +158,7 @@ void TypeChecker::visitFn(Node::Stmt *stmt) {
     }
   }
 
+  function_name = "";
   return_type = nullptr;
   context->exitScope();
 }
@@ -150,9 +182,21 @@ void TypeChecker::visitStruct(Node::Stmt *stmt) {
       {struct_stmt->name, {}}); // Declare blank and insert later
 
   // visit the fields Aka the variables
-  for (std::pair<std::string, Node::Type *> &field : struct_stmt->fields) {
-    context->structTable.addMember(struct_stmt->name, field.first,
+  for (std::pair<IdentExpr *, Node::Type *> &field : struct_stmt->fields) {
+    context->structTable.addMember(struct_stmt->name, field.first->name,
                                    field.second);
+    if (isLspMode) {
+      lsp_idents.push_back(LSPIdentifier{
+          .underlying = field.second,
+          .type = LSPIdentifierType::StructMember,
+          .ident = field.first->name,
+          .scope = struct_stmt->name,
+          .isDefinition = true,
+          .line = (size_t)field.first->line,
+          .pos = (size_t)field.first->pos - field.first->name.size(),
+          .fileID = (size_t)field.first->file_id,
+      });
+    }
   }
 
   // handle fn stmts in the struct
@@ -161,10 +205,10 @@ void TypeChecker::visitStruct(Node::Stmt *stmt) {
     context->enterScope();
     FnStmt *fn_stmt = static_cast<FnStmt *>(stmt);
 
-    for (std::pair<std::string, Node::Type *> &param : fn_stmt->params) {
+    for (std::pair<IdentExpr *, Node::Type *> &param : fn_stmt->params) {
       // add the params to the local table
-      params[param.first] = param.second;
-      context->declareLocal(param.first, param.second);
+      params[param.first->name] = param.second;
+      context->declareLocal(param.first->name, param.second);
     }
 
     // declare_struct_fn(map, {fn_stmt->name, fn_stmt->returnType}, params,
@@ -224,7 +268,12 @@ void TypeChecker::visitEnum(Node::Stmt *stmt) {
   // add the enum name to the local table and global table
   context->declareLocal(enum_stmt->name, static_cast<Node::Type *>(type));
   context->declareGlobal(enum_stmt->name, static_cast<Node::Type *>(type));
-
+  // check if the enum table has the thing already declared
+  if (context->enumTable.contains(enum_stmt->name)) {
+    std::string msg = "Enum '" + enum_stmt->name + "' is already declared";
+    handleError(enum_stmt->line, enum_stmt->pos, msg, "", "Type Error");
+    return;
+  }
   // delcare the enum in the enum table
   context->enumTable.declare(enum_stmt->name);
 
@@ -236,10 +285,22 @@ void TypeChecker::visitEnum(Node::Stmt *stmt) {
 
   // visit the fields Aka the variables
   for (size_t i = 0; i < enum_stmt->fields.size(); i++) {
-    context->enumTable.addMember(enum_stmt->name, enum_stmt->fields[i],
+    context->enumTable.addMember(enum_stmt->name, enum_stmt->fields[i]->name,
                                  (long long)i);
-    context->declareLocal(enum_stmt->fields[i],
-                          static_cast<Node::Type *>(new SymbolType("int")));
+    context->declareLocal(enum_stmt->fields[i]->name,
+                                  static_cast<Node::Type *>(new SymbolType("int")));
+    if (isLspMode) {
+      lsp_idents.push_back(LSPIdentifier{
+          .underlying = new SymbolType(enum_stmt->name),
+          .type = LSPIdentifierType::EnumMember,
+          .ident = enum_stmt->fields[i]->name,
+          .scope = enum_stmt->name,
+          .isDefinition = true,
+          .line = (size_t)enum_stmt->fields[i]->line,
+          .pos = (size_t)enum_stmt->fields[i]->pos - enum_stmt->fields[i]->name.size(),
+          .fileID = (size_t)enum_stmt->file_id,
+      });
+    }
   }
 
   // set return type to the name of the enum
@@ -262,13 +323,32 @@ void TypeChecker::visitIf(Node::Stmt *stmt) {
 
 void TypeChecker::visitVar(Node::Stmt *stmt) {
   VarStmt *var_stmt = static_cast<VarStmt *>(stmt);
-
+  if (context->globalSymbols.contains(var_stmt->name) ||
+      context->lookup(var_stmt->name)) {
+    // If the variable is already declared in the global or local scope
+    // throw an error
+    std::string msg = "Variable '" + var_stmt->name + "' already declared";
+    TypeChecker::handleError(var_stmt->line, var_stmt->pos, msg, "", "Type Error", (int)(var_stmt->pos + var_stmt->name.size()));
+    return;
+  }
   context->declareLocal(var_stmt->name, var_stmt->type);
 
   // check if the type is a struct or enum
   if (context->structTable.contains(type_to_string(var_stmt->type)) ||
       context->enumTable.contains(type_to_string(var_stmt->type))) {
     return_type = share(var_stmt->type);
+  }
+  if (isLspMode) {
+    lsp_idents.push_back(LSPIdentifier {
+      .underlying = var_stmt->type,
+      .type = LSPIdentifierType::Variable,
+      .ident = var_stmt->name,
+      .scope = function_name,
+      .isDefinition = true,
+      .line = (unsigned long)var_stmt->line,
+      .pos = (unsigned long)var_stmt->pos + 1, // i dont know why you have to add one. it just looked off
+      .fileID = (unsigned long)var_stmt->file_id,
+    });
   }
 
   // Now check if we have a template struct
@@ -449,11 +529,26 @@ void TypeChecker::visitWhile(Node::Stmt *stmt) {
 
 void TypeChecker::visitImport(Node::Stmt *stmt) {
   ImportStmt *import_stmt = static_cast<ImportStmt *>(stmt);
-
+  // Convert the relative path of the import's name to be absolute
+  std::filesystem::path import_path = std::filesystem::absolute(
+      std::filesystem::path(import_stmt->name));
+  if (importedFiles.contains(import_path.string())) {
+    // If the import has already been imported, we do not need to do anything
+    return;
+  }
   // store the current file name
   std::string file_name = node.current_file;
   // If the path of the import is absolute, we must set the node.current_file to
-  // be the import path relative to the pwd
+  
+  std::unordered_map<std::string, Node::Type *>::iterator res =
+      context->globalSymbols.find(import_stmt->name);
+  if (res != context->globalSymbols.end()) {
+    std::string msg = "'" + import_stmt->name + "' has already been imported.";
+    handleError(import_stmt->line, import_stmt->pos, msg, "", "Type Error");
+    return;
+  }
+  
+  // be the import path relative to the cwd
   if (std::filesystem::path(import_stmt->name).is_absolute()) {
     node.current_file =
         std::filesystem::path(import_stmt->name).relative_path().string();
@@ -461,20 +556,16 @@ void TypeChecker::visitImport(Node::Stmt *stmt) {
     node.current_file = import_stmt->name;
   }
 
-  std::unordered_map<std::string, Node::Type *>::iterator res =
-      context->globalSymbols.find(import_stmt->name);
-  if (res != context->globalSymbols.end()) {
-    std::string msg = "'" + import_stmt->name + "' has already been imported.";
-    handleError(import_stmt->line, import_stmt->pos, msg, "", "Type Error");
-  }
-
   context->declareGlobal(import_stmt->name, return_type.get());
-
+  std::swap(node.tks, import_stmt->tks); // C++ my beloved
   // type check the import
   visitStmt(import_stmt->stmt);
-
+  
   return_type = nullptr;
   node.current_file = file_name; // reset the current file name
+  std::swap(node.tks, import_stmt->tks);
+  // Add the absolute path to the imported files
+  importedFiles.insert(import_path.string());
 }
 
 void TypeChecker::visitMatch(Node::Stmt *stmt) {

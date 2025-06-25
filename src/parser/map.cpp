@@ -4,6 +4,7 @@
 #include <vector>
 
 #include "../ast/ast.hpp"
+#include "../ast/expr.hpp"
 #include "../helper/error/error.hpp"
 #include "../lexer/lexer.hpp"
 #include "parser.hpp"
@@ -33,7 +34,8 @@ T Parser::lookup(PStruct *psr, const std::vector<std::pair<U, T>> &lu, U key) {
 
   if (it == lu.end()) {
     std::string msg = "Could not find key (" + std::to_string(key) + ") in lookup table!";
-    Error::handle_error("Parser", psr->current_file, msg, psr->tks, psr->current().line, psr->current().column);
+    Error::handle_error("Parser", psr->current_file, msg, psr->tks, psr->current().line, psr->current().column, 
+                        psr->current().column + psr->current().value.size());
     return nullptr;
   }
 
@@ -150,6 +152,7 @@ void Parser::createMaps() {
       {TokenKind::OR, BindingPower::logicalOr},
       {TokenKind::AND, BindingPower::logicalAnd},
 
+
       {TokenKind::BANG, BindingPower::prefix},
       {TokenKind::EQUAL_EQUAL, BindingPower::comparison},
       {TokenKind::BANG_EQUAL, BindingPower::comparison},
@@ -228,7 +231,7 @@ Node::Expr *Parser::nud(PStruct *psr) {
   } catch (std::runtime_error &e) {
     std::string msg = "Could not parse expression in NUD!";
     Error::handle_error("Parser", psr->current_file, msg, psr->tks,
-                              psr->current().line, psr->current().column);
+                              psr->current().line, psr->current().column, psr->current().column + op.value.size());
     return nullptr;
   }
 }
@@ -254,7 +257,7 @@ Node::Expr *Parser::led(PStruct *psr, Node::Expr *left, BindingPower bp) {
   } catch (std::runtime_error &e) {
     std::string msg = "Could not parse expression in LED!";
     Error::handle_error("Parser", psr->current_file, msg, psr->tks,
-                              psr->current().line, psr->current().column);
+                              psr->current().line, psr->current().column, psr->current().column + op.value.size());
     return nullptr;
   }
 }

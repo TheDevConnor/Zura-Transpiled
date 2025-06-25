@@ -17,9 +17,9 @@ std::string codegen::dwarf::generateAbbreviations() {
                          "\n.uleb128 0x3a # AT_decl_file"
                          "\n.uleb128 0xb # FORM_data1"
                          "\n.uleb128 0x3b # AT_decl_line"
-                         "\n.uleb128 0xb # FORM_data1"
+                         "\n.uleb128 0x06 # FORM_data4"
                          "\n.uleb128 0x39 # AT_decl_column"
-                         "\n.uleb128 0xb # FORM_data1"
+                         "\n.uleb128 0x06 # FORM_data4"
                          "\n.uleb128 0x49 # AT_type" 
                          "\n.uleb128 0x13 # FORM_ref4"
                          "\n.uleb128 0x11 # AT_low_pc"
@@ -44,9 +44,9 @@ std::string codegen::dwarf::generateAbbreviations() {
                          "\n.uleb128 0x3a # AT_decl_file"
                          "\n.uleb128 0xb # FORM_data1"
                          "\n.uleb128 0x3b # AT_decl_line"
-                         "\n.uleb128 0xb # FORM_data1"
+                         "\n.uleb128 0x06 # FORM_data4"
                          "\n.uleb128 0x39 # AT_decl_column"
-                         "\n.uleb128 0xb # FORM_data1"
+                         "\n.uleb128 0x06 # FORM_data4"
                          "\n.uleb128 0x11 # AT_low_pc"
                          "\n.uleb128 0x1 # FORM_addr" 
                          "\n.uleb128 0x12 # AT_high_pc"
@@ -71,9 +71,9 @@ std::string codegen::dwarf::generateAbbreviations() {
                          "\n.uleb128 0x3a # AT_decl_file"
                          "\n.uleb128 0xb # FORM_data1"
                          "\n.uleb128 0x3b # AT_decl_line"
-                         "\n.uleb128 0xb # FORM_data1"
+                         "\n.uleb128 0x06 # FORM_data4"
                          "\n.uleb128 0x39 # AT_decl_column"
-                         "\n.uleb128 0xb # FORM_data1"
+                         "\n.uleb128 0x06 # FORM_data4"
                          "\n.uleb128 0x49 # AT_type" 
                          "\n.uleb128 0x13 # FORM_ref4"
                          "\n.uleb128 0x11 # AT_low_pc"
@@ -100,9 +100,9 @@ std::string codegen::dwarf::generateAbbreviations() {
                          "\n.uleb128 0x3a # AT_decl_file"
                          "\n.uleb128 0xb # FORM_data1"
                          "\n.uleb128 0x3b # AT_decl_line"
-                         "\n.uleb128 0xb # FORM_data1"
+                         "\n.uleb128 0x06 # FORM_data4"
                          "\n.uleb128 0x39 # AT_decl_column"
-                         "\n.uleb128 0xb # FORM_data1"
+                         "\n.uleb128 0x06 # FORM_data4"
                          "\n.uleb128 0x11 # AT_low_pc"
                          "\n.uleb128 0x1 # FORM_addr" 
                          "\n.uleb128 0x12 # AT_high_pc"
@@ -123,9 +123,9 @@ std::string codegen::dwarf::generateAbbreviations() {
                           "\n.uleb128 0x3a # AT_decl_file"
                           "\n.uleb128 0xb # FORM_data1"
                           "\n.uleb128 0x3b # AT_decl_line"
-                          "\n.uleb128 0xb # FORM_data1"
+                          "\n.uleb128 0x06 # FORM_data4"
                           "\n.uleb128 0x39 # AT_decl_column"
-                          "\n.uleb128 0xb # FORM_data1"
+                          "\n.uleb128 0x06 # FORM_data4"
                           "\n.uleb128 0x49 # AT_type"
                           "\n.uleb128 0x13 # FORM_ref4"
                           "\n.uleb128 0x2 # AT_location"
@@ -182,16 +182,12 @@ std::string codegen::dwarf::generateAbbreviations() {
         abbreviations += "\n.uleb128 " + std::to_string((int)a) +
                          "\n.byte 0x05 # TAG_formal_parameter"
                          "\n.byte 0 # No children"
-                         "\n.byte 0x3a # AT_decl_file"
-                         "\n.byte 0x0b # FORM_data1"
-                         "\n.byte 0x3b # AT_decl_line"
-                         "\n.byte 0x0b # FORM_data1"
-                         "\n.byte 0x39 # AT_decl_column"
-                         "\n.byte 0x0b # FORM_data1"
                          "\n.byte 0x49 # AT_type"
                          "\n.byte 0x13 # FORM_ref4"
                          "\n.byte 0x2 # AT_location"
                          "\n.byte 0x18 # FORM_exprloc"
+                         "\n.uleb128 0x3 # AT_name"
+                         "\n.uleb128 0xe # FORM_strp"
                          "\n";
 
         break;
@@ -203,9 +199,9 @@ std::string codegen::dwarf::generateAbbreviations() {
                           "\n.uleb128 0x3a # AT_decl_file"
                           "\n.uleb128 0xb # FORM_data1"
                           "\n.uleb128 0x3b # AT_decl_line"
-                          "\n.uleb128 0xb # FORM_data1"
+                          "\n.uleb128 0x06 # FORM_data4"
                           "\n.uleb128 0x39 # AT_decl_column"
-                          "\n.uleb128 0xb # FORM_data1"
+                          "\n.uleb128 0x06 # FORM_data4"
                           "\n.uleb128 0x11 # AT_low_pc"
                           "\n.uleb128 0x1 # FORM_addr"
                           "\n.uleb128 0x12 # AT_high_pc"
@@ -223,9 +219,9 @@ std::string codegen::dwarf::generateAbbreviations() {
                          "\n.uleb128 0x3a # AT_decl_file"
                          "\n.uleb128 0xb # FORM_data1"
                          "\n.uleb128 0x3b # AT_decl_line"
-                         "\n.uleb128 0xb # FORM_data1"
+                         "\n.uleb128 0x06 # FORM_data4"
                          "\n.uleb128 0x39 # AT_decl_column"
-                         "\n.uleb128 0xb # FORM_data1"
+                         "\n.uleb128 0x06 # FORM_data4"
                          "\n.uleb128 0xb # AT_byte_size"
                          "\n.uleb128 0x05 # FORM_data2"
                          "\n";
@@ -241,6 +237,10 @@ std::string codegen::dwarf::generateAbbreviations() {
                          "\n.uleb128 0x13 # FORM_ref4"
                          "\n.uleb128 0x38 # AT_data_member_location"
                          "\n.uleb128 0x0d # FORM_sdata"
+                         "\n.uleb128 0x3b # AT_decl_line"
+                         "\n.uleb128 0x06 # FORM_data4"
+                         "\n.uleb128 0x39 # AT_decl_column"
+                         "\n.uleb128 0x06 # FORM_data4"
                          "\n";
         break;
       }
@@ -253,9 +253,9 @@ std::string codegen::dwarf::generateAbbreviations() {
                          "\n.uleb128 0x3a # AT_decl_file"
                          "\n.uleb128 0xb # FORM_data1"
                          "\n.uleb128 0x3b # AT_decl_line"
-                         "\n.uleb128 0xb # FORM_data1"
+                         "\n.uleb128 0x06 # FORM_data4"
                          "\n.uleb128 0x39 # AT_decl_column"
-                         "\n.uleb128 0xb # FORM_data1"
+                         "\n.uleb128 0x06 # FORM_data4"
                          // For some reason, C includes BOTH a "type" AND "encoding" attribute.
                          // Since both the 'type', and the 'encoding'-'byte-size' pair are included in C,
                          // i will just make them both the same constant- unsigned long (32-bits, although this is too much.)
@@ -276,6 +276,11 @@ std::string codegen::dwarf::generateAbbreviations() {
                          "\n.uleb128 0xe # FORM_strp"
                          "\n.uleb128 0x1c # AT_const_value"
                          "\n.uleb128 0xb # FORM_data1"
+                         // line, column, and file information
+                         "\n.uleb128 0x3b # AT_decl_line"
+                         "\n.uleb128 0x06 # FORM_data4"
+                         "\n.uleb128 0x39 # AT_decl_column"
+                         "\n.uleb128 0x06 # FORM_data4"
                          "\n";
         break;
       }
@@ -306,9 +311,9 @@ std::string codegen::dwarf::generateAbbreviations() {
         abbreviations += "ERROR HERE! UNIMPLEMENTED ABBREV: " + std::to_string((int)a) + "\n";
         break;
     };
-    abbreviations += "\n.byte 0\n.byte 0\n"; // Add padding
+    abbreviations += "\n.byte 0 # ABBREV PADDING\n.byte 0 # ABBREV PADDING 2\n"; // Add padding
   }
-  abbreviations += ".byte 0\n.byte 0\n"; // End of all children of CU, end of all tags, yata yata shut up its the end of the abbevations.
+  abbreviations += ".byte 0 # ABBREV OVERALL PADDING\n.byte 0 # ABBREV OVERALL PADDING 2\n"; // End of all children of CU, end of all tags, yata yata shut up its the end of the abbevations.
   return abbreviations;
 };
 
@@ -359,7 +364,7 @@ void codegen::dwarf::useType(Node::Type *type) {
     pushLinker(".uleb128 " + std::to_string((int)DIEAbbrev::ArraySubrange) +
                "\n.long .Lint_u_debug_type" // This is gonna be the type of the index used in arrays - arr[1] - 1 is an int 
                "\n.short " + (a->constSize <= 0 ? std::to_string(std::numeric_limits<short signed int>::max()) : std::to_string(a->constSize - 1)) +
-               "\n.byte 0\n" // end of the arrayType
+               "\n.byte 0 # </ARRAY TYPE>\n" // end of the arrayType
                , Section::DIETypes);
   } else {
     // Nothing can be done if it is a basic type.
@@ -474,15 +479,6 @@ void codegen::dwarf::emitTypes(void) {
                "\n.long .Lchar_u_debug_type # FORM_ref4"
                , Section::DIETypes);
   }
-  // bool (no signedness)
-  if (dieNamesUsed.find("bool_i") != dieNamesUsed.end()) {
-    push(Instr{.var = Label{.name = ".Lbool_i_debug_type"}, .type = InstrType::Label}, Section::DIETypes);
-    pushLinker(".uleb128 " + std::to_string((int)DIEAbbrev::Type) +
-               "\n.byte 1 # AT_byte_size"
-               "\n.uleb128 0x2 # AT_encoding = ATE_boolean"
-               "\n.string \"bool\"\n"
-    , Section::DIETypes);
-  }
   // float
   if (dieNamesUsed.find("float_i") != dieNamesUsed.end()) {
     push(Instr{.var = Label{.name = ".Lfloat_i_debug_type"}, .type = InstrType::Label}, Section::DIETypes);
@@ -499,6 +495,20 @@ void codegen::dwarf::emitTypes(void) {
                "\n.byte 8 # AT_byte_size"
                "\n.uleb128 0x4 # AT_encoding = ATE_float"
                "\n.string \"double\"\n"
+    , Section::DIETypes);
+  }
+
+  // bool
+  if (dieNamesUsed.contains("bool_i") ||
+      dieNamesUsed.contains("bool_u") ||
+      dieNamesUsed.contains("bool_s")) {
+    push(Instr{.var=Label{.name=".Lbool_s_debug_type"}, .type=InstrType::Label}, Section::DIETypes);
+    push(Instr{.var=Label{.name=".Lbool_u_debug_type"}, .type=InstrType::Label}, Section::DIETypes);
+    push(Instr{.var=Label{.name=".Lbool_i_debug_type"}, .type=InstrType::Label}, Section::DIETypes);
+    pushLinker(".uleb128 " + std::to_string((int)DIEAbbrev::Type) +
+               "\n.byte 1 # AT_byte_size"
+               "\n.uleb128 0x2 # AT_encoding = ATE_boolean"
+               "\n.string \"bool\"\n"
     , Section::DIETypes);
   }
 

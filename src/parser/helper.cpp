@@ -22,11 +22,12 @@ Lexer::Token Parser::PStruct::expect(TokenKind tk, std::string msg) {
   if (!hadTokens()) {
     std::string message = "Expected token of type '" + std::string(Lexer::tokenToStringMap.at(tk)) + "', but instead found the end of the file.";
     Error::handle_error("Parser", current_file, message, tks,
-                        tks.back().line, tks.back().column);
+                        tks.back().line, tks.back().column, tks.back().column + 1);
     return tks.back();
   }
   if (peek(0).kind == tk) return advance();
   std::string errorMsg = msg;
-  Error::handle_error("Parser", current_file, errorMsg, tks, current().line, current().column);
+  Error::handle_error("Parser", current_file, errorMsg, tks, current().line, current().column, 
+                      current().column + current().value.size());
   return current();
 }

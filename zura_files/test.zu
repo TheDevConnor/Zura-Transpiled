@@ -1,0 +1,2 @@
+have x: int! = 15;
+have y: float = 75.504555;

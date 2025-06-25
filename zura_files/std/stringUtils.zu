@@ -14,6 +14,7 @@ const concat := fn (a: *char, b: *char) *char {
   have result: *char = @cast<*char>(@alloc(t_len));
   if (result == nil) {
     @outputln(1, "Memory allocation failed in concat");
+    @free(result, t_len); # Technically it failed, but freeing the memory here would be a nop. I still feel like it's better to keep this here anyway.
     return nil;
   }
 
@@ -31,6 +32,7 @@ const copy := fn (src: *char) *char {
   have dest: *char = @cast<*char>(@alloc(len + 1)); # +1 for null terminator
   if (dest == nil) {
     @outputln(1, "Memory allocation failed in copy");
+    @free(dest, len + 1); # Same as above
     return nil;
   }
 
@@ -40,7 +42,10 @@ const copy := fn (src: *char) *char {
   return dest;
 };
 
+# ????
+# A strcmp function could just be placed a builtin but this function is unimplemented??
 const strcmp := fn (a: *char, b: *char) int! {
+  @outputln(1, "strcmp is not implemented");
   return 0; # Placeholder for string comparison logic
 };
 

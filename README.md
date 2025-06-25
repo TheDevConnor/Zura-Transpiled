@@ -74,63 +74,35 @@ You’ll need the following tools installed:
 
 #### Debain / Ubuntu
 ```sh
-sudo apt-get install cmake gcc valgrind ninja
+sudo apt-get install make cmake gcc valgrind
 ```
 
 #### openSUSE / SUSE Linux
 ```sh
-sudo zypper install cmake gcc valgrind ninja
+sudo zypper install make cmake gcc valgrind
 ```
 
 #### Red Hat / Fedora
 ```sh
-sudo dnf install gcc cmake valgrind ninja
+sudo dnf install make gcc cmake valgrind
 ```
 
 #### Arch Linux
 ```sh
-sudo pacman -S cmake gcc valgrind ninja
+sudo pacman -S make cmake gcc valgrind
 ```
 
 ##### Building
 
-Now if you want to build zura for the debug mode do
-
-```console
-mkdir debug
-cmake -G Ninja -DCMAKE_BUILD_TYPE=debug -DCMAKE_EXPORT_COMPILE_COMMANDS=1 -B debug -S .
-ninja -C debug
+To build the Zura compiler from source, run:
+```sh
+make BUILD=release -j$(nproc)
 ```
-
-and now the exacutable will be available for you to use to debug with
-
-Or if you want the release version do this
-
-```console
-mkdir release
-cmake -G Ninja -DCMAKE_BUILD_TYPE=release -DCMAKE_EXPORT_COMPILE_COMMANDS=1 -B release -S .
-ninja -C release
-```
-
-This will create a `zura` executable in the `build` directory.
-
-Or you can alternativly use the build.sh file to do this for you
-
-```console
-chmod +x build.sh
-./build.sh debug or ./build.sh release
-```
+This will compile the Zura compiler and place the executable in the `release/` directory.
+You can also run `make BUILD=debug -j$(nproc)` to build a debug version of the compiler.
+Also the `-j$(nproc)` flag will speed up the build process by using all available CPU cores.
 
 Or you can download the latest release from [here](https://github.com/TheDevConnor/Zura-Transpiled/releases/tag/pre-release) and add either the `zura.exe` (For Windows) or `zura` (For Linux) executable to your path.
-Eventually, I will add a script to automate this process.
-
-You can also copy the 'installer.sh' file and run it to install the latest release of Zura to your system.
-Instead of building the project yourself.
-
-```console
-chmod +x installer.sh
-./installer.sh
-```
 
 ## Usage
 

@@ -80,6 +80,10 @@ Lexer::Token Lexer::String(int whitespace) {
   while (peek() != '"' && !isAtEnd()) {
     if (peek() == '\n')
       token.line++;
+    if (peek() == '\\')
+      if (*(scanner.current+1) == '"') {
+        advance();
+      }
     advance();
   }
   if (isAtEnd())
@@ -156,7 +160,14 @@ Lexer::Token Lexer::scanToken() {
   char c = Lexer::advance();
 
   if (isalpha(c)) return makeToken(identifier(whitespace_count).kind, whitespace_count);
-  if (c == '@')   return makeToken(at_keywords[identifier(whitespace_count).value], whitespace_count);
+  if (c == '@') {
+    auto ident_token = identifier(whitespace_count);
+    auto it = at_keywords.find(ident_token.value);
+    if (ident_token.value.empty() || it == at_keywords.end()) {
+      return errorToken("Unknown or missing @-keyword after '@'", whitespace_count);
+    }
+    return makeToken(it->second, whitespace_count);
+  }
   if (isdigit(c)) return makeToken(number(whitespace_count).kind, whitespace_count);
   if (c == '"')   return makeToken(String(whitespace_count).kind, whitespace_count);
   if (c == '\'')  return makeToken(Char(whitespace_count).kind, whitespace_count);

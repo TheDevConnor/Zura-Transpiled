@@ -21,7 +21,7 @@ Node::Stmt *Parser::parse(const char *source, std::string file) {
   node.current_file = file;
   if (Error::report_error()) return nullptr; // Error handling
   if (tks.empty()) {
-    Error::handle_error("Parser", file, "No tokens found!", tks, 0, 0);
+    Error::handle_error("Parser", file, "No tokens found!", tks, 0, 0, 0);
     return nullptr;
   }
 

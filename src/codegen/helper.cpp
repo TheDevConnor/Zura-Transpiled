@@ -14,7 +14,7 @@
 void codegen::handleError(int line, int pos, std::string msg,
                           std::string typeOfError, bool isFatal) {
   (void)isFatal;
-  Error::handle_error(typeOfError, node.current_file, msg, node.tks, line, pos);
+  Error::handle_error(typeOfError, node.current_file, msg, node.tks, line, pos, pos + 1);
 }
 
 /*
@@ -228,7 +228,7 @@ void codegen::handleExitSyscall() {
 
 void codegen::handleReturnCleanup() {
   popToRegister("%rbp");
-  pushLinker(".cfi_def_cfa 7, 8\n\t", Section::Main);
+  pushLinker(".cfi_def_cfa %rsp, 8\n\t", Section::Main);
   push(Instr{.var = Ret{}, .type = InstrType::Ret}, Section::Main);
 }
 

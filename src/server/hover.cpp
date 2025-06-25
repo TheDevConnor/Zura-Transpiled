@@ -1,9 +1,41 @@
 #include "lsp.hpp"
+#include "../codegen/gen.hpp"
+#include "../typeChecker/type.hpp"
 
 // And completions!
 bool lsp::isTokenCharacter(char c) {
 
   return std::isalnum(c) || c == '@' || c == '_';
+}
+
+char lsp::getCharUnder(const std::string &text, size_t line, size_t character) {
+  // Returns the character at the given line and character position.
+  size_t currentLine = 0;
+  size_t currentChar = 0;
+  size_t offset = 0;
+
+  // Step 1: Find the byte offset at (line, character)
+  while (offset < text.size() && currentLine < line) {
+    if (text[offset] == '\n') {
+      currentLine++;
+      currentChar = 0;
+    } else {
+      currentChar++;
+    }
+    offset++;
+  }
+
+  // Now walk from the start of the line to the character offset
+  while (offset < text.size() && text[offset] != '\n' && currentChar < character) {
+    offset++;
+    currentChar++;
+  }
+
+  if (offset >= text.size() || text[offset] == '\n') {
+    return '\0'; // No character found
+  }
+
+  return text[offset];
 }
 
 lsp::Word lsp::getWordUnder(const std::string &text, size_t line, size_t character) {
@@ -68,6 +100,13 @@ lsp::Word lsp::getWordUnder(const std::string &text, size_t line, size_t charact
   return { finalText, {startPos, endPos} };
 }
 
+size_t lsp::fileIDFromURI(lsp::URI uri) {
+  for (size_t i = 0; i < codegen::fileIDs.size(); i++) {
+    if (codegen::fileIDs[i] == uri.substr(7)) return i;
+  }
+  return (size_t)-1;
+};
+
 
 void lsp::handleMethodTextDocumentHover(const nlohmann::json &object)
 {
@@ -109,12 +148,35 @@ void lsp::handleMethodTextDocumentHover(const nlohmann::json &object)
   }
 
   //! 2. Check for references within the actual codebase
-  // We will not handle this. I'm FAR too lazy.
-  nlohmann::json response = {
+  // there is a lsp_idents vector that contains a bunch of, you guessed it, identifiers
+  for (const auto &ident : TypeChecker::lsp_idents) {
+    if (
+      ident.ident == word.text && 
+      ident.fileID == fileIDFromURI(object["params"]["textDocument"]["uri"]) &&
+      (ident.line - 1) == word.range.start.line
+      && !ident.ident.empty()) {
+      nlohmann::json response = {
+        {"jsonrpc", "2.0"},
+        {"id", object["id"]},
+        {"result", {
+          {"contents", {
+            {"kind", "markdown"},
+            {"value", "```zura\n" + ident.ident + ": " + TypeChecker::type_to_string(ident.underlying) + "\n```"}
+          }},
+          {"range", {
+            {"start", {{"line", word.range.start.line}, {"character", word.range.start.character}}},
+            {"end", {{"line", word.range.end.line}, {"character", word.range.end.character}}}
+          }}
+        }}
+      };
+      handleResponse(response);
+      return;
+    }
+  }
+  handleResponse({
     {"jsonrpc", "2.0"},
     {"id", object["id"]},
-    {"result", nullptr} // No hover information found
-  };
-  handleResponse(response);
+    {"result", nullptr} // No identifier found
+  });
   return;
 }

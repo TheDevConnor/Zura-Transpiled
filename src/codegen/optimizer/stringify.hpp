@@ -105,7 +105,7 @@ class Stringifier {  // converts Instr structures into AT&T Syntax strings
       }
       std::string operator()(XorInstr instr) const {
         // Assume qword
-        return "xorq " + instr.lhs + ", " + instr.rhs + "\n\t";
+        return "xor " + instr.lhs + ", " + instr.rhs + "\n\t";
       }
       std::string operator()(AddInstr instr) const {
         return "add" + dsToChar(instr.size) + " " + instr.rhs + ", " + instr.lhs + "\n\t";

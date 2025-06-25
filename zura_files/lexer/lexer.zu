@@ -1,89 +1,43 @@
 @import "../std/asciiToString.zu";
+@import "helper.zu";
 
-const TokenKind := enum {
-  Plus,
-  Dash,
-  Star,
-  Slash,
-  LParen,
-  RParen,
-  Number,
-  Identifier,
-  String,
-  Comma,
-  Semicolon,
-  Equals,
-  LBrace,
-  RBrace,
-  LBracket,
-  RBracket,
-  Less,
-  Greater,
-  Ampersand,
-  Percent,
-  Bang,
-  Question,
-  Colon,
-  Dot
-};
+# const make_token := fn (k: TokenKind, v: *char) Token {
+#   have token: Token = {
+#     kind: k,
+#     value: v,
+#   };
+#   return token;
+# };
 
-const Position := struct {
-  line: int!,
-  pos: int!
-};
-
-const Token := struct {
-  position: Position,
-  kind: TokenKind,
-  value: *char
-};
-
-const Lexer := struct {
-  current: *char,
-  start: *char,
-  line: int!,
-  pos: int!,
-};
-
-const advance := fn (lx: *Lexer) char {
-  return lx&.current[lx&.pos++];
-};
-
-const whitespace := fn (lx: *Lexer) int! {
-  have count: int! = 0;
-
-  loop (i = 0; i < lx&.pos) : (i++) {
-    if (lx&.current[lx&.pos] == @cast<char>(10)) { # Newline 
-      lx&.line++;
-      lx&.pos = 0;
-      advance(lx);
-    } 
-    if (lx&.current[lx&.pos] == @cast<char>(32)) { # Space
-      count++;
-      advance(lx);
-    } else {
-      break; # Stop if we encounter a non-whitespace character
-    }
-  }
-
-  return count; # Return the count of whitespace characters skipped
-};
-
-const scan := fn (lx: *Lexer, size: int!) void {
-  have count: int! = 0;
+const scan := fn (source: *char, size: int!) void {
   have whitespaceCount: int! = 0;
+  have generate: bool! = true; # Flag to control token generation
+  have col: int! = 0;
+  have line: int! = 1;
 
   loop (i = 0; i < size) : (i++) {
-    whitespaceCount = whitespace(lx);
-    lx&.start = lx&.current;
+    whitespaceCount = 0; # reset whitespace count for each character
 
-    if (lx&.current[lx&.pos] == @cast<char>(0)) {
-      break; # End of input
+    have whitespace: int! = check_whitespace(source, &i, &line, &col, size);
+    if (whitespace == 1) {
+      if (source[i] == @cast<char>(10)) col = 0;
+      whitespaceCount++;
+    } else {
+      col++; # increment column count
     }
-    
-    # for now just print the current character and its position
-    @outputln(1, "Current character: ", ascii_to_string(lx&.current[lx&.pos]), " ", lx&.current[lx&.pos], " at position: ", lx&.pos, " on line: ", lx&.line, " whitespace skipped: ", whitespaceCount);
 
-    advance(lx);
+    have is_alpha: bool = ident(source, &i);
+    if (is_alpha) {
+      @outputln(1, "identifier found at ", ascii_to_string(source[i]));
+    }
+    # Anything that is prexed with '@' is a special token
+    # have is_default: int! = default_function(source, &i);
+
+    have is_digit: *char = number(source, &i);
+    if (@streq(@cast<str>(is_digit), "")) {} else {
+      @outputln(1, is_digit);
+    }
+
+    # TODO: Implement check for single-character tokens and multi-character tokens
   }
 };

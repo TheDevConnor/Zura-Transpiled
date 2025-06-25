@@ -18,8 +18,10 @@ const printHelp := fn () int! {
   @outputln(1, "  ", color(@cast<int!>(Color.Green), "--license"), "    Show the license of Zura");
   @outputln(1, "Compiler Flags:");
   @outputln(1, "  ", color(@cast<int!>(Color.Green), "build"), " <file> Build a Zura file");
-  @outputln(1, "  ", color(@cast<int!>(Color.Green), "-name"), " <name> Set the name of the output file");
-  @outputln(1, "  ", color(@cast<int!>(Color.Green), "-save"), "        Saves the assembly output");
+  @outputln(1, "  ", color(@cast<int!>(Color.Green), "-quiet"), "       Quiet mode, minimal printed output");
+  @outputln(1, "  ", color(@cast<int!>(Color.Green), "-debug"), "       Debug mode, emplace debug info");
+  @outputln(1, "  ", color(@cast<int!>(Color.Green), "-name"), " <name> Change the name of the output executable");
+  @outputln(1, "  ", color(@cast<int!>(Color.Green), "-save"), "        Does not automatically delete the assembly file after compilation");
   @outputln(1, "  ", color(@cast<int!>(Color.Green), "-clean"), "       Clean the build files [*.asm || *.s, *.o]");
   @outputln(1, "Zura LSP Flags:");
   @outputln(1, "  ", color(@cast<int!>(Color.Green), "-lsp"), "         Create an LSP connection via stdio.");

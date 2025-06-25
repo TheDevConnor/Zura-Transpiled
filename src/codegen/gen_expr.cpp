@@ -412,6 +412,17 @@ void codegen::unary(Node::Expr *expr) {
       .what = whatWasPushed,
       .whatSize = size     
     }, .type=InstrType::Push},Section::Main);
+  } else if (e->op == "!") {
+    // The rhs should be a bool
+    push(Instr{.var = PopInstr{.where = "%al", .whereSize = DataSize::Byte},
+                 .type = InstrType::Pop},
+         Section::Main);
+    // Perform the operation
+    pushLinker("not %al\n\t", Section::Main);
+    // Push the result
+    push(Instr{.var = PushInstr{.what = "%al", .whatSize = DataSize::Byte},
+                 .type = InstrType::Push},
+         Section::Main);
   }
 }
 
@@ -746,8 +757,14 @@ void codegen::assign(Node::Expr *expr) {
       IdentExpr *lhs = static_cast<IdentExpr *>(e->assignee);
       visitExpr(e->rhs);
       std::string res = variableTable[lhs->name];
-      popToRegister(res);
-      pushRegister(res);  // Expressions return values!
+      push(Instr{.var=PopInstr{.where = res, .whereSize = intDataToSize(getByteSizeOfType(e->rhs->asmType))},
+                 .type = InstrType::Pop},
+           Section::Main);
+      // Assignments are expressions that reutrn things. Chances likely are that this will be ignored
+      // but this is still required
+      push(Instr{.var=PushInstr{.what = res, .whatSize = intDataToSize(getByteSizeOfType(e->rhs->asmType))},
+                 .type = InstrType::Push},
+           Section::Main);
     }
   }
 }
@@ -1027,7 +1044,6 @@ void codegen::assignStructMember(Node::Expr *expr) {
   std::string structName = getUnderlying(dynamic_cast<MemberExpr*>(e->assignee)->lhs->asmType);
   std::string rhsName = dynamic_cast<IdentExpr *>(dynamic_cast<MemberExpr*>(e->assignee)->rhs)->name;
   auto &thisByteSizes = structByteSizes[structName];
-  e->debug();
   size_t elementIndex = 99999; // This would be a stupid struct to have.
   for (size_t i = 0; i < thisByteSizes.second.size(); i++) {
     if (thisByteSizes.second.at(i).first == rhsName) {

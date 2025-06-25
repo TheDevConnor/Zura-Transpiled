@@ -55,7 +55,7 @@ Node::Expr *Parser::primary(PStruct *psr) {
     std::string msg =
         "Expected a primary expression, but got: " + psr->current().value;
     Error::handle_error("Parser", psr->current_file, msg, psr->tks, line,
-                        column);
+                        column, psr->current().column + psr->current().value.size());
     return nullptr;
   }
 }
@@ -451,12 +451,15 @@ Node::Expr *Parser::structExpr(PStruct *psr) {
   psr->expect(TokenKind::LEFT_BRACE,
               "Expected a L_Brace to start a struct expr!");
 
-  std::unordered_map<std::string, Node::Expr *> elements;
+  std::unordered_map<IdentExpr *, Node::Expr *> elements;
   while (psr->current().kind != TokenKind::RIGHT_BRACE) {
-    std::string key =
-        psr->expect(TokenKind::IDENTIFIER,
-                    "Expected an IDENTIFIER as a key in a struct expr!")
-            .value;
+    Node::Expr *keyExpr = parseExpr(psr, defaultValue);
+    if (keyExpr->kind != ND_IDENT) {
+      std::string msg = "Expected an IDENTIFIER as a key in a struct expr!";
+      Error::handle_error("Parser", psr->current_file, msg, psr->tks, line,
+                          column, column + 1);
+    }
+    IdentExpr *key = static_cast<IdentExpr *>(keyExpr);
     psr->expect(TokenKind::COLON,
                 "Expected a COLON after a key in a struct expr!");
     Node::Expr *value = parseExpr(psr, defaultValue);
@@ -529,7 +532,7 @@ Node::Expr *Parser::openExpr(PStruct *psr) {
     } else {
       std::string msg = "Expected a maximum of 3 arguments for an open expr!";
       Error::handle_error("Parser", psr->current_file, msg, psr->tks, line,
-                          column);
+                          column, column + 1);
     }
     if (psr->current().kind == TokenKind::RIGHT_PAREN)
       break;

@@ -1,0 +1,87 @@
+@import "../std/type.zu";
+
+const TokenKind := enum {
+  Plus,
+  Dash,
+  Star,
+  Slash,
+  LParen,
+  RParen,
+  Number,
+  Identifier,
+  String,
+  Comma,
+  Semicolon,
+  Equals,
+  LBrace,
+  RBrace,
+  LBracket,
+  RBracket,
+  Less,
+  Greater,
+  Ampersand,
+  Percent,
+  Bang,
+  Question,
+  Colon,
+  Dot
+};
+
+const Position := struct {
+  line: int!,
+  pos: int!
+};
+
+const Token := struct {
+  kind: TokenKind,
+  value: *char
+};
+
+const default_function := fn (c: *char, index: *int!) int! {
+  return 0;
+};
+
+const check_whitespace := fn (c: *char, index: *int!, line: *int!, col: *int!, size: int!) int! {
+  if (c[index&] == @cast<char>(32)) {
+    col&++; # increment column count
+    return 1; # space
+  }
+
+  if (c[index&] == @cast<char>(10)) {
+    line&++; # increment line count
+    # col& = 0; # reset column count #?Note: assign on deref is not working
+    return 1; # newline
+  }
+
+  return 0;
+};
+
+const number := fn (c: *char, index: *int!) *char {
+  have check: bool = digit(c, index); # This is the first check
+  if (check == false) {
+    return "";
+  }
+
+  loop (i = index&; i < 100000000) : (i++) {
+    have ch: bool = digit(c, &i);
+    if (ch == false) break;
+    index&++;
+  }
+
+  if (c[index&] == @cast<char>(46)) {
+    index&++;
+    loop (i = index&; i < 100000000) : (i++) {
+      have ch: bool = digit(c, &i);
+      if (ch == false) break;
+      index&++;
+    }
+    return @cast<*char>("FLOAT"); # Floating point number
+  }
+
+  return @cast<*char>("INT"); # Integer number
+};
+
+const ident := fn (c: *char, index: *int!) bool {
+  have check: bool = alpha(c, index);
+  return check;
+};

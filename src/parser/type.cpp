@@ -43,7 +43,7 @@ Node::Type *Parser::array_type(PStruct *psr) {
   if (psr->current().kind != TokenKind::IDENTIFIER) {
     std::string msg = "Expected a type for the array!";
     Error::handle_error("Parser", psr->current_file, msg, psr->tks,
-                        psr->current().line, psr->current().column);
+                        psr->current().line, psr->current().column, psr->current().column + psr->current().value.size());
     return nullptr;
   }
    
