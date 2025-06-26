@@ -38,6 +38,17 @@ const scan := fn (source: *char, size: int!) void {
       @outputln(1, is_digit);
     }
 
-    # TODO: Implement check for single-character tokens and multi-character tokens
+    have dc: bool = check_d_character(source, &i);
+    if (dc) {
+      @outputln(1, "Double character found at ", ascii_to_string(source[i]));
+      # advance the index by 1 to skip the next character
+      i++;
+      col++; # increment column count
+    }
+
+    have sc: bool = check_s_character(source, &i);
+    if (sc) {
+      @outputln(1, "Single Character found at ", ascii_to_string(source[i]));
+    }
   }
 };

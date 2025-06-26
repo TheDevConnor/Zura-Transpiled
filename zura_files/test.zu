@@ -1,2 +1,3 @@
-have x: int! = 15;
-have y: float = 75.504555;
+const main := fn () int! {
+    return 0;
+};

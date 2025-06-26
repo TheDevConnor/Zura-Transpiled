@@ -85,3 +85,49 @@ const ident := fn (c: *char, index: *int!) bool {
   have check: bool = alpha(c, index);
   return check;
 };
+
+const check_s_character := fn (c: *char, index: *int!) bool {
+  match (c[index&]) {
+    case @cast<char>(123) -> { return true; } # {
+    case @cast<char>(125) -> { return true; } # }
+    case @cast<char>(40)  -> { return true; } # (
+    case @cast<char>(41)  -> { return true; } # )
+    case @cast<char>(59)  -> { return true; } # ;
+    case @cast<char>(44)  -> { return true; } # ,
+    case @cast<char>(46)  -> { return true; } # .
+    case @cast<char>(43)  -> { return true; } # +
+    case @cast<char>(45)  -> { return true; } # -
+    case @cast<char>(42)  -> { return true; } # *
+    case @cast<char>(47)  -> { return true; } # /
+    case @cast<char>(37)  -> { return true; } # %
+    case @cast<char>(94)  -> { return true; } # ^
+    case @cast<char>(91)  -> { return true; } # [
+    case @cast<char>(93)  -> { return true; } # ]
+    case @cast<char>(63)  -> { return true; } # ?
+    case @cast<char>(58)  -> { return true; } # :
+    case @cast<char>(61)  -> { return true; } # =
+    case @cast<char>(33)  -> { return true; } # !
+    case @cast<char>(60)  -> { return true; } # <
+    case @cast<char>(62)  -> { return true; } # >
+    case @cast<char>(38)  -> { return true; } # &
+    case @cast<char>(124) -> { return true; } # |
+    default -> {}
+  }
+  return false;
+};
+
+const check_d_character := fn (c: *char, index: *int!) bool {
+  match (c[index&]) {
+    case @cast<char>(58) -> { # := or : (false)
+      have offset: int! = index& + 1;
+      if (c[offset] == @cast<char>(61)) {
+        index&++; # Increment index to skip the '=' character
+        return true; # This is a ':=' token
+      } else {
+        return false; # This is just a ':'
+      }
+    }
+    default -> {}
+  }
+  return false;
+};
