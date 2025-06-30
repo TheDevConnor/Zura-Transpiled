@@ -2,14 +2,12 @@
 
 #include <string>
 #include <unordered_map>
-#include "../../common.hpp"
 
 class Color {
 public:
   enum C { RED, GREEN, BLUE, CYAN, MAGENTA, YELLOW, WHITE, BLACK, GRAY };
 
-  std::string color(std::string text, C color, bool isUnderline = false,
-                    bool isBold = false) {
+  std::string color(std::string text, C color, bool isUnderline = false, bool isBold = false) {
     if (!terminal_supports_color())
       return text;
     if (isUnderline)
@@ -32,18 +30,28 @@ private:
     return "";
   }
 
-  // Check to see if the terminal supports color
+  //   8 → basic color support
+  //  16 → extended (like bold variants)
+  // 256 → full 256-color support
+  // 0 or error → no color support (or not a terminal)
+
   bool terminal_supports_color() {
-    // if we have lsp mode, just return false all the time
-    if (!shouldUseColor) return false;
-    FILE *pipe = popen("/bin/sh -c 'tput colors'", "r");
-    if (!pipe)
-      return false;
+      const char* term = std::getenv("TERM");
+      if (!term || std::string(term) == "dumb")
+          return false;
 
-    int result = 0;
-    if (pclose(pipe) == -1)
-      return false;
+      FILE* pipe = popen("tput colors", "r");
+      if (!pipe)
+          return false;
 
-    return result > 0;
+      char buffer[128];
+      if (fgets(buffer, sizeof(buffer), pipe) == nullptr) {
+          pclose(pipe);
+          return false;
+      }
+
+      pclose(pipe);
+      int colors = std::atoi(buffer);
+      return colors >= 8;
   }
 };

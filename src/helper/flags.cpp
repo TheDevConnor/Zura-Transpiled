@@ -57,32 +57,21 @@ void Flags::runFile(const char *path, std::string outName, bool save,
                     bool debug, bool echoOn) {
   const char *source = readFile(path);
 
-  if (echoOn)
-    Flags::updateProgressBar(0.0);
+  if (echoOn) Flags::updateProgressBar(0.0);
   Node::Stmt *result = Parser::parse(source, path);
-  bool parserError = Error::report_error();
-  if (parserError)
-    Exit(ExitValue::PARSER_ERROR);
-  if (echoOn)
-    Flags::updateProgressBar(0.25);
+  if (echoOn) Flags::updateProgressBar(0.25);
 
   TypeChecker::performCheck(result);
-  bool tcError = Error::report_error();
-  if (tcError && shouldPrintErrors)
-    Exit(ExitValue::TYPE_ERROR);
-  if (echoOn)
-    Flags::updateProgressBar(0.5);
+  if (echoOn) Flags::updateProgressBar(0.5);
 
-  // Compiler optimize the AST!
   result = CompileOptimizer::optimizeStmt(result);
-  if (echoOn)
-    Flags::updateProgressBar(0.75);
+  if (echoOn) Flags::updateProgressBar(0.75);
   codegen::gen(result, save, outName, path, debug);
-  bool codegenError = Error::report_error();
-  if (codegenError && shouldPrintErrors)
+  if (echoOn) Flags::updateProgressBar(1.0);
+
+  bool hadErrors = Error::report_error();
+  if (hadErrors && shouldPrintErrors)
     Exit(ExitValue::GENERATOR_ERROR);
-  if (echoOn)
-    Flags::updateProgressBar(1.0); // We're done!
 
   delete result;
   delete[] source;

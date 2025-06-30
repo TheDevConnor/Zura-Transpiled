@@ -328,7 +328,9 @@ void codegen::gen(Node::Stmt *stmt, bool isSaved, std::string output_filename,
 
   output_filename = output_filename.substr(0, output_filename.find_last_of("."));
 
+  shouldPrintErrors = false;
   bool isError = Error::report_error();
+  shouldPrintErrors = true; // Reset this so that we can print errors again if they occur later
   if (isError) { return; }
 
   // Compile, but do not link main.o

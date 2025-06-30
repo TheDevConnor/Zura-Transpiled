@@ -1146,7 +1146,7 @@ void codegen::assignArray(Node::Expr *expr) {
   
   if (e->asmType->kind != ND_ARRAY_TYPE &&
       !(e->asmType->kind == ND_SYMBOL_TYPE && structByteSizes.contains(getUnderlying(e->asmType)))) {
-    handleError(e->line, e->pos, "you can only reassign the values of big boy functions because LLLL HAHHAHA", "Codegen", true);
+    handleError(e->line, e->pos, "Array assignment is only allowed for arrays or structs.", "Codegen", true);
     return;
   }
   if (assign->rhs->kind == ND_CALL && getByteSizeOfType(e->asmType) > 16) {
