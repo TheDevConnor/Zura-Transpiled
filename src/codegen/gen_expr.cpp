@@ -1146,7 +1146,44 @@ void codegen::assignArray(Node::Expr *expr) {
   
   if (e->asmType->kind != ND_ARRAY_TYPE &&
       !(e->asmType->kind == ND_SYMBOL_TYPE && structByteSizes.contains(getUnderlying(e->asmType)))) {
-    handleError(e->line, e->pos, "Array assignment is only allowed for arrays or structs.", "Codegen", true);
+    // its likely a builtin type. yippee!
+    visitExpr(e->lhs);
+    // what was pushed time
+    PushInstr instr =
+        std::get<PushInstr>(text_section.at(text_section.size() - 1).var);
+    text_section.pop_back();
+    push(Instr{.var = LeaInstr{.size = DataSize::Qword,
+                               .dest = "%rbx",
+                               .src = instr.what},
+               .type = InstrType::Lea},
+         Section::Main);
+    visitExpr(e->rhs);
+    popToRegister("%rdi", intDataToSize(getByteSizeOfType(e->rhs->asmType))); // Pop the index into %rdi
+    long byteSize = getByteSizeOfType(e->asmType);
+    if (byteSize == 1 || byteSize == 2 || byteSize == 4 || byteSize == 8)
+      push(Instr{.var=LeaInstr{
+          .size = DataSize::Qword,
+          .dest = "%rbx",
+          .src = "(%rbx, %rdi, " + std::to_string(getByteSizeOfType(e->asmType)) + ")" // 1 is the multiplier
+        }, .type = InstrType::Lea},
+      Section::Main);
+    else {
+      push(Instr{.var = BinaryInstr{.op = "imul",
+                                    .src = "$" + std::to_string(getByteSizeOfType(e->asmType)),
+                                    .dst = "%rdi"},
+                 .type = InstrType::Binary},
+           Section::Main);
+      push(Instr{.var=LeaInstr{
+          .size = DataSize::Qword,
+          .dest = "%rbx",
+          .src = "(%rbx, %rdi)"
+        }, .type = InstrType::Lea},
+      Section::Main);
+    }
+    visitExpr(assign->rhs);
+    // get the location of where to pop to
+    popToRegister("(%rbx)", intDataToSize(getByteSizeOfType(e->asmType)));
+    pushRegister("(%rbx)", intDataToSize(getByteSizeOfType(e->asmType)));
     return;
   }
   if (assign->rhs->kind == ND_CALL && getByteSizeOfType(e->asmType) > 16) {
@@ -1173,7 +1210,7 @@ void codegen::assignArray(Node::Expr *expr) {
       handleError(e->line, e->pos, "Array element size is negative. This is a bug in the compiler.", "Codegen", true);
       return;
     }
-    pushLinker("incq %rdi\n\t", Section::Main); // We will use this to calculate the offset
+    pushLinker("incq %rdi\n\t", Section::Main); // its off by one or something
     if (elementByteSize == 2 ||
         elementByteSize == 4 || elementByteSize == 8) {
       push(Instr{.var=LeaInstr{
@@ -1204,8 +1241,8 @@ void codegen::assignArray(Node::Expr *expr) {
            Section::Main);
     }
     push(Instr{.var=SubInstr{.lhs="%r14",.rhs="$8",.size=DataSize::Qword},
-               .type=InstrType::Add},
-         Section::Main); // Add 16 to the address so that we can store the value
+               .type=InstrType::Add}, // its still off
+         Section::Main);
     // Rbx has the thing now! Call the freaking function
     visitExpr(assign->rhs);
     pushRegister("%r14"); // we need to push something because this is a expression
