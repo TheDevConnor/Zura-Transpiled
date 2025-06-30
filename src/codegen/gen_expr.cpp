@@ -1153,7 +1153,7 @@ void codegen::assignArray(Node::Expr *expr) {
         std::get<PushInstr>(text_section.at(text_section.size() - 1).var);
     text_section.pop_back();
     push(Instr{.var = LeaInstr{.size = DataSize::Qword,
-                               .dest = "%rbx",
+                               .dest = "%r11",
                                .src = instr.what},
                .type = InstrType::Lea},
          Section::Main);
@@ -1163,8 +1163,8 @@ void codegen::assignArray(Node::Expr *expr) {
     if (byteSize == 1 || byteSize == 2 || byteSize == 4 || byteSize == 8)
       push(Instr{.var=LeaInstr{
           .size = DataSize::Qword,
-          .dest = "%rbx",
-          .src = "(%rbx, %rdi, " + std::to_string(getByteSizeOfType(e->asmType)) + ")" // 1 is the multiplier
+          .dest = "%r11",
+          .src = "(%r11, %rdi, " + std::to_string(getByteSizeOfType(e->asmType)) + ")" // 1 is the multiplier
         }, .type = InstrType::Lea},
       Section::Main);
     else {
@@ -1175,15 +1175,15 @@ void codegen::assignArray(Node::Expr *expr) {
            Section::Main);
       push(Instr{.var=LeaInstr{
           .size = DataSize::Qword,
-          .dest = "%rbx",
-          .src = "(%rbx, %rdi)"
+          .dest = "%r11",
+          .src = "(%r11, %rdi)"
         }, .type = InstrType::Lea},
       Section::Main);
     }
     visitExpr(assign->rhs);
     // get the location of where to pop to
-    popToRegister("(%rbx)", intDataToSize(getByteSizeOfType(e->asmType)));
-    pushRegister("(%rbx)", intDataToSize(getByteSizeOfType(e->asmType)));
+    popToRegister("(%r11)", intDataToSize(getByteSizeOfType(e->asmType)));
+    pushRegister("(%r11)", intDataToSize(getByteSizeOfType(e->asmType)));
     return;
   }
   if (assign->rhs->kind == ND_CALL && getByteSizeOfType(e->asmType) > 16) {
