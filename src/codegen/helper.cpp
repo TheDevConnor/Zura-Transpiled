@@ -197,14 +197,14 @@ void codegen::handleBinaryExprs(int lhsDepth, int rhsDepth, std::string lhsReg,
     lhsSize = intDataToSizeFloat(getByteSizeOfType(lhs->asmType));
     rhsSize = intDataToSizeFloat(getByteSizeOfType(rhs->asmType));
   }
-  // if (lhsDepth == 1 && rhsDepth == 1) {
-  //   // If both are depth 1, we can just load them into registers
-  //   visitExpr(lhs);
-  //   popToRegister(lhsReg);
-  //   visitExpr(rhs);
-  //   popToRegister(rhsReg);
-  //   return;
-  // }
+  if (lhsDepth <= 1 && rhsDepth <= 1) {
+    // If both are depth 1, we can just load them into registers
+    visitExpr(lhs);
+    popToRegister(lhsReg);
+    visitExpr(rhs);
+    popToRegister(rhsReg);
+    return;
+  }
   if (lhsDepth > rhsDepth) {
     visitExpr(lhs);
     push(Instr{.var = PopInstr{.where = std::to_string(-variableCount) + "(%rbp)", .whereSize = lhsSize}, .type = InstrType::Pop}, Section::Main);

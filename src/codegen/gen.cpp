@@ -237,7 +237,7 @@ void codegen::gen(Node::Stmt *stmt, bool isSaved, std::string output_filename,
     file << "\n# non-main user functions" << std::endl;
     file << Stringifier::stringifyInstrs(head_section);
   }
-  if (rodt_section.size() > 0) {
+  if (rodt_section.size() > 0 || isUsingNewline) {
     file << "\n# readonly data section - contains constant strings and floats (for now)"
             "\n.section .rodata\n";
     file << Stringifier::stringifyInstrs(rodt_section);
