@@ -1,1 +1,3 @@
-const main := fn () int! { return 0; };
+const main := fn () int! { 
+    return 0; 
+};
