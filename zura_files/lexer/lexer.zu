@@ -1,54 +1,26 @@
 @import "../std/asciiToString.zu";
 @import "helper.zu";
 
-# const make_token := fn (k: TokenKind, v: *char) Token {
-#   have token: Token = {
-#     kind: k,
-#     value: v,
-#   };
-#   return token;
-# };
-
-const scan := fn (source: *char, size: int!) void {
-  have whitespaceCount: int! = 0;
-  have generate: bool! = true; # Flag to control token generation
-  have col: int! = 0;
+const tokenize := fn (source: *char, realSize: int!) void {
+  have tk: [120]Token = [0];
   have line: int! = 1;
+  have col: int! = 0;
 
-  loop (i = 0; i < size) : (i++) {
-    whitespaceCount = 0; # reset whitespace count for each character
+  loop (i = 0; i <= realSize) : (i++) {
+    # Check whitespace and skip it
+    if (source[i] == @cast<char>(32)) { i++; col++; } # Skip spaces
+    if (source[i] == @cast<char>(10)) { i++; line++; col = 0; } # Skip newlines
+    if (source[i] == @cast<char>(9))  { i++; }  # Skip tabs
 
-    have whitespace: int! = check_whitespace(source, &i, &line, &col, size);
-    if (whitespace == 1) {
-      if (source[i] == @cast<char>(10)) col = 0;
-      whitespaceCount++;
-    } else {
-      col++; # increment column count
-    }
+    if (is_eof(source, i)) break; # Stop at null terminator
+    else col++; # if we didn't skip, increment column
 
-    have is_alpha: bool = ident(source, &i);
-    if (is_alpha) {
-      @outputln(1, "identifier found at ", ascii_to_string(source[i]));
-    }
-    # Anything that is prexed with '@' is a special token
-    # have is_default: int! = default_function(source, &i);
+    @outputln(1, ascii_to_string(source[i]), " line: ", line, " col: ", col);
+    make_token(ascii_to_string(source[i]), 0, line, col);
+  }
 
-    have is_digit: *char = number(source, &i);
-    if (@streq(@cast<str>(is_digit), "")) {} else {
-      @outputln(1, is_digit);
-    }
-
-    have dc: bool = check_d_character(source, &i);
-    if (dc) {
-      @outputln(1, "Double character found at ", ascii_to_string(source[i]));
-      # advance the index by 1 to skip the next character
-      i++;
-      col++; # increment column count
-    }
-
-    have sc: bool = check_s_character(source, &i);
-    if (sc) {
-      @outputln(1, "Single Character found at ", ascii_to_string(source[i]));
-    }
+  loop (i = 0; i <= 120) : (i++) {
+    @outputln(1, "Token ", i, ": ", tk[i].value, " Kind: ", tk[i].kind, 
+              " Line: ", tk[i].line, " Col: ", tk[i].col);
   }
 };

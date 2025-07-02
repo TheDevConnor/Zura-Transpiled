@@ -27,107 +27,29 @@ const TokenKind := enum {
   Dot
 };
 
-const Position := struct {
-  line: int!,
-  pos: int!
-};
-
 const Token := struct {
-  kind: TokenKind,
-  value: *char
+  value: str,
+  kind: int!,
+  line: int!,
+  col: int!,
 };
 
-const default_function := fn (c: *char, index: *int!) int! {
-  return 0;
-};
-
-const check_whitespace := fn (c: *char, index: *int!, line: *int!, col: *int!, size: int!) int! {
-  if (c[index&] == @cast<char>(32)) {
-    col&++; # increment column count
-    return 1; # space
-  }
-
-  if (c[index&] == @cast<char>(10)) {
-    line&++; # increment line count
-    # col& = 0; # reset column count #?Note: assign on deref is not working
-    return 1; # newline
-  }
-
-  return 0;
-};
-
-const number := fn (c: *char, index: *int!) *char {
-  have check: bool = digit(c, index); # This is the first check
-  if (check == false) {
-    return "";
-  }
-
-  loop (i = index&; i < 100000000) : (i++) {
-    have ch: bool = digit(c, &i);
-    if (ch == false) break;
-    index&++;
-  }
-
-  if (c[index&] == @cast<char>(46)) {
-    index&++;
-    loop (i = index&; i < 100000000) : (i++) {
-      have ch: bool = digit(c, &i);
-      if (ch == false) break;
-      index&++;
-    }
-    return @cast<*char>("FLOAT"); # Floating point number
-  }
-
-  return @cast<*char>("INT"); # Integer number
-};
-
-const ident := fn (c: *char, index: *int!) bool {
-  have check: bool = alpha(c, index);
-  return check;
-};
-
-const check_s_character := fn (c: *char, index: *int!) bool {
-  match (c[index&]) {
-    case @cast<char>(123) -> { return true; } # {
-    case @cast<char>(125) -> { return true; } # }
-    case @cast<char>(40)  -> { return true; } # (
-    case @cast<char>(41)  -> { return true; } # )
-    case @cast<char>(59)  -> { return true; } # ;
-    case @cast<char>(44)  -> { return true; } # ,
-    case @cast<char>(46)  -> { return true; } # .
-    case @cast<char>(43)  -> { return true; } # +
-    case @cast<char>(45)  -> { return true; } # -
-    case @cast<char>(42)  -> { return true; } # *
-    case @cast<char>(47)  -> { return true; } # /
-    case @cast<char>(37)  -> { return true; } # %
-    case @cast<char>(94)  -> { return true; } # ^
-    case @cast<char>(91)  -> { return true; } # [
-    case @cast<char>(93)  -> { return true; } # ]
-    case @cast<char>(63)  -> { return true; } # ?
-    case @cast<char>(58)  -> { return true; } # :
-    case @cast<char>(61)  -> { return true; } # =
-    case @cast<char>(33)  -> { return true; } # !
-    case @cast<char>(60)  -> { return true; } # <
-    case @cast<char>(62)  -> { return true; } # >
-    case @cast<char>(38)  -> { return true; } # &
-    case @cast<char>(124) -> { return true; } # |
-    default -> {}
-  }
+const is_eof := fn (source: *char, index: int!) bool {
+  if (source[index] == @cast<char>(0)) return true;
   return false;
 };
 
-const check_d_character := fn (c: *char, index: *int!) bool {
-  match (c[index&]) {
-    case @cast<char>(58) -> { # := or : (false)
-      have offset: int! = index& + 1;
-      if (c[offset] == @cast<char>(61)) {
-        index&++; # Increment index to skip the '=' character
-        return true; # This is a ':=' token
-      } else {
-        return false; # This is just a ':'
-      }
-    }
-    default -> {}
-  }
-  return false;
+const peek := fn (source: *char, index: int!) char {
+  return source[index];
+};
+
+const make_token := fn (value: str, kind: int!, 
+                        line: int!, col: int!) Token {
+  have token: Token = {
+    value: value,
+    kind: kind,
+    line: line,
+    col: col,
+  };
+  return token;
 };

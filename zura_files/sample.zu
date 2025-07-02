@@ -1,36 +1,30 @@
 const BigStruct := struct {
-  a: int!,
-  b: str,
-  c: int!,
-  # add any amount of fields here....
+  b: str, # value
+  a: int!,# kind 
+  c: int!,# line
+  d: int!,# column
 };
 
-const ConstantBigStruct := fn (a: int!, b: str, c: int!) BigStruct {
+const ConstantBigStruct := fn (a: int!, b: str, c: int!, d: int!) BigStruct {
   have constantValue: BigStruct = {
     a: a,
     b: b,
     c: c,
+    d: d,
   };
   return constantValue;
 };
 
 const main := fn () int! {
-  have test: [3]BigStruct = [0];
-  loop (i = 0; i < 3) : (i++) { 
-    test[i] = ConstantBigStruct(i, "test", i + 1);
+  have test: [120]BigStruct = [0];
+  loop (i = 0; i < 120) : (i++) { 
+    test[i] = ConstantBigStruct(i, "test", i + 1, i);
   };
-  loop (i = 0; i < 3) : (i++) { 
-    @outputln(1, test[i].a);
-    @outputln(1, test[i].b);
-    @outputln(1, test[i].c);
+  loop (i = 0; i < 120) : (i++) { 
+    @output(1, test[i].a, " ");
+    @output(1, test[i].b, " ");
+    @output(1, test[i].c, " ");
+    @output(1, test[i].d, "\n");
   };
   return 0;
 };
-
-# const main := fn () int! {
-#   have test: BigStruct = ConstantBigStruct(1, "test", 2);
-#   @outputln(1, test.a);
-#   @outputln(1, test.b);
-#   @outputln(1, test.c);
-#   return 0;
-# };
