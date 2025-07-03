@@ -7,7 +7,8 @@ const TokenKind := enum {
   Slash,
   LParen,
   RParen,
-  Number,
+  Int,
+  Float,
   Identifier,
   String,
   Comma,
@@ -24,7 +25,8 @@ const TokenKind := enum {
   Bang,
   Question,
   Colon,
-  Dot
+  Dot,
+  EOF
 };
 
 const Token := struct {
@@ -43,8 +45,12 @@ const peek := fn (source: *char, index: int!) char {
   return source[index];
 };
 
-const make_token := fn (value: str, kind: int!, 
-                        line: int!, col: int!) Token {
+const advance := fn (index: *int!, col: *int!) void {
+  index&++;
+  col&++;
+};
+
+const make_token := fn (value: str, kind: int!, line: int!, col: int!) Token {
   have token: Token = {
     value: value,
     kind: kind,

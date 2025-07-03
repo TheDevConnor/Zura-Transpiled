@@ -56,8 +56,14 @@ const main := fn () int! {
   # add a null terminator to the end of the file contents
   fileContents[realSize - 1] = @cast<char>(0);
 
-  tokenize(fileContents, realSize);
-  
+  have tk: [6048]Token = @cast<[]Token>(@alloc(@sizeof(Token) * 120));
+  tokenize(fileContents, realSize, tk);
+
+  loop (j = 0; j < 6028) : (j++) {
+    if (tk[j].kind == @cast<int!>(TokenKind.EOF)) break;
+    @outputln(1, "Token: ", tk[j].value, " Kind: ", tk[j].kind, " Line: ", tk[j].line, " Col: ", tk[j].col);
+  }
+
   @free(fileContents, @sizeof(fileContents));
   return 0;
 };

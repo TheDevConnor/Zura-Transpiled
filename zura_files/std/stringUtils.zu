@@ -14,7 +14,6 @@ const concat := fn (a: *char, b: *char) *char {
   have result: *char = @cast<*char>(@alloc(t_len));
   if (result == nil) {
     @outputln(1, "Memory allocation failed in concat");
-    @free(result, t_len); # Technically it failed, but freeing the memory here would be a nop. I still feel like it's better to keep this here anyway.
     return nil;
   }
 

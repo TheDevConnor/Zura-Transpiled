@@ -1,10 +1,10 @@
 @import "../std/asciiToString.zu";
 @import "helper.zu";
 
-const tokenize := fn (source: *char, realSize: int!) void {
-  have tk: [6048]Token = @cast<[]Token>(@alloc(@sizeof(Token) * 6048));
+const tokenize := fn (source: *char, realSize: int!, tk: *[]Token) void {
   have line: int! = 1;
   have col: int! = 0;
+  have value: *char = "";
 
   loop (i = 0; i < realSize) : (i++) {
     # Check whitespace and skip it
@@ -13,16 +13,19 @@ const tokenize := fn (source: *char, realSize: int!) void {
 
     if (is_eof(source, i)) break; # Stop at null terminator
 
-    @outputln(1, ascii_to_string(source[i]), " line: ", line, " col: ", col);
-    tk[i] = make_token(ascii_to_string(source[i]), 0, line, col);
+    loop (j = i; alpha(source, &j)) : (j++) {
+      tk&[j] = make_token(ascii_to_string(source[j]), @cast<int!>(TokenKind.Identifier), line, col);
+      advance(&i, &col); # Advance past the letter
+    }
+
+    loop (j = i; digit(source, &j)) : (j++) {
+      tk&[j] = make_token(ascii_to_string(source[j]), @cast<int!>(TokenKind.Int), line, col);
+      advance(&i, &col); # Advance past the digit
+    }
+
+    tk&[i] = make_token(ascii_to_string(source[i]), 0, line, col);
   }
 
   # Add a null terminator to the end of the tokens array
-  tk[realSize] = make_token("", 0, line, col + 1);
-
-  # Output the tokens for debugging
-  loop (j = 0; j <= 6028) : (j++) {
-    if (@streq(tk[j].value, "")) break;
-    @outputln(1, "Token: ", tk[j].value, " Kind: ", tk[j].kind, " Line: ", tk[j].line, " Col: ", tk[j].col);
-  }
+  tk&[realSize] = make_token("", @cast<int!>(TokenKind.EOF), line, col + 1);
 };
