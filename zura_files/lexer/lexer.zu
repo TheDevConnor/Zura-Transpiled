@@ -2,11 +2,11 @@
 @import "helper.zu";
 
 const tokenize := fn (source: *char, realSize: int!) void {
-  # have tk: [120]Token = [0];
+  have tk: [6048]Token = @cast<[]Token>(@alloc(@sizeof(Token) * 6048));
   have line: int! = 1;
   have col: int! = 0;
 
-  loop (i = 0; i <= realSize) : (i++) {
+  loop (i = 0; i < realSize) : (i++) {
     # Check whitespace and skip it
     if (source[i] == @cast<char>(32)) { col++; } # Skip spaces
     if (source[i] == @cast<char>(10)) { line++; col = 0; } # Skip newlines
@@ -14,6 +14,15 @@ const tokenize := fn (source: *char, realSize: int!) void {
     if (is_eof(source, i)) break; # Stop at null terminator
 
     @outputln(1, ascii_to_string(source[i]), " line: ", line, " col: ", col);
-    # make_token(ascii_to_string(source[i]), 0, line, col);
+    tk[i] = make_token(ascii_to_string(source[i]), 0, line, col);
+  }
+
+  # Add a null terminator to the end of the tokens array
+  tk[realSize] = make_token("", 0, line, col + 1);
+
+  # Output the tokens for debugging
+  loop (j = 0; j <= 6028) : (j++) {
+    if (@streq(tk[j].value, "")) break;
+    @outputln(1, "Token: ", tk[j].value, " Kind: ", tk[j].kind, " Line: ", tk[j].line, " Col: ", tk[j].col);
   }
 };
