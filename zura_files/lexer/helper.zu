@@ -26,6 +26,26 @@ const TokenKind := enum {
   Question,
   Colon,
   Dot,
+  Caret,
+  LAnd,
+  LOr,
+  BangEqual,
+  EqualEqual,
+  GreaterEqual,
+  LessEqual,
+  Walrus,
+  PlusPlus,
+  MinusMinus,
+  PlusEqual,
+  MinusEqual,
+  StarEqual,
+  SlashEqual,
+  And,
+  Or,
+  LeftArrow,
+  RightArrow,
+  Range,
+  Resolution,
   EOF
 };
 
@@ -36,13 +56,14 @@ const Token := struct {
   col: int!,
 };
 
+const SymbolTable := struct {
+  text: str,
+  kind: int!
+};
+
 const is_eof := fn (source: *char, index: int!) bool {
   if (source[index] == @cast<char>(0)) return true;
   return false;
-};
-
-const peek := fn (source: *char, index: int!) char {
-  return source[index];
 };
 
 const advance := fn (index: *int!, col: *int!) void {
