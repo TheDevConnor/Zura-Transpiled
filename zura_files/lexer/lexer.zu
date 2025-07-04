@@ -23,47 +23,44 @@ const tokenize := fn (source: *char, realSize: int!, tk: *[]Token) void {
   ];
 
   have builtins: [26]BuiltinTable = [
-    {text: "@template", kind: @cast<int!>(TokenKind.Template)},{text: "@cast", kind: @cast<int!>(TokenKind.Cast)},
-    {text: "@import", kind: @cast<int!>(TokenKind.Import)},    {text: "@link", kind: @cast<int!>(TokenKind.Link)},
-    {text: "@extern", kind: @cast<int!>(TokenKind.Extern)},    {text: "@call", kind: @cast<int!>(TokenKind.Call)},
-    {text: "@output", kind: @cast<int!>(TokenKind.Output)},    {text: "@read", kind: @cast<int!>(TokenKind.Read)},
-    {text: "@input", kind: @cast<int!>(TokenKind.Input)},      {text: "@write", kind: @cast<int!>(TokenKind.Write)},
-    {text: "@free", kind: @cast<int!>(TokenKind.Free)},        {text: "@alloc", kind: @cast<int!>(TokenKind.Alloc)},
-    {text: "@memcpy", kind: @cast<int!>(TokenKind.Memcpy)},    {text: "@sizeof", kind: @cast<int!>(TokenKind.Sizeof)},
-    {text: "@getArgv", kind: @cast<int!>(TokenKind.GetArgv)},  {text: "@getArgc", kind: @cast<int!>(TokenKind.GetArgc)},
-    {text: "@streq", kind: @cast<int!>(TokenKind.Streq)},      {text: "@open", kind: @cast<int!>(TokenKind.Open)},
-    {text: "@close", kind: @cast<int!>(TokenKind.Close)},      {text: "@outputln", kind: @cast<int!>(TokenKind.Outputln)},
-    {text: "@socket", kind: @cast<int!>(TokenKind.Socket)},    {text: "@bind", kind: @cast<int!>(TokenKind.Bind)},
-    {text: "@listen", kind: @cast<int!>(TokenKind.Listen)},    {text: "@accept", kind: @cast<int!>(TokenKind.Accept)},
-    {text: "@recv", kind: @cast<int!>(TokenKind.Recv)},        {text: "@send", kind: @cast<int!>(TokenKind.Send)}
+    {text: "@template", kind: @cast<int!>(TokenKind.Template)}, {text: "@cast", kind: @cast<int!>(TokenKind.Cast)},
+    {text: "@import", kind: @cast<int!>(TokenKind.Import)},     {text: "@link", kind: @cast<int!>(TokenKind.Link)},
+    {text: "@extern", kind: @cast<int!>(TokenKind.Extern)},     {text: "@call", kind: @cast<int!>(TokenKind.Call)},
+    {text: "@output", kind: @cast<int!>(TokenKind.Output)},     {text: "@read", kind: @cast<int!>(TokenKind.Read)},
+    {text: "@input", kind: @cast<int!>(TokenKind.Input)},       {text: "@write", kind: @cast<int!>(TokenKind.Write)},
+    {text: "@free", kind: @cast<int!>(TokenKind.Free)},         {text: "@alloc", kind: @cast<int!>(TokenKind.Alloc)},
+    {text: "@memcpy", kind: @cast<int!>(TokenKind.Memcpy)},     {text: "@sizeof", kind: @cast<int!>(TokenKind.Sizeof)},
+    {text: "@getArgv", kind: @cast<int!>(TokenKind.GetArgv)},   {text: "@getArgc", kind: @cast<int!>(TokenKind.GetArgc)},
+    {text: "@streq", kind: @cast<int!>(TokenKind.Streq)},       {text: "@open", kind: @cast<int!>(TokenKind.Open)},
+    {text: "@close", kind: @cast<int!>(TokenKind.Close)},       {text: "@outputln", kind: @cast<int!>(TokenKind.Outputln)},
+    {text: "@socket", kind: @cast<int!>(TokenKind.Socket)},     {text: "@bind", kind: @cast<int!>(TokenKind.Bind)},
+    {text: "@listen", kind: @cast<int!>(TokenKind.Listen)},     {text: "@accept", kind: @cast<int!>(TokenKind.Accept)},
+    {text: "@recv", kind: @cast<int!>(TokenKind.Recv)},         {text: "@send", kind: @cast<int!>(TokenKind.Send)}
   ];
 
-  have symbol: [40]SymbolTable = [
-    {text: "(", kind: @cast<int!>(TokenKind.LParen)},        {text: ")", kind: @cast<int!>(TokenKind.RParen)},
-    {text: "{", kind: @cast<int!>(TokenKind.LBrace)},        {text: "}", kind: @cast<int!>(TokenKind.RBrace)},
-    {text: ";", kind: @cast<int!>(TokenKind.Semicolon)},     {text: ",", kind: @cast<int!>(TokenKind.Comma)},
-    {text: ".", kind: @cast<int!>(TokenKind.Dot)},           {text: "-", kind: @cast<int!>(TokenKind.Dash)},
-    {text: "+", kind: @cast<int!>(TokenKind.Plus)},          {text: "/", kind: @cast<int!>(TokenKind.Slash)},
-    {text: "*", kind: @cast<int!>(TokenKind.Star)},          {text: "%", kind: @cast<int!>(TokenKind.Percent)},
-    {text: "^", kind: @cast<int!>(TokenKind.Caret)},         {text: "[", kind: @cast<int!>(TokenKind.LBracket)},
-    {text: "]", kind: @cast<int!>(TokenKind.RBracket)},      {text: "?", kind: @cast<int!>(TokenKind.Question)},
-    {text: ":", kind: @cast<int!>(TokenKind.Colon)},         {text: "=", kind: @cast<int!>(TokenKind.Equals)},
-    {text: "!", kind: @cast<int!>(TokenKind.Bang)},          {text: "<", kind: @cast<int!>(TokenKind.Less)},
-    {text: ">", kind: @cast<int!>(TokenKind.Greater)},       {text: "&", kind: @cast<int!>(TokenKind.Ampersand)},
-    {text: "|", kind: @cast<int!>(TokenKind.LOr)},           {text: "!=", kind: @cast<int!>(TokenKind.BangEqual)},
-    {text: "==", kind: @cast<int!>(TokenKind.EqualEqual)},   {text: ">=", kind: @cast<int!>(TokenKind.GreaterEqual)},
-    {text: "<=", kind: @cast<int!>(TokenKind.LessEqual)},    {text: ":=", kind: @cast<int!>(TokenKind.Walrus)},
-    {text: "++", kind: @cast<int!>(TokenKind.PlusPlus)},     {text: "--", kind: @cast<int!>(TokenKind.MinusMinus)},
-    {text: "+=", kind: @cast<int!>(TokenKind.PlusEqual)},    {text: "-=", kind: @cast<int!>(TokenKind.MinusEqual)},
-    {text: "*=", kind: @cast<int!>(TokenKind.StarEqual)},    {text: "/=", kind: @cast<int!>(TokenKind.SlashEqual)},
-    {text: "&&", kind: @cast<int!>(TokenKind.And)},          {text: "||", kind: @cast<int!>(TokenKind.Or)},
-    {text: "<-", kind: @cast<int!>(TokenKind.LeftArrow)},    {text: "->", kind: @cast<int!>(TokenKind.RightArrow)},
-    {text: "..", kind: @cast<int!>(TokenKind.Range)},        {text: "::", kind: @cast<int!>(TokenKind.Resolution)},
+  have symbol: [23]SingleSymbolTable = [
+    {text: @cast<char>(41), kind: @cast<int!>(TokenKind.LParen)},    {text: @cast<char>(41), kind: @cast<int!>(TokenKind.RParen)},
+    {text: @cast<char>(123), kind: @cast<int!>(TokenKind.LBrace)},   {text: @cast<char>(125), kind: @cast<int!>(TokenKind.RBrace)},
+    {text: @cast<char>(59), kind: @cast<int!>(TokenKind.Semicolon)}, {text: @cast<char>(44), kind: @cast<int!>(TokenKind.Comma)},
+    {text: @cast<char>(46), kind: @cast<int!>(TokenKind.Dot)},       {text: @cast<char>(45), kind: @cast<int!>(TokenKind.Dash)},
+    {text: @cast<char>(43), kind: @cast<int!>(TokenKind.Plus)},      {text: @cast<char>(47), kind: @cast<int!>(TokenKind.Slash)},
+    {text: @cast<char>(42), kind: @cast<int!>(TokenKind.Star)},      {text: @cast<char>(37), kind: @cast<int!>(TokenKind.Percent)},
+    {text: @cast<char>(94), kind: @cast<int!>(TokenKind.Caret)},     {text: @cast<char>(91), kind: @cast<int!>(TokenKind.LBracket)},
+    {text: @cast<char>(93), kind: @cast<int!>(TokenKind.RBracket)},  {text: @cast<char>(63), kind: @cast<int!>(TokenKind.Question)},
+    {text: @cast<char>(58), kind: @cast<int!>(TokenKind.Colon)},     {text: @cast<char>(61), kind: @cast<int!>(TokenKind.Equals)},
+    {text: @cast<char>(33), kind: @cast<int!>(TokenKind.Bang)},      {text: @cast<char>(60), kind: @cast<int!>(TokenKind.Less)},
+    {text: @cast<char>(62), kind: @cast<int!>(TokenKind.Greater)},   {text: @cast<char>(38), kind: @cast<int!>(TokenKind.Ampersand)},
+    {text: @cast<char>(124), kind: @cast<int!>(TokenKind.LOr)},
   ];
 
-  match_keyword("", keywords);
-  match_builtin("", builtins);
-  match_symbol("", symbol);
+  have doubleSymbol: [11]DoubleSymbolTable = [
+    {text: "==", kind: @cast<int!>(TokenKind.EqualEqual)},  {text: "!=", kind: @cast<int!>(TokenKind.BangEqual)},
+    {text: "<=", kind: @cast<int!>(TokenKind.LessEqual)},   {text: ">=", kind: @cast<int!>(TokenKind.GreaterEqual)},
+    {text: "++", kind: @cast<int!>(TokenKind.Increment)},   {text: "--", kind: @cast<int!>(TokenKind.Decrement)},
+    {text: "&&", kind: @cast<int!>(TokenKind.AndAnd)},      {text: "||", kind: @cast<int!>(TokenKind.OrOr)},
+    {text: "->", kind: @cast<int!>(TokenKind.RightArrow)},  {text: "<-", kind: @cast<int!>(TokenKind.LeftArrow)},
+    {text: ":=", kind: @cast<int!>(TokenKind.Walrus)},
+  ];
 
   loop (i = 0; i < realSize) : (i++) {
     # Check whitespace and skip it

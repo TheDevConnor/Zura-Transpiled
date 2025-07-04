@@ -26,20 +26,6 @@ const concat := fn (a: *char, b: *char) *char {
   return result;
 };
 
-const copy := fn (src: *char) *char {
-  have len: int! = strlen(src);
-  have dest: *char = @cast<*char>(@alloc(len + 1)); # +1 for null terminator
-  if (dest == nil) {
-    @outputln(1, "Memory allocation failed in copy");
-    @free(dest, len + 1); # Same as above
-    return nil;
-  }
-
-  @memcpy(dest, src, len); # Copy the string
-  dest[len] = @cast<char>(0); # Null-terminate the string
-
-  return dest;
-};
 
 # const char_to_string := fn (c: char) *char {
 #   have str: *char = @cast<*char>(@alloc(2));
@@ -53,10 +39,3 @@ const copy := fn (src: *char) *char {
 #   str[1] = @cast<char>(0); # Null-terminate the string
 #   return str;
 # };
-
-# ????
-# A strcmp function could just be placed a builtin but this function is unimplemented??
-const strcmp := fn (a: *char, b: *char) int! {
-  @outputln(1, "strcmp is not implemented");
-  return 0; # Placeholder for string comparison logic
-};

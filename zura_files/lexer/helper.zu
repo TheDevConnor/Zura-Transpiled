@@ -50,8 +50,10 @@ const TokenKind := enum {
   Or,
   LeftArrow,
   RightArrow,
-  Range,
-  Resolution,
+  AndAnd,
+  OrOr,
+  Increment,
+  Decrement,
 
   # Keywords 
   Else,
@@ -118,7 +120,12 @@ const Token := struct {
   col: int!,
 };
 
-const SymbolTable := struct {
+const SingleSymbolTable := struct {
+  text: char,
+  kind: int!
+};
+
+const DoubleSymbolTable := struct {
   text: str,
   kind: int!
 };
@@ -153,22 +160,33 @@ const make_token := fn (value: str, kind: int!, line: int!, col: int!) Token {
   return token;
 };
 
-const match_keyword := fn (v: *char, keywords: *[]KeywordTable) int? {
+const match_keyword := fn (v: *char, keywords: *[]KeywordTable, 
+                           tks: *[]Token, index: *int!) int? {
   loop (i = 0; i < 24) : (i++) {
     @outputln(1, keywords&[i].text);
   }
   return -1; # Not found
 };
 
-const match_builtin := fn (v: *char, builtins: *[]BuiltinTable) int? {
+const match_builtin := fn (v: *char, builtins: *[]BuiltinTable, 
+                           tks: *[]Token, index: *int!) int? {
   loop (i = 0; i < 26) : (i++) {
     @outputln(1, builtins&[i].text);
   }
   return -1; # Not found
 };
 
-const match_symbol := fn (v: *char, symbols: *[]SymbolTable) int? {
-  loop (i = 0; i < 40) : (i++) {
+const match_ssymbol := fn (v: char, symbols: *[]SingleSymbolTable, 
+                           tks: *[]Token, index: *int!) int? {
+  loop (i = 0; i < 23) : (i++) {
+    @outputln(1, ascii_to_string(symbols&[i].text));
+  }
+  return -1; # Not found
+};
+
+const match_dsymbol := fn (v: char, symbols: *[]DoubleSymbolTable, 
+                           tks: *[]Token, index: *int!) int? {
+  loop (i = 0; i < 11) : (i++) {
     @outputln(1, symbols&[i].text);
   }
   return -1; # Not found

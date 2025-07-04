@@ -59,10 +59,10 @@ const main := fn () int! {
   have tk: [6048]Token = @cast<[]Token>(@alloc(@sizeof(Token) * 120));
   tokenize(fileContents, realSize, tk);
 
-  # loop (i = 0; i < 6028) : (i++) {
-  #   if (tk[i].kind == @cast<int!>(TokenKind.EOF)) break;
-  #   @output(1, tk[i].value);
-  # }
+  loop (i = 0; i < 6028) : (i++) {
+    if (tk[i].kind == @cast<int!>(TokenKind.EOF)) break;
+    @output(1, tk[i].value);
+  }
 
   @free(fileContents, @sizeof(fileContents));
   return 0;
