@@ -1,16 +1,22 @@
 @import "../std/type.zu";
 
 const TokenKind := enum {
+  # Literals
+  Char,
+  Bool,
+  Nil,
+  Int,
+  Float,
+  Identifier,
+  String,
+
+  # Operators
   Plus,
   Dash,
   Star,
   Slash,
   LParen,
   RParen,
-  Int,
-  Float,
-  Identifier,
-  String,
   Comma,
   Semicolon,
   Equals,
@@ -46,6 +52,62 @@ const TokenKind := enum {
   RightArrow,
   Range,
   Resolution,
+
+  # Keywords 
+  Else,
+  False,
+  Fn,
+  Loop,
+  If,
+  Or,
+  Exit,
+  True,
+  Have,
+  Pkg,
+  In,
+  Type,
+  Struct,
+  Enum,
+  Const,
+  Import,
+  Pub,
+  Priv,
+  Break,
+  Continue,
+  Typename,
+  Match,
+  Default,
+  Case,
+  Return,
+
+  # Built-in functions
+  Template,
+  Cast,
+  Import,
+  Link,
+  Extern,
+  Call,
+  Output,
+  Read,
+  Input,
+  Write,
+  Free,
+  Alloc,
+  Memcpy,
+  Sizeof,
+  GetArgv,
+  GetArgc,
+  Streq,
+  Open,
+  Close,
+  Outputln,
+  Socket,
+  Bind,
+  Listen,
+  Accept,
+  Recv,
+  Send,
+
   EOF
 };
 
@@ -57,6 +119,16 @@ const Token := struct {
 };
 
 const SymbolTable := struct {
+  text: str,
+  kind: int!
+};
+
+const KeywordTable := struct {
+  text: str,
+  kind: int!
+};
+
+const BuiltinTable := struct {
   text: str,
   kind: int!
 };
@@ -79,4 +151,25 @@ const make_token := fn (value: str, kind: int!, line: int!, col: int!) Token {
     col: col,
   };
   return token;
+};
+
+const match_keyword := fn (v: *char, keywords: *[]KeywordTable) int? {
+  loop (i = 0; i < 24) : (i++) {
+    @outputln(1, keywords&[i].text);
+  }
+  return -1; # Not found
+};
+
+const match_builtin := fn (v: *char, builtins: *[]BuiltinTable) int? {
+  loop (i = 0; i < 26) : (i++) {
+    @outputln(1, builtins&[i].text);
+  }
+  return -1; # Not found
+};
+
+const match_symbol := fn (v: *char, symbols: *[]SymbolTable) int? {
+  loop (i = 0; i < 40) : (i++) {
+    @outputln(1, symbols&[i].text);
+  }
+  return -1; # Not found
 };
