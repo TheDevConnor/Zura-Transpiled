@@ -46,6 +46,7 @@ void codegen::initMaps() {
       {ND_GETARGC, getArgcExpr},
       {ND_GETARGV, getArgvExpr},
       {ND_STRCMP, strcmp},
+      {ND_COMMAND, commandExpr},
   };
   opMap = {
       {"+", "add"},   {"-", "sub"},    {"*", "imul"}, {"/", "idiv"},

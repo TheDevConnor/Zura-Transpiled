@@ -742,3 +742,27 @@ Node::Expr *Parser::recvExpr(PStruct *psr) {
   return new RecvExpr(line, column, socket, buffer, size, flags,
                       codegen::getFileID(psr->current_file));
 }
+
+// @command<CommandName>(commandArgs);
+Node::Expr *Parser::commandExpr(PStruct *psr) {
+  int line = psr->tks[psr->pos].line;
+  int column = psr->tks[psr->pos].column;
+
+  psr->expect(TokenKind::COMMAND, "Expected a COMMAND keyword to start a command expr!");
+
+  psr->expect(TokenKind::LESS, "Expected a LESS to start command name");
+  std::string command = psr->expect(STRING, "Expected a STRING as a command name in a command expr").value;
+  psr->expect(TokenKind::GREATER, "Expected a GREATER to end command name");
+
+  psr->expect(TokenKind::LEFT_PAREN, "Expected a L_Paren to start a command expr!");
+  std::vector<Node::Expr *> args;
+  while (psr->current().kind != TokenKind::RIGHT_PAREN) {
+    args.push_back(parseExpr(psr, defaultValue));
+    if (psr->current().kind == TokenKind::RIGHT_PAREN) break;
+    psr->expect(TokenKind::COMMA, "Expected a COMMA after an argument in a command expr!");
+  }
+  
+  psr->expect(TokenKind::RIGHT_PAREN, "Expected a R_Paren to end a command expr!");
+
+  return new CommandExpr(line, column, command, args, codegen::getFileID(psr->current_file));
+}

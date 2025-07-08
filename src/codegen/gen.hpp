@@ -97,6 +97,7 @@ void openExpr(Node::Expr *expr);
 void getArgcExpr(Node::Expr *expr);
 void getArgvExpr(Node::Expr *expr);
 void strcmp(Node::Expr *expr);
+void commandExpr(Node::Expr *expr);
 
 void assignStructMember(Node::Expr *expr);
 void assignArray(Node::Expr *expr);
@@ -149,6 +150,7 @@ enum class NativeASMFunc {
   uitoa,
   memcpy_func,
   strcmp,
+  system,
 };
 
 inline std::vector<Instr> text_section = {};

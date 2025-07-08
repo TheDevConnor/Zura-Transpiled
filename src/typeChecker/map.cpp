@@ -64,6 +64,7 @@ void TypeChecker::initMaps() {
       {NodeKind::ND_GETARGC, visitArgc},
       {NodeKind::ND_GETARGV, visitArgv},
       {NodeKind::ND_STRCMP, visitStrcmp},
+      {NodeKind::ND_COMMAND, visitCommand},
   };
 }
 

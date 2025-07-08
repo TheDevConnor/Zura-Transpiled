@@ -1,3 +1,14 @@
-const main := fn () int! { 
-    return 0; 
+const main := fn () int! {
+  @command<"pwd">();
+  @command<"uname">("-a");
+  @command<"date">();
+  @command<"whoami">();
+  @command<"uptime">();
+  @command<"df">("-h");
+  @command<"free">("-h");
+  @command<"ls">("-l", "-a");
+  @command<"ps">("-aux");
+  @command<"ifconfig">();
+  @command<"netstat">("-tuln");
+  return 0;
 };

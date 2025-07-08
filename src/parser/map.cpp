@@ -103,6 +103,7 @@ void Parser::createMaps() {
       {TokenKind::BIND, bindExpr},
       {TokenKind::ACCEPT, acceptExpr},
       {TokenKind::LISTEN, listenExpr},
+      {TokenKind::COMMAND, commandExpr},
   };
   led_lu = {
       {TokenKind::PLUS, binary},

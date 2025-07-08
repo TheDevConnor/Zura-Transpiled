@@ -50,6 +50,7 @@ enum NodeKind {
   ND_ACCEPT,          // @accept(x, *y, z) -> (int!, *, int!)
   ND_RECV,            // @recv(x, y, z, w)
   ND_SEND,            // @send(x, y, z, w)
+  ND_COMMAND,         // @command("ls ", "arg1", "arg2")
 
   // Statements
   ND_EXPR_STMT,     // x = 12

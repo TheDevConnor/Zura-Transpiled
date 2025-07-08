@@ -1098,3 +1098,30 @@ public:
     length->debug(indent + 2);
   }
 };
+
+class CommandExpr : public Node::Expr {
+public:
+  int line, pos;
+  std::string command;
+  std::vector<Node::Expr *> args; // This is a list of commands to execute
+
+  CommandExpr(int line, int pos, std::string command,
+              std::vector<Node::Expr *> args, size_t file)
+      : line(line), pos(pos), command(std::move(command)), args(std::move(args)) {
+    file_id = file;
+    kind = NodeKind::ND_COMMAND;
+    // type check whatever the rhs is supposed to be
+    asmType = new SymbolType("str"); // Returns an str 
+  }
+  void debug(int indent = 0) const override {
+    Node::printIndent(indent);
+    std::cout << "CommandExpr: \n";
+    Node::printIndent(indent + 1);
+    std::cout << "Command: " << command << "\n";
+    Node::printIndent(indent + 1);
+    std::cout << "Arguments: \n";
+    for (const auto &arg : args) {
+      arg->debug(indent + 2); 
+    }
+  }
+};

@@ -1,4 +1,5 @@
 #include <unordered_map>
+#include <sstream>
 
 #include "../typeChecker/type.hpp"
 #include "gen.hpp"
@@ -622,5 +623,69 @@ void codegen::closeStmt(Node::Stmt *stmt) {
   // Stupid AI! Rax is not 0...
   moveRegister("%rax", "$3", DataSize::Qword, DataSize::Qword);
   push(Instr{.var = Syscall{.name = "SYS_CLOSE"}, .type = InstrType::Syscall},
+       Section::Main);
+}
+
+std::string stripQuotes(const std::string &s) {
+  if (s.size() >= 2 && s.front() == '"' && s.back() == '"') {
+    return s.substr(1, s.size() - 2);
+  }
+  return s;
+}
+
+void codegen::commandExpr(Node::Expr *expr) {
+  CommandExpr *c = static_cast<CommandExpr *>(expr);
+  pushDebug(c->line, expr->file_id, c->pos);
+
+  // 0. Build the /bin/sh -c command
+  std::string commandPrefix = "\"/bin/sh\"";
+  std::string commandSuffix = "\"-c\"";
+
+  visitExpr(new StringExpr(c->line, c->pos, commandPrefix.c_str(), expr->file_id));
+  popToRegister("%rdi"); // This will be the first argument to native_system
+  visitExpr(new StringExpr(c->line, c->pos, commandSuffix.c_str(), expr->file_id));
+  popToRegister("%rsi"); // This will be the second argument to native_system
+
+  // 1. Build the full command string in C++
+  std::string fullCommand = "\"";
+  fullCommand += stripQuotes(c->command);
+
+  for (Node::Expr *arg : c->args) {
+    fullCommand += " ";
+    if (auto s = dynamic_cast<StringExpr *>(arg)) {
+      fullCommand += stripQuotes(s->value);
+    } else {
+      fullCommand += "$(" + stripQuotes(s->value) + ")";
+    }
+  }
+
+  fullCommand += "\"";
+
+  // 2. Emit as a single StringExpr
+  visitExpr(new StringExpr(c->line, c->pos, fullCommand.c_str(), expr->file_id));
+  popToRegister("%rdx"); // This will be the third argument to native_system
+
+  // 3. Call the native system function
+  long long offsetAmount = round(variableCount - 8, 8);
+  if (offsetAmount)
+    push(Instr{.var = SubInstr{.lhs = "%rsp",
+                               .rhs = "$" + std::to_string(offsetAmount),
+                               .size = DataSize::Qword},
+               .type = InstrType::Sub},
+         Section::Main);
+
+  push(Instr{.var = CallInstr{.name = "native_system"}, .type = InstrType::Call}, Section::Main);
+  nativeFunctionsUsed[NativeASMFunc::system] = true;
+
+  if (offsetAmount)
+    push(Instr{.var = AddInstr{.lhs = "%rsp",
+                               .rhs = "$" + std::to_string(offsetAmount),
+                               .size = DataSize::Qword},
+               .type = InstrType::Add},
+         Section::Main);
+
+  // 4. Push return value (if any)
+  push(Instr{.var = PushInstr{.what = "%rax", .whatSize = DataSize::Qword},
+             .type = InstrType::Push},
        Section::Main);
 }
