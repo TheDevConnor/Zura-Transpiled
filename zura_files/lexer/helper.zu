@@ -2,115 +2,120 @@
 
 const TokenKind := enum {
   # Literals
-  Char,
-  Bool,
-  Nil,
-  Int,
-  Float,
-  Identifier,
-  String,
+  Char,         # 0
+  Bool,         # 1
+  Nil,          # 2
+  Int,          # 3
+  Float,        # 4
+  Identifier,   # 5
+  String,       # 6
 
   # Operators
-  Plus,
-  Dash,
-  Star,
-  Slash,
-  LParen,
-  RParen,
-  Comma,
-  Semicolon,
-  Equals,
-  LBrace,
-  RBrace,
-  LBracket,
-  RBracket,
-  Less,
-  Greater,
-  Ampersand,
-  Percent,
-  Bang,
-  Question,
-  Colon,
-  Dot,
-  Caret,
-  LAnd,
-  LOr,
-  BangEqual,
-  EqualEqual,
-  GreaterEqual,
-  LessEqual,
-  Walrus,
-  PlusPlus,
-  MinusMinus,
-  PlusEqual,
-  MinusEqual,
-  StarEqual,
-  SlashEqual,
-  And,
-  Or,
-  LeftArrow,
-  RightArrow,
-  AndAnd,
-  OrOr,
-  Increment,
-  Decrement,
+  Plus,         # 7
+  Dash,         # 8
+  Star,         # 9
+  Slash,        # 10
+  LParen,       # 11
+  RParen,       # 12
+  Comma,        # 13
+  Semicolon,    # 14
+  Equals,       # 15
+  LBrace,       # 16
+  RBrace,       # 17
+  LBracket,     # 18
+  RBracket,     # 19
+  Less,         # 20
+  Greater,      # 21
+  Ampersand,    # 22
+  Percent,      # 23
+  Bang,         # 24
+  Question,     # 25
+  Colon,        # 26
+  Dot,          # 27
+  Caret,        # 28
+  LAnd,         # 29
+  LOr,          # 30
+  BangEqual,    # 31
+  EqualEqual,   # 32
+  GreaterEqual, # 33
+  LessEqual,    # 34
+  Walrus,       # 35
+  PlusPlus,     # 36
+  MinusMinus,   # 37
+  PlusEqual,    # 38
+  MinusEqual,   # 39
+  StarEqual,    # 40
+  SlashEqual,   # 41
+  And,          # 42
+  Or,           # 43
+  LeftArrow,    # 44
+  RightArrow,   # 45
+  AndAnd,       # 46
+  OrOr,         # 47
+  Increment,    # 48
+  Decrement,    # 49
 
-  # Keywords 
-  Else,
-  False,
-  Fn,
-  Loop,
-  If,
-  Or,
-  Exit,
-  True,
-  Have,
-  Pkg,
-  In,
-  Type,
-  Struct,
-  Enum,
-  Const,
-  Import,
-  Pub,
-  Priv,
-  Break,
-  Continue,
-  Typename,
-  Match,
-  Default,
-  Case,
-  Return,
+  # Keywords
+  Else,      # 50
+  False,     # 51
+  Fn,        # 52
+  Loop,      # 53
+  If,        # 54
+  Or,        # 55
+  Exit,      # 56
+  True,      # 57
+  Have,      # 58
+  Pkg,       # 59
+  In,        # 60
+  Type,      # 61
+  Struct,    # 62
+  Enum,      # 63
+  Const,     # 64
+  Import,    # 65
+  Pub,       # 66
+  Priv,      # 67
+  Break,     # 68
+  Continue,  # 69
+  Typename,  # 70
+  Match,     # 71
+  Default,   # 72
+  Case,      # 73
+  Return,    # 74
 
   # Built-in functions
-  Template,
-  Cast,
-  Import,
-  Link,
-  Extern,
-  Call,
-  Output,
-  Read,
-  Input,
-  Write,
-  Free,
-  Alloc,
-  Memcpy,
-  Sizeof,
-  GetArgv,
-  GetArgc,
-  Streq,
-  Open,
-  Close,
-  Outputln,
-  Socket,
-  Bind,
-  Listen,
-  Accept,
-  Recv,
-  Send,
+  Template,  # 75
+  Cast,      # 76
+  Import,    # 77
+  Link,      # 78
+  Extern,    # 79
+  Call,      # 80
+  Output,    # 81
+  Read,      # 82
+  Input,     # 83
+  Write,     # 84
+  Free,      # 85
+  Alloc,     # 86
+  Memcpy,    # 87
+  Sizeof,    # 88
+  GetArgv,   # 89
+  GetArgc,   # 90
+  Streq,     # 91
+  Open,      # 92
+  Close,     # 93
+  Outputln,  # 94
+  Socket,    # 95
+  Bind,      # 96
+  Listen,    # 97
+  Accept,    # 98
+  Recv,      # 99
+  Send,      # 100
 
-  EOF
+  # Special tokens
+  Unknown,   # 101
+  EOF,       # 102
+  Error,     # 103
+  Space,     # 104
+  Newline,   # 105
 };
 
 const Token := struct {
@@ -140,17 +145,18 @@ const BuiltinTable := struct {
   kind: int!
 };
 
-const is_eof := fn (source: *char, index: int!) bool {
-  if (source[index] == @cast<char>(0)) return true;
+const is_eof := fn (source: *char, index: *int!) bool {
+  if (source[index&] == @cast<char>(0)) return true;
   return false;
 };
 
-const advance := fn (index: *int!, col: *int!) void {
-  index&++;
+const advance := fn (i: *int!, col: *int!) void {
+  i&++;
   col&++;
 };
 
-const make_token := fn (value: str, kind: int!, line: int!, col: int!) Token {
+const make_token := fn (value: str, kind: int!, 
+                        line: int!, col: int!) Token {
   have token: Token = {
     value: value,
     kind: kind,
@@ -160,34 +166,144 @@ const make_token := fn (value: str, kind: int!, line: int!, col: int!) Token {
   return token;
 };
 
-const match_keyword := fn (v: *char, keywords: *[]KeywordTable, 
-                           tks: *[]Token, index: *int!) int? {
+const match_keyword := fn (v: *char, keywords: *[]KeywordTable) int? {
   loop (i = 0; i < 24) : (i++) {
     @outputln(1, keywords&[i].text);
   }
   return -1; # Not found
 };
 
-const match_builtin := fn (v: *char, builtins: *[]BuiltinTable, 
-                           tks: *[]Token, index: *int!) int? {
+const match_builtin := fn (v: *char, builtins: *[]BuiltinTable) int? {
   loop (i = 0; i < 26) : (i++) {
     @outputln(1, builtins&[i].text);
   }
   return -1; # Not found
 };
 
-const match_ssymbol := fn (v: char, symbols: *[]SingleSymbolTable, 
-                           tks: *[]Token, index: *int!) int? {
+const match_sc_dc := fn (v: *char, index: *int!, 
+                         ssymbols: *[]SingleSymbolTable,
+                         dsymbols: *[]DoubleSymbolTable) int? {
   loop (i = 0; i < 23) : (i++) {
-    @outputln(1, ascii_to_string(symbols&[i].text));
+    if (ssymbols&[i].text == v[index&]) {
+      return ssymbols&[i].kind;
+    }
   }
   return -1; # Not found
 };
 
-const match_dsymbol := fn (v: char, symbols: *[]DoubleSymbolTable, 
-                           tks: *[]Token, index: *int!) int? {
-  loop (i = 0; i < 11) : (i++) {
-    @outputln(1, symbols&[i].text);
+const kind_to_string := fn (kind: int!) str {
+  match (kind) {
+    case 0 -> { return "Char"; }
+    case 1 -> { return "Bool"; }
+    case 2 -> { return "Nil"; }
+    case 3 -> { return "Int"; }
+    case 4 -> { return "Float"; }
+    case 5 -> { return "Identifier"; }
+    case 6 -> { return "String"; }
+    case 7 -> { return "Plus"; }
+    case 8 -> { return "Dash"; }
+    case 9 -> { return "Star"; }
+    case 10 -> { return "Slash"; }
+    case 11 -> { return "LParen"; }
+    case 12 -> { return "RParen"; }
+    case 13 -> { return "Comma"; }
+    case 14 -> { return "Semicolon"; }
+    case 15 -> { return "Equals"; }
+    case 16 -> { return "LBrace"; }
+    case 17 -> { return "RBrace"; }
+    case 18 -> { return "LBracket"; }
+    case 19 -> { return "RBracket"; }
+    case 20 -> { return "Less"; }
+    case 21 -> { return "Greater"; }
+    case 22 -> { return "Ampersand"; }
+    case 23 -> { return "Percent"; }
+    case 24 -> { return "Bang"; }
+    case 25 -> { return "Question"; }
+    case 26 -> { return "Colon"; }
+    case 27 -> { return "Dot"; }
+    case 28 -> { return "Caret"; }
+    case 29 -> { return "LAnd"; }
+    case 30 -> { return "LOr"; }
+    case 31 -> { return "BangEqual"; }
+    case 32 -> { return "EqualEqual"; }
+    case 33 -> { return "GreaterEqual"; }
+    case 34 -> { return "LessEqual"; }
+    case 35 -> { return "Walrus"; }
+    case 36 -> { return "PlusPlus"; }
+    case 37 -> { return "MinusMinus"; }
+    case 38 -> { return "PlusEqual"; }
+    case 39 -> { return "MinusEqual"; }
+    case 40 -> { return "StarEqual"; }
+    case 41 -> { return "SlashEqual"; }
+    case 42 -> { return "And"; }
+    case 43 -> { return "Or"; }
+    case 44 -> { return "LeftArrow"; }
+    case 45 -> { return "RightArrow"; }
+    case 46 -> { return "AndAnd"; }
+    case 47 -> { return "OrOr"; }
+    case 48 -> { return "Increment"; }
+    case 49 -> { return "Decrement"; }
+    case 50 -> { return "Else"; }
+    case 51 -> { return "False"; }
+    case 52 -> { return "Fn"; }
+    case 53 -> { return "Loop"; }
+    case 54 -> { return "If"; }
+    case 55 -> { return "Or"; }
+    case 56 -> { return "Exit"; }
+    case 57 -> { return "True"; }
+    case 58 -> { return "Have"; }
+    case 59 -> { return "Pkg"; }
+    case 60 -> { return "In"; }
+    case 61 -> { return "Type"; }
+    case 62 -> { return "Struct"; }
+    case 63 -> { return "Enum"; }
+    case 64 -> { return "Const"; }
+    case 65 -> { return "Import"; }
+    case 66 -> { return "Pub"; }
+    case 67 -> { return "Priv"; }
+    case 68 -> { return "Break"; }
+    case 69 -> { return "Continue"; }
+    case 70 -> { return "Typename"; }
+    case 71 -> { return "Match"; }
+    case 72 -> { return "Default"; }
+    case 73 -> { return "Case"; }
+    case 74 -> { return "Return"; }
+    case 75 -> { return "Template"; }
+    case 76 -> { return "Cast"; }
+    case 77 -> { return "Import"; }
+    case 78 -> { return "Link"; }
+    case 79 -> { return "Extern"; }
+    case 80 -> { return "Call"; }
+    case 81 -> { return "Output"; }
+    case 82 -> { return "Read"; }
+    case 83 -> { return "Input"; }
+    case 84 -> { return "Write"; }
+    case 85 -> { return "Free"; }
+    case 86 -> { return "Alloc"; }
+    case 87 -> { return "Memcpy"; }
+    case 88 -> { return "Sizeof"; }
+    case 89 -> { return "GetArgv"; }
+    case 90 -> { return "GetArgc"; }
+    case 91 -> { return "Streq"; }
+    case 92 -> { return "Open"; }
+    case 93 -> { return "Close"; }
+    case 94 -> { return "Outputln"; }
+    case 95 -> { return "Socket"; }
+    case 96 -> { return "Bind"; }
+    case 97 -> { return "Listen"; }
+    case 98 -> { return "Accept"; }
+    case 99 -> { return "Recv"; }
+    case 100 -> { return "Send"; }
+    case 101 -> { return "Unknown"; }
+    case 102 -> { return "EOF"; }
+    case 103 -> { return "Error"; }
+    case 104 -> { return "Space"; }
+    case 105 -> { return "Newline"; }
+    default -> {
+      @outputln(1, "Unknown token kind: ", kind);
+      return "Unknown";
+    }
   }
-  return -1; # Not found
+
+  return "";
 };

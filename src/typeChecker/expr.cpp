@@ -89,8 +89,8 @@ void TypeChecker::visitChar(Node::Expr *expr) {
 void TypeChecker::visitAddress(Node::Expr *expr) {
   AddressExpr *address = static_cast<AddressExpr *>(expr);
   visitExpr(address->right);
-  return_type = std::make_shared<PointerType>(return_type.get());
-  expr->asmType = new PointerType(createDuplicate(address->right->asmType));
+  return_type = std::make_shared<PointerType>(createDuplicate(return_type.get()));
+  expr->asmType = new PointerType(createDuplicate(return_type.get()));
 }
 
 void TypeChecker::visitDereference(Node::Expr *expr) {

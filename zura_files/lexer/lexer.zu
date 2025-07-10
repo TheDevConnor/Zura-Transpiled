@@ -39,7 +39,7 @@ const tokenize := fn (source: *char, realSize: int!, tk: *[]Token) void {
   ];
 
   have symbol: [23]SingleSymbolTable = [
-    {text: @cast<char>(41), kind: @cast<int!>(TokenKind.LParen)},    {text: @cast<char>(41), kind: @cast<int!>(TokenKind.RParen)},
+    {text: @cast<char>(40), kind: @cast<int!>(TokenKind.LParen)},    {text: @cast<char>(41), kind: @cast<int!>(TokenKind.RParen)},
     {text: @cast<char>(123), kind: @cast<int!>(TokenKind.LBrace)},   {text: @cast<char>(125), kind: @cast<int!>(TokenKind.RBrace)},
     {text: @cast<char>(59), kind: @cast<int!>(TokenKind.Semicolon)}, {text: @cast<char>(44), kind: @cast<int!>(TokenKind.Comma)},
     {text: @cast<char>(46), kind: @cast<int!>(TokenKind.Dot)},       {text: @cast<char>(45), kind: @cast<int!>(TokenKind.Dash)},
@@ -63,23 +63,42 @@ const tokenize := fn (source: *char, realSize: int!, tk: *[]Token) void {
   ];
 
   loop (i = 0; i < realSize) : (i++) {
+    @outputln(1, "Current char: ", ascii_to_string(source[i]), " at line ", line, " col ", col);
     # Check whitespace and skip it
-    if (source[i] == @cast<char>(32)) { col++; } # Skip spaces
-    if (source[i] == @cast<char>(10)) { line++; col = 0; } # Skip newlines
+    if (source[i] == @cast<char>(32)) { 
+      i++; col++;
+      continue;
+    } # Skip spaces
+    if (source[i] == @cast<char>(10)) { 
+      i++; line++; col = 0;
+      continue;
+    } # Skip newlines
 
-    if (is_eof(source, i)) break; # Stop at null terminator
+    if (is_eof(source, &i)) break; # Stop at null terminator
 
-    loop (j = i; alpha(source, &j)) : (j++) {
-      tk&[j] = make_token(ascii_to_string(source[j]), @cast<int!>(TokenKind.Identifier), line, col);
-      advance(&i, &col); # Advance past the letter
+    if (alpha(source, &i)) {
+      have start: int! = i; # Start of the identifier
+      loop (j = i; alpha(source, &i)) : (i++) {
+        tk&[i] = make_token(ascii_to_string(source[i]), @cast<int!>(TokenKind.Identifier), line, col);
+      }
+      have length: int! = i - start; # Length of the identifier
+      # @outputln(1, "length: ", length, " start: ", start, " i: ", i);
     }
 
-    loop (j = i; digit(source, &j)) : (j++) {
-      tk&[j] = make_token(ascii_to_string(source[j]), @cast<int!>(TokenKind.Int), line, col);
-      advance(&i, &col); # Advance past the digit
+    if (digit(source, &i)) {
+      loop (j = i; digit(source, &i)) : (i++) {
+        tk&[i] = make_token(ascii_to_string(source[i]), @cast<int!>(TokenKind.Int), line, col);
+      }
+      # @outputln(1, "Found integer: ", ascii_to_string(source[i - 1]), " at line ", line, " col ", col);
     }
 
-    tk&[i] = make_token(ascii_to_string(source[i]), 0, line, col);
+    have character: int? = match_sc_dc(source, &i, &symbol, &doubleSymbol);
+    if (character != -1) {
+      # @outputln(1, "Found symbol: ", ascii_to_string(source[i]), " at line ", line, " col ", col);
+      tk&[i] = make_token(ascii_to_string(source[i]), character, line, col);
+    } else {
+      tk&[i] = make_token(ascii_to_string(source[i]), @cast<int!>(TokenKind.Unknown), line, col);
+    }
   }
 
   # Add a null terminator to the end of the tokens array

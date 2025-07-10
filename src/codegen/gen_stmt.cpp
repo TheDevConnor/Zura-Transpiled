@@ -913,6 +913,7 @@ void codegen::_return(Node::Stmt *stmt) {
 
 void codegen::forLoop(Node::Stmt *stmt) {
   ForStmt *s = static_cast<ForStmt *>(stmt);
+  loopDepth++;
   dwarf::nextBlockDIE = false;
   std::string preconCount = std::to_string(conditionalCount++);
 
@@ -1009,47 +1010,73 @@ void codegen::forLoop(Node::Stmt *stmt) {
   // Pop the loop variable from the stack
   variableTable.erase(assignee->name);
   variableCount -= 8; // We now have room for another variable!
+  loopDepth--;
 };
 
 void codegen::whileLoop(Node::Stmt *stmt) {
   WhileStmt *s = static_cast<WhileStmt *>(stmt);
   loopDepth++;
-  pushDebug(s->line, stmt->file_id, s->pos);
-  // Do basically the same thing as a for loop. No variable declaration, though.
-  std::string preLoop = ".Lwhile_pre" + std::to_string(loopCount);
-  std::string postLoop = ".Lwhile_post" + std::to_string(loopCount);
-  loopCount++;
-  // Evaluate condition
-  push(Instr{.var = Label{.name = preLoop}, .type = InstrType::Label},
+  
+  dwarf::nextBlockDIE = false;
+  std::string preconCount = std::to_string(conditionalCount++);
+  
+  // Fix: Store current loop count before incrementing
+  int currentLoop = loopCount;
+  std::string preLoopLabel = "loop_pre" + std::to_string(currentLoop);
+  std::string postLoopLabel = "loop_post" + std::to_string(currentLoop);
+  loopCount++; // Increment after using the value
+  
+  push(Instr{.var = Comment{.comment = "while loop"}, .type = InstrType::Comment},
        Section::Main);
-  // Check if is a stupid loop (like if a test would fail like when checking 0
-  // == 0)
+  
+  // Set loop start label
+  push(Instr{.var = Label{.name = preLoopLabel}, .type = InstrType::Label},
+       Section::Main);
+  
+  // Evaluate the loop condition
   if (s->condition->kind != ND_BOOL) {
+    // For non-boolean conditions, process comparison and jump
     JumpCondition jc = processComparison(s->condition);
-    push(Instr{.var = JumpInstr{.op = getOpposite(jc), .label = postLoop},
+    push(Instr{.var = JumpInstr{.op = getOpposite(jc), .label = postLoopLabel},
+               .type = InstrType::Jmp},
+         Section::Main);
+  } else {
+    // Fix: For boolean conditions, we need to evaluate the expression first
+    visitExpr(s->condition); // This should put 0 or 1 on the stack
+    // Then compare with 0 and jump if equal (false)
+    push(Instr{.var = JumpInstr{.op = JumpCondition::Equal,
+                                .label = postLoopLabel},
                .type = InstrType::Jmp},
          Section::Main);
   }
-
-  // yummers, now just do the block
-  if (debug) dwarf::nextBlockDIE = true;
-  visitStmt(s->block);
-
-  // Eval the optional ': ()' part
+  
+  // Execute the loop body (if condition is true)
+  visitStmt(s->block); // Visit the statements inside the loop body
+  
   if (s->optional != nullptr) {
-    visitExpr(s->optional);
+    // Evaluate the loop increment (e.g., i++)
+    visitExpr(s->optional); // Process the loop increment if provided
     text_section.pop_back();
   }
-
-  // Jump back to the start of the loop
+  
+  // Jump back to the loop start
   push(Instr{.var = JumpInstr{.op = JumpCondition::Unconditioned,
-                              .label = preLoop},
+                              .label = preLoopLabel},
              .type = InstrType::Jmp},
        Section::Main);
-  push(Instr{.var = Label{.name = postLoop}, .type = InstrType::Label},
+  
+  // Set loop end label
+  push(Instr{.var = Label{.name = postLoopLabel}, .type = InstrType::Label},
        Section::Main);
+  
+  if (debug) {
+    push(Instr{.var=Label{.name=".Ldie_loop" + std::to_string(currentLoop) + "_end"},.type=InstrType::Label},Section::Main);
+    pushLinker(".byte 0 # </WHILE BLOCK>\n", Section::DIE); // Explain that the LexicalBlock is over!
+  }
+  
+  dwarf::nextBlockDIE = true;
   loopDepth--;
-};
+}
 
 void codegen::_break(Node::Stmt *stmt) {
   BreakStmt *s = static_cast<BreakStmt *>(stmt);
@@ -1075,24 +1102,20 @@ void codegen::_break(Node::Stmt *stmt) {
 
 void codegen::_continue(Node::Stmt *stmt) {
   ContinueStmt *s = static_cast<ContinueStmt *>(stmt);
-
   push(Instr{.var = Comment{.comment = "continue statement"},
              .type = InstrType::Comment},
        Section::Main);
   pushDebug(s->line, stmt->file_id, s->pos);
-
-  // Jump back to the start of the loop
+  // Jump to the start of the loop
   push(Instr{.var = JumpInstr{.op = JumpCondition::Unconditioned,
-                              .label =
-                                  ".Lloop_pre" + std::to_string(loopCount - 1)},
+                              .label = "loop_pre" + std::to_string(loopCount)},
              .type = InstrType::Jmp},
-       Section::Main);
-
+       Section::Main);  
   // Continue statements are only valid inside loops
-  if (loopDepth < 1) {
-    std::cerr << "Error: Continue statement outside of loop" << std::endl;
-    exit(-1);
-  }
+  // if (loopDepth < 1) {
+  //   std::cerr << "Error: Continue statement outside of loop" << std::endl;
+  //   exit(-1);
+  // }
 };
 
 void codegen::matchStmt(Node::Stmt *stmt) {
