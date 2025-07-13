@@ -485,7 +485,7 @@ std::string lsp::getBuiltinNote(const std::string &builtin) {
            "\treturn 0; # Return 0 to indicate success\n"
             "};\n"
             "```";
-  } 
+  } else 
   if (builtin == "@import") {
     return "This function will import another Zura file and make its functions usable in your current one.\n"
            "This could be useful for organization, reusing old code, or importing somebody else's code.\n"
