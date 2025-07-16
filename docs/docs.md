@@ -17,7 +17,7 @@ Zura is a statically typed language that blends familiar syntax with modern cons
 11. [Templates](#templates)
 12. [Casting](#casting)
 13. [Built-in Functions](#built-in-functions)
-14. [Getting CMDLine Args from the user](#Cmd-line-args) 
+14. [Getting CMDLine Args from the user](#cmd-line-args) 
 15. [Debugging Zura](#debug-mode)
 
 ## Basic Syntax
@@ -331,7 +331,7 @@ Zura provides a set of built-in functions that do not require the importing of s
 
 `@streq` - (str1, str2) - Compares two strings for equality. Returns `true` if they are equal, `false` otherwise.
 
-## Cmd-line-args
+## cmd-line-args
 Zura provides built-in functions to access command-line arguments passed to the program.
 
 Here is an example of how to retrieve and use them:
