@@ -24,7 +24,7 @@ Zura is a statically typed language that blends familiar syntax with modern cons
 
 Zura uses a unique combination of operators and control structures for defining variables, functions, and loops. All Zura programs must define a `main` function which serves as the entry point.
 
-```cpp
+```zura
 const main := fn () int! {
   @outputln(1, "Hello, World!");
   return 0;
@@ -48,7 +48,7 @@ Zura supports the following data types:
 
 Variables in Zura are defined using the `have` keyword. Variables can be assigned a value at the time of declaration or later in the program.
 
-```cpp
+```zura
 have x: int! = 10;
 have y: int!;
 y = 20;
@@ -58,7 +58,7 @@ y = 20;
 
 Functions in Zura are defined using the `fn` keyword. Functions can take arguments and return values.
 
-```cpp
+```zura
 const add := fn (x: int!, y: int!) int! {
    return x + y;
 };
@@ -68,7 +68,7 @@ const add := fn (x: int!, y: int!) int! {
 
 Zura supports the `if`, `else`, `while`, and `for` control structures that you may see in C-style languages. In Zura, however, we do not use `for` and `while`, but use the `loop` syntax with an optional iterator.
 
-```cpp
+```zura
 #    iterator  cond    postfix
 loop (i = 0; i < 10) : (i++) {
    @output(1, i, "\n");
@@ -83,7 +83,7 @@ loop (i = 0; i < 10) {
 
 You are allowed to have a post-loop operator in the loop syntax without the inline variable declaration. Aka a `while` loop.
 
-```cpp
+```zura
 have x: int! = 0;
 loop (x < 10) : (x++) {
    @output(1, x, "\n");
@@ -92,7 +92,7 @@ loop (x < 10) : (x++) {
 
 Which can also be written as:
 
-```cpp
+```zura
 have x: int! = 0;
 loop (x < 10) {
    @output(1, x, "\n");
@@ -102,7 +102,7 @@ loop (x < 10) {
 
 The `break` and `continue` statements are also supported in Zura.
 
-```cpp
+```zura
 loop (i = 0; i < 10) : (i++) {
    if (i == 5) {
       continue; # Skip the rest of the loop when i is 5.
@@ -116,7 +116,7 @@ loop (i = 0; i < 10) : (i++) {
 
 The `if` and `else` statements are similar to other languages.
 
-```cpp
+```zura
 have x: int! = 10;
 if (x > 10) {
    @output(1, "x > 10\n");
@@ -128,26 +128,26 @@ if (x > 10) {
 ## Arrays
 Zura supports arrays which are fixed-size collections of elements of the same type. Arrays are defined using square brackets `[]`.
 
-```cpp
+```zura
 have arr: [5]int! = [1, 2, 3, 4, 5];
 ```
 
 You can also define arrays with a specific size and auto initialize them to zero.
 
-```cpp
+```zura
 have arr: [5]int! = [0];
 ```
 
 You can access elements of an array using the square bracket operator `[]`.
 
-```cpp
+```zura
 have x: int! = arr[0];
 ```
 
 ## Structures
 Zura supports structures which allow you to define custom data types. Similar to C-family languages, structs are simply a way to manage multiple variables in one easy-to-access place.
 
-```cpp
+```zura
 const Point := struct {
    have x: int!;
    have y: int!;
@@ -163,7 +163,7 @@ p.y = 20;
 
 Structs can also be defined in one big expression, rather than defining each member individually like the example above.
 
-```cpp
+```zura
 have p: Point = {
   x: 10;
   y: 20;
@@ -175,7 +175,7 @@ This is functionally identical to first example.
 ## Enums
 Zura supports enums which allow you to define a set of named constants.
 
-```cpp
+```zura
 const Color := enum {
    Red,   # 1
    Green, # 2
@@ -193,21 +193,21 @@ In Zura, we try to avoid the use of pointer arithmetic and other fancy operation
 
 The data type of a pointer is defined with an asterisk `*`. A point-to operator that returns the address of the right-hand side is done with the `&` character.
 
-```cpp
+```zura
 have i: int = 43;
 have j: *int = &i; # Contains the address of i.
 ```
 
 When dereferencing a pointer, you use the `&` operator on the right-hand side to access the value at the address stored in the pointer.
 
-```cpp
+```zura
 j& = 100; # Here we are dereferencing j and giving it a new value of 100.
 @output(1, "Value of i: ", i, "\n"); # This will output "Value of i: 100"
 ```
 
 Pointers are also allowed to be the members of a struct.
 
-```cpp
+```zura
 const Point := struct {
   x: int!,
   y: int!
@@ -233,7 +233,7 @@ have r: Ray = {
 Zura provides built-in functions for memory management, such as `@alloc`, `@free`, and `@memcpy`.
 
 The `@alloc` will allocate a piece of memory of the given size (in bytes) and return the pointer to it. The @alloc function returns a void pointer that can later be type-casted for use of any type. Additionally, if the allocation fails, the returned pointer will be `nil` (0).
-```cpp
+```zura
 have buffer: *char = @cast<*char>(@alloc(100)); # Allocates 100 bytes of memory for a char buffer.
 if (buffer == nil) {
     @outputln(1, "Memory allocation failed");
@@ -243,7 +243,7 @@ if (buffer == nil) {
 
 The `@free` function will free the memory allocated by `@alloc`. It takes a pointer to the memory and the size of the memory to be freed.
 
-```cpp
+```zura
 @free(buffer, 100); # Free the memory allocated for the buffer.
 ```
 
@@ -253,7 +253,7 @@ The `@free` function will free the memory allocated by `@alloc`. It takes a poin
 > If you did not do this, then the program will not work as intended, or, more likely, crash altogether.
 > Additionally, the type of the pointers used does not matter, whether they match or differ. A byte-for-byte copy from the source to the destination will be performed.
 
-```cpp
+```zura
 have source: *char = "Hello, World!";
 have des: *char =@cast<*char>(@alloc(50)); # Allocate 50 bytes for the destination buffer.
 if (des == nil) {
@@ -270,14 +270,14 @@ Zura does not yet support templates.
 ## Casting
 Zura supports casting between different types using the `cast` keyword. This is a "functional" cast rather than a static cast like in C++. This will convert between data types rather than simply changing the type associated with the bytes.
 
-```cpp
+```zura
 have x: float = 10.5;
 have y: int = @cast<int!>(x);
 ```
 
 Here is a more complex example:
 
-```cpp
+```zura
 const calculate_average := fn (a: float, b: float) float {
    return (a + b) / 2.0;
 };
@@ -335,7 +335,7 @@ Zura provides a set of built-in functions that do not require the importing of s
 Zura provides built-in functions to access command-line arguments passed to the program.
 
 Here is an example of how to retrieve and use them:
-```cpp
+```zura
 const main := fn () int! {
   have argc: int! = @getArgc();    # Get the number of args
   have argv: *[]str = @getArgv();  # Pointer to array of str
@@ -356,7 +356,7 @@ This code defines a variable that stores the pointer to the array of arguments a
 ## Debug mode
 You can add the `-debug` flag to the Zura binary to compile your code in debug mode. This adds debugging information (like line/column locations and expression watching) to the output assembly/executable. You can try it out in GDB. (For the nerds, this uses DWARF v5.)
 
-```cpp
+```zura
 1. const main := fn () int {
 2.   have i: int = 45;
 4.   # gdb: "Old value = 0, New value = 45"
