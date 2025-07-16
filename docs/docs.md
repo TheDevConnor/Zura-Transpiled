@@ -38,7 +38,7 @@ Zura supports the following data types:
 - `int?`: 64-bit signed integer (9,223,372,036,854,775,807)
 - `int!`: 64-bit unsigned integer (18,446,744,073,709,551,615)
 - `float`: 64-bit floating-point number
-- `bool`: 8-bit boolean value (Technically 1-bit types cannot exist.)
+- `bool`: 8-bit (1 byte) boolean (true or false)
 - `str`: 64-bit char* (pointer to the first character of the string.)
 - `char`: 8-bit signed integer
 - `void`: Represents no value or a null pointer.
