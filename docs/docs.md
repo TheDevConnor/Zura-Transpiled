@@ -357,11 +357,11 @@ This code defines a variable that stores the pointer to the array of arguments a
 You can add the `-debug` flag to the Zura binary to compile your code in debug mode. This adds debugging information (like line/column locations and expression watching) to the output assembly/executable. You can try it out in GDB. (For the nerds, this uses DWARF v5.)
 
 ```zura
-1. const main := fn () int {
-2.   have i: int = 45;
-4.   # gdb: "Old value = 0, New value = 45"
-3.   i = 3;
-5.   # gdb: "Old value = 45, New value = 3"
-6.   return i;
-7. };
+const main := fn () int {
+   have i: int = 45;
+   # gdb: "Old value = 0, New value = 45"
+   i = 3;
+   # gdb: "Old value = 45, New value = 3"
+   return i;
+};
 ```
