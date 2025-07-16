@@ -302,34 +302,20 @@ const main := fn () int! {
 
 ## Built-in Functions
 Zura provides a set of built-in functions that do not require the importing of standard libraries. Here is a list of the built-in functions:
-
-`@import ""` - (str) - Imports another Zura file and makes its functions available in the current file.
-
-`@output` - (int, ...) - Outputs the given arguments to the console. The first argument is the file descriptor (1 for stdout, 2 for stderr).
-
-`@outputln` - (int, ...) - Similar to `@output`, but adds a newline at the end of the output.
-
-`@input` - (int, *void, int) - Reads input from the console. The first argument is the file descriptor (0 for stdin), the second argument is a pointer to the buffer where the input will be stored, and the third argument is the size of the buffer.
-
-`@alloc` - (int) - Allocates a block of memory of the specified size in bytes and returns a pointer to it.
-
-`@free` - (*void, int) - Frees the memory allocated by `@alloc`.
-
-`@memcpy` - (*void, *void, int) - Copies a specified number of bytes from one memory location to another.
-
-`@sizeof` - (type) - Returns the size of the specified type in bytes.
-
-`@cast<>()` - <type>(value) - Casts the value to the specified type.
-
-`@getArgc` - () - Returns the number of command-line arguments passed to the program.
-
-`@getArgv` - () - Returns a pointer to an array of strings containing the command-line arguments.
-
-`@open` - (path, (3 bools)(read, write, create)) This function takes in a path, either relative or absolute, and returns a file descriptor opened from that path. It is useful for opening files used in I/O. However, it is not designed for use in sockets. That is the job of the `@socket` function. On an error or unsuccessful opening, the function returns a negative number (USUALLY -1, but can sometimes be different...)
-
-`@close` - (fd) - Closes the file descriptor specified by `fd`. This is useful for cleaning up resources after you are done using a file.
-
-`@streq` - (str1, str2) - Compares two strings for equality. Returns `true` if they are equal, `false` otherwise.
+- `@import ""` - (str) - Imports another Zura file and makes its functions available in the current file.
+- `@output` - (int, ...) - Outputs the given arguments to the console. The first argument is the file descriptor (1 for stdout, 2 for stderr).
+- `@outputln` - (int, ...) - Similar to `@output`, but adds a newline at the end of the output.
+- `@input` - (int, *void, int) - Reads input from the console. The first argument is the file descriptor (0 for stdin), the second argument is a pointer to the buffer where the input will be stored, and the third argument is the size of the buffer.
+- `@alloc` - (int) - Allocates a block of memory of the specified size in bytes and returns a pointer to it.
+- `@free` - (*void, int) - Frees the memory allocated by `@alloc`.
+- `@memcpy` - (*void, *void, int) - Copies a specified number of bytes from one memory location to another.
+- `@sizeof` - (type) - Returns the size of the specified type in bytes.
+- `@cast<>()` - <type>(value) - Casts the value to the specified type.
+- `@getArgc` - () - Returns the number of command-line arguments passed to the program.
+- `@getArgv` - () - Returns a pointer to an array of strings containing the command-line arguments.
+- `@open` - (path, (3 bools)(read, write, create)) This function takes in a path, either relative or absolute, and returns a file descriptor opened from that path. It is useful for opening files used in I/O. However, it is not designed for use in sockets. That is the job of the `@socket` function. On an error or unsuccessful opening, the function returns a negative number (USUALLY -1, but can sometimes be different...)
+- `@close` - (fd) - Closes the file descriptor specified by `fd`. This is useful for cleaning up resources after you are done using a file.
+- `@streq` - (str1, str2) - Compares two strings for equality. Returns `true` if they are equal, `false` otherwise.
 
 ## cmd-line-args
 Zura provides built-in functions to access command-line arguments passed to the program.
