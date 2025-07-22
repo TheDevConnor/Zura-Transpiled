@@ -231,13 +231,59 @@ void codegen::gen(Node::Stmt *stmt, bool isSaved, std::string output_filename,
              "\n    ret"
              "\n.size native_strcmp, .-native_strcmp\n";
   }
+  if (nativeFunctionsUsed[NativeASMFunc::system] == true) {
+    file << ".type native_system, @function\n"
+            "native_system:\n"
+            "  push %rbp\n"
+            "  mov %rsp, %rbp\n"
+            "  # Save input strings from %rdi, %rsi, %rdx\n"
+            "  #   %rdi = /bin/sh\n"
+            "  #   %rsi = -c\n"
+            "  #   %rdx = command string\n"
+            "  # We'll build argv[] = [rdi, rsi, rdx, NULL]\n"
+            "  subq $32, %rsp               # Reserve space for argv[] (4 * 8 bytes)\n"
+            "  movq %rdi, 0(%rsp)           # argv[0] = /bin/sh\n"
+            "  movq %rsi, 8(%rsp)           # argv[1] = -c\n"
+            "  movq %rdx, 16(%rsp)          # argv[2] = command\n"
+            "  movq $0,   24(%rsp)          # argv[3] = NULL\n"
+            "  # Fork the process\n"
+            "  mov $57, %rax                # syscall: fork\n"
+            "  syscall\n"
+            "  test %rax, %rax\n"
+            "  js .fork_failed              # RAX < 0 → fork failed\n"
+            "  je .in_child                 # RAX == 0 → in child\n"
+            "  # Parent process: wait for child\n"
+            "  mov %rax, %rdi               # rdi = child pid\n"
+            "  xor %rsi, %rsi               # rsi = NULL (status)\n"
+            "  mov $61, %rax                # syscall: waitpid\n"
+            "  syscall\n"
+            "  jmp .done\n"
+            ".in_child:\n"
+            "  mov %rsp, %rsi               # rsi = argv[]\n"
+            "  xor %rdx, %rdx               # rdx = NULL\n"
+            "  movq 0(%rsp), %rdi           # rdi = path = /bin/sh\n"
+            "  mov $59, %rax                # syscall: execve\n"
+            "  syscall\n"
+            "  # If execve fails\n"
+            "  mov $60, %rax\n"
+            "  mov $1, %rdi\n"
+            "  syscall\n"
+            ".fork_failed:\n"
+            "  mov $60, %rax\n"
+            "  mov $1, %rdi\n"
+            "  syscall\n"
+            ".done:\n"
+            "  leave\n"
+            "  ret\n"
+            ".size native_system, .-native_system\n";
+  }
   if (debug) 
     file << ".Ldebug_text0:\n";
   if (head_section.size() > 0) {
     file << "\n# non-main user functions" << std::endl;
     file << Stringifier::stringifyInstrs(head_section);
   }
-  if (rodt_section.size() > 0) {
+  if (rodt_section.size() > 0 || isUsingNewline) {
     file << "\n# readonly data section - contains constant strings and floats (for now)"
             "\n.section .rodata\n";
     file << Stringifier::stringifyInstrs(rodt_section);
@@ -328,7 +374,9 @@ void codegen::gen(Node::Stmt *stmt, bool isSaved, std::string output_filename,
 
   output_filename = output_filename.substr(0, output_filename.find_last_of("."));
 
+  shouldPrintErrors = false;
   bool isError = Error::report_error();
+  shouldPrintErrors = true; // Reset this so that we can print errors again if they occur later
   if (isError) { return; }
 
   // Compile, but do not link main.o

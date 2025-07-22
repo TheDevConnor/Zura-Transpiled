@@ -15,15 +15,11 @@ const main := fn () int! {
   }
 
   have filePath: *char = nil;
-  have quietMode: bool = false;
-  have debugMode: bool = false;
   loop (i = 0; i < argc) :  (i++) {
-    if (@streq(argv&[i], "--help"))    return printHelp();
-    if (@streq(argv&[i], "--version")) return printVersion();
-    if (@streq(argv&[i], "--license")) return printLicense();
-    if (@streq(argv&[i], "--lsp"))     return printLsp();
-    if (@streq(argv&[i], "--quiet"))   quietMode = true;
-    if (@streq(argv&[i], "--debug"))   debugMode = true;
+    if (@streq(argv&[i], "--help"))    { return printHelp();    }
+    if (@streq(argv&[i], "--version")) { return printVersion(); }
+    if (@streq(argv&[i], "--license")) { return printLicense(); }
+    if (@streq(argv&[i], "--lsp"))     { return printLsp();     }
     if (@streq(argv&[i], "build")) {
       # expect the very next argument to be a path, if there IS a next argument
       if (i == argc - 1) {
@@ -59,11 +55,15 @@ const main := fn () int! {
   } 
   # add a null terminator to the end of the file contents
   fileContents[realSize - 1] = @cast<char>(0);
-  
-  scan(fileContents, realSize); # TODO: Fix null terminators filling console, very annoying
-  
-  @free(fileContents, size); # My computer is gonna explode nooo!!
-  # @free(lx.current, size);
-  # @free(lx.start, size);
+
+  have tk: [6048]Token = @cast<[]Token>(@alloc(@sizeof(Token) * 120));
+  tokenize(fileContents, realSize, tk);
+
+  loop (i = 0; i < 6028) : (i++) {
+    if (tk[i].kind == @cast<int!>(TokenKind.EOF)) break;
+    @outputln(1, tk[i].value);
+  }
+
+  @free(fileContents, @sizeof(fileContents));
   return 0;
 };

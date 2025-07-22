@@ -168,4 +168,5 @@ void visitOpen(Node::Expr *expr);
 void visitArgc(Node::Expr *expr);
 void visitArgv(Node::Expr *expr);
 void visitStrcmp(Node::Expr *expr);
+void visitCommand(Node::Expr *expr);
 } // namespace TypeChecker

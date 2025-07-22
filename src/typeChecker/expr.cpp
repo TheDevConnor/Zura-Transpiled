@@ -89,8 +89,8 @@ void TypeChecker::visitChar(Node::Expr *expr) {
 void TypeChecker::visitAddress(Node::Expr *expr) {
   AddressExpr *address = static_cast<AddressExpr *>(expr);
   visitExpr(address->right);
-  return_type = std::make_shared<PointerType>(return_type.get());
-  expr->asmType = new PointerType(createDuplicate(address->right->asmType));
+  return_type = std::make_shared<PointerType>(createDuplicate(return_type.get()));
+  expr->asmType = new PointerType(createDuplicate(return_type.get()));
 }
 
 void TypeChecker::visitDereference(Node::Expr *expr) {
@@ -957,4 +957,35 @@ void TypeChecker::visitStrcmp(Node::Expr *expr) {
 
   expr->asmType = new SymbolType("bool");
   return_type = std::make_shared<SymbolType>("bool");
+}
+
+void TypeChecker::visitCommand(Node::Expr *expr) {
+  CommandExpr *command = static_cast<CommandExpr *>(expr);
+
+  // Check if the command is a string literal
+  if (command->command == "") {
+    handleError(command->line, command->pos,
+                "Command expression requires a string literal as the command",
+                "", "Type Error");
+    return_type = std::make_shared<SymbolType>("unknown");
+    expr->asmType = new SymbolType("unknown");
+    return;
+  } 
+
+  // Visit the arguments
+  for (Node::Expr *arg : command->args) {
+    visitExpr(arg);
+    if (type_to_string(return_type.get()) != "str" &&
+        type_to_string(return_type.get()) != "*char" &&
+        type_to_string(return_type.get()) != "[]char") {
+      std::string msg = "Command argument must be of type 'str' or its "
+                        "derivatives but got '" +
+                        type_to_string(return_type.get()) + "'";
+      handleError(command->line, command->pos, msg, "", "Type Error");
+    }
+  }
+
+  // We want to return a string type for the command result
+  return_type = std::make_shared<SymbolType>("str");
+  expr->asmType = new SymbolType("str");
 }

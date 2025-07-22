@@ -1,23 +1,13 @@
-@import "std/stringUtils.zu";
-
-const Test := struct {
-    source: *char,
-    a: int!,
-    b: int!,
+const c_to_ptr := fn (c: char) *char {
+    have ptr: *char = @cast<*char>(@alloc(2));
+    ptr[0] = c;
+    ptr[1] = @cast<char>(0); # Null-terminate the string
+    return ptr;
 };
-
+ 
 const main := fn () int! {
-    have test: *Test = @cast<*Test>(@alloc(@sizeof(Test)));
-    have msg: *char = "Hello, Zura!";
-
-    test.a = 42;
-    test.b = 84; 
-
-    @outputln(1, "Test struct created with a = ", test.a, " and b = ", test.b);
-    @memcpy(test.source, msg, strlen(msg) + 1); # +1 for null terminator
-    @outputln(1, "Test source: ", test.source);
-
-    @free(test, @sizeof(Test));
-    @outputln(1, "Test struct freed successfully.");
-    return 0; 
+    have c: char = @cast<char>(65); # ASCII 'A'
+    have ptr: *char = c_to_ptr(c);
+    @output(1, "Character to pointer: ", @cast<str>(ptr));
+    return 0;
 };

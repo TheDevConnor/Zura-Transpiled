@@ -50,6 +50,7 @@ void Lexer::initMap() {
       {"@getArgv", TokenKind::GETARGV},
       {"@getArgc", TokenKind::GETARGC},
       {"@streq", TokenKind::STRCMP},
+      {"@command", TokenKind::COMMAND},
       // file management
       {"@open", TokenKind::OPEN},
       {"@close", TokenKind::CLOSE},

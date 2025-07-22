@@ -111,6 +111,7 @@ enum TokenKind {
   ACCEPT, // accept a connection on a socket
   RECV,   // receive bytes from a connection
   SEND,   // send bytes to a connection
+  COMMAND, // run a command in the shell
 
   // Error
   ERROR_,

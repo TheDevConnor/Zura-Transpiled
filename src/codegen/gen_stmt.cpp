@@ -226,6 +226,15 @@ void codegen::funcDecl(Node::Stmt *stmt) {
       dwarf::useStringP(s->params.at(i).first->name);
     }
   }
+  // Check the byte size of what we return; if it is humongous then we have to pass an extra parameter
+  if (getByteSizeOfType(s->returnType) > 16 && !isEntryPoint) {
+    // If the return type is larger than 8 bytes, we have to pass it as a pointer
+    // to the return value.
+    std::string where = std::to_string(-(long long)(variableCount)) + "(%rbp)";
+    moveRegister(where, "%r14", DataSize::Qword, DataSize::Qword);
+    variableTable.insert({"**ret**", where});
+    variableCount += getByteSizeOfType(s->returnType);
+  }
 
   // Do not push the lexical block to the dwarf stack
   dwarf::nextBlockDIE = false;
@@ -301,7 +310,33 @@ void codegen::varDecl(Node::Stmt *stmt) {
       variableTable.insert(
           {s->name, std::to_string(-(variableCount - 8)) + "(%rbp)"});
     } else {
+      if (s->expr->kind == ND_CALL && structByteSizes.contains(getUnderlying(s->type)) && getByteSizeOfType(s->type) > 16) {
+        // Subtract from rsp to make room for the function call
+        push(Instr{.var=SubInstr{
+            .lhs = "%rsp",
+            .rhs = "$" + std::to_string(getByteSizeOfType(s->type)),
+            .size = DataSize::Qword},
+                   .type = InstrType::Sub},
+             Section::Main);
+        // If the return type of the function is fat, then we will pass the current stack location there because bruh
+        // lea the variablecount with rbp and pass into rbx
+        push(Instr{.var = LeaInstr{.size = DataSize::Qword,
+                                  .dest = "%r14",
+                                  .src = "-" + std::to_string(variableCount) +
+                                          "(%rbp)"},
+                  .type = InstrType::Lea},
+            Section::Main);
+      }
       visitExpr(s->expr);
+      if (s->expr->kind == ND_CALL && structByteSizes.contains(getUnderlying(s->type)) && getByteSizeOfType(s->type) > 16) {
+        // Subtract from rsp to make room for the function call
+        push(Instr{.var=AddInstr{
+            .lhs = "%rsp",
+            .rhs = "$" + std::to_string(getByteSizeOfType(s->type)),
+            .size = DataSize::Qword},
+                   .type = InstrType::Sub},
+             Section::Main);
+      }
       bool isFloatingType = s->type->kind == ND_SYMBOL_TYPE &&
                             (getUnderlying(s->type) == "float" ||
                              getUnderlying(s->type) == "double");
@@ -309,8 +344,9 @@ void codegen::varDecl(Node::Stmt *stmt) {
                           ? intDataToSizeFloat(getByteSizeOfType(s->type))
                           : intDataToSize(getByteSizeOfType(s->type));
       // If it was a call expression, and it returned a struct, DONT DO THIS
-      if (s->expr->kind == ND_CALL && structByteSizes.contains(getUnderlying(s->type)) && getByteSizeOfType(s->type) > 8) {
-        variableTable.insert({s->name, std::to_string(-variableCount + 8) + "(%rbp)"});
+     if (s->expr->kind == ND_CALL && structByteSizes.contains(getUnderlying(s->type)) && getByteSizeOfType(s->type) > 8) {
+       variableCount += getByteSizeOfType(s->type);
+       variableTable.insert({s->name, std::to_string(-(variableCount-8)) + "(%rbp)"});
       } else {
         push(Instr{.var = PopInstr{.where = where, .whereSize = size},
           .type = InstrType::Pop},
@@ -727,73 +763,157 @@ void codegen::_return(Node::Stmt *stmt) {
                     .type = InstrType::Push},
               Section::Main);
       } else {
-        visitExpr(returnStmt->expr);
+        if (returnStmt->expr->asmType->kind == ND_SYMBOL_TYPE && structByteSizes.contains(getUnderlying(returnStmt->expr->asmType))) {
+          // Visiting the expression will return a pointer to the struct; not its contents.
+          long long structSize = structByteSizes[getUnderlying(returnStmt->expr->asmType)].first;
+          if (structSize == 8) {
+            visitExpr(returnStmt->expr);
+            popToRegister("%rax");
+            // Deref rax to get the contents inside of rax which itself is a pointer
+            moveRegister("%rax", "(%rax)", DataSize::Qword, DataSize::Qword);
+          } else if (structSize == 4) {
+            visitExpr(returnStmt->expr);
+            popToRegister("%eax");
+            // Deref rax to get the contents inside of rax which itself is a pointer
+            moveRegister("%rax", "(%rax)", DataSize::Dword, DataSize::Dword);
+          } else if (structSize == 2) {
+            visitExpr(returnStmt->expr);
+            popToRegister("%ax");
+            // Deref rax to get the contents inside of rax which itself is a pointer
+            moveRegister("%rax", "(%rax)", DataSize::Word, DataSize::Word);
+          } else if (structSize == 1) {
+            visitExpr(returnStmt->expr);
+            popToRegister("%al");
+            // Deref rax to get the contents inside of rax which itself is a pointer
+            moveRegister("%rax", "(%rax)", DataSize::Byte, DataSize::Byte);
+          } else {
+            std::cout << "haha screw you bozo lol imagine having a struct thats not 2^n lmaoooo bro your gonna crash zura lmao loser" << std::endl;
+          }
+          handleReturnCleanup();
+          return;
+        } else {
+          visitExpr(returnStmt->expr);
+        }
+        switch (byteSize) {
+        case 1:
+          push(Instr{.var = PopInstr{.where = "%al", .whereSize = DataSize::Byte},
+                    .type = InstrType::Pop},
+              Section::Main);
+          break;
+        case 2:
+          push(Instr{.var = PopInstr{.where = "%ax", .whereSize = DataSize::Word},
+                    .type = InstrType::Pop},
+              Section::Main);
+          break;
+        case 4:
+          push(Instr{.var =
+                        PopInstr{.where = "%eax", .whereSize = DataSize::Dword},
+                    .type = InstrType::Pop},
+              Section::Main);
+          break;
+        case 8:
+        default:
+          push(Instr{.var =
+                        PopInstr{.where = "%rax", .whereSize = DataSize::Qword},
+                    .type = InstrType::Pop},
+              Section::Main);
+          break;
+        }
+        handleReturnCleanup();
+        return;
       }
-      switch (byteSize) {
-      case 1:
-        push(Instr{.var = PopInstr{.where = "%al", .whereSize = DataSize::Byte},
-                   .type = InstrType::Pop},
-             Section::Main);
-        break;
-      case 2:
-        push(Instr{.var = PopInstr{.where = "%ax", .whereSize = DataSize::Word},
-                   .type = InstrType::Pop},
-             Section::Main);
-        break;
-      case 4:
-        push(Instr{.var =
-                       PopInstr{.where = "%eax", .whereSize = DataSize::Dword},
-                   .type = InstrType::Pop},
-             Section::Main);
-        break;
-      case 8:
-      default:
-        push(Instr{.var =
-                       PopInstr{.where = "%rax", .whereSize = DataSize::Qword},
-                   .type = InstrType::Pop},
-             Section::Main);
-        break;
-      }
-      handleReturnCleanup();
-      return;
     }
-    // TODO: Return things LARGER than 8 bytes!
     // If a struct:
     bool isStruct = structByteSizes.contains(st->name);
-    if (isStruct) {
-      if (byteSize <= 16) {
-        // Return the two halves into the second register
-        // Are we returning a literal?
-        if (returnStmt->expr->kind == ND_STRUCT) {
-          // Declare the struct as a variable-- put it into a temporary place of memory
-          // then return it
-          declareStructVariable(returnStmt->expr, st->name, "%rbp", variableCount);
-          // We already know that it is greater than 8 bytes large, so we will automatically
-          // put its fields into %rax and %rdi (%RAX = bottom half)
+    if (byteSize <= 16) {
+      // Return the two halves into the second register
+      // Are we returning a literal?
+      if (returnStmt->expr->kind == ND_STRUCT) {
+        // Declare the struct as a variable-- put it into a temporary place of memory
+        // then return it
+        declareStructVariable(returnStmt->expr, st->name, "%rbp", variableCount);
+        // We already know that it is greater than 8 bytes large, so we will automatically
+        // put its fields into %rax and %rdi (%RAX = bottom half)
 
-          push(Instr{.var = MovInstr{.dest = "%rdi",
-                                     .src = std::to_string(-(variableCount)) + "(%rbp)",
-                                     .destSize = DataSize::Qword,
-                                     .srcSize = DataSize::Qword},
-                     .type = InstrType::Mov},
-               Section::Main);
-          variableCount += 8;
-          push(Instr{.var = MovInstr{.dest = "%rax",
-                                     .src = std::to_string(-variableCount) + "(%rbp)",
-                                     .destSize = DataSize::Qword,
-                                     .srcSize = DataSize::Qword},
-                     .type = InstrType::Mov},
-                Section::Main);
-          return;
-        }
-        visitExpr(returnStmt->expr);
+        push(Instr{.var = MovInstr{.dest = "%rdi",
+                                    .src = std::to_string(-(variableCount)) + "(%rbp)",
+                                    .destSize = DataSize::Qword,
+                                    .srcSize = DataSize::Qword},
+                    .type = InstrType::Mov},
+              Section::Main);
+        variableCount += 8;
+        push(Instr{.var = MovInstr{.dest = "%rax",
+                                    .src = std::to_string(-variableCount) + "(%rbp)",
+                                    .destSize = DataSize::Qword,
+                                    .srcSize = DataSize::Qword},
+                    .type = InstrType::Mov},
+              Section::Main);
+        return;
       }
+      // It is not a struct
+      // Check if an array or a struct in the asmType
+      if (returnStmt->expr->asmType->kind == ND_ARRAY_TYPE ||
+        (returnStmt->expr->asmType->kind == ND_SYMBOL_TYPE &&
+         structByteSizes.contains(getUnderlying(returnStmt->expr->asmType)))) {
+        visitExpr(returnStmt->expr);
+        popToRegister("%rcx");
+        push(Instr{.var = MovInstr{.dest = "%rdi",
+                                    .src = "8(%rcx)",
+                                    .destSize = DataSize::Qword,
+                                    .srcSize = DataSize::Qword},
+                    .type = InstrType::Mov},
+              Section::Main);
+        push(Instr{.var = MovInstr{.dest = "%rax",
+                                    .src = "(%rcx)",
+                                    .destSize = DataSize::Qword,
+                                    .srcSize = DataSize::Qword},
+                    .type = InstrType::Mov},
+              Section::Main);
+        handleReturnCleanup();
+        return;
+      }
+      // Literally how did you get a primitive type that is over 8 bytes lmao
+      // you are cooked if this point is reached lmao
     }
+    // Oopsies haha now we have to copy the memory manually fuuck
+    // We stored a "**ret**" variable and that will contain the address of where to return to
+    // we have to descend (go negative) from that value in order to allocate the memory properly
+    if (returnStmt->expr->asmType->kind != ND_ARRAY_TYPE && (returnStmt->expr->asmType->kind != ND_SYMBOL_TYPE &&
+        !structByteSizes.contains(getUnderlying(returnStmt->expr->asmType)))) {
+      // lol this is invalid
+      return;
+    }
+    visitExpr(returnStmt->expr);
+    popToRegister("%rdi");
+    // Step 1. Move that **ret** into a register (for example, %rdx)
+    moveRegister("%rdx", variableTable["**ret**"], DataSize::Qword, DataSize::Qword);
+    long long bytesRemaining = byteSize;
+    long long pushedCount = 0;
+    while (bytesRemaining > 0) {
+      // Rdx contains the register to return things into
+      // Step 2. move eight bytes from wherever the fuck into that return register
+      if (bytesRemaining >= 8) {
+        bytesRemaining -= 8;
+        push(Instr{.var=PushInstr{
+          .what = std::to_string(bytesRemaining) + "(%rdi)",
+          .whatSize = DataSize::Qword
+        }, .type = InstrType::Push});
+        push(Instr{.var=PopInstr{
+          .where = std::to_string(-pushedCount) + "(%rdx)",
+          .whereSize = DataSize::Qword
+        }, .type = InstrType::Pop});
+        pushedCount += 8;
+      }
+      // WE PRAYYYY
+    };
+    handleReturnCleanup();
+    return;
   }
 }
 
 void codegen::forLoop(Node::Stmt *stmt) {
   ForStmt *s = static_cast<ForStmt *>(stmt);
+  loopDepth++;
   dwarf::nextBlockDIE = false;
   std::string preconCount = std::to_string(conditionalCount++);
 
@@ -890,47 +1010,73 @@ void codegen::forLoop(Node::Stmt *stmt) {
   // Pop the loop variable from the stack
   variableTable.erase(assignee->name);
   variableCount -= 8; // We now have room for another variable!
+  loopDepth--;
 };
 
 void codegen::whileLoop(Node::Stmt *stmt) {
   WhileStmt *s = static_cast<WhileStmt *>(stmt);
   loopDepth++;
-  pushDebug(s->line, stmt->file_id, s->pos);
-  // Do basically the same thing as a for loop. No variable declaration, though.
-  std::string preLoop = ".Lwhile_pre" + std::to_string(loopCount);
-  std::string postLoop = ".Lwhile_post" + std::to_string(loopCount);
-  loopCount++;
-  // Evaluate condition
-  push(Instr{.var = Label{.name = preLoop}, .type = InstrType::Label},
+  
+  dwarf::nextBlockDIE = false;
+  std::string preconCount = std::to_string(conditionalCount++);
+  
+  // Fix: Store current loop count before incrementing
+  int currentLoop = loopCount;
+  std::string preLoopLabel = "loop_pre" + std::to_string(currentLoop);
+  std::string postLoopLabel = "loop_post" + std::to_string(currentLoop);
+  loopCount++; // Increment after using the value
+  
+  push(Instr{.var = Comment{.comment = "while loop"}, .type = InstrType::Comment},
        Section::Main);
-  // Check if is a stupid loop (like if a test would fail like when checking 0
-  // == 0)
+  
+  // Set loop start label
+  push(Instr{.var = Label{.name = preLoopLabel}, .type = InstrType::Label},
+       Section::Main);
+  
+  // Evaluate the loop condition
   if (s->condition->kind != ND_BOOL) {
+    // For non-boolean conditions, process comparison and jump
     JumpCondition jc = processComparison(s->condition);
-    push(Instr{.var = JumpInstr{.op = getOpposite(jc), .label = postLoop},
+    push(Instr{.var = JumpInstr{.op = getOpposite(jc), .label = postLoopLabel},
+               .type = InstrType::Jmp},
+         Section::Main);
+  } else {
+    // Fix: For boolean conditions, we need to evaluate the expression first
+    visitExpr(s->condition); // This should put 0 or 1 on the stack
+    // Then compare with 0 and jump if equal (false)
+    push(Instr{.var = JumpInstr{.op = JumpCondition::Equal,
+                                .label = postLoopLabel},
                .type = InstrType::Jmp},
          Section::Main);
   }
-
-  // yummers, now just do the block
-  if (debug) dwarf::nextBlockDIE = true;
-  visitStmt(s->block);
-
-  // Eval the optional ': ()' part
+  
+  // Execute the loop body (if condition is true)
+  visitStmt(s->block); // Visit the statements inside the loop body
+  
   if (s->optional != nullptr) {
-    visitExpr(s->optional);
+    // Evaluate the loop increment (e.g., i++)
+    visitExpr(s->optional); // Process the loop increment if provided
     text_section.pop_back();
   }
-
-  // Jump back to the start of the loop
+  
+  // Jump back to the loop start
   push(Instr{.var = JumpInstr{.op = JumpCondition::Unconditioned,
-                              .label = preLoop},
+                              .label = preLoopLabel},
              .type = InstrType::Jmp},
        Section::Main);
-  push(Instr{.var = Label{.name = postLoop}, .type = InstrType::Label},
+  
+  // Set loop end label
+  push(Instr{.var = Label{.name = postLoopLabel}, .type = InstrType::Label},
        Section::Main);
+  
+  if (debug) {
+    push(Instr{.var=Label{.name=".Ldie_loop" + std::to_string(currentLoop) + "_end"},.type=InstrType::Label},Section::Main);
+    pushLinker(".byte 0 # </WHILE BLOCK>\n", Section::DIE); // Explain that the LexicalBlock is over!
+  }
+  
+  dwarf::nextBlockDIE = true;
   loopDepth--;
-};
+}
 
 void codegen::_break(Node::Stmt *stmt) {
   BreakStmt *s = static_cast<BreakStmt *>(stmt);
@@ -956,24 +1102,20 @@ void codegen::_break(Node::Stmt *stmt) {
 
 void codegen::_continue(Node::Stmt *stmt) {
   ContinueStmt *s = static_cast<ContinueStmt *>(stmt);
-
   push(Instr{.var = Comment{.comment = "continue statement"},
              .type = InstrType::Comment},
        Section::Main);
   pushDebug(s->line, stmt->file_id, s->pos);
-
-  // Jump back to the start of the loop
+  // Jump to the start of the loop
   push(Instr{.var = JumpInstr{.op = JumpCondition::Unconditioned,
-                              .label =
-                                  ".Lloop_pre" + std::to_string(loopCount - 1)},
+                              .label = "loop_pre" + std::to_string(loopCount)},
              .type = InstrType::Jmp},
-       Section::Main);
-
+       Section::Main);  
   // Continue statements are only valid inside loops
-  if (loopDepth < 1) {
-    std::cerr << "Error: Continue statement outside of loop" << std::endl;
-    exit(-1);
-  }
+  // if (loopDepth < 1) {
+  //   std::cerr << "Error: Continue statement outside of loop" << std::endl;
+  //   exit(-1);
+  // }
 };
 
 void codegen::matchStmt(Node::Stmt *stmt) {
@@ -1229,7 +1371,7 @@ void codegen::declareArrayVariable(Node::Expr *expr, long long arrayLength) {
           // Fill with a quad word
           push(Instr{.var = MovInstr{.dest = std::to_string(
                                                  -((long long)variableCount +
-                                                   remainingBytes)) +
+                                                   remainingBytes - 8)) +
                                              "(%rbp)",
                                      .src = "$0",
                                      .destSize = DataSize::Qword,
@@ -1242,7 +1384,7 @@ void codegen::declareArrayVariable(Node::Expr *expr, long long arrayLength) {
           // Fill with a long word
           push(Instr{.var = MovInstr{.dest = std::to_string(
                                                  -((long long)variableCount +
-                                                   remainingBytes)) +
+                                                   remainingBytes - 8)) +
                                              "(%rbp)",
                                      .src = "$0",
                                      .destSize = DataSize::Dword,
@@ -1255,7 +1397,7 @@ void codegen::declareArrayVariable(Node::Expr *expr, long long arrayLength) {
           // Fill with a word
           push(Instr{.var = MovInstr{.dest = std::to_string(
                                                  -((long long)variableCount +
-                                                   remainingBytes)) +
+                                                   remainingBytes - 8)) +
                                              "(%rbp)",
                                      .src = "$0",
                                      .destSize = DataSize::Word,
@@ -1268,7 +1410,7 @@ void codegen::declareArrayVariable(Node::Expr *expr, long long arrayLength) {
           // Fill with a single byte
           push(Instr{.var = MovInstr{.dest = std::to_string(
                                                  -((long long)variableCount +
-                                                   remainingBytes)) +
+                                                   remainingBytes - 8)) +
                                              "(%rbp)",
                                      .src = "$0",
                                      .destSize = DataSize::Byte,

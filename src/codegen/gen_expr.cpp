@@ -526,7 +526,6 @@ void codegen::call(Node::Expr *expr) {
                              // fine for both floats AND doubles to fit in here)
       } else if (structByteSizes.find(st->name) != structByteSizes.end()) {
         if (structByteSizes[st->name].first > 16) {
-          pushRegister("%rax"); // big boy struct
           return;
         }
         // We will put this into a temporary variable
@@ -545,10 +544,6 @@ void codegen::call(Node::Expr *expr) {
                     .type = InstrType::Mov},
               Section::Main);
           variableCount += 8;
-          return;
-        }
-        // What if it was greater than 16? I have no idea!
-        if (structByteSizes[st->name].first > 16) {
           return;
         }
       }
@@ -643,11 +638,6 @@ void codegen::call(Node::Expr *expr) {
             Section::Main);  // abi standard (can hold many bytes of data, so its
                              // fine for both floats AND doubles to fit in here)
       } else if (structByteSizes.find(st->name) != structByteSizes.end()) {
-        // TODO: No! This is really wrong!!!!
-        if (structByteSizes[st->name].first > 16) {
-          pushRegister("%rax");
-          return;
-        }
         if (structByteSizes[st->name].first > 8 && 
             structByteSizes[st->name].first <= 16) {
           // Put into the variable
@@ -895,7 +885,7 @@ void codegen::memberExpr(Node::Expr *expr) {
     std::string whatWasPushed = instr.what;
     text_section.pop_back();
     size_t elementIndex = 99999; // This would be a stupid struct to have.
-    for (size_t i = 0; i < whatWasPushed.size(); i++) {
+    for (size_t i = 0; i < structByteSizes[lhsName].second.size(); i++) {
       if (structByteSizes[lhsName].second.at(i).first == dynamic_cast<IdentExpr *>(e->rhs)->name) {
         elementIndex = i;
         break;
@@ -1145,7 +1135,119 @@ void codegen::assignDereference(Node::Expr *expr) {
 
 void codegen::assignArray(Node::Expr *expr) {
   AssignmentExpr *assign = static_cast<AssignmentExpr *>(expr);
-  // im scared
+  // Check if the lhs is an index
+  if (assign->assignee->kind != ND_INDEX) {
+    handleError(assign->line, assign->pos, "You cant reassign arrays just loop like bruh", "Codegen", true);
+    return;
+  }
+
+  IndexExpr *e = static_cast<IndexExpr *>(assign->assignee);
+  pushDebug(e->line, expr->file_id, e->pos);
+  
+  if (e->asmType->kind != ND_ARRAY_TYPE &&
+      !(e->asmType->kind == ND_SYMBOL_TYPE && structByteSizes.contains(getUnderlying(e->asmType)))) {
+    // its likely a builtin type. yippee!
+    visitExpr(e->lhs);
+    // what was pushed time
+    PushInstr instr =
+        std::get<PushInstr>(text_section.at(text_section.size() - 1).var);
+    text_section.pop_back();
+    push(Instr{.var = LeaInstr{.size = DataSize::Qword,
+                               .dest = "%r11",
+                               .src = instr.what},
+               .type = InstrType::Lea},
+         Section::Main);
+    visitExpr(e->rhs);
+    popToRegister("%rdi", intDataToSize(getByteSizeOfType(e->rhs->asmType))); // Pop the index into %rdi
+    long byteSize = getByteSizeOfType(e->asmType);
+    if (byteSize == 1 || byteSize == 2 || byteSize == 4 || byteSize == 8)
+      push(Instr{.var=LeaInstr{
+          .size = DataSize::Qword,
+          .dest = "%r11",
+          .src = "(%r11, %rdi, " + std::to_string(getByteSizeOfType(e->asmType)) + ")" // 1 is the multiplier
+        }, .type = InstrType::Lea},
+      Section::Main);
+    else {
+      push(Instr{.var = BinaryInstr{.op = "imul",
+                                    .src = "$" + std::to_string(getByteSizeOfType(e->asmType)),
+                                    .dst = "%rdi"},
+                 .type = InstrType::Binary},
+           Section::Main);
+      push(Instr{.var=LeaInstr{
+          .size = DataSize::Qword,
+          .dest = "%r11",
+          .src = "(%r11, %rdi)"
+        }, .type = InstrType::Lea},
+      Section::Main);
+    }
+    visitExpr(assign->rhs);
+    // get the location of where to pop to
+    popToRegister("(%r11)", intDataToSize(getByteSizeOfType(e->asmType)));
+    pushRegister("(%r11)", intDataToSize(getByteSizeOfType(e->asmType)));
+    return;
+  }
+  if (assign->rhs->kind == ND_CALL && getByteSizeOfType(e->asmType) > 16) {
+    // Rbx contains the base of the struct/array that we are reassigning
+    // So, we will calculate the index's offset
+  
+    // step 1. compute the lhs
+    visitExpr(e->lhs);  // This should push the address of the array/struct
+    // step 2. run the calculation based on the index
+    popToRegister("%r14");  // Pop the address of the array/struct into
+    // %rbx. This is the base address of the array/struct.
+    // step 3. calculate the offset of the index
+    visitExpr(e->rhs);
+    popToRegister("%rdi");
+    // multiply rdi by the the byte size of the element
+    long long elementByteSize = -1;
+    if (e->asmType->kind == ND_ARRAY_TYPE) {
+      ArrayType *at = dynamic_cast<ArrayType *>(e->asmType);
+      elementByteSize = getByteSizeOfType(at->underlying) * at->constSize;
+    } else if (e->asmType->kind == ND_SYMBOL_TYPE) {
+      elementByteSize = getByteSizeOfType(e->asmType);
+    }
+    if (elementByteSize < 0) {
+      handleError(e->line, e->pos, "Array element size is negative. This is a bug in the compiler.", "Codegen", true);
+      return;
+    }
+    pushLinker("incq %rdi\n\t", Section::Main); // its off by one or something
+    if (elementByteSize == 2 ||
+        elementByteSize == 4 || elementByteSize == 8) {
+      push(Instr{.var=LeaInstr{
+        .size = DataSize::Qword,
+        .dest = "%r14",
+        .src = "(%r14, %rdi, " + std::to_string(elementByteSize) + ")" 
+      }, .type = InstrType::Lea},
+           Section::Main);
+    } else if (elementByteSize == 1) {
+      push(Instr{.var=LeaInstr{
+        .size = DataSize::Qword,
+        .dest = "%r14",
+        .src = "(%r14, %rdi)"
+      }, .type = InstrType::Lea},
+           Section::Main);
+    } else {
+      // We will multiply rdi by the size of the element
+      push(Instr{.var = BinaryInstr{.op = "imul",
+                                    .src = "$" + std::to_string(elementByteSize),
+                                    .dst = "%rdi"},
+                 .type = InstrType::Binary},
+           Section::Main);
+      push(Instr{.var=LeaInstr{
+        .size = DataSize::Qword,
+        .dest = "%r14",
+        .src = "(%r14, %rdi)"
+      }, .type = InstrType::Lea},
+           Section::Main);
+    }
+    push(Instr{.var=SubInstr{.lhs="%r14",.rhs="$8",.size=DataSize::Qword},
+               .type=InstrType::Add}, // its still off
+         Section::Main);
+    // Rbx has the thing now! Call the freaking function
+    visitExpr(assign->rhs);
+    pushRegister("%r14"); // we need to push something because this is a expression
+    // It shoudlnt have pushed anything in rax because its fat so yay
+  }
 };
 
 void codegen::nullExpr(Node::Expr *expr) {

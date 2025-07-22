@@ -1,2 +1,50 @@
-have x: int! = 15;
-have y: float = 75.504555;
+# const vector := struct {
+#     item_size: int!,
+#     cap: int!,
+#     size: int!,
+#     data: *void,
+# };
+
+# const free_vector := fn (vec: *vector, size: int!) void {
+#     # vec.data = nil;
+#     vec.item_size = 0;
+#     vec.cap = 0;
+#     @free(vec, size);
+# };
+
+# const MakeVector := fn (vec: *vector, i_size: int!, cap: int!) void{        
+#     vec.item_size = i_size;
+#     vec.cap = cap;
+#     vec.size = 0;
+#     # vec.data = @alloc(i_size * cap);
+#     if (vec.data == nil) {
+#         @outputln(1, "Failed to allocate memory for vector data");
+#     }
+# };
+const Point := struct {
+    x: int!,
+    y: int!,
+};
+
+const Ray := struct {
+    endpoint: *Point,
+    angle: int!
+};
+
+const main := fn () int!{   
+    have p: *Point = @cast<*Point>(@alloc(@sizeof(Point)));
+    p.x = 10;
+    p.y = 20;
+
+    have r: *Ray = @cast<*Ray>(@alloc(@sizeof(Ray) * 2));
+    r.endpoint = p;
+    r.angle = 45;
+
+    @outputln(1, "Ray endpoint: (", r.endpoint.x, ", ", 
+                 r.endpoint.y, "), angle: ", r.angle);
+
+    @free(p, @sizeof(Point));
+    @free(r, @sizeof(Ray));
+    return 0;
+};
+

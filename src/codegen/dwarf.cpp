@@ -512,5 +512,19 @@ void codegen::dwarf::emitTypes(void) {
     , Section::DIETypes);
   }
 
+  // void
+   if (dieNamesUsed.contains("void_i") ||
+      dieNamesUsed.contains("void_u") ||
+      dieNamesUsed.contains("void_s")) {
+    push(Instr{.var=Label{.name=".Lvoid_s_debug_type"}, .type=InstrType::Label}, Section::DIETypes);
+    push(Instr{.var=Label{.name=".Lvoid_u_debug_type"}, .type=InstrType::Label}, Section::DIETypes);
+    push(Instr{.var=Label{.name=".Lvoid_i_debug_type"}, .type=InstrType::Label}, Section::DIETypes);
+    pushLinker(".uleb128 " + std::to_string((int)DIEAbbrev::Type) +
+               "\n.byte 1 # AT_byte_size"
+               "\n.uleb128 0x0 # AT_encoding = ATE_void"
+               "\n.string \"bool\"\n"
+    , Section::DIETypes);
+  }
+
   // TODO: Make custom structs for the @ functions (like sockaddr)
 }

@@ -1,43 +1,106 @@
 @import "../std/asciiToString.zu";
 @import "helper.zu";
 
-# const make_token := fn (k: TokenKind, v: *char) Token {
-#   have token: Token = {
-#     kind: k,
-#     value: v,
-#   };
-#   return token;
-# };
-
-const scan := fn (source: *char, size: int!) void {
-  have whitespaceCount: int! = 0;
-  have generate: bool! = true; # Flag to control token generation
-  have col: int! = 0;
+const tokenize := fn (source: *char, realSize: int!, tk: *[]Token) void {
   have line: int! = 1;
+  have col: int! = 0;
+  have value: *char = "";
 
-  loop (i = 0; i < size) : (i++) {
-    whitespaceCount = 0; # reset whitespace count for each character
+  # !NOTE: Arrays are backwards in Zura; except when you are pushing to them like the tokens
+  have keywords: [24]KeywordTable = [
+    {text: "and", kind: @cast<int!>(TokenKind.And)},            {text: "else", kind: @cast<int!>(TokenKind.Else)},
+    {text: "false", kind: @cast<int!>(TokenKind.False)},        {text: "fn", kind: @cast<int!>(TokenKind.Fn)},
+    {text: "loop", kind: @cast<int!>(TokenKind.Loop)},          {text: "if", kind: @cast<int!>(TokenKind.If)},
+    {text: "nil", kind: @cast<int!>(TokenKind.Nil)},            {text: "or", kind: @cast<int!>(TokenKind.Or)},
+    {text: "true", kind: @cast<int!>(TokenKind.True)},          {text: "have", kind: @cast<int!>(TokenKind.Have)},          
+    {text: "type", kind: @cast<int!>(TokenKind.Type)},          {text: "struct", kind: @cast<int!>(TokenKind.Struct)},      
+    {text: "enum", kind: @cast<int!>(TokenKind.Enum)},          {text: "const", kind: @cast<int!>(TokenKind.Const)},        
+    {text: "import", kind: @cast<int!>(TokenKind.Import)},      {text: "pub", kind: @cast<int!>(TokenKind.Pub)},            
+    {text: "priv", kind: @cast<int!>(TokenKind.Priv)},          {text: "break", kind: @cast<int!>(TokenKind.Break)},        
+    {text: "continue", kind: @cast<int!>(TokenKind.Continue)},  {text: "typename", kind: @cast<int!>(TokenKind.Typename)},  
+    {text: "match", kind: @cast<int!>(TokenKind.Match)},        {text: "default", kind: @cast<int!>(TokenKind.Default)},    
+    {text: "case", kind: @cast<int!>(TokenKind.Case)},          {text: "return", kind: @cast<int!>(TokenKind.Return)},
+  ];
 
-    have whitespace: int! = check_whitespace(source, &i, &line, &col, size);
-    if (whitespace == 1) {
-      if (source[i] == @cast<char>(10)) col = 0;
-      whitespaceCount++;
+  have builtins: [26]BuiltinTable = [
+    {text: "@template", kind: @cast<int!>(TokenKind.Template)}, {text: "@cast", kind: @cast<int!>(TokenKind.Cast)},
+    {text: "@import", kind: @cast<int!>(TokenKind.Import)},     {text: "@link", kind: @cast<int!>(TokenKind.Link)},
+    {text: "@extern", kind: @cast<int!>(TokenKind.Extern)},     {text: "@call", kind: @cast<int!>(TokenKind.Call)},
+    {text: "@output", kind: @cast<int!>(TokenKind.Output)},     {text: "@read", kind: @cast<int!>(TokenKind.Read)},
+    {text: "@input", kind: @cast<int!>(TokenKind.Input)},       {text: "@write", kind: @cast<int!>(TokenKind.Write)},
+    {text: "@free", kind: @cast<int!>(TokenKind.Free)},         {text: "@alloc", kind: @cast<int!>(TokenKind.Alloc)},
+    {text: "@memcpy", kind: @cast<int!>(TokenKind.Memcpy)},     {text: "@sizeof", kind: @cast<int!>(TokenKind.Sizeof)},
+    {text: "@getArgv", kind: @cast<int!>(TokenKind.GetArgv)},   {text: "@getArgc", kind: @cast<int!>(TokenKind.GetArgc)},
+    {text: "@streq", kind: @cast<int!>(TokenKind.Streq)},       {text: "@open", kind: @cast<int!>(TokenKind.Open)},
+    {text: "@close", kind: @cast<int!>(TokenKind.Close)},       {text: "@outputln", kind: @cast<int!>(TokenKind.Outputln)},
+    {text: "@socket", kind: @cast<int!>(TokenKind.Socket)},     {text: "@bind", kind: @cast<int!>(TokenKind.Bind)},
+    {text: "@listen", kind: @cast<int!>(TokenKind.Listen)},     {text: "@accept", kind: @cast<int!>(TokenKind.Accept)},
+    {text: "@recv", kind: @cast<int!>(TokenKind.Recv)},         {text: "@send", kind: @cast<int!>(TokenKind.Send)}
+  ];
+
+  have symbol: [23]SingleSymbolTable = [
+    {text: @cast<char>(40), kind: @cast<int!>(TokenKind.LParen)},    {text: @cast<char>(41), kind: @cast<int!>(TokenKind.RParen)},
+    {text: @cast<char>(123), kind: @cast<int!>(TokenKind.LBrace)},   {text: @cast<char>(125), kind: @cast<int!>(TokenKind.RBrace)},
+    {text: @cast<char>(59), kind: @cast<int!>(TokenKind.Semicolon)}, {text: @cast<char>(44), kind: @cast<int!>(TokenKind.Comma)},
+    {text: @cast<char>(46), kind: @cast<int!>(TokenKind.Dot)},       {text: @cast<char>(45), kind: @cast<int!>(TokenKind.Dash)},
+    {text: @cast<char>(43), kind: @cast<int!>(TokenKind.Plus)},      {text: @cast<char>(47), kind: @cast<int!>(TokenKind.Slash)},
+    {text: @cast<char>(42), kind: @cast<int!>(TokenKind.Star)},      {text: @cast<char>(37), kind: @cast<int!>(TokenKind.Percent)},
+    {text: @cast<char>(94), kind: @cast<int!>(TokenKind.Caret)},     {text: @cast<char>(91), kind: @cast<int!>(TokenKind.LBracket)},
+    {text: @cast<char>(93), kind: @cast<int!>(TokenKind.RBracket)},  {text: @cast<char>(63), kind: @cast<int!>(TokenKind.Question)},
+    {text: @cast<char>(58), kind: @cast<int!>(TokenKind.Colon)},     {text: @cast<char>(61), kind: @cast<int!>(TokenKind.Equals)},
+    {text: @cast<char>(33), kind: @cast<int!>(TokenKind.Bang)},      {text: @cast<char>(60), kind: @cast<int!>(TokenKind.Less)},
+    {text: @cast<char>(62), kind: @cast<int!>(TokenKind.Greater)},   {text: @cast<char>(38), kind: @cast<int!>(TokenKind.Ampersand)},
+    {text: @cast<char>(124), kind: @cast<int!>(TokenKind.LOr)},
+  ];
+
+  have doubleSymbol: [11]DoubleSymbolTable = [
+    {text: "==", kind: @cast<int!>(TokenKind.EqualEqual)},  {text: "!=", kind: @cast<int!>(TokenKind.BangEqual)},
+    {text: "<=", kind: @cast<int!>(TokenKind.LessEqual)},   {text: ">=", kind: @cast<int!>(TokenKind.GreaterEqual)},
+    {text: "++", kind: @cast<int!>(TokenKind.Increment)},   {text: "--", kind: @cast<int!>(TokenKind.Decrement)},
+    {text: "&&", kind: @cast<int!>(TokenKind.AndAnd)},      {text: "||", kind: @cast<int!>(TokenKind.OrOr)},
+    {text: "->", kind: @cast<int!>(TokenKind.RightArrow)},  {text: "<-", kind: @cast<int!>(TokenKind.LeftArrow)},
+    {text: ":=", kind: @cast<int!>(TokenKind.Walrus)},
+  ];
+
+  loop (i = 0; i < realSize) : (i++) {
+    @outputln(1, "Current char: ", ascii_to_string(source[i]), " at line ", line, " col ", col);
+    # Check whitespace and skip it
+    if (source[i] == @cast<char>(32)) { 
+      i++; col++;
+      continue;
+    } # Skip spaces
+    if (source[i] == @cast<char>(10)) { 
+      i++; line++; col = 0;
+      continue;
+    } # Skip newlines
+
+    if (is_eof(source, &i)) break; # Stop at null terminator
+
+    if (alpha(source, &i)) {
+      have start: int! = i; # Start of the identifier
+      loop (j = i; alpha(source, &i)) : (i++) {
+        tk&[i] = make_token(ascii_to_string(source[i]), @cast<int!>(TokenKind.Identifier), line, col);
+      }
+      have length: int! = i - start; # Length of the identifier
+      # @outputln(1, "length: ", length, " start: ", start, " i: ", i);
+    }
+
+    if (digit(source, &i)) {
+      loop (j = i; digit(source, &i)) : (i++) {
+        tk&[i] = make_token(ascii_to_string(source[i]), @cast<int!>(TokenKind.Int), line, col);
+      }
+      # @outputln(1, "Found integer: ", ascii_to_string(source[i - 1]), " at line ", line, " col ", col);
+    }
+
+    have character: int? = match_sc_dc(source, &i, &symbol, &doubleSymbol);
+    if (character != -1) {
+      # @outputln(1, "Found symbol: ", ascii_to_string(source[i]), " at line ", line, " col ", col);
+      tk&[i] = make_token(ascii_to_string(source[i]), character, line, col);
     } else {
-      col++; # increment column count
+      tk&[i] = make_token(ascii_to_string(source[i]), @cast<int!>(TokenKind.Unknown), line, col);
     }
-
-    have is_alpha: bool = ident(source, &i);
-    if (is_alpha) {
-      @outputln(1, "identifier found at ", ascii_to_string(source[i]));
-    }
-    # Anything that is prexed with '@' is a special token
-    # have is_default: int! = default_function(source, &i);
-
-    have is_digit: *char = number(source, &i);
-    if (@streq(@cast<str>(is_digit), "")) {} else {
-      @outputln(1, is_digit);
-    }
-
-    # TODO: Implement check for single-character tokens and multi-character tokens
   }
+
+  # Add a null terminator to the end of the tokens array
+  tk&[realSize] = make_token("", @cast<int!>(TokenKind.EOF), line, col + 1);
 };

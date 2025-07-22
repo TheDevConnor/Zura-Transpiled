@@ -24,8 +24,8 @@ void codegen::handleError(int line, int pos, std::string msg,
  * Also look at {@link popToRegister}
  * @param reg The register to push
  */
-void codegen::pushRegister(const std::string &reg) {
-  push(Instr{.var = PushInstr{.what = reg}, .type = InstrType::Push},
+void codegen::pushRegister(const std::string &reg, DataSize regSize) {
+  push(Instr{.var = PushInstr{.what = reg, .whatSize = regSize}, .type = InstrType::Push},
        Section::Main);
   stackSize++;
 }
@@ -37,8 +37,8 @@ void codegen::pushRegister(const std::string &reg) {
  * Also look at {@link pushRegister}
  * @param reg The register to pop to
  */
-void codegen::popToRegister(const std::string &reg) {
-  push(Instr{.var = PopInstr{.where = reg}, .type = InstrType::Pop},
+void codegen::popToRegister(const std::string &reg, DataSize regSize) {
+  push(Instr{.var = PopInstr{.where = reg, .whereSize = regSize}, .type = InstrType::Pop},
        Section::Main);
   stackSize--;
 }
@@ -197,12 +197,12 @@ void codegen::handleBinaryExprs(int lhsDepth, int rhsDepth, std::string lhsReg,
     lhsSize = intDataToSizeFloat(getByteSizeOfType(lhs->asmType));
     rhsSize = intDataToSizeFloat(getByteSizeOfType(rhs->asmType));
   }
-  // if (lhsDepth == 1 && rhsDepth == 1) {
+  // if (lhsDepth <= 1 && rhsDepth <= 1) {
   //   // If both are depth 1, we can just load them into registers
   //   visitExpr(lhs);
-  //   popToRegister(lhsReg);
+  //   popToRegister(lhsReg, lhsSize);
   //   visitExpr(rhs);
-  //   popToRegister(rhsReg);
+  //   popToRegister(rhsReg, rhsSize);
   //   return;
   // }
   if (lhsDepth > rhsDepth) {

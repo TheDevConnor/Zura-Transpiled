@@ -130,6 +130,7 @@ std::string Error::handle_type_error(const std::vector<Lexer::Token> &tks, int l
 void Error::handle_error(std::string error_type, std::string file_path,
                          std::string msg, const std::vector<Lexer::Token> &tks,
                          int line, int pos, int endPos, bool isWarn) {
+  // check to see if we are printing the errors again
   if (msg.find("Expected a SEMICOLON") == 0) line = line - 1;
   try {
     ErrorInfo error = {
