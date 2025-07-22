@@ -1,7 +1,9 @@
-<h1>
-  <img src="assets/zura.png" alt="Zura Logo" width="40" style="vertical-align: middle; margin-right: 10px;">
-    Zura a low-level compiled alternative to C and C++
-</h1>
+# Zura 
+*Zura a low-level compiled alternative to C and C++*
+
+<p align="center">
+  <img src="assets/zura.png" alt="Zura Logo" width="120">
+</p>
 
 <p align="center">
   <a href="#why">Why?</a> |
