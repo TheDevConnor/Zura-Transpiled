@@ -941,32 +941,26 @@ void codegen::forLoop(Node::Stmt *stmt) {
     dwarf::useAbbrev(dwarf::DIEAbbrev::Variable);
     dwarf::useAbbrev(dwarf::DIEAbbrev::LexicalBlock);
     dwarf::useType(assignee->asmType);
-    push(Instr{.var=Label{.name=".Ldie_loop" + std::to_string(loopCount) + "_begin"}, .type=InstrType::Label},Section::Main);
+    push(Instr{.var=Label{.name=".Ldie_" + preLoopLabel}, .type=InstrType::Label},Section::Main);
     pushLinker(".uleb128 " + std::to_string((int)dwarf::DIEAbbrev::LexicalBlock) +
                "\n.byte " + std::to_string(s->file_id) +
                "\n.long " + std::to_string(dynamic_cast<BlockStmt *>(s->block)->line) +
                "\n.long " + std::to_string(dynamic_cast<BlockStmt *>(s->block)->pos) +
                // Low pc (the address of the start of the block- thats RIGHT NOW!)
-               "\n.quad .Ldie_loop" + std::to_string(loopCount) + "_begin"
-               "\n.quad .Ldie_loop" + std::to_string(loopCount) + "_end-.Ldie_loop" + std::to_string(loopCount) + "_begin\n",
+               "\n.quad .Ldie_" + preLoopLabel +
+               "\n.quad .Ldie_" + postLoopLabel + "-.Ldie_" + preLoopLabel + "\n",
             Section::DIE);
     // we know the type is always int
     pushLinker(".uleb128 " + std::to_string((int)dwarf::DIEAbbrev::Variable) +
-                   "\n.long .L" + assignee->name +
-                   "_string\n"
-                   "\n.byte " +
-                   std::to_string(s->file_id) +           // File ID
-                   "\n.long " + std::to_string(s->line) + // Line number
-                   "\n.long " + std::to_string(s->pos) +  // Line column
-                   "\n.long .L" + type_to_diename(assignee->asmType) +
-                   "_debug_type\n" // Type - point to the DIE of
-                                   // the DW_TAG_base_type
-                   "\n.uleb128 " +
-                   std::to_string(1 + sizeOfLEB(-variableCount -
-                                                8)) + // 1 byte is gonna follow
+                   "\n.long .L" + assignee->name + "_string\n"
+                   "\n.byte " + std::to_string(s->file_id) +                           // File ID
+                   "\n.long " + std::to_string(s->line) +                              // Line number
+                   "\n.long " + std::to_string(s->pos) +                               // Line column
+                   "\n.long .L" + type_to_diename(assignee->asmType) + "_debug_type\n" // Type - point to the DIE of
+                                                                                       // the DW_TAG_base_type
+                   "\n.uleb128 " + std::to_string(1 + sizeOfLEB(-variableCount - 8)) + // 1 byte is gonna follow
                    "\n.byte 0x91\n" // DW_OP_fbreg (first byte)
-                   "\n.sleb128 " +
-                   std::to_string(-variableCount - 8) + "\n",
+                   "\n.sleb128 " + std::to_string(-variableCount - 8) + "\n",
                Section::DIE);
     // Push the name of the variable
     dwarf::useStringP(assignee->name);
@@ -1003,7 +997,7 @@ void codegen::forLoop(Node::Stmt *stmt) {
   push(Instr{.var = Label{.name = postLoopLabel}, .type = InstrType::Label},
        Section::Main);
   if (debug) {
-    push(Instr{.var=Label{.name=".Ldie_loop" + std::to_string(loopCount) + "_end"},.type=InstrType::Label},Section::Main);
+    push(Instr{.var=Label{.name=".Ldie_" + postLoopLabel},.type=InstrType::Label},Section::Main);
     pushLinker(".byte 0 # </FOR BLOCK>\n", Section::DIE); // Explain that the LexicalBlock is over!
   }
   dwarf::nextBlockDIE = true;
