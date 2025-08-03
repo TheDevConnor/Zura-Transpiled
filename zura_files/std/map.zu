@@ -1,0 +1,56 @@
+const Map := struct {
+    key: str,
+    value: str,
+};
+
+const MapResult := struct {
+    length: int!,
+    value: str,
+    index: int!,
+};
+
+const map_length := fn (map: *[]Map) int! {
+    have count: int! = 0;
+
+    if (map == nil) return 0; # Return 0 if the map is nil
+
+    loop (i = 0; i < 2147483647) : (i++) {
+        if (map&[i].key == nil) break; # Stop when we reach a null pointer
+        count++;
+    }
+
+    return count;
+};
+
+const print_map := fn (map: *[]Map, len: int) void {
+    loop (i = 0; i < len) : (i++) {
+        @outputln(1, "Key: ", map&[i].key, ", Value: ", map&[i].value);
+    }
+};
+
+const has_key := fn (map: *[]Map, key: str, len: int) bool {
+    loop (i = 0; i < len) : (i++) {
+        if (@streq(map&[i].key, key)) return true;
+    }
+    return false;
+};
+
+const get_value := fn (map: *[]Map, key: str, len: int) MapResult {
+    have r: MapResult = {
+        length: len,
+        value: "Key not found",
+        index: 0,
+    };
+
+    # Note: Arrays are stored in reverse order, when we pass them to this function
+    loop (i = 0; i < r.length) : (i++) {
+        if (@streq(map&[i].key, key)) {
+            have val: str = map&[i].value;
+            r.value = val;
+            r.index = r.length - i - 1;
+            return r;
+        }
+    }
+
+    return r;
+};

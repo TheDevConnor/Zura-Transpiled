@@ -1,13 +1,26 @@
-const c_to_ptr := fn (c: char) *char {
-    have ptr: *char = @cast<*char>(@alloc(2));
-    ptr[0] = c;
-    ptr[1] = @cast<char>(0); # Null-terminate the string
-    return ptr;
-};
- 
+@import "std/map.zu";
+
 const main := fn () int! {
-    have c: char = @cast<char>(65); # ASCII 'A'
-    have ptr: *char = c_to_ptr(c);
-    @output(1, "Character to pointer: ", @cast<str>(ptr));
+    have map: [4]Map = [
+        { key: "name", value: "Zura" },
+        { key: "version", value: "1.0.0" },
+        { key: "author", value: "OpenAI" },
+        { key: "license", value: "MIT" },
+    ];
+
+    have key: str = "author";
+    have len: int! = map_length(&map);
+
+    print_map(&map, len);
+
+    if (has_key(&map, key, len)) {
+        @outputln(1, "\nKey '", key, "' exists in the map.");
+    } else {
+        @outputln(1, "Key '", key, "' does not exist in the map.");
+    }
+
+    have value: MapResult = get_value(&map, key, len);
+    @outputln(1, "Value for key '", key, "': ", value.value, " (at index ", value.index, ")");
+
     return 0;
 };
