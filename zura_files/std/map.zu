@@ -6,7 +6,7 @@ const Map := struct {
 const MapResult := struct {
     length: int!,
     value: str,
-    index: int!,
+    index: int?,
 };
 
 const map_length := fn (map: *[]Map) int! {
@@ -22,8 +22,17 @@ const map_length := fn (map: *[]Map) int! {
     return count;
 };
 
+const debug_print_map := fn (map: *[]Map, len: int) void {
+    @outputln(1, "Debugging Map:");
+    loop (i = 0; i < len) : (i++) {
+        if (map&[i].key == nil) break; # Skip nil keys
+        @outputln(1, "Index ", i, ": Key: ", map&[i].key, ", Value: ", map&[i].value);
+    }
+};
+
 const print_map := fn (map: *[]Map, len: int) void {
     loop (i = 0; i < len) : (i++) {
+        if (map&[i].key == nil) continue; # Skip nil keys
         @outputln(1, "Key: ", map&[i].key, ", Value: ", map&[i].value);
     }
 };
@@ -32,6 +41,39 @@ const has_key := fn (map: *[]Map, key: str, len: int) bool {
     loop (i = 0; i < len) : (i++) {
         if (@streq(map&[i].key, key)) return true;
     }
+    return false;
+};
+
+const add_key := fn (map: *[]Map, key: str, value: str) bool {
+    return false; # Return false if the map is full
+};
+
+const remove_key := fn (map: *[]Map, key: str) bool {
+    have len: int! = map_length(map);
+
+    loop (i = 0; i < len) : (i++) {
+        if (@streq(map&[i].key, key)) {
+            have next_key: str = map&[i + 1].key;
+            have next_value: str = map&[i + 1].value;
+
+            if (next_key == nil) {
+                map&[i].key = nil; # Clear the current key
+                map&[i].value = nil; # Clear the current value
+                # @outputln(1, "Removed key: ", key, " at index ", i);
+                return true; # Return true to indicate the key was removed
+            }
+
+            map&[i].key = next_key; # Shift the next key to the current position
+            map&[i].value = next_value; # Shift the next value to the current
+
+            map&[i + 1].key = nil; # Clear the next position
+            map&[i + 1].value = nil; # Clear the next value
+
+            # @outputln(1, "Removed key: ", key, " at index ", i);`
+            return true; # Return true to indicate the key was removed
+        }
+    }
+
     return false;
 };
 
@@ -45,9 +87,11 @@ const get_value := fn (map: *[]Map, key: str, len: int) MapResult {
     # Note: Arrays are stored in reverse order, when we pass them to this function
     loop (i = 0; i < r.length) : (i++) {
         if (@streq(map&[i].key, key)) {
+            have index: int = i;
+            @outputln(1, "Found key: ", key, " at index ", i);
             have val: str = map&[i].value;
             r.value = val;
-            r.index = r.length - i - 1;
+            r.index = index;
             return r;
         }
     }

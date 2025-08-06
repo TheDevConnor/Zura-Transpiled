@@ -1,26 +1,21 @@
 @import "std/map.zu";
 
 const main := fn () int! {
-    have map: [4]Map = [
+    have map: [5]Map = [
         { key: "name", value: "Zura" },
         { key: "version", value: "1.0.0" },
         { key: "author", value: "OpenAI" },
         { key: "license", value: "MIT" },
+        { key: "description", value: "A sample map for testing" },
     ];
 
-    have key: str = "author";
-    have len: int! = map_length(&map);
+    @outputln(1, "Initial Map:");
+    debug_print_map(&map, 5); # Debugging the map
+    remove_key(&map, "version"); # Remove the "version" key
+    remove_key(&map, "author"); # Remove the "author" key
 
-    print_map(&map, len);
+    debug_print_map(&map, 5); # Debugging the map after removal
 
-    if (has_key(&map, key, len)) {
-        @outputln(1, "\nKey '", key, "' exists in the map.");
-    } else {
-        @outputln(1, "Key '", key, "' does not exist in the map.");
-    }
-
-    have value: MapResult = get_value(&map, key, len);
-    @outputln(1, "Value for key '", key, "': ", value.value, " (at index ", value.index, ")");
 
     return 0;
 };
