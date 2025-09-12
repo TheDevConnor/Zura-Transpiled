@@ -126,4 +126,4 @@ Then run the binary with:
 
 ## Join Us
 
-[Zura Website](https://thedevconnor.github.io/Zura-Website/)
+[Zura Website](https://zuralang.com)
